@@ -7,18 +7,18 @@
  */
 
 export const Colors = {
-  // Primary - Purple
+  // Primary - Indigo/Purple
   primary: {
-    50: '#F3F1FE',
-    100: '#E8E4FD',
-    200: '#D1CAFB',
-    300: '#B9AFF9',
-    400: '#9389F7',
-    500: '#6D5DF6', // Main
-    600: '#5A48E5',
-    700: '#4735C9',
-    800: '#3727A3',
-    900: '#2A1D7D',
+    50: '#F0EFFF',
+    100: '#E0DEFF',
+    200: '#C2BCFF',
+    300: '#9E94FF',
+    400: '#6D5DF6', // Purple from logo
+    500: '#4338CA', // Main Indigo
+    600: '#3730A3',
+    700: '#312E81',
+    800: '#23215E',
+    900: '#0F172A', // Dark Navy for text
   },
 
   // Secondary - Green

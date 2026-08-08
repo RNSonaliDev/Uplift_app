@@ -116,7 +116,7 @@ export const Button: React.FC<ButtonProps> = ({
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'center',
-      borderRadius: BorderRadius.md,
+      borderRadius: BorderRadius.lg,
       minHeight: sizeConfig.minHeight,
       paddingVertical: sizeConfig.paddingVertical,
       paddingHorizontal: sizeConfig.paddingHorizontal,

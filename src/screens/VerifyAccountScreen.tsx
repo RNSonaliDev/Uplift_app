@@ -1,0 +1,517 @@
+import React, {useState, useRef, useEffect, useCallback} from 'react';
+import {
+  View,
+  StyleSheet,
+  StatusBar,
+  ScrollView,
+  TouchableOpacity,
+  TextInput,
+  KeyboardAvoidingView,
+  NativeSyntheticEvent,
+  TextInputKeyPressEventData,
+} from 'react-native';
+import {SafeAreaView} from 'react-native-safe-area-context';
+import Svg, {Path, Circle, Rect} from 'react-native-svg';
+import {AppText} from '../components/AppText';
+import {Button} from '../components/Button';
+import {UpliftLogo} from '../components/UpliftLogo';
+import {Colors} from '../theme/colors';
+import {FontFamily, FontSize} from '../theme/typography';
+import {Spacing, BorderRadius} from '../theme/spacing';
+import {
+  wp,
+  hp,
+  moderateScale,
+  fontScale,
+  verticalScale,
+  horizontalScale,
+  isIOS,
+} from '../utils/responsive';
+
+const OTP_LENGTH = 6;
+const RESEND_TIMER_SECONDS = 45;
+
+// ── Icon Components ──────────────────────────────────
+
+const BackArrowIcon: React.FC<{size?: number; color?: string}> = ({
+  size = 24,
+  color = Colors.primary[500],
+}) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path
+      d="M15 18L9 12L15 6"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </Svg>
+);
+
+const MailIcon: React.FC<{size?: number}> = ({size = 24}) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Rect
+      x="3"
+      y="5"
+      width="18"
+      height="14"
+      rx="2"
+      stroke={Colors.primary[500]}
+      strokeWidth="1.5"
+    />
+    <Path
+      d="M3 7L12 13L21 7"
+      stroke={Colors.primary[500]}
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </Svg>
+);
+
+const PhoneIcon: React.FC<{size?: number}> = ({size = 24}) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Rect
+      x="7"
+      y="2"
+      width="10"
+      height="20"
+      rx="2"
+      stroke={Colors.neutral[600]}
+      strokeWidth="1.5"
+    />
+    <Path
+      d="M11 18H13"
+      stroke={Colors.neutral[600]}
+      strokeWidth="1.5"
+      strokeLinecap="round"
+    />
+  </Svg>
+);
+
+const LockIcon: React.FC<{size?: number}> = ({size = 16}) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Rect
+      x="5"
+      y="11"
+      width="14"
+      height="10"
+      rx="2"
+      stroke={Colors.neutral[400]}
+      strokeWidth="1.5"
+    />
+    <Path
+      d="M8 11V7C8 4.79 9.79 3 12 3C14.21 3 16 4.79 16 7V11"
+      stroke={Colors.neutral[400]}
+      strokeWidth="1.5"
+      strokeLinecap="round"
+    />
+  </Svg>
+);
+
+// ── OTP Input Component ──────────────────────────────────
+
+interface OtpInputProps {
+  length: number;
+  value: string[];
+  onChange: (otp: string[]) => void;
+}
+
+const OtpInput: React.FC<OtpInputProps> = ({length, value, onChange}) => {
+  const inputRefs = useRef<(TextInput | null)[]>([]);
+
+  const handleChange = (text: string, index: number) => {
+    const newOtp = [...value];
+
+    if (text.length > 1) {
+      // Handle paste
+      const pastedChars = text.split('').slice(0, length);
+      pastedChars.forEach((char, i) => {
+        if (index + i < length) {
+          newOtp[index + i] = char;
+        }
+      });
+      onChange(newOtp);
+      const nextIndex = Math.min(index + pastedChars.length, length - 1);
+      inputRefs.current[nextIndex]?.focus();
+      return;
+    }
+
+    newOtp[index] = text;
+    onChange(newOtp);
+
+    if (text && index < length - 1) {
+      inputRefs.current[index + 1]?.focus();
+    }
+  };
+
+  const handleKeyPress = (
+    e: NativeSyntheticEvent<TextInputKeyPressEventData>,
+    index: number,
+  ) => {
+    if (e.nativeEvent.key === 'Backspace' && !value[index] && index > 0) {
+      const newOtp = [...value];
+      newOtp[index - 1] = '';
+      onChange(newOtp);
+      inputRefs.current[index - 1]?.focus();
+    }
+  };
+
+  return (
+    <View style={otpStyles.container}>
+      {Array.from({length}, (_, index) => {
+        const isFocused = false; // managed by TextInput internally
+        const hasValue = !!value[index];
+
+        return (
+          <TextInput
+            key={index}
+            ref={ref => {
+              inputRefs.current[index] = ref;
+            }}
+            style={[
+              otpStyles.input,
+              hasValue && otpStyles.inputFilled,
+            ]}
+            maxLength={1}
+            keyboardType="number-pad"
+            value={value[index] || ''}
+            onChangeText={text => handleChange(text, index)}
+            onKeyPress={e => handleKeyPress(e, index)}
+            selectTextOnFocus
+            selectionColor={Colors.primary[500]}
+          />
+        );
+      })}
+    </View>
+  );
+};
+
+const otpStyles = StyleSheet.create({
+  container: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: moderateScale(10),
+  },
+  input: {
+    flex: 1,
+    aspectRatio: 1,
+    maxWidth: moderateScale(52),
+    maxHeight: moderateScale(52),
+    borderWidth: 1.5,
+    borderColor: Colors.neutral[300],
+    borderRadius: BorderRadius.md,
+    textAlign: 'center',
+    fontSize: fontScale(22),
+    fontFamily: FontFamily.semiBold,
+    color: Colors.primary[500],
+    backgroundColor: Colors.neutral[0],
+  },
+  inputFilled: {
+    borderColor: Colors.primary[500],
+    backgroundColor: Colors.primary[50],
+  },
+});
+
+// ── Contact Info Row ──────────────────────────────────
+
+interface ContactInfoRowProps {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  onChangePress?: () => void;
+}
+
+const ContactInfoRow: React.FC<ContactInfoRowProps> = ({
+  icon,
+  label,
+  value,
+  onChangePress,
+}) => (
+  <View style={contactStyles.row}>
+    <View style={contactStyles.iconContainer}>{icon}</View>
+    <View style={contactStyles.textContainer}>
+      <AppText variant="caption" color={Colors.neutral[500]}>
+        {label}
+      </AppText>
+      <AppText variant="labelMedium" color={Colors.neutral[900]}>
+        {value}
+      </AppText>
+    </View>
+    <TouchableOpacity onPress={onChangePress}>
+      <AppText variant="labelMedium" color={Colors.primary[500]}>
+        Change
+      </AppText>
+    </TouchableOpacity>
+  </View>
+);
+
+const contactStyles = StyleSheet.create({
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: verticalScale(14),
+    paddingHorizontal: horizontalScale(16),
+    backgroundColor: Colors.neutral[50],
+    borderRadius: BorderRadius.md,
+  },
+  iconContainer: {
+    marginRight: moderateScale(12),
+  },
+  textContainer: {
+    flex: 1,
+  },
+});
+
+// ── Main Component ──────────────────────────────────
+
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+
+type RootStackParamList = {
+  Welcome: undefined;
+  CreateAccount: undefined;
+  VerifyAccount: { emailOrPhone: string };
+  CreateProfile: undefined;
+  SelectRoles: undefined;
+};
+
+type NavigationProps = NativeStackNavigationProp<RootStackParamList>;
+type VerifyAccountRouteProp = RouteProp<RootStackParamList, 'VerifyAccount'>;
+
+export const VerifyAccountScreen: React.FC = () => {
+  const navigation = useNavigation<NavigationProps>();
+  const route = useRoute<VerifyAccountRouteProp>();
+  
+  const contactValue = route.params?.emailOrPhone || '';
+  const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactValue);
+  const isPhone = /^(?:\+1|1)?\s?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}$/.test(contactValue);
+  
+  const email = isEmail ? contactValue : undefined;
+  // If it's not a valid email and not a valid phone, we fallback to treating it as a phone, but typically it should be validated before this screen.
+  const phoneNumber = !isEmail ? contactValue : undefined;
+
+  const contactTypeText = isEmail ? 'email address' : 'phone number';
+  const [otp, setOtp] = useState<string[]>(Array(OTP_LENGTH).fill(''));
+  const [timer, setTimer] = useState(RESEND_TIMER_SECONDS);
+  const [canResend, setCanResend] = useState(false);
+
+  useEffect(() => {
+    if (timer <= 0) {
+      setCanResend(true);
+      return;
+    }
+
+    const interval = setInterval(() => {
+      setTimer(prev => prev - 1);
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [timer]);
+
+  const handleResend = useCallback(() => {
+    if (!canResend) {
+      return;
+    }
+    setTimer(RESEND_TIMER_SECONDS);
+    setCanResend(false);
+    setOtp(Array(OTP_LENGTH).fill(''));
+    console.log('Resend code requested');
+  }, [canResend]);
+
+  const formatTime = (seconds: number): string => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const isOtpComplete = otp.every(digit => digit !== '');
+
+  return (
+    <View style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor={Colors.neutral[0]} />
+      <KeyboardAvoidingView
+        style={styles.flex}
+        behavior={isIOS ? 'padding' : undefined}>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled">
+          {/* Header with Back Button */}
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+            hitSlop={{top: 12, bottom: 12, left: 12, right: 12}}>
+            <BackArrowIcon size={moderateScale(24)} />
+          </TouchableOpacity>
+
+          {/* Logo */}
+          <View style={styles.logoSection}>
+            <UpliftLogo size={moderateScale(0.9, 0.3)} />
+          </View>
+
+          {/* Title & Subtitle */}
+          <AppText variant="h2" center style={styles.title}>
+            Verify your account
+          </AppText>
+          <AppText
+            variant="bodyMedium"
+            center
+            color={Colors.neutral[500]}
+            style={styles.subtitle}>
+            Enter the 6-digit verification code{'\n'}we sent to your {contactTypeText}.
+          </AppText>
+
+          {/* Contact Info Cards */}
+          <View style={styles.contactSection}>
+            {isEmail && (
+              <ContactInfoRow
+                icon={<MailIcon size={moderateScale(22)} />}
+                label="Email"
+                value={email!}
+                onChangePress={() => navigation.goBack()}
+              />
+            )}
+            {isEmail && !isEmail && <View style={{height: verticalScale(8)}} />}
+            {!isEmail && (
+              <ContactInfoRow
+                icon={<PhoneIcon size={moderateScale(22)} />}
+                label="Phone number"
+                value={phoneNumber!}
+                onChangePress={() => navigation.goBack()}
+              />
+            )}
+          </View>
+
+          {/* OTP Input */}
+          <View style={styles.otpSection}>
+            <OtpInput length={OTP_LENGTH} value={otp} onChange={setOtp} />
+          </View>
+
+          {/* Resend Code */}
+          <View style={styles.resendSection}>
+            <AppText variant="bodySmall" color={Colors.neutral[500]}>
+              Didn't receive the code?
+            </AppText>
+            {canResend ? (
+              <TouchableOpacity
+                onPress={handleResend}
+                style={styles.resendButton}>
+                <AppText
+                  variant="labelSmall"
+                  color={Colors.primary[500]}>
+                  Resend Code
+                </AppText>
+              </TouchableOpacity>
+            ) : (
+              <AppText
+                variant="bodySmall"
+                color={Colors.neutral[500]}
+                style={styles.resendTimer}>
+                Resend code in{' '}
+                <AppText
+                  variant="labelSmall"
+                  color={Colors.primary[500]}>
+                  {formatTime(timer)}
+                </AppText>
+              </AppText>
+            )}
+          </View>
+
+          {/* Spacer to push verify button down */}
+          <View style={styles.spacer} />
+
+          {/* Verify Button */}
+          <Button
+            title="Verify & Continue"
+            color="primary"
+            size="lg"
+            fullWidth
+            disabled={!isOtpComplete}
+            onPress={() => navigation.navigate('SelectRoles')}
+            style={styles.verifyButton}
+          />
+
+          {/* Security Note */}
+          <View style={styles.securityNote}>
+            <LockIcon size={moderateScale(16)} />
+            <AppText
+              variant="bodySmall"
+              color={Colors.neutral[500]}
+              style={styles.securityText}>
+              Your information is secure and encrypted.
+            </AppText>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: Colors.neutral[0],
+  },
+  flex: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingHorizontal: horizontalScale(24),
+    paddingBottom: verticalScale(24),
+  },
+  backButton: {
+    alignSelf: 'flex-start',
+    marginTop: verticalScale(8),
+    padding: moderateScale(4),
+  },
+  logoSection: {
+    alignItems: 'center',
+    // marginTop: verticalScale(12),
+  },
+  title: {
+    marginTop: verticalScale(16),
+    fontSize: fontScale(26),
+  },
+  subtitle: {
+    marginTop: verticalScale(8),
+    fontSize: fontScale(14),
+    lineHeight: fontScale(21),
+  },
+  contactSection: {
+    marginTop: verticalScale(24),
+  },
+  otpSection: {
+    marginTop: verticalScale(24),
+    paddingHorizontal: horizontalScale(4),
+  },
+  resendSection: {
+    alignItems: 'center',
+    marginTop: verticalScale(24),
+  },
+  resendButton: {
+    marginTop: verticalScale(4),
+    padding: moderateScale(4),
+  },
+  resendTimer: {
+    marginTop: verticalScale(4),
+  },
+  spacer: {
+    flex: 1,
+    minHeight: verticalScale(32),
+  },
+  verifyButton: {
+    borderRadius: BorderRadius.xl,
+    height: verticalScale(52),
+  },
+  securityNote: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: verticalScale(16),
+  },
+  securityText: {
+    marginLeft: moderateScale(6),
+  },
+});

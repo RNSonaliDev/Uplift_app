@@ -1,45 +1,62 @@
 /**
- * Sample React Native App
- * https://github.com/facebook/react-native
+ * UpliftApp - Main Application Entry
  *
  * @format
  */
 
-import { NewAppScreen } from '@react-native/new-app-screen';
-import { StatusBar, StyleSheet, useColorScheme, View } from 'react-native';
-import {
-  SafeAreaProvider,
-  useSafeAreaInsets,
-} from 'react-native-safe-area-context';
+import React, {useState} from 'react';
+import {SafeAreaProvider, SafeAreaView} from 'react-native-safe-area-context';
+import {NavigationContainer} from '@react-navigation/native';
+import {createNativeStackNavigator} from '@react-navigation/native-stack';
+
+import {WelcomeScreen} from './src/screens/WelcomeScreen';
+import {CreateAccountScreen} from './src/screens/CreateAccountScreen';
+import {VerifyAccountScreen} from './src/screens/VerifyAccountScreen';
+import {SelectRolesScreen} from './src/screens/SelectRolesScreen';
+import {SplashScreen} from './src/screens/SplashScreen';
+import {OrganizationSetupScreen} from './src/screens/OrganizationSetupScreen';
+import {SponsorSetupScreen} from './src/screens/SponsorSetupScreen';
+import {VolunteerSetupScreen} from './src/screens/VolunteerSetupScreen';
+import {BeneficiarySetupScreen} from './src/screens/BeneficiarySetupScreen';
+import {SuccessScreen} from './src/screens/SuccessScreen';
+import {Colors} from './src/theme/colors';
+
+type RootStackParamList = {
+  Splash: undefined;
+  Welcome: undefined;
+  CreateAccount: undefined;
+  VerifyAccount: { emailOrPhone: string };
+  SelectRoles: undefined;
+  OrganizationSetup: undefined;
+  SponsorSetup: undefined;
+  VolunteerSetup: undefined;
+  BeneficiarySetup: undefined;
+  Success: undefined;
+};
+
+const Stack = createNativeStackNavigator<RootStackParamList>();
 
 function App() {
-  const isDarkMode = useColorScheme() === 'dark';
-
   return (
     <SafeAreaProvider>
-      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
-      <AppContent />
+      <SafeAreaView style={{flex: 1, backgroundColor: Colors.neutral[0]}}>
+        <NavigationContainer>
+          <Stack.Navigator screenOptions={{headerShown: false}}>
+            <Stack.Screen name="Splash" component={SplashScreen} />
+            <Stack.Screen name="Welcome" component={WelcomeScreen} />
+            <Stack.Screen name="CreateAccount" component={CreateAccountScreen} />
+            <Stack.Screen name="VerifyAccount" component={VerifyAccountScreen} />
+            <Stack.Screen name="SelectRoles" component={SelectRolesScreen} />
+            <Stack.Screen name="OrganizationSetup" component={OrganizationSetupScreen} />
+            <Stack.Screen name="SponsorSetup" component={SponsorSetupScreen} />
+            <Stack.Screen name="VolunteerSetup" component={VolunteerSetupScreen} />
+            <Stack.Screen name="BeneficiarySetup" component={BeneficiarySetupScreen} />
+            <Stack.Screen name="Success" component={SuccessScreen} />
+          </Stack.Navigator>
+        </NavigationContainer>
+      </SafeAreaView>
     </SafeAreaProvider>
   );
 }
-
-function AppContent() {
-  const safeAreaInsets = useSafeAreaInsets();
-
-  return (
-    <View style={styles.container}>
-      <NewAppScreen
-        templateFileName="App.tsx"
-        safeAreaInsets={safeAreaInsets}
-      />
-    </View>
-  );
-}
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-});
 
 export default App;
