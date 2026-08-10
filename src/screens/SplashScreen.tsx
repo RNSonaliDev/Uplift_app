@@ -1,10 +1,12 @@
 import React, { useEffect, useRef } from 'react';
-import { View, StyleSheet, Image, StatusBar, Animated, Text } from 'react-native';
+import { View, StyleSheet, Image, StatusBar, Animated, Text, Dimensions } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Colors } from '../theme/colors';
 import { Typography } from '../theme/typography';
-import { logo } from '../assets/images';
+import { logo, backgroundimage } from '../assets/images';
+
+const { width, height } = Dimensions.get('window');
 
 type RootStackParamList = {
   Splash: undefined;
@@ -17,69 +19,126 @@ export const SplashScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProps>();
   
   // Animation values
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const scaleAnim = useRef(new Animated.Value(0.8)).current;
-  const translateY = useRef(new Animated.Value(20)).current;
+  const logoScale = useRef(new Animated.Value(0.3)).current;
+  const logoOpacity = useRef(new Animated.Value(0)).current;
+  const textTranslateY = useRef(new Animated.Value(30)).current;
+  const textOpacity = useRef(new Animated.Value(0)).current;
+  const circle1Scale = useRef(new Animated.Value(0)).current;
+  const circle2Scale = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     // Start animations
-    Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 1000,
-        useNativeDriver: true,
-      }),
-      Animated.spring(scaleAnim, {
-        toValue: 1,
-        tension: 10,
-        friction: 2,
-        useNativeDriver: true,
-      }),
-      Animated.timing(translateY, {
-        toValue: 0,
-        duration: 1000,
-        useNativeDriver: true,
-      })
+    Animated.sequence([
+      // 1. Animate circles in
+      Animated.parallel([
+        Animated.spring(circle1Scale, {
+          toValue: 1,
+          tension: 20,
+          friction: 7,
+          useNativeDriver: true,
+        }),
+        Animated.spring(circle2Scale, {
+          toValue: 1,
+          tension: 20,
+          friction: 7,
+          useNativeDriver: true,
+          delay: 200,
+        }),
+      ]),
+      // 2. Animate logo
+      Animated.parallel([
+        Animated.spring(logoScale, {
+          toValue: 1,
+          tension: 10,
+          friction: 4,
+          useNativeDriver: true,
+        }),
+        Animated.timing(logoOpacity, {
+          toValue: 1,
+          duration: 500,
+          useNativeDriver: true,
+        }),
+      ]),
+      // 3. Animate text
+      Animated.parallel([
+        Animated.timing(textTranslateY, {
+          toValue: 0,
+          duration: 600,
+          useNativeDriver: true,
+        }),
+        Animated.timing(textOpacity, {
+          toValue: 1,
+          duration: 600,
+          useNativeDriver: true,
+        }),
+      ]),
     ]).start();
 
-    // Navigate to Welcome screen after 2.5 seconds
+    // Navigate to Welcome screen after 3.5 seconds
     const timer = setTimeout(() => {
-      // navigation.replace('Welcome');
-    }, 2500);
+      navigation.replace('Welcome');
+    }, 3500);
 
     return () => clearTimeout(timer);
-  }, [navigation, fadeAnim, scaleAnim, translateY]);
+  }, [navigation, logoScale, logoOpacity, textTranslateY, textOpacity, circle1Scale, circle2Scale]);
 
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={Colors.neutral[0]} />
       
-      {/* Decorative background elements */}
-      <View style={[styles.circle, styles.circleTopRight]} />
-      <View style={[styles.circle, styles.circleBottomLeft]} />
+      {/* Background Image with very low opacity for texture */}
+      <Image 
+        source={backgroundimage} 
+        style={styles.backgroundImage} 
+        resizeMode="cover"
+      />
 
+      {/* Decorative background elements */}
       <Animated.View 
         style={[
-          styles.content,
-          {
-            opacity: fadeAnim,
-            transform: [
-              { scale: scaleAnim },
-              { translateY: translateY }
-            ]
-          }
-        ]}
-      >
-        <View style={styles.logoContainer}>
-          <Image 
-            source={logo} 
-            style={styles.logoImage}
-            resizeMode="contain"
-          />
-        </View>
-        <Text style={styles.appName}>UPLIFT</Text>
-        <Text style={styles.tagline}>Empowering Communities</Text>
-      </Animated.View>
+          styles.circle, 
+          styles.circleTopRight,
+          { transform: [{ scale: circle1Scale }] }
+        ]} 
+      />
+      <Animated.View 
+        style={[
+          styles.circle, 
+          styles.circleBottomLeft,
+          { transform: [{ scale: circle2Scale }] }
+        ]} 
+      />
+
+      <View style={styles.content}>
+        <Animated.View 
+          style={[
+            styles.logoContainer,
+            {
+              opacity: logoOpacity,
+              transform: [{ scale: logoScale }]
+            }
+          ]}
+        >
+          <View style={styles.logoBackground}>
+            <Image 
+              source={logo} 
+              style={styles.logoImage}
+              resizeMode="contain"
+            />
+          </View>
+        </Animated.View>
+        
+        <Animated.View
+          style={{
+            opacity: textOpacity,
+            transform: [{ translateY: textTranslateY }],
+            alignItems: 'center',
+          }}
+        >
+          <Text style={styles.appName}>UPLIFT</Text>
+          <Text style={styles.tagline}>Empowering Communities</Text>
+        </Animated.View>
+      </View>
     </View>
   );
 };
@@ -92,55 +151,69 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     overflow: 'hidden',
   },
+  backgroundImage: {
+    position: 'absolute',
+    width: width,
+    height: height,
+    opacity: 0.05,
+  },
   content: {
     alignItems: 'center',
     zIndex: 10,
   },
   logoContainer: {
-    shadowColor: Colors.primary[500],
+    marginBottom: 32,
+  },
+  logoBackground: {
+    width: 140,
+    height: 140,
+    backgroundColor: Colors.neutral[0],
+    borderRadius: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: Colors.primary[600],
     shadowOffset: {
       width: 0,
-      height: 10,
+      height: 20,
     },
-    shadowOpacity: 0.15,
-    shadowRadius: 20,
-    elevation: 10,
-    marginBottom: 24,
+    shadowOpacity: 0.25,
+    shadowRadius: 35,
+    elevation: 15,
   },
   logoImage: {
-    width: 160,
-    height: 160,
-    borderRadius: 32, 
+    width: 100,
+    height: 100,
   },
   appName: {
     ...Typography.h1,
-    color: Colors.primary[600],
-    letterSpacing: 2,
-    marginBottom: 8,
+    color: Colors.primary[700],
+    letterSpacing: 4,
+    marginBottom: 12,
   },
   tagline: {
-    ...Typography.bodyMedium,
-    color: Colors.neutral[500],
-    letterSpacing: 0.5,
+    ...Typography.bodyLarge,
+    color: Colors.neutral[600],
+    letterSpacing: 1.5,
   },
   // Decorative circles
   circle: {
     position: 'absolute',
     borderRadius: 999,
-    backgroundColor: Colors.primary[50],
-    opacity: 0.5,
   },
   circleTopRight: {
-    width: 300,
-    height: 300,
-    top: -100,
-    right: -100,
-  },
-  circleBottomLeft: {
     width: 400,
     height: 400,
-    bottom: -150,
-    left: -150,
-    backgroundColor: Colors.secondary[50],
+    top: -150,
+    right: -150,
+    backgroundColor: Colors.primary[100],
+    opacity: 0.6,
+  },
+  circleBottomLeft: {
+    width: 500,
+    height: 500,
+    bottom: -200,
+    left: -200,
+    backgroundColor: Colors.secondary[100],
+    opacity: 0.4,
   },
 });

@@ -152,7 +152,7 @@ const styles = StyleSheet.create({
   },
   logoSection: {
     alignItems: 'center',
-    // marginTop: verticalScale(24),
+    marginTop: verticalScale(24),
   },
   taglineSection: {
     alignItems: 'center',
@@ -176,17 +176,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'flex-end', // Aligns the friend image at the bottom
     marginTop: verticalScale(16),
-    flex: 1,
-    minHeight: verticalScale(200),
+    // flex: 1,
+    height: verticalScale(200),
     width: "100%"
   },
   illustration: {
     width: wp(85),
-    height: verticalScale(240), 
+    height: verticalScale(200), 
   },
   bottomSection: {
     paddingBottom: verticalScale(24),
-    marginTop: verticalScale(8),
+    marginTop: verticalScale(12),
     paddingHorizontal: horizontalScale(24),
   },
   createButton: {

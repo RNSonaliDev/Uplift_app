@@ -253,10 +253,7 @@ type NavigationProps = NativeStackNavigationProp<RootStackParamList>;
 
 export const SelectRolesScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProps>();
-  const [selectedRoles, setSelectedRoles] = useState<RoleType[]>([
-    'beneficiary',
-    'sponsor',
-  ]);
+  const [selectedRoles, setSelectedRoles] = useState<RoleType[]>([]);
 
   const toggleRole = (role: RoleType) => {
     setSelectedRoles(prev => {
@@ -355,16 +352,19 @@ export const SelectRolesScreen: React.FC = () => {
           size="lg"
           fullWidth
           onPress={() => {
-            if (selectedRoles.includes('volunteer')) {
-              navigation.navigate('VolunteerSetup' as any);
-            } else if (selectedRoles.includes('organization')) {
-              navigation.navigate('OrganizationSetup' as any);
-            } else if (selectedRoles.includes('sponsor')) {
-              navigation.navigate('SponsorSetup' as any);
-            } else if (selectedRoles.includes('beneficiary')) {
-              navigation.navigate('BeneficiarySetup' as any);
-            } else {
-              console.log('No specific screen implemented yet for the selected roles.');
+            if (selectedRoles.length === 0) return;
+            const roles = [...selectedRoles];
+            const firstRole = roles.shift();
+            const pendingRoles = roles;
+            
+            if (firstRole === 'volunteer') {
+              navigation.navigate('VolunteerSetup' as any, { pendingRoles });
+            } else if (firstRole === 'organization') {
+              navigation.navigate('OrganizationSetup' as any, { pendingRoles });
+            } else if (firstRole === 'sponsor') {
+              navigation.navigate('SponsorSetup' as any, { pendingRoles });
+            } else if (firstRole === 'beneficiary') {
+              navigation.navigate('BeneficiarySetup' as any, { pendingRoles });
             }
           }}
           disabled={selectedRoles.length === 0}

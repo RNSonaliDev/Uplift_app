@@ -9,7 +9,7 @@ import {
   Image,
   TextInput,
 } from 'react-native';
-import {useNavigation} from '@react-navigation/native';
+import {useNavigation, useRoute} from '@react-navigation/native';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import Svg, {Path, Circle, Rect, Polyline} from 'react-native-svg';
 import { launchImageLibrary } from 'react-native-image-picker';
@@ -176,9 +176,27 @@ export const BeneficiarySetupScreen: React.FC = () => {
     return Object.keys(newErrors).length === 0;
   };
 
+  const route = useRoute<any>();
+  const pendingRoles = route.params?.pendingRoles || [];
+
   const handleContinue = () => {
     if (validate()) {
-      navigation.navigate('Success');
+      if (pendingRoles.length > 0) {
+        const nextRoles = [...pendingRoles];
+        const nextRole = nextRoles.shift();
+        
+        if (nextRole === 'volunteer') {
+          navigation.navigate('VolunteerSetup' as any, { pendingRoles: nextRoles });
+        } else if (nextRole === 'organization') {
+          navigation.navigate('OrganizationSetup' as any, { pendingRoles: nextRoles });
+        } else if (nextRole === 'sponsor') {
+          navigation.navigate('SponsorSetup' as any, { pendingRoles: nextRoles });
+        } else if (nextRole === 'beneficiary') {
+          navigation.navigate('BeneficiarySetup' as any, { pendingRoles: nextRoles });
+        }
+      } else {
+        navigation.navigate('Success' as any);
+      }
     }
   };
 
@@ -286,7 +304,7 @@ export const BeneficiarySetupScreen: React.FC = () => {
             <View style={styles.phoneInputWrapper}>
               <View style={styles.labelRow}>
                 <AppText variant="labelMedium" color={Colors.neutral[900]} style={{marginBottom: Spacing.xs}}>
-                  Phone number (US)
+                  Phone number
                 </AppText>
                 <TouchableOpacity 
                   style={{marginLeft: 6, marginBottom: Spacing.xs}}

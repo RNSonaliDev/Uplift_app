@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
   KeyboardAvoidingView,
 } from 'react-native';
-import {useNavigation} from '@react-navigation/native';
+import {useNavigation, useRoute} from '@react-navigation/native';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import Svg, {Path, Circle, Rect, Polyline} from 'react-native-svg';
 
@@ -233,9 +233,27 @@ export const OrganizationSetupScreen: React.FC = () => {
     return Object.keys(newErrors).length === 0;
   };
 
+  const route = useRoute<any>();
+  const pendingRoles = route.params?.pendingRoles || [];
+
   const handleContinue = () => {
     if (validate()) {
-      navigation.navigate('Success');
+      if (pendingRoles.length > 0) {
+        const nextRoles = [...pendingRoles];
+        const nextRole = nextRoles.shift();
+        
+        if (nextRole === 'volunteer') {
+          navigation.navigate('VolunteerSetup' as any, { pendingRoles: nextRoles });
+        } else if (nextRole === 'organization') {
+          navigation.navigate('OrganizationSetup' as any, { pendingRoles: nextRoles });
+        } else if (nextRole === 'sponsor') {
+          navigation.navigate('SponsorSetup' as any, { pendingRoles: nextRoles });
+        } else if (nextRole === 'beneficiary') {
+          navigation.navigate('BeneficiarySetup' as any, { pendingRoles: nextRoles });
+        }
+      } else {
+        navigation.navigate('Success' as any);
+      }
     }
   };
 
