@@ -156,8 +156,8 @@ export const SuccessScreen: React.FC = () => {
 
         {/* Text Section */}
         <View style={styles.textSection}>
-          <AppText variant="h1" center color={Colors.neutral[900]} style={styles.title}>
-            You're all set!
+          <AppText variant="h2" center color={Colors.primary[900]} style={styles.title}>
+            You're All Set!
           </AppText>
           <AppText
             variant="bodyLarge"
@@ -230,17 +230,15 @@ const styles = StyleSheet.create({
     marginTop: verticalScale(16),
   },
   title: {
-    fontSize: fontScale(28),
-    fontWeight: '700',
     marginBottom: verticalScale(16),
   },
   subtitle: {
-    lineHeight: fontScale(24),
     marginBottom: verticalScale(32),
   },
   checklistCard: {
     width: '100%',
-    backgroundColor: '#F0F8F1', // Light mint green from mockup
+    backgroundColor: Colors.secondary[50], // Light mint green from theme
+
     borderRadius: BorderRadius.xl,
     padding: moderateScale(24),
     gap: verticalScale(20),

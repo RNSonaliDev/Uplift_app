@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   StyleSheet,
@@ -7,14 +7,13 @@ import {
   ScrollView,
   TouchableOpacity,
   ImageBackground,
+  Modal,
 } from 'react-native';
-import {SafeAreaView} from 'react-native-safe-area-context';
 import {AppText} from '../components/AppText';
 import {Button} from '../components/Button';
 import {UpliftLogo} from '../components/UpliftLogo';
 import {Colors} from '../theme/colors';
-import {FontFamily} from '../theme/typography';
-import {Spacing, BorderRadius} from '../theme/spacing';
+import {BorderRadius} from '../theme/spacing';
 import {
   wp,
   hp,
@@ -24,7 +23,7 @@ import {
   horizontalScale,
 } from '../utils/responsive';
 
-import { friendImage, backgroundimage } from '../assets/images';
+import { whatsappImage } from '../assets/images';
 
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -40,6 +39,12 @@ type NavigationProps = NativeStackNavigationProp<RootStackParamList>;
 
 export const WelcomeScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProps>();
+  const [modalConfig, setModalConfig] = useState<{visible: boolean, type: 'terms' | 'privacy'}>({visible: false, type: 'terms'});
+
+  const openTerms = () => setModalConfig({visible: true, type: 'terms'});
+  const openPrivacy = () => setModalConfig({visible: true, type: 'privacy'});
+  const closeModal = () => setModalConfig({...modalConfig, visible: false});
+
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={Colors.neutral[0]} />
@@ -54,14 +59,13 @@ export const WelcomeScreen: React.FC = () => {
 
         {/* Tagline */}
         <View style={styles.taglineSection}>
-          <AppText variant="h1" center style={styles.taglineBlack}>
-            Stronger together.
+          <AppText variant="h2" center color={Colors.primary[900]}>
+            Stronger Together.
           </AppText>
           <AppText
-            variant="h1"
+            variant="h2"
             center
-            color={Colors.primary[500]}
-            style={styles.taglinePurple}>
+            color={Colors.primary[500]}>
             Better together.
           </AppText>
         </View>
@@ -77,13 +81,13 @@ export const WelcomeScreen: React.FC = () => {
         </AppText>
 
         {/* Illustration */}
-        <ImageBackground source={backgroundimage} style={styles.illustrationContainer} resizeMode="cover">
+        <View style={styles.illustrationContainer}>
           <Image
-            source={friendImage}
+            source={whatsappImage}
             style={styles.illustration}
-            resizeMode="contain"
+            resizeMode="cover"
           />
-        </ImageBackground>
+        </View>
 
         {/* Bottom Section */}
         <View style={styles.bottomSection}>
@@ -114,7 +118,7 @@ export const WelcomeScreen: React.FC = () => {
               By continuing, you agree to our
             </AppText>
             <View style={styles.termsLinks}>
-              <TouchableOpacity onPress={() => {}}>
+              <TouchableOpacity onPress={openTerms}>
                 <AppText
                   variant="bodySmall"
                   color={Colors.primary[500]}
@@ -125,7 +129,7 @@ export const WelcomeScreen: React.FC = () => {
               <AppText variant="bodySmall" color={Colors.neutral[500]}>
                 {'  and  '}
               </AppText>
-              <TouchableOpacity onPress={() => {}}>
+              <TouchableOpacity onPress={openPrivacy}>
                 <AppText
                   variant="bodySmall"
                   color={Colors.primary[500]}
@@ -137,6 +141,74 @@ export const WelcomeScreen: React.FC = () => {
           </View>
         </View>
       </ScrollView>
+
+      {/* Terms & Privacy Modal */}
+      <Modal visible={modalConfig.visible} animationType="slide" transparent={true} onRequestClose={closeModal}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <AppText variant="h3" weight="bold">
+                {modalConfig.type === 'terms' ? 'Terms of Service' : 'Privacy Policy'}
+              </AppText>
+              <TouchableOpacity onPress={closeModal} style={styles.closeButton}>
+                <AppText color={Colors.primary[500]} weight="semiBold">Close</AppText>
+              </TouchableOpacity>
+            </View>
+            <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
+              <AppText variant="bodyMedium" color={Colors.neutral[600]}>
+                {modalConfig.type === 'terms' ? (
+                  <>
+                    Welcome to Uplift! These Terms of Service govern your use of our app and services.
+                    {'\n\n'}
+                    By using Uplift, you agree to these terms. Please read them carefully.
+                    {'\n\n'}
+                    1. Use of Service
+                    {'\n'}
+                    You must be at least 13 years old to use Uplift. You are responsible for all activities that occur under your account.
+                    {'\n\n'}
+                    2. Content
+                    {'\n'}
+                    You retain ownership of the content you post, but you grant us a license to use it to provide our services.
+                    {'\n\n'}
+                    3. Prohibited Conduct
+                    {'\n'}
+                    You agree not to engage in any harassment, spamming, or illegal activities on our platform.
+                    {'\n\n'}
+                    4. Termination
+                    {'\n'}
+                    We reserve the right to terminate or suspend your account at any time for violations of these terms.
+                    {'\n\n'}
+                    (This is a placeholder for the full Terms of Service.)
+                  </>
+                ) : (
+                  <>
+                    Your privacy is important to us. This Privacy Policy explains how we collect, use, and protect your information.
+                    {'\n\n'}
+                    1. Information We Collect
+                    {'\n'}
+                    We collect information you provide directly to us, such as when you create an account or update your profile.
+                    {'\n\n'}
+                    2. How We Use Your Information
+                    {'\n'}
+                    We use your information to provide, maintain, and improve our services, as well as to communicate with you.
+                    {'\n\n'}
+                    3. Sharing of Information
+                    {'\n'}
+                    We do not sell your personal information. We may share information with trusted service providers who assist us in operating our app.
+                    {'\n\n'}
+                    4. Security
+                    {'\n'}
+                    We implement reasonable security measures to protect your information, but no system is completely secure.
+                    {'\n\n'}
+                    (This is a placeholder for the full Privacy Policy.)
+                  </>
+                )}
+              </AppText>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
     </View>
   );
 };
@@ -158,19 +230,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: verticalScale(16),
   },
-  taglineBlack: {
-    fontSize: fontScale(28),
-    lineHeight: fontScale(36),
-  },
-  taglinePurple: {
-    fontSize: fontScale(28),
-    lineHeight: fontScale(36),
-  },
   description: {
     marginTop: verticalScale(12),
     paddingHorizontal: horizontalScale(16),
-    fontSize: fontScale(15),
-    lineHeight: fontScale(22),
   },
   illustrationContainer: {
     alignItems: 'center',
@@ -181,7 +243,7 @@ const styles = StyleSheet.create({
     width: "100%"
   },
   illustration: {
-    width: wp(85),
+    width: "100%",
     height: verticalScale(200), 
   },
   bottomSection: {
@@ -206,5 +268,32 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginTop: verticalScale(2),
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: Colors.neutral[0],
+    borderTopLeftRadius: BorderRadius.xl,
+    borderTopRightRadius: BorderRadius.xl,
+    maxHeight: hp(80),
+    paddingBottom: verticalScale(32),
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: horizontalScale(20),
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.neutral[200],
+  },
+  closeButton: {
+    padding: moderateScale(4),
+  },
+  modalBody: {
+    paddingHorizontal: horizontalScale(20),
+    paddingVertical: verticalScale(16),
   },
 });

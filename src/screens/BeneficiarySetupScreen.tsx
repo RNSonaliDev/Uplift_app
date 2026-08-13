@@ -13,6 +13,7 @@ import {useNavigation, useRoute} from '@react-navigation/native';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import Svg, {Path, Circle, Rect, Polyline} from 'react-native-svg';
 import { launchImageLibrary } from 'react-native-image-picker';
+import DatePicker from 'react-native-date-picker';
 
 import {AppText} from '../components/AppText';
 import {Button} from '../components/Button';
@@ -144,6 +145,8 @@ export const BeneficiarySetupScreen: React.FC = () => {
   const [lastName, setLastName] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [dob, setDob] = useState('');
+  const [dateOpen, setDateOpen] = useState(false);
+  const [dateVal, setDateVal] = useState(new Date());
   const [zipCode, setZipCode] = useState('');
   const [notes, setNotes] = useState('');
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
@@ -237,7 +240,7 @@ export const BeneficiarySetupScreen: React.FC = () => {
           <View style={styles.headerSection}>
             <UpliftLogo size={moderateScale(0.8, 0.3)} />
             <AppText variant="h2" center color={Colors.primary[900]} style={styles.title}>
-              Beneficiary setup
+              Beneficiary Setup
             </AppText>
             <AppText
               variant="bodyMedium"
@@ -251,7 +254,7 @@ export const BeneficiarySetupScreen: React.FC = () => {
           {/* Profile Photo Section */}
           <View style={styles.sectionContainer}>
             <AppText variant="labelLarge" color={Colors.primary[900]} weight="bold" style={styles.sectionLabel}>
-              Profile photo
+              Profile Photo
             </AppText>
             <View style={styles.photoUploadContainer}>
               <TouchableOpacity style={styles.photoCircle} onPress={handleSelectPhoto}>
@@ -323,6 +326,7 @@ export const BeneficiarySetupScreen: React.FC = () => {
                   if (errors.phoneNumber) setErrors({...errors, phoneNumber: ''});
                 }}
                 keyboardType="phone-pad"
+                maxLength={10}
                 error={errors.phoneNumber}
               />
 
@@ -338,18 +342,38 @@ export const BeneficiarySetupScreen: React.FC = () => {
               )}
             </View>
 
-            <Input
-              label="Date of Birth"
-              placeholder="MM / DD / YYYY"
-              leftIcon={<CalendarIcon />}
-              rightIcon={<CalendarIcon color={Colors.neutral[500]} />}
-              value={dob}
-              onChangeText={(text) => {
-                setDob(text);
+            <TouchableOpacity activeOpacity={0.8} onPress={() => setDateOpen(true)}>
+              <View pointerEvents="none">
+                <Input
+                  label="Date of Birth"
+                  placeholder="MM / DD / YYYY"
+                  leftIcon={<CalendarIcon />}
+                  rightIcon={<CalendarIcon color={Colors.neutral[500]} />}
+                  value={dob}
+                  onChangeText={setDob}
+                  error={errors.dob}
+                  editable={false}
+                />
+              </View>
+            </TouchableOpacity>
+
+            <DatePicker
+              modal
+              mode="date"
+              open={dateOpen}
+              date={dateVal}
+              onConfirm={(selectedDate) => {
+                setDateOpen(false);
+                setDateVal(selectedDate);
+                const m = String(selectedDate.getMonth() + 1).padStart(2, '0');
+                const d = String(selectedDate.getDate()).padStart(2, '0');
+                const y = selectedDate.getFullYear();
+                setDob(`${m} / ${d} / ${y}`);
                 if (errors.dob) setErrors({...errors, dob: ''});
               }}
-              keyboardType="number-pad"
-              error={errors.dob}
+              onCancel={() => {
+                setDateOpen(false);
+              }}
             />
 
             <Input
@@ -429,12 +453,9 @@ const styles = StyleSheet.create({
   },
   title: {
     marginTop: verticalScale(16),
-    fontSize: fontScale(24),
   },
   subtitle: {
     marginTop: verticalScale(8),
-    fontSize: fontScale(13),
-    lineHeight: fontScale(20),
   },
   sectionContainer: {
     marginTop: verticalScale(32),

@@ -8,7 +8,6 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import {SafeAreaView} from 'react-native-safe-area-context';
 import Svg, {Path, Circle, Rect, G} from 'react-native-svg';
 import {AppText} from '../components/AppText';
 import {Button} from '../components/Button';
@@ -195,7 +194,7 @@ export const CreateAccountScreen: React.FC = () => {
 
           {/* Title & Subtitle */}
           <AppText variant="h2" center color={Colors.primary[900]} style={styles.title}>
-            Create your account
+            Create Your Account
           </AppText>
           <AppText
             variant="bodyMedium"
@@ -319,12 +318,9 @@ const styles = StyleSheet.create({
   },
   title: {
     // marginTop: verticalScale(16),
-    fontSize: fontScale(26),
   },
   subtitle: {
     marginTop: verticalScale(8),
-    fontSize: fontScale(14),
-    lineHeight: fontScale(21),
   },
   inputSection: {
     marginTop: verticalScale(24),
@@ -343,8 +339,6 @@ const styles = StyleSheet.create({
   infoText: {
     marginLeft: moderateScale(10),
     flex: 1,
-    fontSize: fontScale(13),
-    lineHeight: fontScale(19),
   },
   continueButton: {
     borderRadius: BorderRadius.xl,

@@ -285,8 +285,8 @@ export const SelectRolesScreen: React.FC = () => {
         </View>
 
         {/* Title & Subtitle */}
-        <AppText variant="h2" center style={styles.title}>
-          Select your roles
+        <AppText variant="h2" center color={Colors.primary[900]} style={styles.title}>
+          How Would You Like{'\n'}To Join Uplift?
         </AppText>
         <AppText
           variant="bodyMedium"
@@ -396,12 +396,9 @@ const styles = StyleSheet.create({
   },
   title: {
     marginTop: verticalScale(16),
-    fontSize: fontScale(26),
   },
   subtitle: {
     marginTop: verticalScale(8),
-    fontSize: fontScale(13),
-    lineHeight: fontScale(19),
   },
   rolesGrid: {
     flexDirection: 'row',

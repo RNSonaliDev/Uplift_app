@@ -246,7 +246,7 @@ export const SponsorSetupScreen: React.FC = () => {
           <View style={styles.headerSection}>
             <UpliftLogo size={moderateScale(0.8, 0.3)} />
             <AppText variant="h2" center color={Colors.primary[900]} style={styles.title}>
-              Sponsor setup
+              Sponsor Setup
             </AppText>
             <AppText
               variant="bodyMedium"
@@ -370,12 +370,9 @@ const styles = StyleSheet.create({
   },
   title: {
     marginTop: verticalScale(16),
-    fontSize: fontScale(24),
   },
   subtitle: {
     marginTop: verticalScale(8),
-    fontSize: fontScale(13),
-    lineHeight: fontScale(20),
   },
   bannerContainer: {
     flexDirection: 'row',

@@ -233,7 +233,7 @@ export const CreateProfileScreen: React.FC = () => {
           <View style={styles.headerSection}>
             <UpliftLogo size={moderateScale(0.8, 0.3)} />
             <AppText variant="h2" center color={Colors.primary[900]} style={styles.title}>
-              Create your profile
+              Create Your Profile
             </AppText>
             <AppText
               variant="bodyMedium"
@@ -247,7 +247,7 @@ export const CreateProfileScreen: React.FC = () => {
           {/* Profile Photo Section */}
           <View style={styles.sectionContainer}>
             <AppText variant="labelLarge" color={Colors.primary[900]} weight="bold" style={styles.sectionLabel}>
-              Profile photo
+              Profile Photo
             </AppText>
             <View style={styles.photoUploadContainer}>
               <TouchableOpacity style={styles.photoCircle} onPress={handleSelectPhoto}>
@@ -300,6 +300,7 @@ export const CreateProfileScreen: React.FC = () => {
                 value={phoneNumber}
                 onChangeText={setPhoneNumber}
                 keyboardType="phone-pad"
+                maxLength={10}
               />
 
               {/* Floating Tooltip */}
@@ -318,7 +319,7 @@ export const CreateProfileScreen: React.FC = () => {
           {/* Emergency Contact Section */}
           <View style={styles.sectionContainer}>
             <AppText variant="h3" color={Colors.primary[900]} weight="bold" style={styles.sectionHeader}>
-              Emergency contact
+              Emergency Contact
             </AppText>
 
             <Input
@@ -336,6 +337,7 @@ export const CreateProfileScreen: React.FC = () => {
               value={contactPhone}
               onChangeText={setContactPhone}
               keyboardType="phone-pad"
+              maxLength={10}
             />
 
             <Input
@@ -389,12 +391,9 @@ const styles = StyleSheet.create({
   },
   title: {
     marginTop: verticalScale(16),
-    fontSize: fontScale(24),
   },
   subtitle: {
     marginTop: verticalScale(8),
-    fontSize: fontScale(13),
-    lineHeight: fontScale(20),
   },
   sectionContainer: {
     marginTop: verticalScale(32),
@@ -403,7 +402,6 @@ const styles = StyleSheet.create({
     marginBottom: verticalScale(16),
   },
   sectionHeader: {
-    fontSize: fontScale(18),
     marginBottom: verticalScale(16),
   },
   photoUploadContainer: {

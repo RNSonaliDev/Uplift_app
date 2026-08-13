@@ -27,7 +27,7 @@ export const SplashScreen: React.FC = () => {
   const circle2Scale = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    // Start animations
+    // Start animationsp
     Animated.sequence([
       // 1. Animate circles in
       Animated.parallel([
@@ -119,13 +119,13 @@ export const SplashScreen: React.FC = () => {
             }
           ]}
         >
-          <View style={styles.logoBackground}>
+          {/* <View style={styles.logoBackground}> */}
             <Image 
               source={logo} 
               style={styles.logoImage}
               resizeMode="contain"
             />
-          </View>
+          {/* </View> */}
         </Animated.View>
         
         <Animated.View
@@ -135,8 +135,6 @@ export const SplashScreen: React.FC = () => {
             alignItems: 'center',
           }}
         >
-          <Text style={styles.appName}>UPLIFT</Text>
-          <Text style={styles.tagline}>Empowering Communities</Text>
         </Animated.View>
       </View>
     </View>

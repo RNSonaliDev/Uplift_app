@@ -12,6 +12,7 @@ import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {WelcomeScreen} from './src/screens/WelcomeScreen';
 import {CreateAccountScreen} from './src/screens/CreateAccountScreen';
 import {VerifyAccountScreen} from './src/screens/VerifyAccountScreen';
+import {CreateProfileScreen} from './src/screens/CreateProfileScreen';
 import {SelectRolesScreen} from './src/screens/SelectRolesScreen';
 import {SplashScreen} from './src/screens/SplashScreen';
 import {OrganizationSetupScreen} from './src/screens/OrganizationSetupScreen';
@@ -26,6 +27,7 @@ type RootStackParamList = {
   Welcome: undefined;
   CreateAccount: undefined;
   VerifyAccount: { emailOrPhone: string };
+  CreateProfile: undefined;
   SelectRoles: undefined;
   OrganizationSetup: undefined;
   SponsorSetup: undefined;
@@ -46,6 +48,7 @@ function App() {
             <Stack.Screen name="Welcome" component={WelcomeScreen} />
             <Stack.Screen name="CreateAccount" component={CreateAccountScreen} />
             <Stack.Screen name="VerifyAccount" component={VerifyAccountScreen} />
+            <Stack.Screen name="CreateProfile" component={CreateProfileScreen} />
             <Stack.Screen name="SelectRoles" component={SelectRolesScreen} />
             <Stack.Screen name="OrganizationSetup" component={OrganizationSetupScreen} />
             <Stack.Screen name="SponsorSetup" component={SponsorSetupScreen} />

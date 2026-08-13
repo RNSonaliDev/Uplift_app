@@ -298,7 +298,7 @@ export const VolunteerSetupScreen: React.FC = () => {
           <View style={styles.headerSection}>
             <UpliftLogo size={moderateScale(0.8, 0.3)} />
             <AppText variant="h2" center color={Colors.primary[900]} style={styles.title}>
-              Volunteer setup
+              Volunteer Setup
             </AppText>
             <AppText
               variant="bodyMedium"
@@ -312,7 +312,7 @@ export const VolunteerSetupScreen: React.FC = () => {
           {/* Profile Photo Section */}
           <View style={styles.sectionContainer}>
             <AppText variant="labelLarge" color={Colors.primary[900]} weight="bold" style={styles.sectionLabel}>
-              Profile photo
+              Profile Photo
             </AppText>
             <View style={styles.photoUploadContainer}>
               <TouchableOpacity style={styles.photoCircle} onPress={handleSelectPhoto}>
@@ -391,6 +391,7 @@ export const VolunteerSetupScreen: React.FC = () => {
                   if (errors.phoneNumber) setErrors({...errors, phoneNumber: ''});
                 }}
                 keyboardType="phone-pad"
+                maxLength={10}
                 error={errors.phoneNumber}
               />
 
@@ -558,12 +559,9 @@ const styles = StyleSheet.create({
   },
   title: {
     marginTop: verticalScale(16),
-    fontSize: fontScale(24),
   },
   subtitle: {
     marginTop: verticalScale(8),
-    fontSize: fontScale(13),
-    lineHeight: fontScale(20),
   },
   sectionContainer: {
     marginTop: verticalScale(32),

@@ -351,8 +351,8 @@ export const VerifyAccountScreen: React.FC = () => {
           </View>
 
           {/* Title & Subtitle */}
-          <AppText variant="h2" center style={styles.title}>
-            Verify your account
+          <AppText variant="h2" center color={Colors.primary[900]} style={styles.title}>
+            Verify Your Account
           </AppText>
           <AppText
             variant="bodyMedium"
@@ -428,7 +428,7 @@ export const VerifyAccountScreen: React.FC = () => {
             size="lg"
             fullWidth
             disabled={!isOtpComplete}
-            onPress={() => navigation.navigate('SelectRoles')}
+            onPress={() => navigation.navigate('CreateProfile')}
             style={styles.verifyButton}
           />
 
@@ -472,12 +472,9 @@ const styles = StyleSheet.create({
   },
   title: {
     marginTop: verticalScale(16),
-    fontSize: fontScale(26),
   },
   subtitle: {
     marginTop: verticalScale(8),
-    fontSize: fontScale(14),
-    lineHeight: fontScale(21),
   },
   contactSection: {
     marginTop: verticalScale(24),

@@ -2789,6 +2789,7 @@ __metadata:
     prettier: 2.8.8
     react: 19.2.3
     react-native: 0.86.2
+    react-native-date-picker: ^5.0.13
     react-native-image-picker: ^8.2.1
     react-native-safe-area-context: ^5.5.2
     react-native-screens: ^4.26.2
@@ -7508,6 +7509,16 @@ __metadata:
   version: 19.2.8
   resolution: "react-is@npm:19.2.8"
   checksum: ec955b3b167cbe041a1f474063d15aa0c5a4d67a75b95e3e4090e9b964986a1fcf66370f3aa4deb34342c898e5d95da37d725d089c40e537598e0c3cc8bba00e
+  languageName: node
+  linkType: hard
+
+"react-native-date-picker@npm:^5.0.13":
+  version: 5.0.13
+  resolution: "react-native-date-picker@npm:5.0.13"
+  peerDependencies:
+    react: ">= 17.0.1"
+    react-native: ">= 0.64.3"
+  checksum: 80a97687571d25cee8b40a9e1d471ccb303cd152d2db2edbc735b3280747e40f42ea626437d81bd5abeced7ed815414195929074295d54c0da54fc7da6e1011e
   languageName: node
   linkType: hard
 
