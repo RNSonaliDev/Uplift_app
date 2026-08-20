@@ -14,7 +14,7 @@ export const Colors = {
     200: '#C2BCFF',
     300: '#9E94FF',
     400: '#6D5DF6', // Purple from logo
-    500: '#4338CA', // Main Indigo
+    500: '#442BD2', // Main Brand Blue
     600: '#3730A3',
     700: '#312E81',
     800: '#23215E',
@@ -69,7 +69,7 @@ export const Colors = {
   success: '#22C55E',
   error: '#EF4444',
   warning: '#F59E0B',
-  info: '#3B82F6',
+  info: '#442BD2',
 
   // Background
   background: {

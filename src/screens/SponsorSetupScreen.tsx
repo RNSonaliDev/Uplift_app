@@ -244,7 +244,7 @@ export const SponsorSetupScreen: React.FC = () => {
 
           {/* Logo & Title */}
           <View style={styles.headerSection}>
-            <UpliftLogo size={moderateScale(0.8, 0.3)} />
+            {/* <UpliftLogo size={moderateScale(0.8, 0.3)} /> */}
             <AppText variant="h2" center color={Colors.primary[900]} style={styles.title}>
               Sponsor Setup
             </AppText>
@@ -411,7 +411,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.neutral[0],
   },
   radioCardSelected: {
-    borderColor: Colors.primary[400],
+    borderColor: Colors.primary[500],
     backgroundColor: Colors.primary[50],
   },
   radioIconContainer: {

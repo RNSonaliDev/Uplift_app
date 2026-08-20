@@ -280,9 +280,9 @@ export const SelectRolesScreen: React.FC = () => {
         </TouchableOpacity>
 
         {/* Logo */}
-        <View style={styles.logoSection}>
+        {/* <View style={styles.logoSection}>
           <UpliftLogo size={moderateScale(0.9, 0.3)} />
-        </View>
+        </View> */}
 
         {/* Title & Subtitle */}
         <AppText variant="h2" center color={Colors.primary[900]} style={styles.title}>

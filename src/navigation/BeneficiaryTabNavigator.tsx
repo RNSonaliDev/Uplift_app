@@ -1,0 +1,60 @@
+import React from 'react';
+import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
+import {Colors} from '../theme/colors';
+import {Typography} from '../theme/typography';
+import {Home, List, MessageSquare, User} from 'lucide-react-native';
+
+import BeneficiaryHomeStack from './BeneficiaryHomeStack';
+import BeneficiaryRequestsStack from './BeneficiaryRequestsStack';
+import BeneficiaryMessagesStack from './BeneficiaryMessagesStack';
+import BeneficiaryProfileStack from './BeneficiaryProfileStack';
+
+const Tab = createBottomTabNavigator();
+
+export function BeneficiaryTabNavigator() {
+  return (
+    <Tab.Navigator
+      screenOptions={{
+        headerShown: false,
+        tabBarActiveTintColor: Colors.primary[500],
+        tabBarInactiveTintColor: Colors.neutral[400],
+        tabBarStyle: {
+          borderTopWidth: 1,
+          borderTopColor: Colors.neutral[200],
+          backgroundColor: Colors.neutral[0],
+          height: 60,
+          paddingBottom: 8,
+          paddingTop: 8,
+        },
+        tabBarLabelStyle: {
+          ...Typography.caption,
+          fontWeight: '500',
+        },
+      }}>
+      <Tab.Screen
+        name="HomeTab"
+        component={BeneficiaryHomeStack}
+        options={{
+          tabBarLabel: 'Home',
+          tabBarIcon: ({color, size}) => <Home color={color} size={24} />,
+        }}
+      />
+      <Tab.Screen
+        name="RequestsTab"
+        component={BeneficiaryRequestsStack}
+        options={{
+          tabBarLabel: 'Requests',
+          tabBarIcon: ({color, size}) => <List color={color} size={24} />,
+        }}
+      />
+      <Tab.Screen
+        name="ProfileTab"
+        component={BeneficiaryProfileStack}
+        options={{
+          tabBarLabel: 'Profile',
+          tabBarIcon: ({color, size}) => <User color={color} size={24} />,
+        }}
+      />
+    </Tab.Navigator>
+  );
+}

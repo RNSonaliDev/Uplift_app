@@ -296,7 +296,7 @@ export const VolunteerSetupScreen: React.FC = () => {
 
           {/* Logo & Title */}
           <View style={styles.headerSection}>
-            <UpliftLogo size={moderateScale(0.8, 0.3)} />
+            {/* <UpliftLogo size={moderateScale(0.8, 0.3)} /> */}
             <AppText variant="h2" center color={Colors.primary[900]} style={styles.title}>
               Volunteer Setup
             </AppText>
@@ -309,36 +309,10 @@ export const VolunteerSetupScreen: React.FC = () => {
             </AppText>
           </View>
 
-          {/* Profile Photo Section */}
-          <View style={styles.sectionContainer}>
-            <AppText variant="labelLarge" color={Colors.primary[900]} weight="bold" style={styles.sectionLabel}>
-              Profile Photo
-            </AppText>
-            <View style={styles.photoUploadContainer}>
-              <TouchableOpacity style={styles.photoCircle} onPress={handleSelectPhoto}>
-                {profilePhoto ? (
-                  <Image source={{ uri: profilePhoto }} style={styles.photoImage} />
-                ) : (
-                  <CameraIcon />
-                )}
-              </TouchableOpacity>
-              <View style={styles.photoTextContainer}>
-                <AppText variant="bodySmall" color={Colors.neutral[700]}>
-                  Add a clear photo of yourself{'\n'}so others can recognize you.
-                </AppText>
-                <TouchableOpacity style={{marginTop: 8}} onPress={handleSelectPhoto}>
-                  <AppText variant="labelMedium" color={Colors.primary[500]} weight="bold">
-                    {profilePhoto ? 'Change Photo' : 'Add Photo'}
-                  </AppText>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
 
           {/* Form Fields */}
           <View style={styles.sectionContainer}>
             {/* Name Row */}
-            <View style={styles.nameRow}>
               <View style={styles.nameColumn}>
                 <Input
                   label="First name"
@@ -366,7 +340,7 @@ export const VolunteerSetupScreen: React.FC = () => {
                   error={errors.lastName}
                 />
               </View>
-            </View>
+
 
             {/* Phone Number with Tooltip */}
             <View style={styles.phoneInputWrapper}>
@@ -463,7 +437,7 @@ export const VolunteerSetupScreen: React.FC = () => {
               <View style={styles.sliderHeaderRow}>
                 <View style={styles.sliderLabelGroup}>
                   <AppText variant="labelMedium" color={Colors.neutral[900]} style={{ flexShrink: 1 }}>
-                    Service Radius (within your selected radius)
+                    Select service radius (within your selected radius)
                   </AppText>
                   <TouchableOpacity style={{marginLeft: 6}}>
                     <InfoCircleIcon size={16} color={Colors.primary[500]} />
@@ -476,7 +450,7 @@ export const VolunteerSetupScreen: React.FC = () => {
                 </View>
               </View>
               <AppText variant="caption" color={Colors.neutral[500]} style={styles.sliderSubtitle}>
-                Show opportunities within your current radius.
+                Area's you are comfortabling serving
               </AppText>
               
               <CustomSlider value={radiusWithin} onValueChange={setRadiusWithin} min={5} max={50} />
@@ -488,7 +462,7 @@ export const VolunteerSetupScreen: React.FC = () => {
             </View>
 
             {/* Radius 2 */}
-            <View style={styles.sliderGroup}>
+            {/* <View style={styles.sliderGroup}>
               <View style={styles.sliderHeaderRow}>
                 <View style={styles.sliderLabelGroup}>
                   <AppText variant="labelMedium" color={Colors.neutral[900]} style={{ flexShrink: 1 }}>
@@ -514,7 +488,7 @@ export const VolunteerSetupScreen: React.FC = () => {
                 <AppText variant="caption" color={Colors.neutral[500]}>5 miles</AppText>
                 <AppText variant="caption" color={Colors.neutral[500]}>50 miles</AppText>
               </View>
-            </View>
+            </View> */}
           </View>
 
           {/* Spacer */}

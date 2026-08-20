@@ -173,6 +173,30 @@ const InfoCircleIcon: React.FC<{size?: number; color?: string}> = ({
   </Svg>
 );
 
+const MailOutlineIcon: React.FC<{size?: number; color?: string}> = ({
+  size = 22,
+  color = Colors.neutral[400],
+}) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Rect
+      x="3"
+      y="5"
+      width="18"
+      height="14"
+      rx="2"
+      stroke={color}
+      strokeWidth="1.5"
+    />
+    <Path
+      d="M3 7L12 13L21 7"
+      stroke={color}
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </Svg>
+);
+
 // ── Custom Components ──────────────────────────────────
 const PhonePrefixPrefix = () => (
   <View style={styles.phonePrefixContainer}>
@@ -189,7 +213,9 @@ const PhonePrefixPrefix = () => (
 export const CreateProfileScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProps>();
 
-  const [fullName, setFullName] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [email, setEmail] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [contactName, setContactName] = useState('');
   const [contactPhone, setContactPhone] = useState('');
@@ -231,7 +257,7 @@ export const CreateProfileScreen: React.FC = () => {
 
           {/* Logo & Title */}
           <View style={styles.headerSection}>
-            <UpliftLogo size={moderateScale(0.8, 0.3)} />
+            {/* <UpliftLogo size={moderateScale(0.8, 0.3)} /> */}
             <AppText variant="h2" center color={Colors.primary[900]} style={styles.title}>
               Create Your Profile
             </AppText>
@@ -272,12 +298,34 @@ export const CreateProfileScreen: React.FC = () => {
 
           {/* Form Fields */}
           <View style={styles.sectionContainer}>
+              <View style={styles.nameColumn}>
+                <Input
+                  label="First name"
+                  placeholder="Enter first name"
+                  leftIcon={<UserOutlineIcon />}
+                  value={firstName}
+                  onChangeText={setFirstName}
+                />
+              </View>
+              <View style={styles.nameSpacer} />
+              <View style={styles.nameColumn}>
+                <Input
+                  label="Last name"
+                  placeholder="Enter last name"
+                  leftIcon={<UserOutlineIcon />}
+                  value={lastName}
+                  onChangeText={setLastName}
+                />
+              </View>
+
             <Input
-              label="Full name"
-              placeholder="Enter your full name"
-              leftIcon={<UserOutlineIcon />}
-              value={fullName}
-              onChangeText={setFullName}
+              label="Email address"
+              placeholder="Enter your email address"
+              leftIcon={<MailOutlineIcon />}
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
             />
 
             {/* Phone Number with Tooltip */}
@@ -317,7 +365,7 @@ export const CreateProfileScreen: React.FC = () => {
           </View>
 
           {/* Emergency Contact Section */}
-          <View style={styles.sectionContainer}>
+          {/* <View style={styles.sectionContainer}>
             <AppText variant="h3" color={Colors.primary[900]} weight="bold" style={styles.sectionHeader}>
               Emergency Contact
             </AppText>
@@ -347,7 +395,7 @@ export const CreateProfileScreen: React.FC = () => {
               value={contactAddress}
               onChangeText={setContactAddress}
             />
-          </View>
+          </View> */}
 
           {/* Spacer */}
           <View style={styles.spacer} />
@@ -427,6 +475,16 @@ const styles = StyleSheet.create({
   photoTextContainer: {
     marginLeft: horizontalScale(20),
     flex: 1,
+  },
+  nameRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  nameColumn: {
+    flex: 1,
+  },
+  nameSpacer: {
+    width: horizontalScale(16),
   },
   labelRow: {
     flexDirection: 'row',

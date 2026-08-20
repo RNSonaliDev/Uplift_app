@@ -193,16 +193,18 @@ export const CreateAccountScreen: React.FC = () => {
           </View>
 
           {/* Title & Subtitle */}
-          <AppText variant="h2" center color={Colors.primary[900]} style={styles.title}>
-            Create Your Account
-          </AppText>
-          <AppText
-            variant="bodyMedium"
-            center
-            color={Colors.neutral[500]}
-            style={styles.subtitle}>
-            Enter your email address or{'\n'} phone number to get started.
-          </AppText>
+          <View style={styles.headerSection}>
+            <AppText variant="h2" center color={Colors.primary[900]} style={styles.title}>
+              Create Your Account
+            </AppText>
+            <AppText
+              variant="bodyMedium"
+              center
+              color={Colors.neutral[500]}
+              style={styles.subtitle}>
+              Enter your email address or{'\n'} phone number to get started.
+            </AppText>
+          </View>
 
           {/* Email / Phone Input */}
           <View style={styles.inputSection}>
@@ -316,8 +318,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     // marginTop: verticalScale(12),
   },
+  headerSection: {
+    alignItems: 'center',
+  },
   title: {
-    // marginTop: verticalScale(16),
+    marginTop: verticalScale(16),
   },
   subtitle: {
     marginTop: verticalScale(8),

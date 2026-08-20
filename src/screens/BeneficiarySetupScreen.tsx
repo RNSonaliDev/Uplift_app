@@ -125,6 +125,30 @@ const CalendarIcon: React.FC<{size?: number; color?: string}> = ({
   </Svg>
 );
 
+const MailOutlineIcon: React.FC<{size?: number; color?: string}> = ({
+  size = 22,
+  color = Colors.neutral[400],
+}) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Rect
+      x="3"
+      y="5"
+      width="18"
+      height="14"
+      rx="2"
+      stroke={color}
+      strokeWidth="1.5"
+    />
+    <Path
+      d="M3 7L12 13L21 7"
+      stroke={color}
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </Svg>
+);
+
 // ── Custom Components ──────────────────────────────────
 const PhonePrefixPrefix = () => (
   <View style={styles.phonePrefixContainer}>
@@ -143,6 +167,7 @@ export const BeneficiarySetupScreen: React.FC = () => {
 
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
+  const [email, setEmail] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [dob, setDob] = useState('');
   const [dateOpen, setDateOpen] = useState(false);
@@ -158,6 +183,12 @@ export const BeneficiarySetupScreen: React.FC = () => {
     
     if (!firstName.trim()) newErrors.firstName = 'First name is required';
     if (!lastName.trim()) newErrors.lastName = 'Last name is required';
+    
+    if (!email.trim()) {
+      newErrors.email = 'Email address is required';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      newErrors.email = 'Invalid email address';
+    }
     
     const phoneDigits = phoneNumber.replace(/\D/g, '');
     if (!phoneNumber.trim()) {
@@ -238,7 +269,7 @@ export const BeneficiarySetupScreen: React.FC = () => {
 
           {/* Logo & Title */}
           <View style={styles.headerSection}>
-            <UpliftLogo size={moderateScale(0.8, 0.3)} />
+            {/* <UpliftLogo size={moderateScale(0.8, 0.3)} /> */}
             <AppText variant="h2" center color={Colors.primary[900]} style={styles.title}>
               Beneficiary Setup
             </AppText>
@@ -247,34 +278,8 @@ export const BeneficiarySetupScreen: React.FC = () => {
               center
               color={Colors.neutral[500]}
               style={styles.subtitle}>
-              Tell us a little more so we can{'\n'}connect you with the right help.
+              let's setup Beneficiary profile
             </AppText>
-          </View>
-
-          {/* Profile Photo Section */}
-          <View style={styles.sectionContainer}>
-            <AppText variant="labelLarge" color={Colors.primary[900]} weight="bold" style={styles.sectionLabel}>
-              Profile Photo
-            </AppText>
-            <View style={styles.photoUploadContainer}>
-              <TouchableOpacity style={styles.photoCircle} onPress={handleSelectPhoto}>
-                {profilePhoto ? (
-                  <Image source={{ uri: profilePhoto }} style={styles.photoImage} />
-                ) : (
-                  <CameraIcon />
-                )}
-              </TouchableOpacity>
-              <View style={styles.photoTextContainer}>
-                <AppText variant="bodySmall" color={Colors.neutral[900]}>
-                  Add a clear photo of yourself{'\n'}so others can recognize you.
-                </AppText>
-                <TouchableOpacity style={{marginTop: 8}} onPress={handleSelectPhoto}>
-                  <AppText variant="labelMedium" color={Colors.primary[600]} weight="bold">
-                    {profilePhoto ? 'Change Photo' : 'Add Photo'}
-                  </AppText>
-                </TouchableOpacity>
-              </View>
-            </View>
           </View>
 
           {/* Form Fields */}
@@ -301,6 +306,20 @@ export const BeneficiarySetupScreen: React.FC = () => {
                 if (errors.lastName) setErrors({...errors, lastName: ''});
               }}
               error={errors.lastName}
+            />
+
+            <Input
+              label="Email address"
+              placeholder="Enter your email address"
+              leftIcon={<MailOutlineIcon />}
+              value={email}
+              onChangeText={(text) => {
+                setEmail(text);
+                if (errors.email) setErrors({...errors, email: ''});
+              }}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              error={errors.email}
             />
 
             {/* Phone Number with Tooltip */}
@@ -390,7 +409,7 @@ export const BeneficiarySetupScreen: React.FC = () => {
             />
 
             {/* Additional Notes (Multiline) */}
-            <View style={{ marginBottom: Spacing.lg }}>
+            {/* <View style={{ marginBottom: Spacing.lg }}>
               <AppText variant="labelMedium" color={Colors.neutral[900]} style={{marginBottom: Spacing.xs}}>
                 Additional Notes (Optional)
               </AppText>
@@ -408,7 +427,7 @@ export const BeneficiarySetupScreen: React.FC = () => {
                   {notes.length}/300
                 </AppText>
               </View>
-            </View>
+            </View> */}
           </View>
 
           {/* Spacer */}
@@ -490,6 +509,7 @@ const styles = StyleSheet.create({
   },
   formSection: {
     marginBottom: verticalScale(8),
+    marginTop: verticalScale(20),
   },
   labelRow: {
     flexDirection: 'row',

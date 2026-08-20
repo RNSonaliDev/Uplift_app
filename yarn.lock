@@ -2349,6 +2349,23 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@react-navigation/bottom-tabs@npm:^7.18.16":
+  version: 7.18.16
+  resolution: "@react-navigation/bottom-tabs@npm:7.18.16"
+  dependencies:
+    "@react-navigation/elements": ^2.9.38
+    color: ^4.2.3
+    sf-symbols-typescript: ^2.1.0
+  peerDependencies:
+    "@react-navigation/native": ^7.3.16
+    react: ">= 18.2.0"
+    react-native: "*"
+    react-native-safe-area-context: ">= 4.0.0"
+    react-native-screens: ">= 4.0.0"
+  checksum: 2cba40edafd3c9bb1ae1ab234a88e79ac29a598de163a29edf38ff3353d4f60e9786de137da38d6a255f6924d551c6e741c2ffc766d89186a511344fd62be748
+  languageName: node
+  linkType: hard
+
 "@react-navigation/core@npm:^7.21.11":
   version: 7.21.11
   resolution: "@react-navigation/core@npm:7.21.11"
@@ -2384,6 +2401,26 @@ __metadata:
     "@react-native-masked-view/masked-view":
       optional: true
   checksum: f5a157c5f0ec61afafe0b8ae7d886f8a25fe886a1f708305ce9a06e554ab59258d152872930512fe160d77a6c7fa6fc2676a53970e6786e069c6999239e5d62e
+  languageName: node
+  linkType: hard
+
+"@react-navigation/elements@npm:^2.9.38":
+  version: 2.9.38
+  resolution: "@react-navigation/elements@npm:2.9.38"
+  dependencies:
+    color: ^4.2.3
+    use-latest-callback: ^0.2.4
+    use-sync-external-store: ^1.5.0
+  peerDependencies:
+    "@react-native-masked-view/masked-view": ">= 0.2.0"
+    "@react-navigation/native": ^7.3.16
+    react: ">= 18.2.0"
+    react-native: "*"
+    react-native-safe-area-context: ">= 4.0.0"
+  peerDependenciesMeta:
+    "@react-native-masked-view/masked-view":
+      optional: true
+  checksum: db44be714ba6638bfcf38c4eaf0690aba99947e5b14cfecf78db0196d48a903e5a34969e31dd68cad4b0ae6d31b372699381ae110adb2f4f5da2805a791377cc
   languageName: node
   linkType: hard
 
@@ -2779,6 +2816,7 @@ __metadata:
     "@react-native/metro-config": 0.86.2
     "@react-native/new-app-screen": 0.86.2
     "@react-native/typescript-config": 0.86.2
+    "@react-navigation/bottom-tabs": ^7.18.16
     "@react-navigation/native": ^7.3.14
     "@react-navigation/native-stack": ^7.18.6
     "@types/jest": ^29.5.13
@@ -2786,6 +2824,7 @@ __metadata:
     "@types/react-test-renderer": ^19.1.0
     eslint: ^8.19.0
     jest: ^29.6.3
+    lucide-react-native: ^1.31.0
     prettier: 2.8.8
     react: 19.2.3
     react-native: 0.86.2
@@ -6451,6 +6490,17 @@ __metadata:
   dependencies:
     yallist: ^3.0.2
   checksum: c154ae1cbb0c2206d1501a0e94df349653c92c8cbb25236d7e85190bcaf4567a03ac6eb43166fabfa36fd35623694da7233e88d9601fbf411a9a481d85dbd2cb
+  languageName: node
+  linkType: hard
+
+"lucide-react-native@npm:^1.31.0":
+  version: 1.31.0
+  resolution: "lucide-react-native@npm:1.31.0"
+  peerDependencies:
+    react: ^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0
+    react-native: "*"
+    react-native-svg: ^12.0.0 || ^13.0.0 || ^14.0.0 || ^15.0.0
+  checksum: 5d015fb0db06c452919bb285da90a78d040a0e759173c875d2e33563d8815630a85ea5c1f4e27c64f98ee1a783c30e29ee3058e40e94919753e5bfaabfedd4f9
   languageName: node
   linkType: hard
 

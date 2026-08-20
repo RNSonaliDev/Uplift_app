@@ -24,6 +24,7 @@ import {
 // ── Navigation Types ──────────────────────────────────────
 type RootStackParamList = {
   Dashboard: undefined; // Or wherever it goes next
+  BeneficiaryFlow: undefined;
 };
 
 type NavigationProps = NativeStackNavigationProp<RootStackParamList>;
@@ -141,6 +142,7 @@ export const SuccessScreen: React.FC = () => {
     // In a real app, this would route to the Main App Tabs / Dashboard
     // For now, we can just reset to Welcome or log it
     console.log('Navigating to Dashboard...');
+    navigation.navigate('BeneficiaryFlow');
   };
 
   return (

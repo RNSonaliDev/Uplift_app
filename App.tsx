@@ -21,6 +21,7 @@ import {VolunteerSetupScreen} from './src/screens/VolunteerSetupScreen';
 import {BeneficiarySetupScreen} from './src/screens/BeneficiarySetupScreen';
 import {SuccessScreen} from './src/screens/SuccessScreen';
 import {Colors} from './src/theme/colors';
+import {BeneficiaryTabNavigator} from './src/navigation/BeneficiaryTabNavigator';
 
 type RootStackParamList = {
   Splash: undefined;
@@ -34,6 +35,7 @@ type RootStackParamList = {
   VolunteerSetup: undefined;
   BeneficiarySetup: undefined;
   Success: undefined;
+  BeneficiaryFlow: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -55,6 +57,7 @@ function App() {
             <Stack.Screen name="VolunteerSetup" component={VolunteerSetupScreen} />
             <Stack.Screen name="BeneficiarySetup" component={BeneficiarySetupScreen} />
             <Stack.Screen name="Success" component={SuccessScreen} />
+            <Stack.Screen name="BeneficiaryFlow" component={BeneficiaryTabNavigator} />
           </Stack.Navigator>
         </NavigationContainer>
       </SafeAreaView>
