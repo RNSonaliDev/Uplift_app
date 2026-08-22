@@ -7,8 +7,9 @@ import {
   TouchableOpacity,
   KeyboardAvoidingView,
   Image,
+  Alert,
 } from 'react-native';
-import {useNavigation} from '@react-navigation/native';
+import {useNavigation, useRoute, RouteProp} from '@react-navigation/native';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import Svg, {Path, Circle, Rect, Polyline} from 'react-native-svg';
 import { launchImageLibrary } from 'react-native-image-picker';
@@ -17,7 +18,9 @@ import {AppText} from '../components/AppText';
 import {Button} from '../components/Button';
 import {Input} from '../components/Input';
 import {UpliftLogo} from '../components/UpliftLogo';
+import {authApi} from '../api';
 import {Colors} from '../theme/colors';
+import {persistAuthToken} from '../api/client';
 import {BorderRadius, Spacing} from '../theme/spacing';
 import {Shadows} from '../theme/common';
 import {
@@ -57,7 +60,7 @@ const BackArrowIcon: React.FC<{size?: number; color?: string}> = ({
 
 const UserOutlineIcon: React.FC<{size?: number; color?: string}> = ({
   size = 22,
-  color = Colors.neutral[400],
+  color = Colors.primary[500],
 }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Path
@@ -81,7 +84,7 @@ const UserOutlineIcon: React.FC<{size?: number; color?: string}> = ({
 
 const PhoneOutlineIcon: React.FC<{size?: number; color?: string}> = ({
   size = 20,
-  color = Colors.neutral[400],
+  color = Colors.primary[500],
 }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Path
@@ -111,7 +114,7 @@ const ChevronDownIcon: React.FC<{size?: number; color?: string}> = ({
 
 const LocationPinIcon: React.FC<{size?: number; color?: string}> = ({
   size = 22,
-  color = Colors.neutral[400],
+  color = Colors.primary[500],
 }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Path
@@ -175,7 +178,7 @@ const InfoCircleIcon: React.FC<{size?: number; color?: string}> = ({
 
 const MailOutlineIcon: React.FC<{size?: number; color?: string}> = ({
   size = 22,
-  color = Colors.neutral[400],
+  color = Colors.primary[500],
 }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Rect
@@ -200,7 +203,7 @@ const MailOutlineIcon: React.FC<{size?: number; color?: string}> = ({
 // ── Custom Components ──────────────────────────────────
 const PhonePrefixPrefix = () => (
   <View style={styles.phonePrefixContainer}>
-    <PhoneOutlineIcon size={18} color={Colors.neutral[500]} />
+    <PhoneOutlineIcon size={18} color={Colors.primary[500]} />
     <AppText variant="bodyMedium" style={{marginLeft: 8, marginRight: 4}}>
       +1
     </AppText>
@@ -212,18 +215,94 @@ const PhonePrefixPrefix = () => (
 // ── Main Component ──────────────────────────────────
 export const CreateProfileScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProps>();
+  const route = useRoute<RouteProp<RootStackParamList, 'CreateProfile'>>();
+  const verificationToken = route.params?.verificationToken;
+  const emailOrPhone = route.params?.emailOrPhone || '';
+  
+  const isEmail = emailOrPhone.includes('@');
 
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
-  const [email, setEmail] = useState('');
-  const [phoneNumber, setPhoneNumber] = useState('');
+  const [email, setEmail] = useState(isEmail ? emailOrPhone : '');
+  const [phoneNumber, setPhoneNumber] = useState(!isEmail ? emailOrPhone.replace('+1', '') : '');
   const [contactName, setContactName] = useState('');
   const [contactPhone, setContactPhone] = useState('');
   const [contactAddress, setContactAddress] = useState('');
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errors, setErrors] = useState<{[key: string]: string}>({});
 
   // Info tooltip visibility
-  const [showPhoneInfo, setShowPhoneInfo] = useState(true);
+  const [showPhoneInfo, setShowPhoneInfo] = useState(false);
+
+  const validate = () => {
+    const newErrors: {[key: string]: string} = {};
+    
+    if (!firstName.trim()) newErrors.firstName = 'First name is required';
+    if (!lastName.trim()) newErrors.lastName = 'Last name is required';
+    
+    if (!email.trim()) {
+      newErrors.email = 'Email address is required';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      newErrors.email = 'Please enter a valid email address';
+    }
+    
+    const phoneDigits = phoneNumber.replace(/\D/g, '');
+    if (!phoneNumber.trim()) {
+      newErrors.phoneNumber = 'Phone number is required';
+    } else if (phoneDigits.length < 10) {
+      newErrors.phoneNumber = 'Phone number must be at least 10 digits';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSaveAndContinue = async () => {
+    // Validation
+    if (!validate()) {
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      const formData = new FormData();
+      formData.append('first_name', firstName);
+      formData.append('last_name', lastName);
+      formData.append('email', email);
+      formData.append('phone', `+1${phoneNumber}`);
+      formData.append('country_code', 'US');
+      
+      if (profilePhoto) {
+        formData.append('profile_image', {
+          uri: profilePhoto,
+          type: 'image/jpeg',
+          name: 'profile.jpg',
+        } as any);
+      } else {
+        formData.append('profile_image', '');
+      }
+
+      if (!verificationToken) {
+        throw new Error('Verification token is missing');
+      }
+
+      const response = await authApi.register(formData, verificationToken);
+      
+      console.log('register response', response);
+      const token = response?.access_token
+      console.log('register token', token);
+      if (token) {
+        await persistAuthToken(token);
+      }
+      
+      navigation.navigate('SelectRoles');
+    } catch (error: any) {
+      Alert.alert('Error', error?.message || 'Failed to create profile');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const handleSelectPhoto = async () => {
     const result = await launchImageLibrary({
@@ -304,7 +383,11 @@ export const CreateProfileScreen: React.FC = () => {
                   placeholder="Enter first name"
                   leftIcon={<UserOutlineIcon />}
                   value={firstName}
-                  onChangeText={setFirstName}
+                  onChangeText={(text) => {
+                    setFirstName(text);
+                    if (errors.firstName) setErrors({...errors, firstName: ''});
+                  }}
+                  error={errors.firstName}
                 />
               </View>
               <View style={styles.nameSpacer} />
@@ -314,7 +397,11 @@ export const CreateProfileScreen: React.FC = () => {
                   placeholder="Enter last name"
                   leftIcon={<UserOutlineIcon />}
                   value={lastName}
-                  onChangeText={setLastName}
+                  onChangeText={(text) => {
+                    setLastName(text);
+                    if (errors.lastName) setErrors({...errors, lastName: ''});
+                  }}
+                  error={errors.lastName}
                 />
               </View>
 
@@ -323,15 +410,20 @@ export const CreateProfileScreen: React.FC = () => {
               placeholder="Enter your email address"
               leftIcon={<MailOutlineIcon />}
               value={email}
-              onChangeText={setEmail}
+              onChangeText={(text) => {
+                setEmail(text);
+                if (errors.email) setErrors({...errors, email: ''});
+              }}
               keyboardType="email-address"
               autoCapitalize="none"
+              error={errors.email}
+              disabled={isEmail}
             />
 
             {/* Phone Number with Tooltip */}
             <View style={styles.phoneInputWrapper}>
               <View style={styles.labelRow}>
-                <AppText variant="labelMedium" color={Colors.neutral[700]} style={{marginBottom: Spacing.xs}}>
+                <AppText variant="labelMedium" color={errors.phoneNumber ? Colors.error : Colors.neutral[700]} style={{marginBottom: Spacing.xs}}>
                   Phone number
                 </AppText>
                 <TouchableOpacity 
@@ -346,9 +438,14 @@ export const CreateProfileScreen: React.FC = () => {
                 placeholder="(201) 555-0123"
                 leftIcon={<PhonePrefixPrefix />}
                 value={phoneNumber}
-                onChangeText={setPhoneNumber}
+                onChangeText={(text) => {
+                  setPhoneNumber(text);
+                  if (errors.phoneNumber) setErrors({...errors, phoneNumber: ''});
+                }}
                 keyboardType="phone-pad"
                 maxLength={10}
+                error={errors.phoneNumber}
+                disabled={!isEmail}
               />
 
               {/* Floating Tooltip */}
@@ -406,7 +503,8 @@ export const CreateProfileScreen: React.FC = () => {
             color="primary"
             size="lg"
             fullWidth
-            onPress={() => navigation.navigate('SelectRoles')}
+            loading={isSubmitting}
+            onPress={handleSaveAndContinue}
             style={styles.continueButton}
           />
         </ScrollView>

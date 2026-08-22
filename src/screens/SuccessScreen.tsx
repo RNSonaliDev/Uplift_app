@@ -6,7 +6,7 @@ import {
   ScrollView,
   SafeAreaView,
 } from 'react-native';
-import {useNavigation} from '@react-navigation/native';
+import {useNavigation, useRoute, RouteProp} from '@react-navigation/native';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import Svg, {Path, Circle, Rect} from 'react-native-svg';
 
@@ -23,11 +23,13 @@ import {
 
 // ── Navigation Types ──────────────────────────────────────
 type RootStackParamList = {
-  Dashboard: undefined; // Or wherever it goes next
+  DashboardRoleSelection: { selectedRoles: string[] };
   BeneficiaryFlow: undefined;
+  Success: { selectedRoles?: string[] };
 };
 
 type NavigationProps = NativeStackNavigationProp<RootStackParamList>;
+type SuccessScreenRouteProp = RouteProp<RootStackParamList, 'Success'>;
 
 // ── Illustrations & Icons ─────────────────────────────────
 
@@ -137,12 +139,18 @@ const SettingsUpdateIcon: React.FC = () => (
 // ── Main Component ───────────────────────────────────────
 export const SuccessScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProps>();
+  const route = useRoute<SuccessScreenRouteProp>();
+  const selectedRoles = route.params?.selectedRoles || [];
 
   const handleContinue = () => {
-    // In a real app, this would route to the Main App Tabs / Dashboard
-    // For now, we can just reset to Welcome or log it
-    console.log('Navigating to Dashboard...');
-    navigation.navigate('BeneficiaryFlow');
+    if (selectedRoles.length > 1) {
+      navigation.navigate('DashboardRoleSelection', { selectedRoles });
+    } else {
+      const role = selectedRoles[0];
+      // For now, if it's beneficiary or any other role, route to BeneficiaryFlow as placeholder if others aren't built
+      // Or in real app, route to role-specific flow
+      navigation.navigate('BeneficiaryFlow');
+    }
   };
 
   return (

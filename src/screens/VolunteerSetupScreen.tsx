@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import {
   View,
   StyleSheet,
@@ -8,6 +8,9 @@ import {
   KeyboardAvoidingView,
   Image,
   PanResponder,
+  Alert,
+  Modal,
+  FlatList,
 } from 'react-native';
 import {useNavigation, useRoute} from '@react-navigation/native';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
@@ -18,6 +21,7 @@ import {AppText} from '../components/AppText';
 import {Button} from '../components/Button';
 import {Input} from '../components/Input';
 import {UpliftLogo} from '../components/UpliftLogo';
+import {authApi} from '../api';
 import {Colors} from '../theme/colors';
 import {BorderRadius, Spacing} from '../theme/spacing';
 import {Shadows} from '../theme/common';
@@ -52,7 +56,7 @@ const BackArrowIcon: React.FC<{size?: number; color?: string}> = ({
 
 const UserOutlineIcon: React.FC<{size?: number; color?: string}> = ({
   size = 22,
-  color = Colors.neutral[400],
+  color = Colors.primary[500],
 }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Path d="M20 21V19C20 17.9391 19.5786 16.9217 18.8284 16.1716C18.0783 15.4214 17.0609 15 16 15H8C6.93913 15 5.92172 15.4214 5.17157 16.1716C4.42143 16.9217 4 17.9391 4 19V21" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -62,7 +66,7 @@ const UserOutlineIcon: React.FC<{size?: number; color?: string}> = ({
 
 const PhoneOutlineIcon: React.FC<{size?: number; color?: string}> = ({
   size = 20,
-  color = Colors.neutral[400],
+  color = Colors.primary[500],
 }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -80,7 +84,7 @@ const ChevronDownIcon: React.FC<{size?: number; color?: string}> = ({
 
 const LocationPinIcon: React.FC<{size?: number; color?: string}> = ({
   size = 22,
-  color = Colors.neutral[400],
+  color = Colors.primary[500],
 }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Path d="M21 10C21 17 12 23 12 23C12 23 3 17 3 10C3 7.61305 3.94821 5.32387 5.63604 3.63604C7.32387 1.94821 9.61305 1 12 1C14.3869 1 16.6761 1.94821 18.364 3.63604C20.0518 5.32387 21 7.61305 21 10Z" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -111,7 +115,7 @@ const InfoCircleIcon: React.FC<{size?: number; color?: string}> = ({
 
 const ClockIcon: React.FC<{size?: number; color?: string}> = ({
   size = 22,
-  color = Colors.neutral[400],
+  color = Colors.primary[500],
 }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Circle cx="12" cy="12" r="10" stroke={color} strokeWidth="1.5" />
@@ -121,7 +125,7 @@ const ClockIcon: React.FC<{size?: number; color?: string}> = ({
 
 const GridIcon: React.FC<{size?: number; color?: string}> = ({
   size = 22,
-  color = Colors.neutral[400],
+  color = Colors.primary[500],
 }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Rect x="4" y="4" width="6" height="6" rx="1" stroke={color} strokeWidth="1.5" />
@@ -131,10 +135,44 @@ const GridIcon: React.FC<{size?: number; color?: string}> = ({
   </Svg>
 );
 
+const CheckIcon: React.FC<{size?: number; color?: string}> = ({
+  size = 20,
+  color = Colors.primary[500],
+}) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path d="M20 6L9 17L4 12" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+  </Svg>
+);
+
+const MailOutlineIcon: React.FC<{size?: number; color?: string}> = ({
+  size = 22,
+  color = Colors.primary[500],
+}) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path
+      d="M4 7.00005L10.2 11.65C11.2667 12.45 12.7333 12.45 13.8 11.65L20 7"
+      stroke={color}
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <Rect
+      x="3"
+      y="5"
+      width="18"
+      height="14"
+      rx="2"
+      stroke={color}
+      strokeWidth="1.5"
+      strokeLinecap="round"
+    />
+  </Svg>
+);
+
 // ── Custom Components ──────────────────────────────────
 const PhonePrefixPrefix = () => (
   <View style={styles.phonePrefixContainer}>
-    <PhoneOutlineIcon size={18} color={Colors.neutral[500]} />
+    <PhoneOutlineIcon size={18} color={Colors.primary[500]} />
     <AppText variant="bodyMedium" style={{marginLeft: 8, marginRight: 4}}>
       +1
     </AppText>
@@ -203,9 +241,12 @@ export const VolunteerSetupScreen: React.FC = () => {
 
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
+  const [email, setEmail] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [zipCode, setZipCode] = useState('');
-  const [category, setCategory] = useState('');
+  const [categories, setCategories] = useState<any[]>([]);
+  const [selectedCategories, setSelectedCategories] = useState<number[]>([]);
+  const [isCategoryModalVisible, setCategoryModalVisible] = useState(false);
   const [hours, setHours] = useState('');
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
   const [radiusWithin, setRadiusWithin] = useState(20);
@@ -213,12 +254,41 @@ export const VolunteerSetupScreen: React.FC = () => {
 
   const [errors, setErrors] = useState<{[key: string]: string}>({});
 
+  useEffect(() => {
+    const fetchInitialData = async () => {
+      try {
+        const [profile, cats] = await Promise.all([
+          authApi.getProfile(),
+          authApi.getCategories()
+        ]);
+        setFirstName(profile.first_name || '');
+        setLastName(profile.last_name || '');
+        setEmail(profile.email || '');
+        if (profile.phone) {
+          const digits = profile.phone.replace('+1', '');
+          setPhoneNumber(digits);
+        }
+        setCategories(cats || []);
+      } catch (error) {
+        // Handle error or ignore
+      }
+    };
+    fetchInitialData();
+  }, []);
+
   const validate = () => {
     const newErrors: {[key: string]: string} = {};
     
     if (!firstName.trim()) newErrors.firstName = 'First name is required';
     if (!lastName.trim()) newErrors.lastName = 'Last name is required';
     
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email.trim()) {
+      newErrors.email = 'Email address is required';
+    } else if (!emailRegex.test(email)) {
+      newErrors.email = 'Please enter a valid email address';
+    }
+
     const phoneDigits = phoneNumber.replace(/\D/g, '');
     if (!phoneNumber.trim()) {
       newErrors.phoneNumber = 'Phone number is required';
@@ -233,30 +303,76 @@ export const VolunteerSetupScreen: React.FC = () => {
       newErrors.zipCode = 'ZIP code must be 5 digits';
     }
 
+    if (selectedCategories.length === 0) {
+      newErrors.category = 'Please select at least one category';
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const route = useRoute<any>();
   const pendingRoles = route.params?.pendingRoles || [];
+  const selectedRoles = route.params?.selectedRoles || [];
+  const collectedRolesData = route.params?.collectedRolesData || [];
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     if (validate()) {
+      const currentRoleData = {
+        role: 'volunteer',
+        profile: {
+          first_name: firstName,
+          last_name: lastName,
+          phone: `+1${phoneNumber.replace(/\D/g, '')}`,
+          email,
+          zip_code: zipCode,
+          service_radius: radiusWithin,
+          category: selectedCategories.join(','),
+          hours_goal_per_week: hours,
+          location: {
+            address: 'mnmnmn',
+            latitude: 0.90,
+            longitude: 0.80,
+            zip_code: zipCode
+          }
+        }
+      };
+      const newCollectedRolesData = [...collectedRolesData, currentRoleData];
+
       if (pendingRoles.length > 0) {
         const nextRoles = [...pendingRoles];
         const nextRole = nextRoles.shift();
+        const routeParams = {
+          pendingRoles: nextRoles,
+          selectedRoles,
+          collectedRolesData: newCollectedRolesData,
+        };
         
         if (nextRole === 'volunteer') {
-          navigation.navigate('VolunteerSetup' as any, { pendingRoles: nextRoles });
+          navigation.navigate('VolunteerSetup' as any, routeParams);
         } else if (nextRole === 'organization') {
-          navigation.navigate('OrganizationSetup' as any, { pendingRoles: nextRoles });
+          navigation.navigate('OrganizationSetup' as any, routeParams);
         } else if (nextRole === 'sponsor') {
-          navigation.navigate('SponsorSetup' as any, { pendingRoles: nextRoles });
+          navigation.navigate('SponsorSetup' as any, routeParams);
         } else if (nextRole === 'beneficiary') {
-          navigation.navigate('BeneficiarySetup' as any, { pendingRoles: nextRoles });
+          navigation.navigate('BeneficiarySetup' as any, routeParams);
         }
       } else {
-        navigation.navigate('Success' as any);
+        try {
+          setIsSubmitting(true);
+          await authApi.saveRoleProfile({
+            role_profile: {
+              selected_roles: selectedRoles,
+              roles: newCollectedRolesData,
+            }
+          });
+          navigation.navigate('Success' as any, { selectedRoles });
+        } catch (error: any) {
+          Alert.alert('Error', error?.message || 'Failed to save profiles');
+        } finally {
+          setIsSubmitting(false);
+        }
       }
     }
   };
@@ -305,7 +421,7 @@ export const VolunteerSetupScreen: React.FC = () => {
               center
               color={Colors.neutral[500]}
               style={styles.subtitle}>
-              Tell us a little more so we can{'\n'}connect you with people who need your help.
+              let's setup Volunteer profile
             </AppText>
           </View>
 
@@ -341,6 +457,19 @@ export const VolunteerSetupScreen: React.FC = () => {
                 />
               </View>
 
+            <Input
+              label="Email address"
+              placeholder="Enter your email address"
+              leftIcon={<MailOutlineIcon />}
+              value={email}
+              onChangeText={(text) => {
+                setEmail(text);
+                if (errors.email) setErrors({...errors, email: ''});
+              }}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              error={errors.email}
+            />
 
             {/* Phone Number with Tooltip */}
             <View style={styles.phoneInputWrapper}>
@@ -406,16 +535,22 @@ export const VolunteerSetupScreen: React.FC = () => {
               <AppText variant="caption" color={Colors.neutral[500]} style={{marginBottom: Spacing.sm, marginTop: 2}}>
                 Select at least one category you'd like to help with.
               </AppText>
-              <TouchableOpacity>
-                <Input
-                  editable={false}
-                  placeholder="Select one or more categories"
-                  leftIcon={<GridIcon />}
-                  rightIcon={<ChevronDownIcon size={20} />}
-                  value={category}
-                  containerStyle={{ marginBottom: 0 }}
-                  pointerEvents="none"
-                />
+              <TouchableOpacity onPress={() => setCategoryModalVisible(true)} activeOpacity={0.8}>
+                <View pointerEvents="none">
+                  <Input
+                    editable={false}
+                    placeholder="Select one or more categories"
+                    leftIcon={<GridIcon />}
+                    rightIcon={<ChevronDownIcon size={20} />}
+                    value={
+                      selectedCategories.length > 0 
+                        ? categories.filter(c => selectedCategories.includes(c.id)).map(c => c.title).join(', ') 
+                        : ''
+                    }
+                    containerStyle={{ marginBottom: 0 }}
+                    error={errors.category}
+                  />
+                </View>
               </TouchableOpacity>
             </View>
 
@@ -450,7 +585,7 @@ export const VolunteerSetupScreen: React.FC = () => {
                 </View>
               </View>
               <AppText variant="caption" color={Colors.neutral[500]} style={styles.sliderSubtitle}>
-                Area's you are comfortabling serving
+                Areas you are comfortable serving
               </AppText>
               
               <CustomSlider value={radiusWithin} onValueChange={setRadiusWithin} min={5} max={50} />
@@ -500,11 +635,78 @@ export const VolunteerSetupScreen: React.FC = () => {
             color="primary"
             size="lg"
             fullWidth
+            loading={isSubmitting}
             onPress={handleContinue}
             style={styles.continueButton}
           />
         </ScrollView>
       </KeyboardAvoidingView>
+
+      {/* Category Multi-Select Modal */}
+      <Modal
+        visible={isCategoryModalVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setCategoryModalVisible(false)}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setCategoryModalVisible(false)}
+        >
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <AppText variant="h3" color={Colors.neutral[900]} weight="bold">
+                Select Categories
+              </AppText>
+            </View>
+            
+            <FlatList
+              data={categories}
+              keyExtractor={(item) => item.id.toString()}
+              showsVerticalScrollIndicator={false}
+              renderItem={({ item }) => {
+                const isSelected = selectedCategories.includes(item.id);
+                return (
+                  <TouchableOpacity
+                    style={styles.modalItem}
+                    activeOpacity={0.7}
+                    onPress={() => {
+                      if (isSelected) {
+                        setSelectedCategories(selectedCategories.filter(id => id !== item.id));
+                      } else {
+                        setSelectedCategories([...selectedCategories, item.id]);
+                        if (errors.category) setErrors({...errors, category: ''});
+                      }
+                    }}
+                  >
+                    <View style={styles.modalItemContent}>
+                      <AppText
+                        variant="bodyLarge"
+                        color={isSelected ? Colors.primary[500] : Colors.neutral[800]}
+                        weight={isSelected ? 'bold' : 'regular'}
+                      >
+                        {item.title}
+                      </AppText>
+                      {isSelected && <CheckIcon size={20} color={Colors.primary[500]} />}
+                    </View>
+                  </TouchableOpacity>
+                );
+              }}
+            />
+            <View style={styles.modalFooter}>
+              <Button 
+                title="Done" 
+                color="primary" 
+                size="md" 
+                fullWidth 
+                onPress={() => setCategoryModalVisible(false)} 
+              />
+            </View>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
     </View>
   );
 };
@@ -688,5 +890,40 @@ const styles = StyleSheet.create({
   continueButton: {
     borderRadius: BorderRadius.xl,
     height: verticalScale(52),
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: Colors.neutral[0],
+    borderTopLeftRadius: BorderRadius.xl,
+    borderTopRightRadius: BorderRadius.xl,
+    maxHeight: '85%',
+    paddingBottom: verticalScale(isIOS ? 32 : 16),
+  },
+  modalHeader: {
+    paddingHorizontal: horizontalScale(24),
+    paddingVertical: verticalScale(20),
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.neutral[100],
+  },
+  modalItem: {
+    paddingVertical: verticalScale(16),
+    paddingHorizontal: horizontalScale(24),
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.neutral[50],
+  },
+  modalItemContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  modalFooter: {
+    paddingHorizontal: horizontalScale(24),
+    paddingTop: verticalScale(16),
+    borderTopWidth: 1,
+    borderTopColor: Colors.neutral[100],
   },
 });

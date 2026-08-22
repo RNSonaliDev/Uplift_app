@@ -4,3 +4,4 @@ export {VerifyAccountScreen} from './VerifyAccountScreen';
 export {CreateProfileScreen} from './CreateProfileScreen';
 export {SelectRolesScreen} from './SelectRolesScreen';
 export {SplashScreen} from './SplashScreen';
+export {LoginScreen} from './LoginScreen';

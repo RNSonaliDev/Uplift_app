@@ -107,7 +107,7 @@ export const Input: React.FC<InputProps> = ({
 
       {(error || helperText) && (
         <AppText
-          variant="caption"
+          variant="bodySmall"
           color={error ? Colors.error : Colors.neutral[500]}
           style={styles.helperText}>
           {error || helperText}

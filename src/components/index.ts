@@ -4,3 +4,4 @@ export {Card} from './Card';
 export {Badge} from './Badge';
 export {Input} from './Input';
 export {Divider} from './Divider';
+export {Popup} from './Popup';

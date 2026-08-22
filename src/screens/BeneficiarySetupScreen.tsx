@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import {
   View,
   StyleSheet,
@@ -8,6 +8,8 @@ import {
   KeyboardAvoidingView,
   Image,
   TextInput,
+  PanResponder,
+  Alert,
 } from 'react-native';
 import {useNavigation, useRoute} from '@react-navigation/native';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
@@ -19,6 +21,7 @@ import {AppText} from '../components/AppText';
 import {Button} from '../components/Button';
 import {Input} from '../components/Input';
 import {UpliftLogo} from '../components/UpliftLogo';
+import {authApi} from '../api';
 import {Colors} from '../theme/colors';
 import {BorderRadius, Spacing} from '../theme/spacing';
 import {Shadows} from '../theme/common';
@@ -50,7 +53,7 @@ const BackArrowIcon: React.FC<{size?: number; color?: string}> = ({
 
 const UserOutlineIcon: React.FC<{size?: number; color?: string}> = ({
   size = 22,
-  color = Colors.neutral[400],
+  color = Colors.primary[500],
 }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Path d="M20 21V19C20 17.9391 19.5786 16.9217 18.8284 16.1716C18.0783 15.4214 17.0609 15 16 15H8C6.93913 15 5.92172 15.4214 5.17157 16.1716C4.42143 16.9217 4 17.9391 4 19V21" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -60,7 +63,7 @@ const UserOutlineIcon: React.FC<{size?: number; color?: string}> = ({
 
 const PhoneOutlineIcon: React.FC<{size?: number; color?: string}> = ({
   size = 20,
-  color = Colors.neutral[400],
+  color = Colors.primary[500],
 }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -78,7 +81,7 @@ const ChevronDownIcon: React.FC<{size?: number; color?: string}> = ({
 
 const LocationPinIcon: React.FC<{size?: number; color?: string}> = ({
   size = 22,
-  color = Colors.neutral[400],
+  color = Colors.primary[500],
 }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Path d="M21 10C21 17 12 23 12 23C12 23 3 17 3 10C3 7.61305 3.94821 5.32387 5.63604 3.63604C7.32387 1.94821 9.61305 1 12 1C14.3869 1 16.6761 1.94821 18.364 3.63604C20.0518 5.32387 21 7.61305 21 10Z" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -109,7 +112,7 @@ const InfoCircleIcon: React.FC<{size?: number; color?: string}> = ({
 
 const CalendarIcon: React.FC<{size?: number; color?: string}> = ({
   size = 22,
-  color = Colors.neutral[400],
+  color = Colors.primary[500],
 }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Rect x="3" y="4" width="18" height="18" rx="2" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -127,7 +130,7 @@ const CalendarIcon: React.FC<{size?: number; color?: string}> = ({
 
 const MailOutlineIcon: React.FC<{size?: number; color?: string}> = ({
   size = 22,
-  color = Colors.neutral[400],
+  color = Colors.primary[500],
 }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Rect
@@ -152,7 +155,7 @@ const MailOutlineIcon: React.FC<{size?: number; color?: string}> = ({
 // ── Custom Components ──────────────────────────────────
 const PhonePrefixPrefix = () => (
   <View style={styles.phonePrefixContainer}>
-    <PhoneOutlineIcon size={18} color={Colors.neutral[500]} />
+    <PhoneOutlineIcon size={18} color={Colors.primary[500]} />
     <AppText variant="bodyMedium" style={{marginLeft: 8, marginRight: 4}}>
       +1
     </AppText>
@@ -177,6 +180,24 @@ export const BeneficiarySetupScreen: React.FC = () => {
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
 
   const [errors, setErrors] = useState<{[key: string]: string}>({});
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const profile = await authApi.getProfile();
+        setFirstName(profile.first_name || '');
+        setLastName(profile.last_name || '');
+        setEmail(profile.email || '');
+        if (profile.phone) {
+          const digits = profile.phone.replace('+1', '');
+          setPhoneNumber(digits);
+        }
+      } catch (error) {
+        // Handle error or ignore
+      }
+    };
+    fetchProfile();
+  }, []);
 
   const validate = () => {
     const newErrors: {[key: string]: string} = {};
@@ -212,24 +233,59 @@ export const BeneficiarySetupScreen: React.FC = () => {
 
   const route = useRoute<any>();
   const pendingRoles = route.params?.pendingRoles || [];
+  const selectedRoles = route.params?.selectedRoles || [];
+  const collectedRolesData = route.params?.collectedRolesData || [];
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     if (validate()) {
+      const currentRoleData = {
+        role: 'beneficiary',
+        profile: {
+          first_name: firstName,
+          last_name: lastName,
+          email: email,
+          phone: `+1${phoneNumber.replace(/\D/g, '')}`,
+          dob: dob,
+          zip_code: zipCode,
+          notes: notes,
+        }
+      };
+      const newCollectedRolesData = [...collectedRolesData, currentRoleData];
+
       if (pendingRoles.length > 0) {
         const nextRoles = [...pendingRoles];
         const nextRole = nextRoles.shift();
+        const routeParams = {
+          pendingRoles: nextRoles,
+          selectedRoles,
+          collectedRolesData: newCollectedRolesData,
+        };
         
         if (nextRole === 'volunteer') {
-          navigation.navigate('VolunteerSetup' as any, { pendingRoles: nextRoles });
+          navigation.navigate('VolunteerSetup' as any, routeParams);
         } else if (nextRole === 'organization') {
-          navigation.navigate('OrganizationSetup' as any, { pendingRoles: nextRoles });
+          navigation.navigate('OrganizationSetup' as any, routeParams);
         } else if (nextRole === 'sponsor') {
-          navigation.navigate('SponsorSetup' as any, { pendingRoles: nextRoles });
+          navigation.navigate('SponsorSetup' as any, routeParams);
         } else if (nextRole === 'beneficiary') {
-          navigation.navigate('BeneficiarySetup' as any, { pendingRoles: nextRoles });
+          navigation.navigate('BeneficiarySetup' as any, routeParams);
         }
       } else {
-        navigation.navigate('Success' as any);
+        try {
+          setIsSubmitting(true);
+          await authApi.saveRoleProfile({
+            role_profile: {
+              selected_roles: selectedRoles,
+              roles: newCollectedRolesData,
+            }
+          });
+          navigation.navigate('Success' as any, { selectedRoles });
+        } catch (error: any) {
+          Alert.alert('Error', error?.message || 'Failed to save profiles');
+        } finally {
+          setIsSubmitting(false);
+        }
       }
     }
   };
@@ -367,7 +423,7 @@ export const BeneficiarySetupScreen: React.FC = () => {
                   label="Date of Birth"
                   placeholder="MM / DD / YYYY"
                   leftIcon={<CalendarIcon />}
-                  rightIcon={<CalendarIcon color={Colors.neutral[500]} />}
+                  rightIcon={<CalendarIcon color={Colors.primary[500]} />}
                   value={dob}
                   onChangeText={setDob}
                   error={errors.dob}
@@ -381,6 +437,7 @@ export const BeneficiarySetupScreen: React.FC = () => {
               mode="date"
               open={dateOpen}
               date={dateVal}
+              maximumDate={new Date()}
               onConfirm={(selectedDate) => {
                 setDateOpen(false);
                 setDateVal(selectedDate);
@@ -439,6 +496,7 @@ export const BeneficiarySetupScreen: React.FC = () => {
             color="primary"
             size="lg"
             fullWidth
+            loading={isSubmitting}
             onPress={handleContinue}
             style={styles.continueButton}
           />

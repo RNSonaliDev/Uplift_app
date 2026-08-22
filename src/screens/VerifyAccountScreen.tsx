@@ -14,9 +14,12 @@ import {SafeAreaView} from 'react-native-safe-area-context';
 import Svg, {Path, Circle, Rect} from 'react-native-svg';
 import {AppText} from '../components/AppText';
 import {Button} from '../components/Button';
+import {Input} from '../components/Input';
 import {UpliftLogo} from '../components/UpliftLogo';
+import {Popup} from '../components';
 import {Colors} from '../theme/colors';
 import {FontFamily, FontSize} from '../theme/typography';
+import {authApi} from '../api';
 import {Spacing, BorderRadius} from '../theme/spacing';
 import {
   wp,
@@ -77,12 +80,12 @@ const PhoneIcon: React.FC<{size?: number}> = ({size = 24}) => (
       width="10"
       height="20"
       rx="2"
-      stroke={Colors.neutral[600]}
+      stroke={Colors.primary[500]}
       strokeWidth="1.5"
     />
     <Path
       d="M11 18H13"
-      stroke={Colors.neutral[600]}
+      stroke={Colors.primary[500]}
       strokeWidth="1.5"
       strokeLinecap="round"
     />
@@ -231,7 +234,7 @@ const ContactInfoRow: React.FC<ContactInfoRowProps> = ({
   <View style={contactStyles.row}>
     <View style={contactStyles.iconContainer}>{icon}</View>
     <View style={contactStyles.textContainer}>
-      <AppText variant="caption" color={Colors.neutral[500]}>
+      <AppText variant="labelMedium" color={Colors.neutral[500]}>
         {label}
       </AppText>
       <AppText variant="labelMedium" color={Colors.neutral[900]}>
@@ -272,7 +275,7 @@ type RootStackParamList = {
   Welcome: undefined;
   CreateAccount: undefined;
   VerifyAccount: { emailOrPhone: string };
-  CreateProfile: undefined;
+  CreateProfile: { verificationToken: string, emailOrPhone: string };
   SelectRoles: undefined;
 };
 
@@ -295,6 +298,20 @@ export const VerifyAccountScreen: React.FC = () => {
   const [otp, setOtp] = useState<string[]>(Array(OTP_LENGTH).fill(''));
   const [timer, setTimer] = useState(RESEND_TIMER_SECONDS);
   const [canResend, setCanResend] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [isResending, setIsResending] = useState(false);
+
+  const [popupConfig, setPopupConfig] = useState<{
+    visible: boolean;
+    type: 'success' | 'error' | 'info';
+    title: string;
+    message: string;
+  }>({
+    visible: false,
+    type: 'error',
+    title: '',
+    message: '',
+  });
 
   useEffect(() => {
     if (timer <= 0) {
@@ -309,15 +326,40 @@ export const VerifyAccountScreen: React.FC = () => {
     return () => clearInterval(interval);
   }, [timer]);
 
-  const handleResend = useCallback(() => {
-    if (!canResend) {
+  const handleResend = useCallback(async () => {
+    if (!canResend || isResending) {
       return;
     }
-    setTimer(RESEND_TIMER_SECONDS);
-    setCanResend(false);
-    setOtp(Array(OTP_LENGTH).fill(''));
-    console.log('Resend code requested');
-  }, [canResend]);
+    
+    try {
+      setIsResending(true);
+      await authApi.resendOtp({
+        otp: {
+          identifier: contactValue,
+          purpose: 'login',
+        },
+      });
+
+      setTimer(RESEND_TIMER_SECONDS);
+      setCanResend(false);
+      setOtp(Array(OTP_LENGTH).fill(''));
+      setPopupConfig({
+        visible: true,
+        type: 'success',
+        title: 'Success',
+        message: 'Verification code resent successfully',
+      });
+    } catch (error: any) {
+      setPopupConfig({
+        visible: true,
+        type: 'error',
+        title: 'Error',
+        message: error?.message || 'Failed to resend code',
+      });
+    } finally {
+      setIsResending(false);
+    }
+  }, [canResend, contactValue, isResending]);
 
   const formatTime = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);
@@ -326,6 +368,41 @@ export const VerifyAccountScreen: React.FC = () => {
   };
 
   const isOtpComplete = otp.every(digit => digit !== '');
+
+  const handleVerify = async () => {
+    if (!isOtpComplete) return;
+
+    try {
+      setIsVerifying(true);
+      const code = otp.join('');
+      
+      const response = await authApi.verifyOtp({
+        otp: {
+          identifier: contactValue,
+          code,
+          purpose: 'login',
+        },
+      });
+
+      if (response.verification_token) {
+        navigation.navigate('CreateProfile', {
+          verificationToken: response.verification_token,
+          emailOrPhone: contactValue
+        });
+      } else {
+        throw new Error('Verification token missing from response');
+      }
+    } catch (error: any) {
+      setPopupConfig({
+        visible: true,
+        type: 'error',
+        title: 'Error',
+        message: error?.message || 'Invalid verification code',
+      });
+    } finally {
+      setIsVerifying(false);
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -396,11 +473,12 @@ export const VerifyAccountScreen: React.FC = () => {
             {canResend ? (
               <TouchableOpacity
                 onPress={handleResend}
+                disabled={isResending}
                 style={styles.resendButton}>
                 <AppText
                   variant="labelSmall"
-                  color={Colors.primary[500]}>
-                  Resend Code
+                  color={isResending ? Colors.neutral[400] : Colors.primary[500]}>
+                  {isResending ? 'Resending...' : 'Resend Code'}
                 </AppText>
               </TouchableOpacity>
             ) : (
@@ -427,8 +505,9 @@ export const VerifyAccountScreen: React.FC = () => {
             color="primary"
             size="lg"
             fullWidth
-            disabled={!isOtpComplete}
-            onPress={() => navigation.navigate('CreateProfile')}
+            disabled={!isOtpComplete || isVerifying}
+            loading={isVerifying}
+            onPress={handleVerify}
             style={styles.verifyButton}
           />
 
@@ -444,6 +523,14 @@ export const VerifyAccountScreen: React.FC = () => {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      <Popup
+        visible={popupConfig.visible}
+        type={popupConfig.type}
+        title={popupConfig.title}
+        message={popupConfig.message}
+        onClose={() => setPopupConfig({ ...popupConfig, visible: false })}
+      />
     </View>
   );
 };

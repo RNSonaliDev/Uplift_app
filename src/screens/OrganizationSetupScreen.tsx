@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import {
   View,
   StyleSheet,
@@ -6,6 +6,9 @@ import {
   ScrollView,
   TouchableOpacity,
   KeyboardAvoidingView,
+  Alert,
+  Modal,
+  FlatList,
 } from 'react-native';
 import {useNavigation, useRoute} from '@react-navigation/native';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
@@ -15,6 +18,7 @@ import {AppText} from '../components/AppText';
 import {Button} from '../components/Button';
 import {Input} from '../components/Input';
 import {UpliftLogo} from '../components/UpliftLogo';
+import {authApi} from '../api';
 import {Colors} from '../theme/colors';
 import {BorderRadius, Spacing} from '../theme/spacing';
 import {
@@ -87,7 +91,7 @@ const ChevronDownIcon: React.FC<{size?: number; color?: string}> = ({
 
 const BuildingOutlineIcon: React.FC<{size?: number; color?: string}> = ({
   size = 22,
-  color = Colors.neutral[400],
+  color = Colors.primary[500],
 }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Path d="M6 21V5C6 4.44772 6.44772 4 7 4H17C17.5523 4 18 4.44772 18 5V21" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
@@ -102,7 +106,7 @@ const BuildingOutlineIcon: React.FC<{size?: number; color?: string}> = ({
 
 const LocationPinIcon: React.FC<{size?: number; color?: string}> = ({
   size = 22,
-  color = Colors.neutral[400],
+  color = Colors.primary[500],
 }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Path
@@ -126,7 +130,7 @@ const LocationPinIcon: React.FC<{size?: number; color?: string}> = ({
 
 const UserOutlineIcon: React.FC<{size?: number; color?: string}> = ({
   size = 22,
-  color = Colors.neutral[400],
+  color = Colors.primary[500],
 }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Path
@@ -150,7 +154,7 @@ const UserOutlineIcon: React.FC<{size?: number; color?: string}> = ({
 
 const MailOutlineIcon: React.FC<{size?: number; color?: string}> = ({
   size = 22,
-  color = Colors.neutral[400],
+  color = Colors.primary[500],
 }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Path
@@ -175,7 +179,7 @@ const MailOutlineIcon: React.FC<{size?: number; color?: string}> = ({
 
 const PhoneOutlineIcon: React.FC<{size?: number; color?: string}> = ({
   size = 20,
-  color = Colors.neutral[400],
+  color = Colors.primary[500],
 }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -185,7 +189,7 @@ const PhoneOutlineIcon: React.FC<{size?: number; color?: string}> = ({
 // ── Custom Components ──────────────────────────────────
 const PhonePrefixPrefix = () => (
   <View style={styles.phonePrefixContainer}>
-    <PhoneOutlineIcon size={18} color={Colors.neutral[500]} />
+    <PhoneOutlineIcon size={18} color={Colors.primary[500]} />
     <AppText variant="bodyMedium" style={{marginLeft: 8, marginRight: 4}}>
       +1
     </AppText>
@@ -194,6 +198,23 @@ const PhonePrefixPrefix = () => (
   </View>
 );
 
+const ORGANIZATION_TYPES = [
+  'school',
+  'company',
+  'volunteer_center',
+  'nonprofit',
+  'government',
+  'other',
+];
+
+const formatType = (type: string) => {
+  if (!type) return '';
+  return type
+    .split('_')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+};
+
 // ── Main Component ───────────────────────────────────────
 export const OrganizationSetupScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProps>();
@@ -201,6 +222,9 @@ export const OrganizationSetupScreen: React.FC = () => {
   const [orgType, setOrgType] = useState('');
   const [orgName, setOrgName] = useState('');
   const [orgAddress, setOrgAddress] = useState('');
+  const [orgEmail, setOrgEmail] = useState('');
+  
+  const [isTypeModalVisible, setTypeModalVisible] = useState(false);
   
   const [contactName, setContactName] = useState('');
   const [contactEmail, setContactEmail] = useState('');
@@ -208,14 +232,44 @@ export const OrganizationSetupScreen: React.FC = () => {
 
   const [errors, setErrors] = useState<{[key: string]: string}>({});
 
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const profile = await authApi.getProfile();
+        // The Organization Setup doesn't have an independent contactName mapping, 
+        // but we can map first_name + last_name to contactName
+        const contact = `${profile.first_name || ''} ${profile.last_name || ''}`.trim();
+        if (contact) {
+          setContactName(contact);
+        }
+        setContactEmail(profile.email || '');
+        if (profile.phone) {
+          const digits = profile.phone.replace('+1', '');
+          setContactPhone(digits);
+        }
+      } catch (error) {
+        // Handle error or ignore
+      }
+    };
+    fetchProfile();
+  }, []);
+
   const validate = () => {
     const newErrors: {[key: string]: string} = {};
     
+    if (!orgType.trim()) newErrors.orgType = 'Organization type is required';
     if (!orgName.trim()) newErrors.orgName = 'Organization name is required';
     if (!orgAddress.trim()) newErrors.orgAddress = 'Organization address is required';
     if (!contactName.trim()) newErrors.contactName = 'Contact name is required';
     
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    
+    if (!orgEmail.trim()) {
+      newErrors.orgEmail = 'Organization email is required';
+    } else if (!emailRegex.test(orgEmail)) {
+      newErrors.orgEmail = 'Please enter a valid email address';
+    }
+
     if (!contactEmail.trim()) {
       newErrors.contactEmail = 'Contact email is required';
     } else if (!emailRegex.test(contactEmail)) {
@@ -235,24 +289,59 @@ export const OrganizationSetupScreen: React.FC = () => {
 
   const route = useRoute<any>();
   const pendingRoles = route.params?.pendingRoles || [];
+  const selectedRoles = route.params?.selectedRoles || [];
+  const collectedRolesData = route.params?.collectedRolesData || [];
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     if (validate()) {
+      const currentRoleData = {
+        role: 'organization',
+        profile: {
+          organization_type: orgType,
+          organization_name: orgName,
+          email: orgEmail,
+          address: orgAddress,
+          contact_name: contactName,
+          contact_email: contactEmail,
+          contact_phone: `+1${contactPhone.replace(/\D/g, '')}`,
+        }
+      };
+      const newCollectedRolesData = [...collectedRolesData, currentRoleData];
+
       if (pendingRoles.length > 0) {
         const nextRoles = [...pendingRoles];
         const nextRole = nextRoles.shift();
+        const routeParams = {
+          pendingRoles: nextRoles,
+          selectedRoles,
+          collectedRolesData: newCollectedRolesData,
+        };
         
         if (nextRole === 'volunteer') {
-          navigation.navigate('VolunteerSetup' as any, { pendingRoles: nextRoles });
+          navigation.navigate('VolunteerSetup' as any, routeParams);
         } else if (nextRole === 'organization') {
-          navigation.navigate('OrganizationSetup' as any, { pendingRoles: nextRoles });
+          navigation.navigate('OrganizationSetup' as any, routeParams);
         } else if (nextRole === 'sponsor') {
-          navigation.navigate('SponsorSetup' as any, { pendingRoles: nextRoles });
+          navigation.navigate('SponsorSetup' as any, routeParams);
         } else if (nextRole === 'beneficiary') {
-          navigation.navigate('BeneficiarySetup' as any, { pendingRoles: nextRoles });
+          navigation.navigate('BeneficiarySetup' as any, routeParams);
         }
       } else {
-        navigation.navigate('Success' as any);
+        try {
+          setIsSubmitting(true);
+          await authApi.saveRoleProfile({
+            role_profile: {
+              selected_roles: selectedRoles,
+              roles: newCollectedRolesData,
+            }
+          });
+          navigation.navigate('Success' as any, { selectedRoles });
+        } catch (error: any) {
+          Alert.alert('Error', error?.message || 'Failed to save profiles');
+        } finally {
+          setIsSubmitting(false);
+        }
       }
     }
   };
@@ -286,7 +375,7 @@ export const OrganizationSetupScreen: React.FC = () => {
               center
               color={Colors.neutral[500]}
               style={styles.subtitle}>
-              Tell us about your organization.
+              let's setup Organization profile
             </AppText>
           </View>
 
@@ -300,15 +389,17 @@ export const OrganizationSetupScreen: React.FC = () => {
 
           {/* Organization Form Fields */}
           <View style={styles.formSection}>
-            <TouchableOpacity activeOpacity={0.8}>
-              <Input
-                label="Organization Type"
-                placeholder="Select organization type"
-                value={orgType}
-                editable={false}
-                pointerEvents="none"
-                rightIcon={<ChevronDownIcon size={20} />}
-              />
+            <TouchableOpacity activeOpacity={0.8} onPress={() => setTypeModalVisible(true)}>
+              <View pointerEvents="none">
+                <Input
+                  label="Organization Type"
+                  placeholder="Select organization type"
+                  value={formatType(orgType)}
+                  editable={false}
+                  rightIcon={<ChevronDownIcon size={20} />}
+                  error={errors.orgType}
+                />
+              </View>
             </TouchableOpacity>
 
             <Input
@@ -321,6 +412,20 @@ export const OrganizationSetupScreen: React.FC = () => {
                 if (errors.orgName) setErrors({...errors, orgName: ''});
               }}
               error={errors.orgName}
+            />
+
+            <Input
+              label="Organization Email"
+              placeholder="Enter organization email"
+              leftIcon={<MailOutlineIcon />}
+              value={orgEmail}
+              onChangeText={(text) => {
+                setOrgEmail(text);
+                if (errors.orgEmail) setErrors({...errors, orgEmail: ''});
+              }}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              error={errors.orgEmail}
             />
 
             <Input
@@ -392,11 +497,54 @@ export const OrganizationSetupScreen: React.FC = () => {
             color="primary"
             size="lg"
             fullWidth
+            loading={isSubmitting}
             onPress={handleContinue}
             style={styles.continueButton}
           />
         </ScrollView>
       </KeyboardAvoidingView>
+
+      {/* Organization Type Picker Modal */}
+      <Modal
+        visible={isTypeModalVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setTypeModalVisible(false)}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setTypeModalVisible(false)}
+        >
+          <View style={styles.modalContent}>
+            <AppText variant="h3" style={styles.modalHeader}>
+              Select Organization Type
+            </AppText>
+            <FlatList
+              data={ORGANIZATION_TYPES}
+              keyExtractor={(item) => item}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={styles.modalItem}
+                  onPress={() => {
+                    setOrgType(item);
+                    if (errors.orgType) setErrors({...errors, orgType: ''});
+                    setTypeModalVisible(false);
+                  }}
+                >
+                  <AppText
+                    variant="bodyLarge"
+                    color={orgType === item ? Colors.primary[500] : Colors.neutral[800]}
+                    weight={orgType === item ? 'bold' : 'regular'}
+                  >
+                    {formatType(item)}
+                  </AppText>
+                </TouchableOpacity>
+              )}
+            />
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </View>
   );
 };
@@ -473,5 +621,29 @@ const styles = StyleSheet.create({
   continueButton: {
     borderRadius: BorderRadius.xl,
     height: verticalScale(52),
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    paddingHorizontal: horizontalScale(24),
+  },
+  modalContent: {
+    backgroundColor: Colors.neutral[0],
+    borderRadius: BorderRadius.xl,
+    paddingVertical: verticalScale(16),
+    maxHeight: '80%',
+  },
+  modalHeader: {
+    paddingHorizontal: horizontalScale(20),
+    paddingBottom: verticalScale(16),
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.neutral[200],
+  },
+  modalItem: {
+    paddingVertical: verticalScale(16),
+    paddingHorizontal: horizontalScale(20),
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.neutral[100],
   },
 });

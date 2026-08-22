@@ -356,15 +356,20 @@ export const SelectRolesScreen: React.FC = () => {
             const roles = [...selectedRoles];
             const firstRole = roles.shift();
             const pendingRoles = roles;
+            const routeParams = {
+              pendingRoles,
+              selectedRoles: [...selectedRoles],
+              collectedRolesData: [],
+            };
             
             if (firstRole === 'volunteer') {
-              navigation.navigate('VolunteerSetup' as any, { pendingRoles });
+              navigation.navigate('VolunteerSetup' as any, routeParams);
             } else if (firstRole === 'organization') {
-              navigation.navigate('OrganizationSetup' as any, { pendingRoles });
+              navigation.navigate('OrganizationSetup' as any, routeParams);
             } else if (firstRole === 'sponsor') {
-              navigation.navigate('SponsorSetup' as any, { pendingRoles });
+              navigation.navigate('SponsorSetup' as any, routeParams);
             } else if (firstRole === 'beneficiary') {
-              navigation.navigate('BeneficiarySetup' as any, { pendingRoles });
+              navigation.navigate('BeneficiarySetup' as any, routeParams);
             }
           }}
           disabled={selectedRoles.length === 0}

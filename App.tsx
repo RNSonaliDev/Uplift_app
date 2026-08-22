@@ -15,17 +15,20 @@ import {VerifyAccountScreen} from './src/screens/VerifyAccountScreen';
 import {CreateProfileScreen} from './src/screens/CreateProfileScreen';
 import {SelectRolesScreen} from './src/screens/SelectRolesScreen';
 import {SplashScreen} from './src/screens/SplashScreen';
+import {LoginScreen} from './src/screens/LoginScreen';
 import {OrganizationSetupScreen} from './src/screens/OrganizationSetupScreen';
 import {SponsorSetupScreen} from './src/screens/SponsorSetupScreen';
 import {VolunteerSetupScreen} from './src/screens/VolunteerSetupScreen';
 import {BeneficiarySetupScreen} from './src/screens/BeneficiarySetupScreen';
 import {SuccessScreen} from './src/screens/SuccessScreen';
+import {DashboardRoleSelectionScreen} from './src/screens/DashboardRoleSelectionScreen';
 import {Colors} from './src/theme/colors';
 import {BeneficiaryTabNavigator} from './src/navigation/BeneficiaryTabNavigator';
 
 type RootStackParamList = {
   Splash: undefined;
   Welcome: undefined;
+  Login: undefined;
   CreateAccount: undefined;
   VerifyAccount: { emailOrPhone: string };
   CreateProfile: undefined;
@@ -34,7 +37,8 @@ type RootStackParamList = {
   SponsorSetup: undefined;
   VolunteerSetup: undefined;
   BeneficiarySetup: undefined;
-  Success: undefined;
+  Success: { selectedRoles?: string[] } | undefined;
+  DashboardRoleSelection: { selectedRoles: string[] };
   BeneficiaryFlow: undefined;
 };
 
@@ -48,6 +52,7 @@ function App() {
           <Stack.Navigator screenOptions={{headerShown: false}}>
             <Stack.Screen name="Splash" component={SplashScreen} />
             <Stack.Screen name="Welcome" component={WelcomeScreen} />
+            <Stack.Screen name="Login" component={LoginScreen} />
             <Stack.Screen name="CreateAccount" component={CreateAccountScreen} />
             <Stack.Screen name="VerifyAccount" component={VerifyAccountScreen} />
             <Stack.Screen name="CreateProfile" component={CreateProfileScreen} />
@@ -57,6 +62,7 @@ function App() {
             <Stack.Screen name="VolunteerSetup" component={VolunteerSetupScreen} />
             <Stack.Screen name="BeneficiarySetup" component={BeneficiarySetupScreen} />
             <Stack.Screen name="Success" component={SuccessScreen} />
+            <Stack.Screen name="DashboardRoleSelection" component={DashboardRoleSelectionScreen} />
             <Stack.Screen name="BeneficiaryFlow" component={BeneficiaryTabNavigator} />
           </Stack.Navigator>
         </NavigationContainer>

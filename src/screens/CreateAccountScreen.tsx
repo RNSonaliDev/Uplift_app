@@ -7,12 +7,15 @@ import {
   TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
+  Alert,
 } from 'react-native';
 import Svg, {Path, Circle, Rect, G} from 'react-native-svg';
 import {AppText} from '../components/AppText';
 import {Button} from '../components/Button';
 import {Input} from '../components/Input';
 import {UpliftLogo} from '../components/UpliftLogo';
+import {Popup} from '../components';
+import {authApi} from '../api';
 import {Colors} from '../theme/colors';
 import {Spacing, BorderRadius} from '../theme/spacing';
 import {
@@ -167,7 +170,43 @@ type NavigationProps = NativeStackNavigationProp<RootStackParamList>;
 
 export const CreateAccountScreen: React.FC = () => {
   const [emailOrPhone, setEmailOrPhone] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [popupConfig, setPopupConfig] = useState<{
+    visible: boolean;
+    type: 'success' | 'error' | 'info';
+    title: string;
+    message: string;
+  }>({
+    visible: false,
+    type: 'info',
+    title: '',
+    message: '',
+  });
   const navigation = useNavigation<NavigationProps>();
+
+  const handleContinue = async () => {
+    try {
+      setIsLoading(true);
+      
+      const response = await authApi.requestOtp({
+        otp: {
+          identifier: emailOrPhone,
+          purpose: 'login',
+        },
+      });
+
+      navigation.navigate('VerifyAccount', { emailOrPhone });
+    } catch (error: any) {
+      setPopupConfig({
+        visible: true,
+        type: 'error',
+        title: 'Error',
+        message: error?.message || 'Something went wrong',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -237,7 +276,8 @@ export const CreateAccountScreen: React.FC = () => {
             color="primary"
             size="lg"
             fullWidth
-            onPress={() => navigation.navigate('VerifyAccount', { emailOrPhone })}
+            loading={isLoading}
+            onPress={handleContinue}
             disabled={
               !emailOrPhone.trim() || 
               (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailOrPhone) && !/^(?:\+1|1)?\s?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}$/.test(emailOrPhone))
@@ -262,17 +302,32 @@ export const CreateAccountScreen: React.FC = () => {
             <SocialButton
               icon={<GoogleIcon size={moderateScale(22)} />}
               label="Continue with Google"
-              onPress={() => {}}
+              onPress={() => setPopupConfig({
+                visible: true,
+                type: 'info',
+                title: 'Coming Soon',
+                message: 'This feature is not yet available. Please check back later!'
+              })}
             />
             <SocialButton
               icon={<FacebookIcon size={moderateScale(22)} />}
               label="Continue with Facebook"
-              onPress={() => {}}
+              onPress={() => setPopupConfig({
+                visible: true,
+                type: 'info',
+                title: 'Coming Soon',
+                message: 'This feature is not yet available. Please check back later!'
+              })}
             />
             <SocialButton
               icon={<AppleIcon size={moderateScale(22)} />}
               label="Continue with Apple"
-              onPress={() => {}}
+              onPress={() => setPopupConfig({
+                visible: true,
+                type: 'info',
+                title: 'Coming Soon',
+                message: 'This feature is not yet available. Please check back later!'
+              })}
             />
           </View>
 
@@ -292,6 +347,14 @@ export const CreateAccountScreen: React.FC = () => {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      <Popup 
+        visible={popupConfig.visible}
+        type={popupConfig.type}
+        title={popupConfig.title}
+        message={popupConfig.message}
+        onClose={() => setPopupConfig({ ...popupConfig, visible: false })}
+      />
     </View>
   );
 };

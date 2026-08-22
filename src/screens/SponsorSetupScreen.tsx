@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import {
   View,
   StyleSheet,
@@ -6,15 +6,17 @@ import {
   ScrollView,
   TouchableOpacity,
   KeyboardAvoidingView,
+  Alert,
 } from 'react-native';
 import {useNavigation, useRoute} from '@react-navigation/native';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
-import Svg, {Path, Circle, Rect} from 'react-native-svg';
+import Svg, {Path, Circle, Rect, Polyline} from 'react-native-svg';
 
 import {AppText} from '../components/AppText';
 import {Button} from '../components/Button';
 import {Input} from '../components/Input';
 import {UpliftLogo} from '../components/UpliftLogo';
+import {authApi} from '../api';
 import {Colors} from '../theme/colors';
 import {BorderRadius, Spacing} from '../theme/spacing';
 import {
@@ -72,7 +74,7 @@ const ShieldCheckIcon: React.FC<{size?: number; color?: string}> = ({
 
 const UserOutlineIcon: React.FC<{size?: number; color?: string}> = ({
   size = 22,
-  color = Colors.neutral[400],
+  color = Colors.primary[500],
 }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Path
@@ -96,7 +98,7 @@ const UserOutlineIcon: React.FC<{size?: number; color?: string}> = ({
 
 const MailOutlineIcon: React.FC<{size?: number; color?: string}> = ({
   size = 22,
-  color = Colors.neutral[400],
+  color = Colors.primary[500],
 }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Path
@@ -116,6 +118,24 @@ const MailOutlineIcon: React.FC<{size?: number; color?: string}> = ({
       strokeWidth="1.5"
       strokeLinecap="round"
     />
+  </Svg>
+);
+
+const PhoneOutlineIcon: React.FC<{size?: number; color?: string}> = ({
+  size = 20,
+  color = Colors.primary[500],
+}) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+  </Svg>
+);
+
+const ChevronDownIcon: React.FC<{size?: number; color?: string}> = ({
+  size = 16,
+  color = Colors.neutral[600],
+}) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Polyline points="6 9 12 15 18 9" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
   </Svg>
 );
 
@@ -139,6 +159,17 @@ const RadioInactiveIcon: React.FC<{size?: number; color?: string}> = ({
 );
 
 // ── Components ───────────────────────────────────────────
+const PhonePrefixPrefix = () => (
+  <View style={styles.phonePrefixContainer}>
+    <PhoneOutlineIcon size={18} color={Colors.primary[500]} />
+    <AppText variant="bodyMedium" style={{marginLeft: 8, marginRight: 4}}>
+      +1
+    </AppText>
+    <ChevronDownIcon />
+    <View style={styles.verticalDivider} />
+  </View>
+);
+
 const RadioCard = ({
   title,
   description,
@@ -178,9 +209,28 @@ export const SponsorSetupScreen: React.FC = () => {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [anonymity, setAnonymity] = useState<'show' | 'hide'>('show');
   
   const [errors, setErrors] = useState<{[key: string]: string}>({});
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const profile = await authApi.getProfile();
+        setFirstName(profile.first_name || '');
+        setLastName(profile.last_name || '');
+        setEmail(profile.email || '');
+        if (profile.phone) {
+          const digits = profile.phone.replace('+1', '');
+          setPhoneNumber(digits);
+        }
+      } catch (error) {
+        // Handle error or ignore
+      }
+    };
+    fetchProfile();
+  }, []);
 
   const validate = () => {
     const newErrors: {[key: string]: string} = {};
@@ -195,30 +245,70 @@ export const SponsorSetupScreen: React.FC = () => {
       newErrors.email = 'Please enter a valid email address';
     }
 
+    const phoneDigits = phoneNumber.replace(/\D/g, '');
+    if (!phoneNumber.trim()) {
+      newErrors.phoneNumber = 'Phone number is required';
+    } else if (phoneDigits.length < 10) {
+      newErrors.phoneNumber = 'Phone number must be at least 10 digits';
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const route = useRoute<any>();
   const pendingRoles = route.params?.pendingRoles || [];
+  const selectedRoles = route.params?.selectedRoles || [];
+  const collectedRolesData = route.params?.collectedRolesData || [];
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     if (validate()) {
+      const currentRoleData = {
+        role: 'sponsor',
+        profile: {
+          first_name: firstName,
+          last_name: lastName,
+          email: email,
+          phone: `+1${phoneNumber.replace(/\D/g, '')}`,
+          anonymous: anonymity === 'hide',
+        }
+      };
+      const newCollectedRolesData = [...collectedRolesData, currentRoleData];
+
       if (pendingRoles.length > 0) {
         const nextRoles = [...pendingRoles];
         const nextRole = nextRoles.shift();
+        const routeParams = {
+          pendingRoles: nextRoles,
+          selectedRoles,
+          collectedRolesData: newCollectedRolesData,
+        };
         
         if (nextRole === 'volunteer') {
-          navigation.navigate('VolunteerSetup' as any, { pendingRoles: nextRoles });
+          navigation.navigate('VolunteerSetup' as any, routeParams);
         } else if (nextRole === 'organization') {
-          navigation.navigate('OrganizationSetup' as any, { pendingRoles: nextRoles });
+          navigation.navigate('OrganizationSetup' as any, routeParams);
         } else if (nextRole === 'sponsor') {
-          navigation.navigate('SponsorSetup' as any, { pendingRoles: nextRoles });
+          navigation.navigate('SponsorSetup' as any, routeParams);
         } else if (nextRole === 'beneficiary') {
-          navigation.navigate('BeneficiarySetup' as any, { pendingRoles: nextRoles });
+          navigation.navigate('BeneficiarySetup' as any, routeParams);
         }
       } else {
-        navigation.navigate('Success' as any);
+        try {
+          setIsSubmitting(true);
+          await authApi.saveRoleProfile({
+            role_profile: {
+              selected_roles: selectedRoles,
+              roles: newCollectedRolesData,
+            }
+          });
+          navigation.navigate('Success' as any, { selectedRoles });
+        } catch (error: any) {
+          Alert.alert('Error', error?.message || 'Failed to save profiles');
+        } finally {
+          setIsSubmitting(false);
+        }
       }
     }
   };
@@ -253,7 +343,7 @@ export const SponsorSetupScreen: React.FC = () => {
               center
               color={Colors.neutral[500]}
               style={styles.subtitle}>
-              Help strengthen communities{'\n'}through your support.
+              let's setup Sponsor profile
             </AppText>
           </View>
 
@@ -304,6 +394,20 @@ export const SponsorSetupScreen: React.FC = () => {
               autoCapitalize="none"
               error={errors.email}
             />
+
+            <Input
+              label="Phone number"
+              placeholder="(201) 555-0123"
+              leftIcon={<PhonePrefixPrefix />}
+              value={phoneNumber}
+              onChangeText={(text) => {
+                setPhoneNumber(text);
+                if (errors.phoneNumber) setErrors({...errors, phoneNumber: ''});
+              }}
+              keyboardType="phone-pad"
+              maxLength={10}
+              error={errors.phoneNumber}
+            />
           </View>
 
           {/* Anonymity Preference Section */}
@@ -337,6 +441,7 @@ export const SponsorSetupScreen: React.FC = () => {
             color="primary"
             size="lg"
             fullWidth
+            loading={isSubmitting}
             onPress={handleContinue}
             style={styles.continueButton}
           />
@@ -388,6 +493,18 @@ const styles = StyleSheet.create({
     marginLeft: horizontalScale(12),
     flex: 1,
     lineHeight: fontScale(18),
+  },
+  phonePrefixContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingLeft: Spacing.xs,
+  },
+  verticalDivider: {
+    width: 1,
+    height: 24,
+    backgroundColor: Colors.neutral[200],
+    marginLeft: Spacing.sm,
+    marginRight: Spacing.sm,
   },
   formSection: {
     marginBottom: verticalScale(8),

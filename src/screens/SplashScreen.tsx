@@ -2,6 +2,8 @@ import React, { useEffect, useRef } from 'react';
 import { View, StyleSheet, Image, StatusBar, Animated, Text, Dimensions } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { loadAuthToken } from '../api/client';
+import { authApi } from '../api';
 import { Colors } from '../theme/colors';
 import { Typography } from '../theme/typography';
 import { logo, backgroundimage } from '../assets/images';
@@ -11,6 +13,8 @@ const { width, height } = Dimensions.get('window');
 type RootStackParamList = {
   Splash: undefined;
   Welcome: undefined;
+  DashboardRoleSelection: { selectedRoles: string[] };
+  BeneficiaryFlow: undefined;
 };
 
 type NavigationProps = NativeStackNavigationProp<RootStackParamList>;
@@ -74,9 +78,33 @@ export const SplashScreen: React.FC = () => {
       ]),
     ]).start();
 
-    // Navigate to Welcome screen after 3.5 seconds
+    // Check for existing token and navigate
+    const checkTokenAndNavigate = async () => {
+      try {
+        const token = await loadAuthToken();
+        if (token) {
+          // Verify token by fetching profile
+          const response = await authApi.getProfile();
+          const selectedRoles = response.selected_roles || [];
+          
+          if (selectedRoles.length > 1) {
+            navigation.replace('DashboardRoleSelection', { selectedRoles });
+          } else {
+            // Placeholder: Go to BeneficiaryFlow if one role
+            navigation.replace('BeneficiaryFlow');
+          }
+        } else {
+          navigation.replace('Welcome');
+        }
+      } catch (error) {
+        // Token invalid or network error, fallback to Welcome
+        navigation.replace('Welcome');
+      }
+    };
+
+    // Wait at least 3.5 seconds before navigating
     const timer = setTimeout(() => {
-      navigation.replace('Welcome');
+      checkTokenAndNavigate();
     }, 3500);
 
     return () => clearTimeout(timer);

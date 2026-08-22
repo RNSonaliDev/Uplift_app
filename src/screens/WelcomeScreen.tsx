@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   ImageBackground,
   Modal,
+  ActivityIndicator,
 } from 'react-native';
 import {AppText} from '../components/AppText';
 import {Button} from '../components/Button';
@@ -24,12 +25,14 @@ import {
 } from '../utils/responsive';
 
 import { whatsappImage } from '../assets/images';
+import { contentApi } from '../api';
 
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 type RootStackParamList = {
   Welcome: undefined;
+  Login: undefined;
   CreateAccount: undefined;
   VerifyAccount: { emailOrPhone: string };
   SelectRoles: undefined;
@@ -40,9 +43,40 @@ type NavigationProps = NativeStackNavigationProp<RootStackParamList>;
 export const WelcomeScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProps>();
   const [modalConfig, setModalConfig] = useState<{visible: boolean, type: 'terms' | 'privacy'}>({visible: false, type: 'terms'});
+  const [content, setContent] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const openTerms = () => setModalConfig({visible: true, type: 'terms'});
-  const openPrivacy = () => setModalConfig({visible: true, type: 'privacy'});
+  const openTerms = async () => {
+    setModalConfig({visible: true, type: 'terms'});
+    setContent(null);
+    setIsLoading(true);
+    try {
+      const res = await contentApi.getTermsOfService();
+      // Basic HTML stripping if the server returns HTML instead of plain text
+      const cleanText = res.body ? res.body.replace(/<[^>]*>?/gm, '') : 'No content available.';
+      setContent(cleanText);
+    } catch (error) {
+      setContent('Failed to load Terms of Service. Please try again later.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const openPrivacy = async () => {
+    setModalConfig({visible: true, type: 'privacy'});
+    setContent(null);
+    setIsLoading(true);
+    try {
+      const res = await contentApi.getPrivacyPolicy();
+      const cleanText = res.body ? res.body.replace(/<[^>]*>?/gm, '') : 'No content available.';
+      setContent(cleanText);
+    } catch (error) {
+      setContent('Failed to load Privacy Policy. Please try again later.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const closeModal = () => setModalConfig({...modalConfig, visible: false});
 
   return (
@@ -108,7 +142,7 @@ export const WelcomeScreen: React.FC = () => {
             color="primary"
             size="lg"
             fullWidth
-            onPress={() => {}}
+            onPress={() => navigation.navigate('Login')}
             style={styles.loginButton}
           />
 
@@ -155,55 +189,13 @@ export const WelcomeScreen: React.FC = () => {
               </TouchableOpacity>
             </View>
             <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
-              <AppText variant="bodyMedium" color={Colors.neutral[600]}>
-                {modalConfig.type === 'terms' ? (
-                  <>
-                    Welcome to Uplift! These Terms of Service govern your use of our app and services.
-                    {'\n\n'}
-                    By using Uplift, you agree to these terms. Please read them carefully.
-                    {'\n\n'}
-                    1. Use of Service
-                    {'\n'}
-                    You must be at least 13 years old to use Uplift. You are responsible for all activities that occur under your account.
-                    {'\n\n'}
-                    2. Content
-                    {'\n'}
-                    You retain ownership of the content you post, but you grant us a license to use it to provide our services.
-                    {'\n\n'}
-                    3. Prohibited Conduct
-                    {'\n'}
-                    You agree not to engage in any harassment, spamming, or illegal activities on our platform.
-                    {'\n\n'}
-                    4. Termination
-                    {'\n'}
-                    We reserve the right to terminate or suspend your account at any time for violations of these terms.
-                    {'\n\n'}
-                    (This is a placeholder for the full Terms of Service.)
-                  </>
-                ) : (
-                  <>
-                    Your privacy is important to us. This Privacy Policy explains how we collect, use, and protect your information.
-                    {'\n\n'}
-                    1. Information We Collect
-                    {'\n'}
-                    We collect information you provide directly to us, such as when you create an account or update your profile.
-                    {'\n\n'}
-                    2. How We Use Your Information
-                    {'\n'}
-                    We use your information to provide, maintain, and improve our services, as well as to communicate with you.
-                    {'\n\n'}
-                    3. Sharing of Information
-                    {'\n'}
-                    We do not sell your personal information. We may share information with trusted service providers who assist us in operating our app.
-                    {'\n\n'}
-                    4. Security
-                    {'\n'}
-                    We implement reasonable security measures to protect your information, but no system is completely secure.
-                    {'\n\n'}
-                    (This is a placeholder for the full Privacy Policy.)
-                  </>
-                )}
-              </AppText>
+              {isLoading ? (
+                <ActivityIndicator size="large" color={Colors.primary[500]} style={{marginTop: verticalScale(40)}} />
+              ) : (
+                <AppText variant="bodyMedium" color={Colors.neutral[600]}>
+                  {content}
+                </AppText>
+              )}
             </ScrollView>
           </View>
         </View>
