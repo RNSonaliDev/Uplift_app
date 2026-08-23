@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import {
   View,
   StyleSheet,
@@ -6,9 +6,11 @@ import {
   ScrollView,
   TouchableOpacity,
   Pressable,
+  Alert,
 } from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import Svg, {Path, Circle, Rect, G} from 'react-native-svg';
+import {authApi} from '../api/auth';
 import {AppText} from '../components/AppText';
 import {Button} from '../components/Button';
 import {UpliftLogo} from '../components/UpliftLogo';
@@ -185,6 +187,7 @@ interface RoleCardProps {
   description: string;
   isSelected: boolean;
   onToggle: () => void;
+  isDisabled?: boolean;
 }
 
 const RoleCard: React.FC<RoleCardProps> = ({
@@ -193,6 +196,7 @@ const RoleCard: React.FC<RoleCardProps> = ({
   description,
   isSelected,
   onToggle,
+  isDisabled,
 }) => {
   const getIcon = () => {
     switch (type) {
@@ -212,8 +216,10 @@ const RoleCard: React.FC<RoleCardProps> = ({
       style={[
         styles.roleCard,
         isSelected && styles.roleCardSelected,
+        isDisabled && { opacity: 0.5 },
       ]}
-      onPress={onToggle}>
+      onPress={isDisabled ? undefined : onToggle}
+      disabled={isDisabled}>
       <View style={styles.roleCardHeader}>
         <View style={styles.roleIconContainer}>{getIcon()}</View>
         <View style={styles.checkIconContainer}>
@@ -239,23 +245,43 @@ const RoleCard: React.FC<RoleCardProps> = ({
 
 // ── Main Component ──────────────────────────────────
 
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 type RootStackParamList = {
   Welcome: undefined;
   CreateAccount: undefined;
   VerifyAccount: { emailOrPhone: string };
-  SelectRoles: undefined;
+  SelectRoles: { fromProfile?: boolean };
 };
 
 type NavigationProps = NativeStackNavigationProp<RootStackParamList>;
 
 export const SelectRolesScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProps>();
+  const route = useRoute<any>();
+  const isFromProfile = route.params?.fromProfile || false;
   const [selectedRoles, setSelectedRoles] = useState<RoleType[]>([]);
+  const [existingRoles, setExistingRoles] = useState<string[]>([]);
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const data = await authApi.getProfile();
+        const combinedRoles = [...(data.roles || []), ...(data.pending_roles || [])];
+        setExistingRoles(combinedRoles.map(r => r.toLowerCase()));
+      } catch (error) {
+        console.log('Could not fetch profile in SelectRolesScreen', error);
+      }
+    };
+    fetchProfile();
+  }, []);
 
   const toggleRole = (role: RoleType) => {
+    if (role === 'organization' || role === 'sponsor') {
+      Alert.alert('Coming Soon', 'This role is not yet available.');
+      return;
+    }
     setSelectedRoles(prev => {
       if (prev.includes(role)) {
         return prev.filter(r => r !== role);
@@ -286,15 +312,16 @@ export const SelectRolesScreen: React.FC = () => {
 
         {/* Title & Subtitle */}
         <AppText variant="h2" center color={Colors.primary[900]} style={styles.title}>
-          How Would You Like{'\n'}To Join Uplift?
+          {isFromProfile ? 'Add a New Role' : `How Would You Like\nTo Join Uplift?`}
         </AppText>
         <AppText
           variant="bodyMedium"
           center
           color={Colors.neutral[500]}
           style={styles.subtitle}>
-          Choose one or more roles. You'll complete{'\n'}the setup for each
-          selected role one at a time.
+          {isFromProfile 
+            ? `Choose an additional role to add to your profile. You'll complete the setup for it next.`
+            : `Choose one or more roles. You'll complete\nthe setup for each selected role one at a time.`}
         </AppText>
 
         {/* Roles Grid */}
@@ -305,6 +332,7 @@ export const SelectRolesScreen: React.FC = () => {
             description="Request help with shopping and groceries."
             isSelected={selectedRoles.includes('beneficiary')}
             onToggle={() => toggleRole('beneficiary')}
+            isDisabled={existingRoles.includes('beneficiary')}
           />
           <RoleCard
             type="volunteer"
@@ -312,6 +340,7 @@ export const SelectRolesScreen: React.FC = () => {
             description="Support people in your community."
             isSelected={selectedRoles.includes('volunteer')}
             onToggle={() => toggleRole('volunteer')}
+            isDisabled={existingRoles.includes('volunteer')}
           />
           <RoleCard
             type="organization"
@@ -319,6 +348,7 @@ export const SelectRolesScreen: React.FC = () => {
             description="Create internships and community events."
             isSelected={selectedRoles.includes('organization')}
             onToggle={() => toggleRole('organization')}
+            isDisabled={existingRoles.includes('organization')}
           />
           <RoleCard
             type="sponsor"
@@ -326,6 +356,7 @@ export const SelectRolesScreen: React.FC = () => {
             description="Fund community support and grocery assistance."
             isSelected={selectedRoles.includes('sponsor')}
             onToggle={() => toggleRole('sponsor')}
+            isDisabled={existingRoles.includes('sponsor')}
           />
         </View>
 

@@ -2,12 +2,13 @@ import React from 'react';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import {View, Text} from 'react-native';
 import {Colors} from '../theme/colors';
-import {Typography} from '../theme/typography';
+import {Typography, FontFamily} from '../theme/typography';
 import {Home, Search, Calendar, Heart, User} from 'lucide-react-native';
 
 import VolunteerHomeStack from './VolunteerHomeStack';
 import VolunteerRequestsStack from './VolunteerRequestsStack';
 import VolunteerScheduleStack from './VolunteerScheduleStack';
+import BeneficiaryProfileStack from './BeneficiaryProfileStack';
 
 const Tab = createBottomTabNavigator();
 
@@ -35,7 +36,7 @@ export function VolunteerTabNavigator() {
         },
         tabBarLabelStyle: {
           ...Typography.caption,
-          fontWeight: '500',
+          fontFamily: FontFamily.medium,
         },
       }}>
       <Tab.Screen
@@ -72,7 +73,7 @@ export function VolunteerTabNavigator() {
       />
       <Tab.Screen
         name="ProfileTab"
-        component={DummyScreen}
+        component={BeneficiaryProfileStack}
         options={{
           tabBarLabel: 'Profile',
           tabBarIcon: ({color}) => <User color={color} size={24} />,

@@ -9,6 +9,7 @@ import {
 import {useNavigation} from '@react-navigation/native';
 import {Colors} from '../../../theme/colors';
 import {AppText} from '../../../components/AppText';
+import {formatDate} from '../../../utils/dateFormatter';
 import {Button} from '../../../components/Button';
 import {
   Bell,
@@ -64,15 +65,15 @@ export default function VolunteerDashboardScreen() {
           <View style={styles.headerTop}>
             <View>
               <AppText variant="bodyMedium" style={styles.welcomeText}>Welcome back,</AppText>
-              <AppText variant="h3" style={styles.nameText}>{name} 👏</AppText>
+              <AppText variant="h3" style={styles.nameText}>{name}</AppText>
             </View>
             <View style={{flexDirection: 'row', alignItems: 'center'}}>
-              <TouchableOpacity 
+              {/* <TouchableOpacity 
                 style={styles.bellIcon}
                 onPress={() => profile && navigation.navigate('DashboardRoleSelection', { selectedRoles: profile.selected_roles || [] })}
               >
                 <ArrowRightLeft color={Colors.neutral[0]} size={22} />
-              </TouchableOpacity>
+              </TouchableOpacity> */}
               <TouchableOpacity style={styles.bellIcon}>
                 <Bell color={Colors.neutral[0]} size={24} />
               </TouchableOpacity>
@@ -108,7 +109,7 @@ export default function VolunteerDashboardScreen() {
         <View style={styles.sectionContainer}>
           <View style={styles.sectionHeader}>
             <AppText variant="h5">Upcoming Requests</AppText>
-            <TouchableOpacity>
+            <TouchableOpacity onPress={() => navigation.navigate('RequestsTab')}>
               <AppText variant="bodyMedium" color={Colors.primary[500]}>View all</AppText>
             </TouchableOpacity>
           </View>
@@ -120,7 +121,12 @@ export default function VolunteerDashboardScreen() {
             </View>
           ) : requests.length > 0 ? (
             requests.slice(0, 3).map((request, index) => (
-              <View key={request.id || index} style={styles.requestCard}>
+              <TouchableOpacity 
+                key={request.id || index} 
+                style={styles.requestCard}
+                onPress={() => navigation.navigate('RequestsTab', { screen: 'RequestDetails', params: { request } })}
+                activeOpacity={0.7}
+              >
                 <View style={styles.requestHeader}>
                   <View style={styles.requestIconContainer}>
                     <ShoppingBag color={Colors.primary[500]} size={20} />
@@ -129,7 +135,7 @@ export default function VolunteerDashboardScreen() {
                     <AppText variant="labelLarge">{request.category?.title || 'Help Request'}</AppText>
                   </View>
                   <View style={styles.statusBadge}>
-                    <AppText variant="caption" color={Colors.warning[500]} style={{fontWeight: '600'}}>
+                    <AppText variant="labelMedium" color={Colors.warning[500]}>
                       {request.status ? request.status.charAt(0).toUpperCase() + request.status.slice(1) : 'Pending'}
                     </AppText>
                   </View>
@@ -139,7 +145,7 @@ export default function VolunteerDashboardScreen() {
                   <View style={styles.detailRow}>
                     <Clock color={Colors.neutral[400]} size={16} />
                     <AppText variant="bodyMedium" color={Colors.neutral[500]} style={styles.detailText}>
-                      {request.preferred_date || 'Date TBD'}
+                      {formatDate(request.preferred_date)}
                     </AppText>
                   </View>
                   <View style={styles.detailRow}>
@@ -157,7 +163,7 @@ export default function VolunteerDashboardScreen() {
                     </View>
                   )}
                 </View>
-              </View>
+              </TouchableOpacity>
             ))
           ) : (
             <View style={[styles.requestCard, {alignItems: 'center', justifyContent: 'center', paddingVertical: 40}]}>
@@ -240,7 +246,6 @@ const styles = StyleSheet.create({
   },
   nameText: {
     color: Colors.neutral[0],
-    fontWeight: '700',
   },
   bellIcon: {
     padding: 8,
@@ -261,7 +266,6 @@ const styles = StyleSheet.create({
   },
   impactTitle: {
     color: Colors.neutral[900],
-    fontWeight: '600',
     marginBottom: verticalScale(16),
   },
   statsRow: {
@@ -280,7 +284,6 @@ const styles = StyleSheet.create({
   },
   statNumber: {
     color: Colors.primary[500],
-    fontWeight: '700',
     marginBottom: 4,
   },
   statLabel: {

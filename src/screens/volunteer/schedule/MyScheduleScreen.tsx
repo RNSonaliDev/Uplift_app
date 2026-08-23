@@ -16,6 +16,7 @@ import {
   verticalScale,
   moderateScale,
 } from '../../../utils/responsive';
+import {formatDate} from '../../../utils/dateFormatter';
 
 type Tab = 'Upcoming' | 'In Progress' | 'Completed';
 
@@ -68,7 +69,7 @@ export default function MyScheduleScreen() {
     const displayData = filtered.length > 0 ? filtered : [];
 
     const grouped = displayData.reduce((acc: any, req: any) => {
-      const dateStr = req.preferred_date || 'Upcoming';
+      const dateStr = formatDate(req.preferred_date) || 'Upcoming';
       if (!acc[dateStr]) acc[dateStr] = [];
       acc[dateStr].push(req);
       return acc;
@@ -85,12 +86,14 @@ export default function MyScheduleScreen() {
       style={styles.card}
       onPress={() => {
         if (activeTab === 'Upcoming') {
-          navigation.navigate('StartRequest', { request: item });
+          navigation.navigate('RequestDetails', { request: item });
         } else if (activeTab === 'In Progress') {
-          navigation.navigate('CompleteRequest', { request: item });
+          navigation.navigate('RequestDetails', { request: item });
+        } else if (activeTab === 'Completed') {
+          navigation.navigate('RequestDetails', { request: item });
         }
       }}
-      activeOpacity={(activeTab === 'Upcoming' || activeTab === 'In Progress') ? 0.7 : 1}
+      activeOpacity={0.7}
     >
       <View style={styles.iconContainer}>
         {getCategoryIcon(item.category?.title)}
@@ -100,7 +103,7 @@ export default function MyScheduleScreen() {
           {item.category?.title || 'Help Request'}
         </AppText>
         <AppText variant="bodyMedium" color={Colors.neutral[700]} style={{marginTop: verticalScale(4)}}>
-          {item.preferred_time || 'Time TBD'}
+          {item.hours_required}
         </AppText>
         <AppText variant="bodyMedium" color={Colors.neutral[700]} style={{marginTop: verticalScale(2)}}>
           {item.location?.address || item.meeting_location || 'Location TBD'}

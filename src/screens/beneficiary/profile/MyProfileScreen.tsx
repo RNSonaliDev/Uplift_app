@@ -8,12 +8,15 @@ import {
   SafeAreaView,
   Image,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {useNavigation} from '@react-navigation/native';
+import {api, getFullImageUrl} from '../../../api/client';
 import {authApi, UserProfileResponse} from '../../../api/auth';
-import {getFullImageUrl} from '../../../api/client';
 import {Colors} from '../../../theme/colors';
 import {Typography} from '../../../theme/typography';
+import {horizontalScale, verticalScale, moderateScale} from '../../../utils/responsive';
 import {
   ChevronLeft,
   Edit2,
@@ -24,6 +27,14 @@ import {
   Phone,
   Bell,
   ChevronRight,
+  PlusCircle,
+  Settings as SettingsIcon,
+  Key,
+  LogOut,
+  Shield,
+  FileText,
+  HelpCircle,
+  Headphones,
 } from 'lucide-react-native';
 
 export default function MyProfileScreen() {
@@ -45,6 +56,28 @@ export default function MyProfileScreen() {
     fetchProfile();
   }, []);
 
+  const handleLogout = async () => {
+    Alert.alert('Logout', 'Are you sure you want to logout?', [
+      {text: 'Cancel', style: 'cancel'},
+      {
+        text: 'Logout', 
+        style: 'destructive', 
+        onPress: async () => {
+          try {
+            await authApi.logout();
+          } catch (e) {
+            console.log('Logout API failed', e);
+          }
+          await AsyncStorage.removeItem('UPLIFT_AUTH_TOKEN');
+          navigation.reset({
+            index: 0,
+            routes: [{name: 'Login'}],
+          });
+        }
+      },
+    ]);
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.header}>
@@ -53,7 +86,7 @@ export default function MyProfileScreen() {
           style={[styles.iconBtn, !navigation.canGoBack() && {opacity: 0}]}
           disabled={!navigation.canGoBack()}
         >
-          <ChevronLeft color={Colors.neutral[0]} size={28} />
+          <ChevronLeft color={Colors.neutral[900]} size={28} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>My Profile</Text>
         <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.navigate('EditProfile')}>
@@ -73,9 +106,9 @@ export default function MyProfileScreen() {
                   source={{uri: getFullImageUrl(profile.profile_image_url) || 'https://i.pravatar.cc/150?u=placeholder'}} 
                   style={styles.avatar} 
                 />
-                <TouchableOpacity style={styles.cameraBtn}>
+                {/* <TouchableOpacity style={styles.cameraBtn}>
                   <Camera color={Colors.primary[500]} size={16} />
-                </TouchableOpacity>
+                </TouchableOpacity> */}
               </View>
               
               <Text style={styles.name}>{profile.first_name}</Text>
@@ -94,7 +127,7 @@ export default function MyProfileScreen() {
           <MenuItem 
             icon={<User color={Colors.neutral[500]} size={24} />} 
             title="Personal Information" 
-            onPress={() => navigation.navigate('EditProfile')} 
+            onPress={() => navigation.navigate('EditProfile', { role: profile?.default_role || 'beneficiary' })} 
           />
           {/* <MenuItem 
             icon={<CreditCard color={Colors.neutral[500]} size={24} />} 
@@ -110,7 +143,48 @@ export default function MyProfileScreen() {
             icon={<Bell color={Colors.neutral[500]} size={24} />} 
             title="Notification Preferences" 
             onPress={() => navigation.navigate('Settings')} 
+          />
+          <MenuItem 
+            icon={<PlusCircle color={Colors.neutral[500]} size={24} />} 
+            title="Add Role" 
+            onPress={() => navigation.navigate('SelectRoles', { fromProfile: true })} 
+          />
+          <MenuItem 
+            icon={<SettingsIcon color={Colors.neutral[500]} size={24} />} 
+            title="Change Role" 
+            onPress={() => profile && navigation.navigate('DashboardRoleSelection', { selectedRoles: profile.selected_roles || profile.roles?.map((r: any) => r.role) || [] })} 
+          />
+          <MenuItem 
+            icon={<Key color={Colors.neutral[500]} size={24} />} 
+            title="Change Password" 
+            onPress={() => {}} 
+          />
+          <MenuItem 
+            icon={<Shield color={Colors.neutral[500]} size={24} />} 
+            title="Privacy Policy" 
+            onPress={() => {}} 
+          />
+          <MenuItem 
+            icon={<FileText color={Colors.neutral[500]} size={24} />} 
+            title="Terms of Service" 
+            onPress={() => {}} 
+          />
+          <MenuItem 
+            icon={<HelpCircle color={Colors.neutral[500]} size={24} />} 
+            title="Help Center" 
+            onPress={() => {}} 
+          />
+          <MenuItem 
+            icon={<Headphones color={Colors.neutral[500]} size={24} />} 
+            title="Contact Support" 
+            onPress={() => {}} 
+          />
+          <MenuItem 
+            icon={<LogOut color={Colors.error[500]} size={24} />} 
+            title="Logout" 
+            onPress={handleLogout} 
             noBorder
+            titleStyle={{color: Colors.error[500]}}
           />
         </View>
         
@@ -122,11 +196,11 @@ export default function MyProfileScreen() {
   );
 }
 
-const MenuItem = ({icon, title, onPress, noBorder}: any) => (
+const MenuItem = ({icon, title, onPress, noBorder, titleStyle}: any) => (
   <TouchableOpacity style={[styles.menuItem, noBorder && styles.menuItemNoBorder]} onPress={onPress}>
     <View style={styles.menuItemLeft}>
       {icon}
-      <Text style={styles.menuItemTitle}>{title}</Text>
+      <Text style={[styles.menuItemTitle, titleStyle]}>{title}</Text>
     </View>
     <ChevronRight color={Colors.neutral[400]} size={20} />
   </TouchableOpacity>
@@ -135,99 +209,99 @@ const MenuItem = ({icon, title, onPress, noBorder}: any) => (
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: Colors.primary[500],
+    backgroundColor: Colors.neutral[0],
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 16,
+    paddingHorizontal: horizontalScale(16),
+    paddingVertical: verticalScale(16),
   },
   iconBtn: {
-    padding: 4,
+    padding: moderateScale(4),
   },
   headerTitle: {
     ...Typography.h5,
-    color: Colors.neutral[0],
+    color: Colors.neutral[900],
   },
   container: {
     flex: 1,
     backgroundColor: Colors.neutral[50],
   },
   content: {
-    paddingBottom: 40,
+    paddingBottom: verticalScale(40),
   },
   profileSection: {
     backgroundColor: Colors.neutral[0],
     alignItems: 'center',
-    paddingVertical: 32,
-    paddingHorizontal: 24,
-    borderBottomLeftRadius: 32,
-    borderBottomRightRadius: 32,
+    paddingVertical: verticalScale(32),
+    paddingHorizontal: horizontalScale(24),
+    borderBottomLeftRadius: moderateScale(32),
+    borderBottomRightRadius: moderateScale(32),
     shadowColor: Colors.neutral[900],
-    shadowOffset: {width: 0, height: 4},
+    shadowOffset: {width: 0, height: verticalScale(4)},
     shadowOpacity: 0.05,
-    shadowRadius: 12,
+    shadowRadius: moderateScale(12),
     elevation: 4,
-    marginBottom: 24,
+    marginBottom: verticalScale(24),
     zIndex: 1,
   },
   avatarContainer: {
     position: 'relative',
-    marginBottom: 16,
+    marginBottom: verticalScale(16),
   },
   avatar: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    borderWidth: 4,
+    width: moderateScale(100),
+    height: moderateScale(100),
+    borderRadius: moderateScale(50),
+    borderWidth: moderateScale(4),
     borderColor: Colors.neutral[0],
   },
   cameraBtn: {
     position: 'absolute',
     bottom: 0,
     right: 0,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: moderateScale(32),
+    height: moderateScale(32),
+    borderRadius: moderateScale(16),
     backgroundColor: Colors.neutral[0],
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: Colors.neutral[900],
-    shadowOffset: {width: 0, height: 2},
+    shadowOffset: {width: 0, height: verticalScale(2)},
     shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowRadius: moderateScale(4),
     elevation: 2,
   },
   name: {
     ...Typography.h4,
     color: Colors.neutral[900],
-    marginBottom: 4,
+    marginBottom: verticalScale(4),
     textAlign: 'center',
   },
   contactInfo: {
     ...Typography.bodyMedium,
     color: Colors.neutral[500],
-    marginBottom: 2,
+    marginBottom: verticalScale(2),
     textAlign: 'center',
   },
   menuContainer: {
     backgroundColor: Colors.neutral[0],
-    borderRadius: 16,
-    marginHorizontal: 16,
-    paddingHorizontal: 16,
+    borderRadius: moderateScale(16),
+    marginHorizontal: horizontalScale(16),
+    paddingHorizontal: horizontalScale(16),
     shadowColor: Colors.neutral[900],
-    shadowOffset: {width: 0, height: 2},
+    shadowOffset: {width: 0, height: verticalScale(2)},
     shadowOpacity: 0.05,
-    shadowRadius: 8,
+    shadowRadius: moderateScale(8),
     elevation: 2,
   },
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 18,
+    paddingVertical: verticalScale(18),
     borderBottomWidth: 1,
     borderBottomColor: Colors.neutral[100],
   },
@@ -241,17 +315,17 @@ const styles = StyleSheet.create({
   menuItemTitle: {
     ...Typography.labelMedium,
     color: Colors.neutral[900],
-    marginLeft: 16,
+    marginLeft: horizontalScale(16),
   },
   footer: {
-    marginTop: 40,
+    marginTop: verticalScale(40),
     alignItems: 'center',
-    paddingHorizontal: 40,
+    paddingHorizontal: horizontalScale(40),
   },
   footerText: {
     ...Typography.bodyMedium,
     color: Colors.neutral[500],
     textAlign: 'center',
-    lineHeight: 22,
+    lineHeight: verticalScale(22),
   },
 });

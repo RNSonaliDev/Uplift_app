@@ -3,8 +3,7 @@
  *
  * @format
  */
-
-import React, {useState} from 'react';
+import React from 'react';
 import {SafeAreaProvider, SafeAreaView} from 'react-native-safe-area-context';
 import {NavigationContainer} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
@@ -25,6 +24,7 @@ import {DashboardRoleSelectionScreen} from './src/screens/DashboardRoleSelection
 import {Colors} from './src/theme/colors';
 import {BeneficiaryTabNavigator} from './src/navigation/BeneficiaryTabNavigator';
 import {VolunteerTabNavigator} from './src/navigation/VolunteerTabNavigator';
+import {DummyTabNavigator} from './src/navigation/DummyTabNavigator';
 
 type RootStackParamList = {
   Splash: undefined;
@@ -42,6 +42,8 @@ type RootStackParamList = {
   DashboardRoleSelection: { selectedRoles: string[] };
   BeneficiaryFlow: undefined;
   VolunteerFlow: undefined;
+  OrganizationFlow: undefined;
+  SponsorFlow: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -67,6 +69,8 @@ function App() {
             <Stack.Screen name="DashboardRoleSelection" component={DashboardRoleSelectionScreen} />
             <Stack.Screen name="BeneficiaryFlow" component={BeneficiaryTabNavigator} />
             <Stack.Screen name="VolunteerFlow" component={VolunteerTabNavigator} />
+            <Stack.Screen name="OrganizationFlow" component={DummyTabNavigator} />
+            <Stack.Screen name="SponsorFlow" component={DummyTabNavigator} />
           </Stack.Navigator>
         </NavigationContainer>
       </SafeAreaView>

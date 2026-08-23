@@ -7,10 +7,14 @@ import {
   ScrollView,
   Image,
   Alert,
+  Text,
+  TextInput,
 } from 'react-native';
 import {useNavigation, useRoute} from '@react-navigation/native';
 import {Colors} from '../../../theme/colors';
+import {FontFamily} from '../../../theme/typography';
 import {AppText} from '../../../components/AppText';
+import {formatDate} from '../../../utils/dateFormatter';
 import {Button} from '../../../components/Button';
 import {
   ArrowLeft,
@@ -26,14 +30,15 @@ import {
   verticalScale,
   moderateScale,
 } from '../../../utils/responsive';
-import {api} from '../../../api/client';
+import {api, getFullImageUrl} from '../../../api/client';
 
 export default function RequestDetailsScreen() {
   const navigation = useNavigation();
   const route = useRoute<any>();
   const request = route.params?.request || {};
   const [isAccepting, setIsAccepting] = useState(false);
-  const [isDeclining, setIsDeclining] = useState(false);
+  const [otp, setOtp] = useState('');
+  const [isStarting, setIsStarting] = useState(false);
 
   const handleAccept = async () => {
     if (!request.id) return;
@@ -48,18 +53,23 @@ export default function RequestDetailsScreen() {
     }
   };
 
-  const handleDecline = async () => {
+  const handleStartRequest = async () => {
+    if (otp.length !== 6) {
+      Alert.alert('Invalid Code', 'Please enter a valid 6-digit start code.');
+      return;
+    }
     if (!request.id) return;
+
     try {
-      setIsDeclining(true);
-      await api.post(`/help_requests/${request.id}/cancel`);
-      Alert.alert('Success', 'Request declined.', [
+      setIsStarting(true);
+      await api.post(`/help_requests/${request.id}/start`, { start_code: otp });
+      Alert.alert('Success', 'Task started successfully!', [
         { text: 'OK', onPress: () => navigation.goBack() }
       ]);
     } catch (error: any) {
-      Alert.alert('Error', error?.message || 'Failed to decline request.');
+      Alert.alert('Error', error?.message || 'Failed to start request.');
     } finally {
-      setIsDeclining(false);
+      setIsStarting(false);
     }
   };
 
@@ -70,21 +80,19 @@ export default function RequestDetailsScreen() {
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.iconButton}>
           <ArrowLeft color={Colors.neutral[900]} size={24} />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.iconButton}>
-          <MoreHorizontal color={Colors.neutral[900]} size={24} />
-        </TouchableOpacity>
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Badges */}
         <View style={styles.badgesRow}>
+          <Text></Text>
           <View style={styles.categoryBadge}>
-            <AppText variant="caption" color={Colors.primary[600]} style={{fontWeight: '600'}}>
-              {request.category?.title || 'Help Request'}
+            <AppText variant="labelMedium" color={Colors.primary[600]}>
+              {request.category?.title}
             </AppText>
           </View>
           <View style={styles.newBadge}>
-            <AppText variant="caption" color={Colors.warning[500]} style={{fontWeight: '600'}}>
+            <AppText variant="labelMedium" color={Colors.warning[500]}>
               {request.status ? request.status.charAt(0).toUpperCase() + request.status.slice(1) : 'New'}
             </AppText>
           </View>
@@ -93,21 +101,25 @@ export default function RequestDetailsScreen() {
         {/* Profile Section */}
         <View style={styles.profileSection}>
           <View style={styles.avatarContainer}>
-            <Image 
-              source={{uri: 'https://ui-avatars.com/api/?name=Sarah+Johnson&background=F3F4F6&color=4B5563'}} 
-              style={styles.avatar} 
-            />
+            {request.beneficiary?.profile_image_url ? (
+              <Image 
+                source={{uri: getFullImageUrl(request.beneficiary.profile_image_url) as string}} 
+                style={styles.avatar} 
+              />
+            ) : (
+              <View style={[styles.avatar, {justifyContent: 'center', alignItems: 'center'}]}>
+                <AppText variant="h6" color={Colors.neutral[600]}>
+                  {request.beneficiary?.first_name 
+                    ? `${request.beneficiary.first_name.charAt(0)}${request.beneficiary.last_name ? request.beneficiary.last_name.charAt(0) : ''}`.toUpperCase() 
+                    : 'SJ'}
+                </AppText>
+              </View>
+            )}
           </View>
           <View style={styles.profileInfo}>
             <AppText variant="h5" color={Colors.neutral[900]} style={{marginBottom: verticalScale(4)}}>
               {request.beneficiary?.first_name ? `${request.beneficiary.first_name} ${request.beneficiary.last_name || ''}` : 'Sarah Johnson'}
             </AppText>
-            <View style={styles.ratingRow}>
-              <Star color={Colors.warning[500]} size={16} fill={Colors.warning[500]} />
-              <AppText variant="bodyMedium" color={Colors.neutral[700]} style={{marginLeft: horizontalScale(4)}}>
-                4.8 (32)
-              </AppText>
-            </View>
           </View>
         </View>
 
@@ -121,20 +133,20 @@ export default function RequestDetailsScreen() {
 
           <View style={styles.detailItem}>
             <Calendar color={Colors.neutral[500]} size={24} />
-            <View style={styles.detailContentRow}>
+            <View style={styles.detailContentColumn}>
               <AppText variant="bodyMedium" color={Colors.neutral[600]}>Date</AppText>
-              <AppText variant="bodyMedium" color={Colors.neutral[900]} style={{fontWeight: '500'}}>
-                {request.preferred_date || 'May 22, 2024'}
+              <AppText variant="bodyMedium" color={Colors.neutral[900]} style={{fontFamily: FontFamily.medium, marginTop: verticalScale(4), lineHeight: 22}}>
+                {formatDate(request.preferred_date)}
               </AppText>
             </View>
           </View>
 
           <View style={styles.detailItem}>
             <Clock color={Colors.neutral[500]} size={24} />
-            <View style={styles.detailContentRow}>
+            <View style={styles.detailContentColumn}>
               <AppText variant="bodyMedium" color={Colors.neutral[600]}>Time</AppText>
-              <AppText variant="bodyMedium" color={Colors.neutral[900]} style={{fontWeight: '500'}}>
-                {request.preferred_time || '2:00 PM - 3:00 PM'}
+              <AppText variant="bodyMedium" color={Colors.neutral[900]} style={{fontFamily: FontFamily.medium, marginTop: verticalScale(4), lineHeight: 22}}>
+                {request.hours_required}
               </AppText>
             </View>
           </View>
@@ -143,43 +155,84 @@ export default function RequestDetailsScreen() {
             <MapPin color={Colors.neutral[500]} size={24} />
             <View style={styles.detailContentColumn}>
               <AppText variant="bodyMedium" color={Colors.neutral[600]}>Location</AppText>
-              <AppText variant="bodyMedium" color={Colors.neutral[900]} style={{fontWeight: '500', marginTop: verticalScale(4), lineHeight: 22}}>
-                {request.location?.address || request.meeting_location || 'Central Park • Main Entrance\nNew York, NY 10022'}
+              <AppText variant="bodyMedium" color={Colors.neutral[900]} style={{fontFamily: FontFamily.medium, marginTop: verticalScale(4), lineHeight: 22}}>
+                {request.location?.address}
               </AppText>
             </View>
           </View>
 
-          <View style={styles.detailItem}>
-            <FileText color={Colors.neutral[500]} size={24} />
-            <View style={styles.detailContentColumn}>
-              <AppText variant="bodyMedium" color={Colors.neutral[600]}>Note</AppText>
-              <AppText variant="bodyMedium" color={Colors.neutral[900]} style={{marginTop: verticalScale(4), lineHeight: 22}}>
-                {request.notes || 'Need help with weekly grocery shopping.'}
-              </AppText>
+          {request.notes ? (
+            <View style={styles.detailItem}>
+              <FileText color={Colors.neutral[500]} size={24} />
+              <View style={styles.detailContentColumn}>
+                <AppText variant="bodyMedium" color={Colors.neutral[600]}>Note</AppText>
+                <AppText variant="bodyMedium" color={Colors.neutral[900]} style={{marginTop: verticalScale(4), lineHeight: 22}}>
+                  {request.notes}
+                </AppText>
+              </View>
             </View>
-          </View>
+          ) : null}
 
         </View>
       </ScrollView>
 
       {/* Action Buttons */}
-      <View style={styles.actionContainer}>
-        <Button 
-          title="Accept Request" 
-          onPress={handleAccept} 
-          loading={isAccepting}
-          disabled={isDeclining}
-          style={styles.acceptBtn} 
-        />
-        <Button 
-          title="Decline" 
-          onPress={handleDecline} 
-          loading={isDeclining}
-          disabled={isAccepting}
-          variant="outline" 
-          style={styles.declineBtn} 
-        />
-      </View>
+      {!['accepted', 'in_progress', 'completed', 'cancelled'].includes(request.status?.toLowerCase()) && (
+        <View style={styles.actionContainer}>
+          <Button 
+            title="Accept Request" 
+            onPress={handleAccept} 
+            loading={isAccepting}
+            style={styles.acceptBtn} 
+          />
+        </View>
+      )}
+
+      {request.status?.toLowerCase() === 'accepted' && (
+        <View style={styles.actionContainer}>
+          <View style={styles.otpInputContainer}>
+            <AppText variant="bodyMedium" color={Colors.neutral[600]} style={{marginBottom: 12}} center>
+              Enter the 6-digit start code from the beneficiary
+            </AppText>
+            <TextInput
+              style={styles.otpInput}
+              value={otp}
+              onChangeText={(text) => setOtp(text.replace(/[^0-9]/g, '').slice(0, 6))}
+              keyboardType="number-pad"
+              placeholder="000000"
+              placeholderTextColor={Colors.neutral[300]}
+              maxLength={6}
+            />
+          </View>
+          <Button 
+            title="Start Request" 
+            onPress={handleStartRequest} 
+            loading={isStarting}
+            disabled={otp.length !== 6 || isStarting}
+            style={styles.acceptBtn} 
+          />
+        </View>
+      )}
+
+      {request.status?.toLowerCase() === 'in_progress' && (
+        <View style={styles.actionContainer}>
+          <Button 
+            title="Complete Request" 
+            onPress={() => navigation.navigate('CompleteRequest', { request })} 
+            style={styles.acceptBtn} 
+          />
+        </View>
+      )}
+
+      {request.status?.toLowerCase() === 'completed' && (!request.ratings || request.ratings.length === 0) && (
+        <View style={styles.actionContainer}>
+          <Button 
+            title="Rate Experience" 
+            onPress={() => navigation.navigate('RateExperience', { request })} 
+            style={styles.acceptBtn} 
+          />
+        </View>
+      )}
     </SafeAreaView>
   );
 }
@@ -194,7 +247,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: horizontalScale(24),
-    paddingVertical: verticalScale(16),
+    // paddingVertical: verticalScale(16),
   },
   iconButton: {
     padding: moderateScale(8),
@@ -202,14 +255,14 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: horizontalScale(24),
-    paddingTop: verticalScale(8),
+    // paddingTop: verticalScale(8),
     paddingBottom: verticalScale(40),
   },
   badgesRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: verticalScale(24),
+    justifyContent: "space-between",
+    marginBottom: verticalScale(16),
     gap: horizontalScale(12),
   },
   categoryBadge: {
@@ -227,7 +280,7 @@ const styles = StyleSheet.create({
   profileSection: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: verticalScale(32),
+    marginBottom: verticalScale(20),
   },
   avatarContainer: {
     width: moderateScale(64),
@@ -251,7 +304,7 @@ const styles = StyleSheet.create({
   divider: {
     height: 1,
     backgroundColor: Colors.neutral[100],
-    marginBottom: verticalScale(32),
+    marginBottom: verticalScale(24),
   },
   detailsSection: {
     flex: 1,
@@ -259,7 +312,7 @@ const styles = StyleSheet.create({
   detailItem: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    marginBottom: verticalScale(24),
+    marginBottom: verticalScale(16),
   },
   detailContentRow: {
     flex: 1,
@@ -280,11 +333,25 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: Colors.neutral[100],
   },
+  otpInputContainer: {
+    marginBottom: verticalScale(20),
+    alignItems: 'center',
+    width: '100%',
+  },
+  otpInput: {
+    backgroundColor: Colors.neutral[50],
+    borderWidth: 1,
+    borderColor: Colors.neutral[200],
+    borderRadius: 12,
+    fontSize: 28,
+    fontWeight: '700',
+    color: Colors.neutral[900],
+    textAlign: 'center',
+    letterSpacing: 8,
+    paddingVertical: verticalScale(12),
+    width: '100%',
+  },
   acceptBtn: {
     marginBottom: verticalScale(12),
-  },
-  declineBtn: {
-    borderWidth: 1,
-    borderColor: Colors.primary[500],
   },
 });

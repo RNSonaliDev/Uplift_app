@@ -118,7 +118,6 @@ export const Button: React.FC<ButtonProps> = ({
       justifyContent: 'center',
       borderRadius: BorderRadius.lg,
       minHeight: sizeConfig.minHeight,
-      paddingVertical: sizeConfig.paddingVertical,
       paddingHorizontal: sizeConfig.paddingHorizontal,
       opacity: disabled ? 0.5 : 1,
     };

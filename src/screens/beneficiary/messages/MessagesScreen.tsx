@@ -26,12 +26,16 @@ export default function MessagesScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.iconBtn}>
-          <ChevronLeft color={Colors.neutral[0]} size={28} />
+        <TouchableOpacity 
+          onPress={() => navigation.canGoBack() && navigation.goBack()} 
+          style={[styles.iconBtn, !navigation.canGoBack() && {opacity: 0}]}
+          disabled={!navigation.canGoBack()}
+        >
+          <ChevronLeft color={Colors.neutral[900]} size={28} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Messages</Text>
         <TouchableOpacity style={styles.iconBtn}>
-          <Edit color={Colors.neutral[0]} size={24} />
+          <Edit color={Colors.neutral[900]} size={24} />
         </TouchableOpacity>
       </View>
 
@@ -134,7 +138,7 @@ const MessageItem = ({avatar, name, time, message, unreadCount, isSupport}: any)
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: Colors.primary[500],
+    backgroundColor: Colors.neutral[0],
   },
   header: {
     flexDirection: 'row',
@@ -148,7 +152,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     ...Typography.h5,
-    color: Colors.neutral[0],
+    color: Colors.neutral[900],
   },
   container: {
     flex: 1,

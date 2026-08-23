@@ -414,9 +414,18 @@ export const VerifyAccountScreen: React.FC = () => {
           } else if (nextRole === 'beneficiary') {
             navigation.navigate('BeneficiarySetup' as any, routeParams);
           }
-        } else {
-          navigation.navigate('BeneficiaryFlow');
-        }
+        } else if (response.user.default_role) {
+            if (response.user.default_role === 'volunteer') {
+              navigation.replace('VolunteerFlow' as any);
+            } else if (response.user.default_role === 'sponsor') {
+              navigation.replace('SponsorFlow' as any);
+            } else if (response.user.default_role === 'organization') {
+              navigation.replace('OrganizationFlow' as any);
+            } else if (response.user.default_role === 'beneficiary') {
+              navigation.replace('BeneficiaryFlow' as any);
+            } else {
+              navigation.replace('Welcome');
+            }}
       } else if (response.verification_token) {
         navigation.navigate('CreateProfile', {
           verificationToken: response.verification_token,

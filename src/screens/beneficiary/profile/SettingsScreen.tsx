@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -8,11 +8,11 @@ import {
   SafeAreaView,
   Switch,
 } from 'react-native';
-import {useNavigation} from '@react-navigation/native';
-import {Colors} from '../../../theme/colors';
-import {Typography} from '../../../theme/typography';
-import {authApi} from '../../../api/auth';
-import {clearAuthToken} from '../../../api/client';
+import { useNavigation } from '@react-navigation/native';
+import { Colors } from '../../../theme/colors';
+import { Typography } from '../../../theme/typography';
+import { authApi } from '../../../api/auth';
+import { clearAuthToken } from '../../../api/client';
 import {
   ChevronLeft,
   ChevronRight,
@@ -45,7 +45,7 @@ export default function SettingsScreen() {
       await clearAuthToken();
       navigation.reset({
         index: 0,
-        routes: [{name: 'CreateAccount'}],
+        routes: [{ name: 'CreateAccount' }],
       });
     }
   };
@@ -54,69 +54,51 @@ export default function SettingsScreen() {
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <ChevronLeft color={Colors.neutral[0]} size={28} />
+          <ChevronLeft color={Colors.neutral[900]} size={28} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Settings</Text>
-        <View style={{width: 28}} />
+        <View style={{ width: 28 }} />
       </View>
 
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-        
-        <Text style={styles.sectionTitle}>Account</Text>
-        <View style={styles.sectionCard}>
-          <SettingItem icon={<User color={Colors.neutral[500]} size={20} />} title="Edit Profile" onPress={() => navigation.navigate('EditProfile')} />
-          <SettingItem icon={<Lock color={Colors.neutral[500]} size={20} />} title="Change Password" />
-          <SettingItem icon={<Shield color={Colors.neutral[500]} size={20} />} title="Privacy Policy" />
-          <SettingItem icon={<FileText color={Colors.neutral[500]} size={20} />} title="Terms of Service" noBorder />
-        </View>
 
-        <Text style={styles.sectionTitle}>Preferences</Text>
+
         <View style={styles.sectionCard}>
-          <SettingToggle 
-            icon={<Bell color={Colors.neutral[500]} size={20} />} 
-            title="Push Notifications" 
+          <SettingToggle
+            icon={<Bell color={Colors.neutral[500]} size={20} />}
+            title="Push Notifications"
             value={pushEnabled}
             onValueChange={setPushEnabled}
           />
-          <SettingToggle 
-            icon={<Mail color={Colors.neutral[500]} size={20} />} 
-            title="Email Notifications" 
+          <SettingToggle
+            icon={<Mail color={Colors.neutral[500]} size={20} />}
+            title="Email Notifications"
             value={emailEnabled}
             onValueChange={setEmailEnabled}
           />
-          <SettingToggle 
-            icon={<MessageSquare color={Colors.neutral[500]} size={20} />} 
-            title="SMS Notifications" 
+          <SettingToggle
+            icon={<MessageSquare color={Colors.neutral[500]} size={20} />}
+            title="SMS Notifications"
             value={smsEnabled}
             onValueChange={setSmsEnabled}
           />
-          <SettingToggle 
+          {/* <SettingToggle 
             icon={<Moon color={Colors.neutral[500]} size={20} />} 
             title="Dark Mode" 
             value={darkModeEnabled}
             onValueChange={setDarkModeEnabled}
             noBorder
-          />
+          /> */}
         </View>
 
-        <Text style={styles.sectionTitle}>Support</Text>
-        <View style={styles.sectionCard}>
-          <SettingItem icon={<HelpCircle color={Colors.neutral[500]} size={20} />} title="Help Center" />
-          <SettingItem icon={<Headphones color={Colors.neutral[500]} size={20} />} title="Contact Support" />
-          <TouchableOpacity style={[styles.itemRow, styles.noBorder]} onPress={handleLogout}>
-            <View style={styles.itemLeft}>
-              <LogOut color={Colors.error} size={20} />
-              <Text style={[styles.itemTitle, {color: Colors.error}]}>Log Out</Text>
-            </View>
-          </TouchableOpacity>
-        </View>
+
 
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-const SettingItem = ({icon, title, onPress, noBorder}: any) => (
+const SettingItem = ({ icon, title, onPress, noBorder }: any) => (
   <TouchableOpacity style={[styles.itemRow, noBorder && styles.noBorder]} onPress={onPress}>
     <View style={styles.itemLeft}>
       {icon}
@@ -126,16 +108,16 @@ const SettingItem = ({icon, title, onPress, noBorder}: any) => (
   </TouchableOpacity>
 );
 
-const SettingToggle = ({icon, title, value, onValueChange, noBorder}: any) => (
+const SettingToggle = ({ icon, title, value, onValueChange, noBorder }: any) => (
   <View style={[styles.itemRow, noBorder && styles.noBorder]}>
     <View style={styles.itemLeft}>
       {icon}
       <Text style={styles.itemTitle}>{title}</Text>
     </View>
-    <Switch 
-      value={value} 
-      onValueChange={onValueChange} 
-      trackColor={{false: Colors.neutral[200], true: Colors.primary[500]}}
+    <Switch
+      value={value}
+      onValueChange={onValueChange}
+      trackColor={{ false: Colors.neutral[200], true: Colors.primary[500] }}
       thumbColor={Colors.neutral[0]}
     />
   </View>
@@ -144,7 +126,7 @@ const SettingToggle = ({icon, title, value, onValueChange, noBorder}: any) => (
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: Colors.primary[500],
+    backgroundColor: Colors.neutral[0],
   },
   header: {
     flexDirection: 'row',
@@ -158,7 +140,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     ...Typography.h5,
-    color: Colors.neutral[0],
+    color: Colors.neutral[900],
   },
   container: {
     flex: 1,
@@ -181,7 +163,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     marginBottom: 24,
     shadowColor: Colors.neutral[900],
-    shadowOffset: {width: 0, height: 2},
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 8,
     elevation: 2,

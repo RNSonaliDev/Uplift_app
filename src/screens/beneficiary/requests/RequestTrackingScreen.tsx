@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   SafeAreaView,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 import {useNavigation, useRoute} from '@react-navigation/native';
 import {api} from '../../../api/client';
@@ -18,7 +19,9 @@ import {
   CheckCircle2,
   Circle,
   Car,
+  Calendar,
 } from 'lucide-react-native';
+import {formatDate} from '../../../utils/dateFormatter';
 
 export default function RequestTrackingScreen() {
   const navigation = useNavigation<any>();
@@ -36,6 +39,28 @@ export default function RequestTrackingScreen() {
     }
   }, [requestId]);
 
+  const handleCancel = () => {
+    Alert.alert('Cancel Request', 'Are you sure you want to cancel this request?', [
+      {text: 'No', style: 'cancel'},
+      {
+        text: 'Yes, Cancel',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            setLoading(true);
+            await api.post(`/help_requests/${requestId}/cancel`);
+            Alert.alert('Success', 'Your request has been cancelled.', [
+              {text: 'OK', onPress: () => navigation.goBack()}
+            ]);
+          } catch (error: any) {
+            Alert.alert('Error', error?.message || 'Failed to cancel request');
+            setLoading(false);
+          }
+        },
+      },
+    ]);
+  };
+
   const fetchRequestDetails = async () => {
     try {
       setLoading(true);
@@ -52,7 +77,7 @@ export default function RequestTrackingScreen() {
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <ChevronLeft color={Colors.neutral[0]} size={28} />
+          <ChevronLeft color={Colors.neutral[900]} size={28} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Request Tracking</Text>
         <View style={{width: 28}} />
@@ -71,7 +96,10 @@ export default function RequestTrackingScreen() {
               </View>
               <View style={styles.cardTitleContainer}>
                 <Text style={styles.cardTitle}>{requestDetail.category?.title || 'Help Request'}</Text>
-                <Text style={styles.cardDate}>{requestDetail.preferred_date}</Text>
+                <View style={styles.dateRow}>
+                  <Calendar color={Colors.neutral[500]} size={16} />
+                  <Text style={styles.cardDate}>{formatDate(requestDetail.preferred_date)}</Text>
+                </View>
                 <Text style={styles.cardId}>Request ID: {requestDetail.reference_number || `#${requestDetail.id}`}</Text>
               </View>
             </View>
@@ -100,13 +128,29 @@ export default function RequestTrackingScreen() {
             />
           </View>
 
-          {requestDetail.volunteer && (
-            <View style={styles.bottomContainer}>
+          <View style={styles.bottomContainer}>
+            {requestDetail.volunteer && requestDetail.status !== 'completed' && (
               <TouchableOpacity style={styles.outlineBtn}>
                 <Text style={styles.outlineBtnText}>Contact Helper</Text>
               </TouchableOpacity>
-            </View>
-          )}
+            )}
+            {requestDetail.status === 'completed' && (
+              <TouchableOpacity 
+                style={[styles.outlineBtn, {backgroundColor: Colors.primary[500]}]}
+                onPress={() => navigation.navigate('RateHelper', {requestId})}
+              >
+                <Text style={[styles.outlineBtnText, {color: Colors.neutral[0]}]}>Rate Helper</Text>
+              </TouchableOpacity>
+            )}
+            {requestDetail.status === 'pending' && (
+              <TouchableOpacity 
+                style={[styles.outlineBtn, {borderColor: Colors.error, marginTop: requestDetail.volunteer ? 16 : 0}]} 
+                onPress={handleCancel}
+              >
+                <Text style={[styles.outlineBtnText, {color: Colors.error}]}>Cancel Request</Text>
+              </TouchableOpacity>
+            )}
+          </View>
         </ScrollView>
       ) : (
         <View style={[styles.container, {justifyContent: 'center', alignItems: 'center'}]}>
@@ -155,7 +199,7 @@ const TimelineItem = ({
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: Colors.primary[500],
+    backgroundColor: Colors.neutral[0],
   },
   header: {
     flexDirection: 'row',
@@ -169,7 +213,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     ...Typography.h5,
-    color: Colors.neutral[0],
+    color: Colors.neutral[900],
   },
   container: {
     flex: 1,
@@ -205,10 +249,15 @@ const styles = StyleSheet.create({
     color: Colors.neutral[900],
     marginBottom: 4,
   },
+  dateRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginBottom: 2,
+  },
   cardDate: {
     ...Typography.caption,
     color: Colors.neutral[700],
-    marginBottom: 2,
   },
   cardId: {
     ...Typography.caption,

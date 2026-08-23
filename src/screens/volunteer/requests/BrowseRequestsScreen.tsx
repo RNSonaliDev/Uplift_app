@@ -11,14 +11,16 @@ import {
 import {useNavigation} from '@react-navigation/native';
 import {Colors} from '../../../theme/colors';
 import {AppText} from '../../../components/AppText';
+import {formatDate} from '../../../utils/dateFormatter';
 import {
   Search,
   Filter,
   ShoppingBag,
   Pill,
-  FileText,
   Clock,
+  Calendar,
   MapPin,
+  FileText,
 } from 'lucide-react-native';
 import {authApi, CategoryResponse} from '../../../api/auth';
 import {api} from '../../../api/client';
@@ -86,14 +88,13 @@ export default function BrowseRequestsScreen() {
         activeOpacity={0.7}
       >
         <View style={styles.cardHeader}>
-          <View style={styles.iconContainer}>
-            {getCategoryIcon(item.category?.title)}
-          </View>
-          <View style={styles.cardTitleInfo}>
-            <AppText variant="labelLarge" style={styles.cardTitle}>{item.category?.title || 'Help Request'}</AppText>
+          <View style={styles.categoryBadge}>
+            <AppText variant="labelMedium" color={Colors.primary[600]}>
+              {item.category?.title || 'Help Request'}
+            </AppText>
           </View>
           <View style={styles.newBadge}>
-            <AppText variant="caption" color={Colors.warning[500]} style={{fontWeight: '600'}}>
+            <AppText variant="labelMedium" color={Colors.warning[500]}>
               {displayStatus}
             </AppText>
           </View>
@@ -101,9 +102,15 @@ export default function BrowseRequestsScreen() {
         
         <View style={styles.cardDetails}>
           <View style={styles.detailRow}>
+            <Calendar color={Colors.neutral[400]} size={16} />
+            <AppText variant="bodyMedium" color={Colors.neutral[600]} style={styles.detailText}>
+              {formatDate(item.preferred_date)}
+            </AppText>
+          </View>
+          <View style={styles.detailRow}>
             <Clock color={Colors.neutral[400]} size={16} />
             <AppText variant="bodyMedium" color={Colors.neutral[600]} style={styles.detailText}>
-              {item.preferred_date || 'Date TBD'}
+              {item.hours_required ? `${item.hours_required} hours` : item.preferred_time}
             </AppText>
           </View>
           <View style={styles.detailRow}>
@@ -129,7 +136,7 @@ export default function BrowseRequestsScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.header}>
-        <View style={styles.searchRow}>
+        {/* <View style={styles.searchRow}>
           <View style={styles.searchContainer}>
             <Search color={Colors.neutral[400]} size={20} />
             <TextInput
@@ -143,7 +150,7 @@ export default function BrowseRequestsScreen() {
           <TouchableOpacity style={styles.filterBtn}>
             <Filter color={Colors.neutral[700]} size={20} />
           </TouchableOpacity>
-        </View>
+        </View> */}
 
         <View style={styles.categoriesWrapper}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoriesContainer}>
@@ -270,25 +277,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: verticalScale(16),
+    gap: horizontalScale(8),
   },
-  iconContainer: {
-    width: moderateScale(40),
-    height: moderateScale(40),
-    borderRadius: 12,
+  categoryBadge: {
     backgroundColor: Colors.primary[50],
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: horizontalScale(12),
-  },
-  cardTitleInfo: {
-    flex: 1,
-  },
-  cardTitle: {
-    color: Colors.neutral[900],
+    paddingHorizontal: horizontalScale(10),
+    paddingVertical: verticalScale(4),
+    borderRadius: 12,
   },
   newBadge: {
     backgroundColor: Colors.warning[50],
-    paddingHorizontal: horizontalScale(8),
+    paddingHorizontal: horizontalScale(10),
     paddingVertical: verticalScale(4),
     borderRadius: 12,
   },

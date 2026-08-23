@@ -3,6 +3,7 @@ import {View, StyleSheet, SafeAreaView} from 'react-native';
 import {useNavigation, useRoute} from '@react-navigation/native';
 import {Check, ShoppingBag, Pill, FileText} from 'lucide-react-native';
 import {AppText} from '../../../components/AppText';
+import {formatDate} from '../../../utils/dateFormatter';
 import {Button} from '../../../components/Button';
 import {Colors} from '../../../theme/colors';
 import {
@@ -23,10 +24,47 @@ export default function RequestAcceptedScreen() {
     return <FileText color={Colors.primary[500]} size={20} />;
   };
 
+  const ConfettiDots = () => {
+    const dots = [
+      { top: -20, left: 10, color: '#F87171', size: 6 },
+      { top: -10, left: 70, color: '#FBBF24', size: 8 },
+      { top: 20, left: 110, color: '#3B82F6', size: 6 },
+      { top: 70, left: 110, color: '#F59E0B', size: 8 },
+      { top: 110, left: 50, color: '#E0E7FF', size: 5 },
+      { top: 90, left: -20, color: '#1D4ED8', size: 7 },
+      { top: 30, left: -30, color: '#F87171', size: 5 },
+      { top: 0, left: -10, color: '#FBBF24', size: 6 },
+      { top: 110, left: 10, color: '#3B82F6', size: 6 },
+      { top: 100, left: 90, color: '#F87171', size: 5 },
+    ];
+  
+    return (
+      <View style={[StyleSheet.absoluteFill, { alignItems: 'center', justifyContent: 'center' }]}>
+        <View style={{ width: 96, height: 96 }}>
+          {dots.map((dot, i) => (
+            <View 
+              key={i} 
+              style={{
+                position: 'absolute',
+                top: dot.top,
+                left: dot.left,
+                width: dot.size,
+                height: dot.size,
+                borderRadius: dot.size / 2,
+                backgroundColor: dot.color,
+              }}
+            />
+          ))}
+        </View>
+      </View>
+    );
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.content}>
         <View style={styles.successIconContainer}>
+          <ConfettiDots />
           <View style={styles.successIconWrapper}>
             <Check color={Colors.neutral[0]} size={48} strokeWidth={3} />
           </View>
@@ -45,20 +83,22 @@ export default function RequestAcceptedScreen() {
             <View style={styles.iconContainer}>
               {getCategoryIcon(request.category?.title)}
             </View>
-            <AppText variant="labelLarge" color={Colors.neutral[900]}>
+            <AppText variant="h6" color={Colors.neutral[900]}>
               {request.category?.title || 'Help Request'}
             </AppText>
           </View>
           
           <View style={styles.cardDetails}>
-            <AppText variant="bodyMedium" color={Colors.neutral[700]} style={styles.detailText}>
-              {request.preferred_date || 'Date TBD'}
+            <AppText variant="labelMedium" color={Colors.neutral[800]} style={styles.detailText}>
+              {formatDate(request.preferred_date)}
             </AppText>
-            <AppText variant="bodyMedium" color={Colors.neutral[700]} style={styles.detailText}>
-              {request.preferred_time || 'Time TBD'}
-            </AppText>
-            <AppText variant="bodyMedium" color={Colors.neutral[700]} style={styles.detailText} numberOfLines={2}>
-              {request.location?.address || request.meeting_location || 'Location TBD'}
+            {request.hours_required && (
+              <AppText variant="labelMedium" color={Colors.neutral[800]} style={styles.detailText}>
+                {request.hours_required} Hours
+              </AppText>
+            )}
+            <AppText variant="labelMedium" color={Colors.neutral[800]} style={styles.detailText} numberOfLines={2}>
+              {request.location?.address || request.meeting_location}
             </AppText>
           </View>
         </View>
@@ -87,10 +127,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   successIconContainer: {
-    marginBottom: verticalScale(32),
+    marginBottom: verticalScale(40),
     position: 'relative',
     alignItems: 'center',
     justifyContent: 'center',
+    height: moderateScale(160),
+    width: moderateScale(160),
   },
   successIconWrapper: {
     width: moderateScale(96),
@@ -141,10 +183,10 @@ const styles = StyleSheet.create({
   },
   cardDetails: {
     paddingLeft: horizontalScale(52),
-    gap: verticalScale(8),
+    gap: verticalScale(12),
   },
   detailText: {
-    lineHeight: 20,
+    lineHeight: 22,
   },
   footer: {
     paddingHorizontal: horizontalScale(24),

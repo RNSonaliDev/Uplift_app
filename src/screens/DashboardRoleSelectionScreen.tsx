@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, { useState } from 'react';
 import {
   View,
   StyleSheet,
@@ -8,16 +8,17 @@ import {
   Pressable,
   Alert,
   ActivityIndicator,
+  Dimensions,
 } from 'react-native';
-import {useNavigation, useRoute, RouteProp} from '@react-navigation/native';
-import {NativeStackNavigationProp} from '@react-navigation/native-stack';
-import Svg, {Path, Circle} from 'react-native-svg';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import Svg, { Path, Circle } from 'react-native-svg';
 
-import {authApi} from '../api';
-import {AppText} from '../components/AppText';
-import {Colors} from '../theme/colors';
-import {FontFamily} from '../theme/typography';
-import {Spacing, BorderRadius} from '../theme/spacing';
+import { authApi } from '../api';
+import { AppText } from '../components/AppText';
+import { Colors } from '../theme/colors';
+import { FontFamily } from '../theme/typography';
+import { Spacing, BorderRadius } from '../theme/spacing';
 import {
   moderateScale,
   fontScale,
@@ -36,13 +37,13 @@ type NavigationProps = NativeStackNavigationProp<RootStackParamList>;
 type DashboardRoleSelectionRouteProp = RouteProp<RootStackParamList, 'DashboardRoleSelection'>;
 
 // ── Icon Components ──────────────────────────────────────
-const ChevronRightIcon: React.FC<{size?: number; color?: string}> = ({
-  size = 20,
+const BackArrowIcon: React.FC<{ size?: number; color?: string }> = ({
+  size = 24,
   color = Colors.primary[500],
 }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Path
-      d="M9 18L15 12L9 6"
+      d="M15 18L9 12L15 6"
       stroke={color}
       strokeWidth="2"
       strokeLinecap="round"
@@ -51,7 +52,7 @@ const ChevronRightIcon: React.FC<{size?: number; color?: string}> = ({
   </Svg>
 );
 
-const BeneficiaryIcon: React.FC<{size?: number; color?: string}> = ({
+const BeneficiaryIcon: React.FC<{ size?: number; color?: string }> = ({
   size = 28,
   color = Colors.primary[500],
 }) => (
@@ -73,7 +74,7 @@ const BeneficiaryIcon: React.FC<{size?: number; color?: string}> = ({
   </Svg>
 );
 
-const VolunteerIcon: React.FC<{size?: number; color?: string}> = ({
+const VolunteerIcon: React.FC<{ size?: number; color?: string }> = ({
   size = 28,
   color = Colors.primary[500],
 }) => (
@@ -88,7 +89,7 @@ const VolunteerIcon: React.FC<{size?: number; color?: string}> = ({
   </Svg>
 );
 
-const OrganizationIcon: React.FC<{size?: number; color?: string}> = ({
+const OrganizationIcon: React.FC<{ size?: number; color?: string }> = ({
   size = 28,
   color = Colors.primary[500],
 }) => (
@@ -118,7 +119,7 @@ const OrganizationIcon: React.FC<{size?: number; color?: string}> = ({
   </Svg>
 );
 
-const SponsorIcon: React.FC<{size?: number; color?: string}> = ({
+const SponsorIcon: React.FC<{ size?: number; color?: string }> = ({
   size = 28,
   color = Colors.primary[500],
 }) => (
@@ -187,7 +188,6 @@ const DashboardCard: React.FC<DashboardCardProps> = ({ role, onPress, disabled }
     <TouchableOpacity style={[styles.card, disabled && styles.cardDisabled]} onPress={onPress} activeOpacity={0.7} disabled={disabled}>
       <View style={styles.cardHeader}>
         <View style={styles.iconContainer}>{getIcon()}</View>
-        <ChevronRightIcon size={moderateScale(24)} color={Colors.neutral[400]} />
       </View>
       <AppText variant="h5" color={Colors.neutral[900]} style={styles.cardTitle}>
         {getTitle()} Dashboard
@@ -211,11 +211,23 @@ export const DashboardRoleSelectionScreen: React.FC = () => {
     try {
       setIsLoading(true);
       await authApi.setDefaultRole({ default_role: role });
-      
+
+      // if (role === 'volunteer') {
+      //   navigation.navigate('VolunteerFlow');
+      // } else {
+      //   navigation.navigate('BeneficiaryFlow');
+      // }
+
       if (role === 'volunteer') {
-        navigation.navigate('VolunteerFlow');
+        navigation.replace('VolunteerFlow' as any);
+      } else if (role === 'sponsor') {
+        navigation.replace('SponsorFlow' as any);
+      } else if (role === 'organization') {
+        navigation.replace('OrganizationFlow' as any);
+      } else if (role === 'beneficiary') {
+        navigation.replace('BeneficiaryFlow' as any);
       } else {
-        navigation.navigate('BeneficiaryFlow');
+        navigation.replace('DashboardRoleSelection', { selectedRoles });
       }
     } catch (error: any) {
       Alert.alert('Error', error?.message || 'Failed to set default role.');
@@ -231,7 +243,15 @@ export const DashboardRoleSelectionScreen: React.FC = () => {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         bounces={false}>
-        
+        {navigation.canGoBack() && (
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
+            <BackArrowIcon size={moderateScale(24)} />
+          </TouchableOpacity>
+        )}
+
         <View style={styles.header}>
           <AppText variant="h2" color={Colors.primary[900]} style={styles.title}>
             Choose Dashboard
@@ -262,6 +282,8 @@ export const DashboardRoleSelectionScreen: React.FC = () => {
   );
 };
 
+const { width } = Dimensions.get('window');
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -270,8 +292,12 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: horizontalScale(24),
-    paddingTop: verticalScale(60),
+    paddingTop: verticalScale(8),
     paddingBottom: verticalScale(32),
+  },
+  backButton: {
+    alignSelf: 'flex-start',
+    marginBottom: verticalScale(16),
   },
   header: {
     marginBottom: verticalScale(32),
@@ -283,14 +309,18 @@ const styles = StyleSheet.create({
     lineHeight: fontScale(24),
   },
   cardsContainer: {
-    gap: verticalScale(16),
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
   },
   card: {
+    width: (width - horizontalScale(48) - horizontalScale(16)) / 2,
     backgroundColor: Colors.neutral[0],
     borderRadius: BorderRadius.xl,
     borderWidth: 1,
     borderColor: Colors.neutral[200],
-    padding: moderateScale(20),
+    padding: moderateScale(16),
+    marginBottom: verticalScale(16),
     shadowColor: Colors.neutral[900],
     shadowOffset: {
       width: 0,

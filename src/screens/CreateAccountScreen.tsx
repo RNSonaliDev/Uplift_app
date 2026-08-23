@@ -336,7 +336,7 @@ export const CreateAccountScreen: React.FC = () => {
             <AppText variant="bodySmall" color={Colors.neutral[500]}>
               Already have an account?{' '}
             </AppText>
-            <TouchableOpacity onPress={() => {}}>
+            <TouchableOpacity onPress={() => navigation.navigate('Login')}>
               <AppText
                 variant="bodySmall"
                 color={Colors.primary[500]}

@@ -1,4 +1,5 @@
 import {TextStyle} from 'react-native';
+import {fontScale, verticalScale} from '../utils/responsive';
 
 /**
  * Typography system using Poppins font family
@@ -26,31 +27,31 @@ export const FontFamily = {
 } as const;
 
 export const FontSize = {
-  xs: 10,
-  sm: 12,
-  md: 14,
-  lg: 16,
-  xl: 18,
-  '2xl': 20,
-  '3xl': 24,
-  '4xl': 28,
-  '5xl': 32,
-  '6xl': 36,
-  '7xl': 48,
+  xs: fontScale(10),
+  sm: fontScale(12),
+  md: fontScale(14),
+  lg: fontScale(16),
+  xl: fontScale(18),
+  '2xl': fontScale(20),
+  '3xl': fontScale(24),
+  '4xl': fontScale(28),
+  '5xl': fontScale(32),
+  '6xl': fontScale(36),
+  '7xl': fontScale(48),
 } as const;
 
 export const LineHeight = {
-  xs: 14,
-  sm: 16,
-  md: 20,
-  lg: 24,
-  xl: 28,
-  '2xl': 28,
-  '3xl': 32,
-  '4xl': 36,
-  '5xl': 40,
-  '6xl': 44,
-  '7xl': 56,
+  xs: verticalScale(14),
+  sm: verticalScale(16),
+  md: verticalScale(20),
+  lg: verticalScale(24),
+  xl: verticalScale(28),
+  '2xl': verticalScale(28),
+  '3xl': verticalScale(32),
+  '4xl': verticalScale(36),
+  '5xl': verticalScale(40),
+  '6xl': verticalScale(44),
+  '7xl': verticalScale(56),
 } as const;
 
 export const Typography: Record<string, TextStyle> = {

@@ -8,10 +8,12 @@ import {
   SafeAreaView,
   Image,
 } from 'react-native';
-import {useNavigation} from '@react-navigation/native';
+import {useNavigation, useFocusEffect} from '@react-navigation/native';
 import {api, getFullImageUrl} from '../../../api/client';
 import {Colors} from '../../../theme/colors';
 import {Typography} from '../../../theme/typography';
+import {formatDate} from '../../../utils/dateFormatter';
+import {horizontalScale, verticalScale, moderateScale} from '../../../utils/responsive';
 import {
   ChevronLeft,
   ChevronRight,
@@ -27,9 +29,11 @@ export default function MyRequestsScreen() {
   const [requests, setRequests] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  React.useEffect(() => {
-    fetchRequests();
-  }, []);
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchRequests();
+    }, [])
+  );
 
   const fetchRequests = async () => {
     try {
@@ -51,7 +55,7 @@ export default function MyRequestsScreen() {
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <ChevronLeft color={Colors.neutral[0]} size={28} />
+          <ChevronLeft color={Colors.neutral[900]} size={28} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>My Requests</Text>
         <View style={{width: 28}} />
@@ -89,7 +93,7 @@ export default function MyRequestsScreen() {
                 key={req.id.toString()}
                 icon={<ShoppingCart color={Colors.primary[500]} size={24} />}
                 title={req.category?.title || 'Help Request'}
-                date={req.preferred_date}
+                date={formatDate(req.preferred_date)}
                 location={req.location?.address || req.meeting_location}
                 status={req.status.charAt(0).toUpperCase() + req.status.slice(1)}
                 statusColor={req.status === 'pending' ? Colors.warning : Colors.info}
@@ -144,21 +148,21 @@ const RequestCard = ({
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: Colors.primary[500],
+    backgroundColor: Colors.neutral[0],
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 16,
+    paddingHorizontal: horizontalScale(16),
+    paddingVertical: verticalScale(16),
   },
   backBtn: {
-    padding: 4,
+    padding: moderateScale(4),
   },
   headerTitle: {
     ...Typography.h5,
-    color: Colors.neutral[0],
+    color: Colors.neutral[900],
   },
   container: {
     flex: 1,
@@ -172,7 +176,7 @@ const styles = StyleSheet.create({
   },
   tab: {
     flex: 1,
-    paddingVertical: 16,
+    paddingVertical: verticalScale(16),
     alignItems: 'center',
     borderBottomWidth: 2,
     borderBottomColor: 'transparent',
@@ -188,33 +192,33 @@ const styles = StyleSheet.create({
     color: Colors.primary[500],
   },
   content: {
-    padding: 24,
-    paddingBottom: 40,
+    padding: horizontalScale(24),
+    paddingBottom: verticalScale(40),
   },
   card: {
     backgroundColor: Colors.neutral[0],
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 16,
+    borderRadius: moderateScale(16),
+    padding: moderateScale(20),
+    marginBottom: verticalScale(16),
     shadowColor: Colors.neutral[900],
-    shadowOffset: {width: 0, height: 2},
+    shadowOffset: {width: 0, height: verticalScale(2)},
     shadowOpacity: 0.05,
-    shadowRadius: 8,
+    shadowRadius: moderateScale(8),
     elevation: 2,
   },
   cardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: verticalScale(12),
   },
   iconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: moderateScale(40),
+    height: moderateScale(40),
+    borderRadius: moderateScale(20),
     backgroundColor: Colors.primary[50],
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
+    marginRight: horizontalScale(12),
   },
   cardTitleContainer: {
     flex: 1,
@@ -222,23 +226,23 @@ const styles = StyleSheet.create({
   cardTitle: {
     ...Typography.labelMedium,
     color: Colors.neutral[900],
-    marginBottom: 2,
+    marginBottom: verticalScale(2),
   },
   cardDate: {
     ...Typography.caption,
     color: Colors.neutral[500],
   },
   cardBody: {
-    marginLeft: 52,
-    marginBottom: 12,
+    marginLeft: horizontalScale(52),
+    marginBottom: verticalScale(12),
   },
   cardLocation: {
     ...Typography.caption,
     color: Colors.neutral[500],
-    lineHeight: 18,
+    lineHeight: verticalScale(18),
   },
   cardFooter: {
-    marginLeft: 52,
+    marginLeft: horizontalScale(52),
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -247,12 +251,12 @@ const styles = StyleSheet.create({
     ...Typography.labelMedium,
   },
   helperAvatar: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    width: moderateScale(24),
+    height: moderateScale(24),
+    borderRadius: moderateScale(12),
   },
   emptyState: {
-    padding: 40,
+    padding: moderateScale(40),
     alignItems: 'center',
   },
   emptyStateText: {
@@ -261,18 +265,18 @@ const styles = StyleSheet.create({
   },
   fab: {
     position: 'absolute',
-    bottom: 24,
-    right: 24,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    bottom: verticalScale(24),
+    right: horizontalScale(24),
+    width: moderateScale(56),
+    height: moderateScale(56),
+    borderRadius: moderateScale(28),
     backgroundColor: Colors.primary[500],
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: Colors.neutral[900],
-    shadowOffset: {width: 0, height: 4},
+    shadowOffset: {width: 0, height: verticalScale(4)},
     shadowOpacity: 0.15,
-    shadowRadius: 12,
+    shadowRadius: moderateScale(12),
     elevation: 4,
   },
 });

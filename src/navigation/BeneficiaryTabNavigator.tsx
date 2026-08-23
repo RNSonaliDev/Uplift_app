@@ -1,7 +1,7 @@
 import React from 'react';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import {Colors} from '../theme/colors';
-import {Typography} from '../theme/typography';
+import {Typography, FontFamily} from '../theme/typography';
 import {Home, List, MessageSquare, User} from 'lucide-react-native';
 
 import BeneficiaryHomeStack from './BeneficiaryHomeStack';
@@ -28,7 +28,8 @@ export function BeneficiaryTabNavigator() {
         },
         tabBarLabelStyle: {
           ...Typography.caption,
-          fontWeight: '500',
+          fontFamily: FontFamily.light,
+          fontWeight: "200"
         },
       }}>
       <Tab.Screen

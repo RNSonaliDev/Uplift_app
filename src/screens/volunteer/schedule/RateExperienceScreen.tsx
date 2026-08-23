@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, { useState } from 'react';
 import {
   View,
   StyleSheet,
@@ -8,17 +8,17 @@ import {
   Alert,
   ScrollView,
 } from 'react-native';
-import {useNavigation, useRoute} from '@react-navigation/native';
-import {Star} from 'lucide-react-native';
-import {AppText} from '../../../components/AppText';
-import {Button} from '../../../components/Button';
-import {Colors} from '../../../theme/colors';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import { Star } from 'lucide-react-native';
+import { AppText } from '../../../components/AppText';
+import { Button } from '../../../components/Button';
+import { Colors } from '../../../theme/colors';
 import {
   horizontalScale,
   verticalScale,
   moderateScale,
 } from '../../../utils/responsive';
-import {api} from '../../../api/client';
+import { api } from '../../../api/client';
 
 export default function RateExperienceScreen() {
   const navigation = useNavigation<any>();
@@ -45,14 +45,14 @@ export default function RateExperienceScreen() {
           comment: notes,
         },
       });
-      
+
       Alert.alert('Success', 'Thank you for your feedback!', [
-        { 
-          text: 'OK', 
+        {
+          text: 'OK',
           onPress: () => {
             // Navigate back to the main Schedule tab
             navigation.navigate('MySchedule');
-          } 
+          }
         }
       ]);
     } catch (error: any) {
@@ -65,13 +65,8 @@ export default function RateExperienceScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.scrollContent} bounces={false}>
-        
+
         <View style={styles.header}>
-          <View style={styles.badge}>
-            <AppText variant="labelLarge" color={Colors.neutral[0]}>
-              11
-            </AppText>
-          </View>
           <AppText variant="h4" color={Colors.neutral[900]} style={styles.headerTitle}>
             Rate Your Experience
           </AppText>
@@ -81,7 +76,7 @@ export default function RateExperienceScreen() {
           <AppText variant="h5" color={Colors.neutral[900]} style={styles.title}>
             Rate Your Experience
           </AppText>
-          
+
           <AppText variant="bodyLarge" color={Colors.neutral[700]} style={styles.subtitle}>
             How was your overall{'\n'}experience?
           </AppText>
@@ -94,10 +89,10 @@ export default function RateExperienceScreen() {
                 activeOpacity={0.7}
                 style={styles.starButton}
               >
-                <Star 
-                  size={40} 
-                  color={Colors.primary[500]} 
-                  fill={rating >= starValue ? Colors.primary[500] : 'transparent'} 
+                <Star
+                  size={40}
+                  color={Colors.primary[500]}
+                  fill={rating >= starValue ? Colors.primary[500] : 'transparent'}
                 />
               </TouchableOpacity>
             ))}
@@ -106,7 +101,7 @@ export default function RateExperienceScreen() {
           <AppText variant="labelLarge" color={Colors.neutral[900]} style={styles.notesTitle}>
             Additional Notes (Optional)
           </AppText>
-          
+
           <TextInput
             style={styles.textInput}
             placeholder="Share your experience..."
@@ -117,8 +112,8 @@ export default function RateExperienceScreen() {
             textAlignVertical="top"
           />
 
-          <Button 
-            title="Submit Rating" 
+          <Button
+            title="Submit Rating"
             onPress={handleSubmit}
             loading={loading}
             fullWidth
@@ -170,7 +165,7 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     padding: moderateScale(24),
     shadowColor: Colors.neutral[900],
-    shadowOffset: {width: 0, height: 8},
+    shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.05,
     shadowRadius: 24,
     elevation: 4,

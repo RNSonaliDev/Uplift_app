@@ -6,13 +6,18 @@ import {
   ScrollView,
   TouchableOpacity,
   SafeAreaView,
+  Image,
 } from 'react-native';
 import {useNavigation, useFocusEffect} from '@react-navigation/native';
 import Svg, {Path, Circle} from 'react-native-svg';
 import {api} from '../../../api/client';
 import {authApi, CategoryResponse, UserProfileResponse} from '../../../api/auth';
+import {AppText} from '../../../components/AppText';
 import {Colors} from '../../../theme/colors';
-import {Typography} from '../../../theme/typography';
+import {Typography, FontFamily} from '../../../theme/typography';
+import {horizontalScale, verticalScale, moderateScale} from '../../../utils/responsive';
+import {formatDate} from '../../../utils/dateFormatter';
+import {logo} from '../../../assets/images';
 import {
   ArrowRightLeft,
   Bell,
@@ -36,21 +41,26 @@ export default function BeneficiaryDashboardScreen() {
   const [categories, setCategories] = useState<CategoryResponse[]>([]);
   const [profile, setProfile] = useState<UserProfileResponse | null>(null);
 
-  React.useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [catData, profData] = await Promise.all([
-          authApi.getCategories(),
-          authApi.getProfile()
-        ]);
-        setCategories(catData);
-        setProfile(profData);
-      } catch (error) {
-        console.error('Failed to fetch data', error);
-      }
-    };
-    fetchData();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      let isActive = true;
+      const fetchData = async () => {
+        try {
+          const [catData, profData] = await Promise.all([
+            authApi.getCategories(),
+            authApi.getProfile()
+          ]);
+          if (!isActive) return;
+          setCategories(catData);
+          setProfile(profData);
+        } catch (error) {
+          console.error('Failed to fetch data', error);
+        }
+      };
+      fetchData();
+      return () => { isActive = false; };
+    }, [])
+  );
 
   useFocusEffect(
     useCallback(() => {
@@ -86,29 +96,21 @@ export default function BeneficiaryDashboardScreen() {
         <View style={styles.header}>
           <View style={styles.headerTopRow}>
             <View style={styles.logoContainer}>
-              <Svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                <Path d="M6 10V14C6 17.3137 8.68629 20 12 20C15.3137 20 18 17.3137 18 14V10" stroke="#FFFFFF" strokeWidth="2.5" strokeLinecap="round" />
-                <Circle cx="8" cy="4" r="2" fill="#FFFFFF" />
-                <Circle cx="16" cy="4" r="2" fill="#FFFFFF" />
-              </Svg>
-              <Text style={styles.brandText}>Uplift</Text>
+              <AppText variant="bodyMedium" style={styles.welcomeText}>Welcome back,</AppText>
+              <AppText variant="h3" style={styles.nameText}>{profile?.first_name || 'User'}</AppText>
             </View>
             <View style={{flexDirection: 'row', alignItems: 'center'}}>
-              <TouchableOpacity 
+              {/* <TouchableOpacity 
                 style={styles.notificationBtn}
                 onPress={() => profile && navigation.navigate('DashboardRoleSelection', { selectedRoles: profile.selected_roles || [] })}
               >
                 <ArrowRightLeft color={Colors.neutral[0]} size={22} />
-              </TouchableOpacity>
+              </TouchableOpacity> */}
               <TouchableOpacity style={styles.notificationBtn}>
                 <Bell color={Colors.neutral[0]} size={24} />
                 <View style={styles.notificationDot} />
               </TouchableOpacity>
             </View>
-          </View>
-          <View>
-            <Text style={styles.welcomeText}>Welcome back,</Text>
-            <Text style={styles.nameText}>Sarah</Text>
           </View>
         </View>
 
@@ -126,10 +128,10 @@ export default function BeneficiaryDashboardScreen() {
                   <ShoppingCart color={Colors.primary[500]} size={24} />
                 </View>
                 <View style={styles.cardTitleContainer}>
-                  <Text style={styles.cardTitle}>{upcomingRequest.category?.title || 'Help Request'}</Text>
+                  <Text style={styles.cardTitle}>{upcomingRequest.category?.title}</Text>
                   <View style={styles.row}>
                     <Calendar color={Colors.neutral[500]} size={14} />
-                    <Text style={styles.cardSubtitle}> {upcomingRequest.preferred_date || 'Date TBD'}</Text>
+                    <Text style={styles.cardSubtitle}> {formatDate(upcomingRequest.preferred_date)}</Text>
                   </View>
                   <View style={styles.row}>
                     <MapPin color={Colors.neutral[500]} size={14} />
@@ -176,11 +178,11 @@ export default function BeneficiaryDashboardScreen() {
               label="My Profile" 
               onPress={() => navigation.navigate('ProfileTab' as never)}
             />
-            <QuickActionItem 
+            {/* <QuickActionItem 
               icon={<Heart color={Colors.neutral[700]} size={24} strokeWidth={1.5} />} 
               label="Donate" 
               onPress={() => {}}
-            />
+            /> */}
           </View>
 
           {/* Need Help with? */}
@@ -243,25 +245,23 @@ const styles = StyleSheet.create({
     flexGrow: 1,
   },
   header: {
-    paddingHorizontal: 24,
-    paddingTop: 16,
-    paddingBottom: 40,
+    paddingHorizontal: horizontalScale(24),
+    paddingTop: verticalScale(16),
+    paddingBottom: verticalScale(40),
   },
   headerTopRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: verticalScale(24),
   },
   logoContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    // alignItems: 'center',
   },
   brandText: {
     ...Typography.h4,
     color: Colors.neutral[0],
-    marginLeft: 8,
-    fontWeight: 'bold',
+    marginLeft: horizontalScale(8),
   },
   welcomeText: {
     ...Typography.bodyMedium,
@@ -270,59 +270,59 @@ const styles = StyleSheet.create({
   nameText: {
     ...Typography.h3,
     color: Colors.neutral[0],
-    marginTop: 4,
+    marginTop: verticalScale(4),
   },
   notificationBtn: {
-    padding: 8,
+    padding: moderateScale(8),
     position: 'relative',
   },
   notificationDot: {
     position: 'absolute',
-    top: 8,
-    right: 8,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    top: moderateScale(8),
+    right: moderateScale(8),
+    width: moderateScale(8),
+    height: moderateScale(8),
+    borderRadius: moderateScale(4),
     backgroundColor: Colors.error,
   },
   mainContent: {
     flex: 1,
     backgroundColor: Colors.neutral[50],
-    borderTopLeftRadius: 32,
-    borderTopRightRadius: 32,
-    paddingHorizontal: 24,
-    paddingTop: 32,
-    paddingBottom: 24,
+    borderTopLeftRadius: moderateScale(32),
+    borderTopRightRadius: moderateScale(32),
+    paddingHorizontal: horizontalScale(24),
+    paddingTop: verticalScale(32),
+    paddingBottom: verticalScale(24),
   },
   sectionTitle: {
     ...Typography.h5,
     color: Colors.neutral[900],
-    marginBottom: 16,
-    marginTop: 8,
+    marginBottom: verticalScale(16),
+    marginTop: verticalScale(8),
   },
   card: {
     backgroundColor: Colors.neutral[0],
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 24,
+    borderRadius: moderateScale(16),
+    padding: moderateScale(20),
+    marginBottom: verticalScale(24),
     shadowColor: Colors.neutral[900],
-    shadowOffset: {width: 0, height: 2},
+    shadowOffset: {width: 0, height: verticalScale(2)},
     shadowOpacity: 0.05,
-    shadowRadius: 8,
+    shadowRadius: moderateScale(8),
     elevation: 2,
   },
   cardHeader: {
     flexDirection: 'row',
-    marginBottom: 20,
+    marginBottom: verticalScale(20),
   },
   iconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: moderateScale(48),
+    height: moderateScale(48),
+    borderRadius: moderateScale(24),
     backgroundColor: Colors.primary[50],
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 16,
+    marginRight: horizontalScale(16),
   },
   cardTitleContainer: {
     flex: 1,
@@ -330,78 +330,77 @@ const styles = StyleSheet.create({
   cardTitle: {
     ...Typography.labelLarge,
     color: Colors.neutral[900],
-    marginBottom: 8,
+    marginBottom: verticalScale(8),
   },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 4,
+    marginBottom: verticalScale(4),
   },
   cardSubtitle: {
     ...Typography.caption,
     color: Colors.neutral[500],
-    marginLeft: 4,
+    marginLeft: horizontalScale(4),
   },
   cardSubtext: {
     ...Typography.caption,
     color: Colors.neutral[500],
-    marginLeft: 18,
+    marginLeft: horizontalScale(18),
   },
   requestHelpBtn: {
     backgroundColor: Colors.primary[500],
-    borderRadius: 12,
+    borderRadius: moderateScale(12),
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: 14,
+    paddingVertical: verticalScale(14),
   },
   requestHelpText: {
     ...Typography.buttonMedium,
     color: Colors.neutral[0],
-    marginLeft: 8,
+    marginLeft: horizontalScale(8),
   },
   quickActionsContainer: {
     flexDirection: 'row',
-    // justifyContent: 'space-between',
-    marginBottom: 24,
-    gap:20
+    marginBottom: verticalScale(24),
+    gap: horizontalScale(20),
   },
   quickActionItem: {
     alignItems: 'center',
   },
   quickActionIcon: {
-    width: 64,
-    height: 64,
-    borderRadius: 16,
+    width: moderateScale(64),
+    height: moderateScale(64),
+    borderRadius: moderateScale(16),
     backgroundColor: Colors.neutral[0],
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: verticalScale(8),
     borderWidth: 1,
     borderColor: Colors.neutral[200],
     shadowColor: Colors.neutral[900],
-    shadowOffset: {width: 0, height: 2},
+    shadowOffset: {width: 0, height: verticalScale(2)},
     shadowOpacity: 0.03,
-    shadowRadius: 4,
+    shadowRadius: moderateScale(4),
     elevation: 1,
   },
   quickActionLabel: {
     ...Typography.caption,
     color: Colors.neutral[700],
-    fontWeight: '500',
+    fontFamily: FontFamily.medium,
   },
   helpCategoryItem: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     backgroundColor: Colors.neutral[0],
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
+    borderRadius: moderateScale(16),
+    padding: moderateScale(16),
+    marginBottom: verticalScale(12),
     shadowColor: Colors.neutral[900],
-    shadowOffset: {width: 0, height: 2},
+    shadowOffset: {width: 0, height: verticalScale(2)},
     shadowOpacity: 0.05,
-    shadowRadius: 8,
+    shadowRadius: moderateScale(8),
     elevation: 2,
   },
   helpCategoryLeft: {
@@ -409,13 +408,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   helpCategoryIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: moderateScale(40),
+    height: moderateScale(40),
+    borderRadius: moderateScale(20),
     backgroundColor: Colors.primary[50],
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 16,
+    marginRight: horizontalScale(16),
   },
   helpCategoryTitle: {
     ...Typography.labelMedium,

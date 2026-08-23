@@ -2,43 +2,44 @@
  * Spacing & Layout constants
  * Based on an 4px grid system
  */
+import {horizontalScale, moderateScale} from '../utils/responsive';
 
 export const Spacing = {
   none: 0,
-  '2xs': 2,
-  xs: 4,
-  sm: 8,
-  md: 12,
-  lg: 16,
-  xl: 20,
-  '2xl': 24,
-  '3xl': 32,
-  '4xl': 40,
-  '5xl': 48,
-  '6xl': 64,
-  '7xl': 80,
+  '2xs': horizontalScale(2),
+  xs: horizontalScale(4),
+  sm: horizontalScale(8),
+  md: horizontalScale(12),
+  lg: horizontalScale(16),
+  xl: horizontalScale(20),
+  '2xl': horizontalScale(24),
+  '3xl': horizontalScale(32),
+  '4xl': horizontalScale(40),
+  '5xl': horizontalScale(48),
+  '6xl': horizontalScale(64),
+  '7xl': horizontalScale(80),
 } as const;
 
 export const BorderRadius = {
   none: 0,
-  xs: 4,
-  sm: 8,
-  md: 12,
-  lg: 16,
-  xl: 20,
-  '2xl': 24,
-  '3xl': 32,
+  xs: moderateScale(4),
+  sm: moderateScale(8),
+  md: moderateScale(12),
+  lg: moderateScale(16),
+  xl: moderateScale(20),
+  '2xl': moderateScale(24),
+  '3xl': moderateScale(32),
   full: 9999,
 } as const;
 
 export const IconSize = {
-  xs: 16,
-  sm: 20,
-  md: 24,
-  lg: 28,
-  xl: 32,
-  '2xl': 40,
-  '3xl': 48,
+  xs: moderateScale(16),
+  sm: moderateScale(20),
+  md: moderateScale(24),
+  lg: moderateScale(28),
+  xl: moderateScale(32),
+  '2xl': moderateScale(40),
+  '3xl': moderateScale(48),
 } as const;
 
 export const HitSlop = {

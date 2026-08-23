@@ -78,26 +78,64 @@ export const SplashScreen: React.FC = () => {
       ]),
     ]).start();
 
-    // Check for existing token and navigate
     const checkTokenAndNavigate = async () => {
       try {
         const token = await loadAuthToken();
         if (token) {
-          // Verify token by fetching profile
-          const response = await authApi.getProfile();
-          const selectedRoles = response.selected_roles || [];
+          const profile = await authApi.getProfile();
+          const pendingRoles = profile.pending_roles || [];
+          const selectedRoles = profile.selected_roles || [];
           
-          if (selectedRoles.length > 1) {
+          if (pendingRoles.length > 0) {
+            const nextRoles = [...pendingRoles];
+            const nextRole = nextRoles.shift();
+            const routeParams = {
+              pendingRoles: nextRoles,
+              selectedRoles: selectedRoles.length > 0 ? selectedRoles : pendingRoles,
+              collectedRolesData: [],
+            };
+            
+            if (nextRole === 'volunteer') {
+              navigation.replace('VolunteerSetup' as any, routeParams);
+            } else if (nextRole === 'organization') {
+              navigation.replace('OrganizationSetup' as any, routeParams);
+            } else if (nextRole === 'sponsor') {
+              navigation.replace('SponsorSetup' as any, routeParams);
+            } else if (nextRole === 'beneficiary') {
+              navigation.replace('BeneficiarySetup' as any, routeParams);
+            } else {
+              navigation.replace('Welcome');
+            }
+          } else if (profile.default_role) {
+            if (profile.default_role === 'volunteer') {
+              navigation.replace('VolunteerFlow' as any);
+            } else if (profile.default_role === 'sponsor') {
+              navigation.replace('SponsorFlow' as any);
+            } else if (profile.default_role === 'organization') {
+              navigation.replace('OrganizationFlow' as any);
+            } else if (profile.default_role === 'beneficiary') {
+              navigation.replace('BeneficiaryFlow' as any);
+            } else {
+              navigation.replace('DashboardRoleSelection', { selectedRoles });
+            }
+          } else if (selectedRoles.length > 1) {
             navigation.replace('DashboardRoleSelection', { selectedRoles });
+          } else if (selectedRoles.length === 1) {
+            const role = selectedRoles[0];
+            if (role === 'volunteer') navigation.replace('VolunteerFlow' as any);
+            else if (role === 'sponsor') navigation.replace('SponsorFlow' as any);
+            else if (role === 'organization') navigation.replace('OrganizationFlow' as any);
+            else if (role === 'beneficiary') navigation.replace('BeneficiaryFlow' as any);
+            else navigation.replace('Welcome');
           } else {
-            // Placeholder: Go to BeneficiaryFlow if one role
-            navigation.replace('BeneficiaryFlow');
+            navigation.replace('Welcome');
           }
         } else {
           navigation.replace('Welcome');
         }
       } catch (error) {
         // Token invalid or network error, fallback to Welcome
+        console.log('Splash screen token check failed', error);
         navigation.replace('Welcome');
       }
     };

@@ -22,6 +22,7 @@ import {api} from '../../../api/client';
 import {authApi, CategoryResponse} from '../../../api/auth';
 import {ChevronLeft} from 'lucide-react-native';
 import {Spacing} from '../../../theme/spacing';
+import {horizontalScale, verticalScale, moderateScale} from '../../../utils/responsive';
 
 export default function CreateRequestScreen() {
   const navigation = useNavigation<any>();
@@ -93,33 +94,13 @@ export default function CreateRequestScreen() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async () => {
+  const handlePreview = () => {
     if (!validate()) return;
-
-    setLoading(true);
-    try {
-      const payload = {
-        help_request: {
-          title: formData.title,
-          category_id: parseInt(formData.category_id, 10),
-          description: formData.description,
-          preferred_date: formData.preferred_date,
-          hours_required: parseInt(formData.hours_required, 10),
-          meeting_location: formData.meeting_location,
-          latitude: formData.latitude ? parseFloat(formData.latitude) : 0.90,
-          longitude: formData.longitude ? parseFloat(formData.longitude) : 0.99,
-        },
-      };
-
-      await api.post('/help_requests', payload);
-      Alert.alert('Success', 'Your request has been created.', [
-        {text: 'OK', onPress: () => navigation.goBack()}
-      ]);
-    } catch (error: any) {
-      Alert.alert('Error', error?.message || 'Failed to create request');
-    } finally {
-      setLoading(false);
-    }
+    
+    navigation.navigate('PreviewRequest', {
+      formData,
+      categoryTitle: getCategoryName(formData.category_id),
+    });
   };
 
   return (
@@ -174,7 +155,7 @@ export default function CreateRequestScreen() {
             <View pointerEvents="none">
               <Input
                 label="Preferred Date"
-                placeholder="YYYY-MM-DD"
+                placeholder="DD-MM-YYYY"
                 value={formData.preferred_date}
                 editable={false}
                 error={errors.preferred_date}
@@ -203,10 +184,8 @@ export default function CreateRequestScreen() {
       </KeyboardAvoidingView>
       <View style={styles.footer}>
         <Button
-          title="Submit Request"
-          onPress={handleSubmit}
-          loading={loading}
-          disabled={loading}
+          title="Preview Request"
+          onPress={handlePreview}
         />
       </View>
 
@@ -218,7 +197,10 @@ export default function CreateRequestScreen() {
         onConfirm={(selectedDate) => {
           setIsDatePickerOpen(false);
           setDate(selectedDate);
-          handleChange('preferred_date', selectedDate.toISOString().split('T')[0]);
+          const day = String(selectedDate.getDate()).padStart(2, '0');
+          const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+          const year = selectedDate.getFullYear();
+          handleChange('preferred_date', `${day}-${month}-${year}`);
         }}
         onCancel={() => {
           setIsDatePickerOpen(false);
@@ -272,21 +254,21 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 16,
+    paddingHorizontal: horizontalScale(16),
+    paddingVertical: verticalScale(16),
     backgroundColor: Colors.neutral[0],
     borderBottomWidth: 1,
     borderBottomColor: Colors.neutral[200],
   },
   backBtn: {
-    padding: 4,
+    padding: moderateScale(4),
   },
   headerTitle: {
     color: Colors.neutral[900],
   },
   content: {
-    padding: 24,
-    paddingBottom: 40,
+    padding: horizontalScale(24),
+    paddingBottom: verticalScale(40),
   },
   subtitle: {
     marginBottom: Spacing.xl,
@@ -299,7 +281,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   footer: {
-    padding: 24,
+    padding: moderateScale(24),
     backgroundColor: Colors.neutral[0],
     borderTopWidth: 1,
     borderTopColor: Colors.neutral[200],
@@ -311,21 +293,21 @@ const styles = StyleSheet.create({
   },
   modalContent: {
     backgroundColor: Colors.neutral[0],
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+    borderTopLeftRadius: moderateScale(20),
+    borderTopRightRadius: moderateScale(20),
     maxHeight: '50%',
-    paddingBottom: 20,
+    paddingBottom: verticalScale(20),
   },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 20,
+    padding: moderateScale(20),
     borderBottomWidth: 1,
     borderBottomColor: Colors.neutral[200],
   },
   categoryItem: {
-    padding: 20,
+    padding: moderateScale(20),
     borderBottomWidth: 1,
     borderBottomColor: Colors.neutral[100],
   },
