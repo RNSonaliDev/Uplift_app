@@ -393,7 +393,30 @@ export const VerifyAccountScreen: React.FC = () => {
         if (response.access_token) {
           await persistAuthToken(response.access_token);
         }
-        navigation.navigate('BeneficiaryFlow');
+
+        const pendingRoles = response.user?.pending_roles || [];
+        
+        if (pendingRoles.length > 0) {
+          const nextRoles = [...pendingRoles];
+          const nextRole = nextRoles.shift();
+          const routeParams = {
+            pendingRoles: nextRoles,
+            selectedRoles: response.user?.selected_roles || pendingRoles,
+            collectedRolesData: [],
+          };
+          
+          if (nextRole === 'volunteer') {
+            navigation.navigate('VolunteerSetup' as any, routeParams);
+          } else if (nextRole === 'organization') {
+            navigation.navigate('OrganizationSetup' as any, routeParams);
+          } else if (nextRole === 'sponsor') {
+            navigation.navigate('SponsorSetup' as any, routeParams);
+          } else if (nextRole === 'beneficiary') {
+            navigation.navigate('BeneficiarySetup' as any, routeParams);
+          }
+        } else {
+          navigation.navigate('BeneficiaryFlow');
+        }
       } else if (response.verification_token) {
         navigation.navigate('CreateProfile', {
           verificationToken: response.verification_token,

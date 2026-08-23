@@ -153,7 +153,7 @@ export default function BeneficiaryDashboardScreen() {
                 onPress={() => navigation.navigate('RequestHelp')}
               >
                 <Plus color={Colors.neutral[0]} size={20} />
-                <Text style={styles.requestHelpText}>Request Help</Text>
+                <Text style={styles.requestHelpText}>Create Request Help</Text>
               </TouchableOpacity>
             </View>
           )}

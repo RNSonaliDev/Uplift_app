@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import {authApi, UserProfileResponse} from '../../../api/auth';
+import {getFullImageUrl} from '../../../api/client';
 import {Colors} from '../../../theme/colors';
 import {Typography} from '../../../theme/typography';
 import {
@@ -56,7 +57,7 @@ export default function MyProfileScreen() {
         </TouchableOpacity>
         <Text style={styles.headerTitle}>My Profile</Text>
         <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.navigate('EditProfile')}>
-          <Edit2 color={Colors.neutral[0]} size={24} />
+          {/* <Edit2 color={Colors.neutral[0]} size={24} /> */}
         </TouchableOpacity>
       </View>
 
@@ -69,7 +70,7 @@ export default function MyProfileScreen() {
             <>
               <View style={styles.avatarContainer}>
                 <Image 
-                  source={{uri: profile.profile_image_url || 'https://i.pravatar.cc/150?u=placeholder'}} 
+                  source={{uri: getFullImageUrl(profile.profile_image_url) || 'https://i.pravatar.cc/150?u=placeholder'}} 
                   style={styles.avatar} 
                 />
                 <TouchableOpacity style={styles.cameraBtn}>
@@ -77,7 +78,7 @@ export default function MyProfileScreen() {
                 </TouchableOpacity>
               </View>
               
-              <Text style={styles.name}>{profile.first_name} {profile.last_name}</Text>
+              <Text style={styles.name}>{profile.first_name}</Text>
               <Text style={styles.contactInfo}>{profile.email}</Text>
               <Text style={styles.contactInfo}>
                 {profile.country_code ? `${profile.country_code} ${profile.phone}` : profile.phone}
@@ -95,16 +96,11 @@ export default function MyProfileScreen() {
             title="Personal Information" 
             onPress={() => navigation.navigate('EditProfile')} 
           />
-          <MenuItem 
-            icon={<MapPin color={Colors.neutral[500]} size={24} />} 
-            title="Addresses" 
-            onPress={() => {}} 
-          />
-          <MenuItem 
+          {/* <MenuItem 
             icon={<CreditCard color={Colors.neutral[500]} size={24} />} 
             title="Payment Methods" 
             onPress={() => {}} 
-          />
+          /> */}
           <MenuItem 
             icon={<Phone color={Colors.neutral[500]} size={24} />} 
             title="Emergency Contacts" 
@@ -119,7 +115,7 @@ export default function MyProfileScreen() {
         </View>
         
         <View style={styles.footer}>
-          <Text style={styles.footerText}>Thank you for being a part of the Uplift community. 💜</Text>
+          <Text style={styles.footerText}>Thank you for being a part of the Uplift community.</Text>
         </View>
       </ScrollView>
     </SafeAreaView>

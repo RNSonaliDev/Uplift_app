@@ -36,6 +36,23 @@ export interface VerifyOtpResponse {
   token?: string; 
   access_token?: string;
   refresh_token?: string;
+  user?: {
+    id: number;
+    first_name: string;
+    last_name: string;
+    email: string;
+    phone: string;
+    default_role?: string;
+    selected_roles?: string[];
+    roles?: string[];
+    pending_roles?: string[];
+    profile_completed?: boolean;
+    basic_profile_complete?: boolean;
+    registration_step?: string;
+    email_verified?: boolean;
+    phone_verified?: boolean;
+    profile_image_url?: string;
+  };
 }
 
 export interface RegistrationResponse {
@@ -89,6 +106,9 @@ export const authApi = {
   },
   resendOtp: (payload: RequestOtpPayload) => {
     return api.post<RequestOtpResponse>('/auth/otp/resend', payload);
+  },
+  logout: () => {
+    return api.delete<{message: string}>('/auth/token');
   },
   register: (data: FormData, verificationToken: string) => {
     return api.post<RegistrationResponse>('/auth/registrations', data, {

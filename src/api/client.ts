@@ -2,6 +2,13 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const BASE_URL = 'https://uplift-backend.pixoatic.com/api/v1';
+export const IMAGE_BASE_URL = 'https://uplift-backend.pixoatic.com';
+
+export const getFullImageUrl = (path?: string | null) => {
+  if (!path) return null;
+  if (path.startsWith('http')) return path;
+  return `${IMAGE_BASE_URL}${path.startsWith('/') ? '' : '/'}${path}`;
+};
 
 interface FetchOptions extends RequestInit {
   data?: any;

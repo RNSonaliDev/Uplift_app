@@ -29,6 +29,7 @@ export default function CreateRequestScreen() {
   const [loading, setLoading] = useState(false);
 
   const [formData, setFormData] = useState({
+    title: '',
     category_id: route.params?.category_id || '',
     description: '',
     preferred_date: '',
@@ -77,6 +78,7 @@ export default function CreateRequestScreen() {
 
   const validate = () => {
     const newErrors: Record<string, string> = {};
+    if (!formData.title) newErrors.title = 'Required';
     if (!formData.category_id) newErrors.category_id = 'Required';
     if (!formData.description) newErrors.description = 'Required';
     if (!formData.preferred_date) newErrors.preferred_date = 'Required';
@@ -98,6 +100,7 @@ export default function CreateRequestScreen() {
     try {
       const payload = {
         help_request: {
+          title: formData.title,
           category_id: parseInt(formData.category_id, 10),
           description: formData.description,
           preferred_date: formData.preferred_date,
@@ -125,7 +128,7 @@ export default function CreateRequestScreen() {
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
           <ChevronLeft color={Colors.neutral[900]} size={28} />
         </TouchableOpacity>
-        <AppText variant="h5" style={styles.headerTitle}>Create Request</AppText>
+        <AppText variant="h5" style={styles.headerTitle}>Create Help Request</AppText>
         <View style={{width: 28}} />
       </View>
 
@@ -134,7 +137,7 @@ export default function CreateRequestScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView contentContainerStyle={styles.content}>
           <AppText variant="bodyMedium" color={Colors.neutral[500]} style={styles.subtitle}>
-            Fill out the details below to request assistance from a volunteer.
+            Fill out the details below to request assistance from a Volunteer.
           </AppText>
 
           <TouchableOpacity onPress={() => setIsCategoryModalVisible(true)} activeOpacity={0.7}>
@@ -148,6 +151,14 @@ export default function CreateRequestScreen() {
               />
             </View>
           </TouchableOpacity>
+
+          <Input
+            label="Title"
+            placeholder="e.g. Grocery Pickup"
+            value={formData.title}
+            onChangeText={v => handleChange('title', v)}
+            error={errors.title}
+          />
 
           <Input
             label="Description"

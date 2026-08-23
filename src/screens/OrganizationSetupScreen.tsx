@@ -307,41 +307,43 @@ export const OrganizationSetupScreen: React.FC = () => {
           contact_phone: `+1${contactPhone.replace(/\D/g, '')}`,
         }
       };
-      const newCollectedRolesData = [...collectedRolesData, currentRoleData];
 
-      if (pendingRoles.length > 0) {
-        const nextRoles = [...pendingRoles];
-        const nextRole = nextRoles.shift();
-        const routeParams = {
-          pendingRoles: nextRoles,
-          selectedRoles,
-          collectedRolesData: newCollectedRolesData,
-        };
-        
-        if (nextRole === 'volunteer') {
-          navigation.navigate('VolunteerSetup' as any, routeParams);
-        } else if (nextRole === 'organization') {
-          navigation.navigate('OrganizationSetup' as any, routeParams);
-        } else if (nextRole === 'sponsor') {
-          navigation.navigate('SponsorSetup' as any, routeParams);
-        } else if (nextRole === 'beneficiary') {
-          navigation.navigate('BeneficiarySetup' as any, routeParams);
-        }
-      } else {
-        try {
-          setIsSubmitting(true);
-          await authApi.saveRoleProfile({
-            role_profile: {
-              selected_roles: selectedRoles,
-              roles: newCollectedRolesData,
-            }
-          });
+      try {
+        setIsSubmitting(true);
+        await authApi.saveRoleProfile({
+          role_profile: {
+            selected_roles: selectedRoles,
+            roles: [currentRoleData],
+          }
+        });
+
+        const newCollectedRolesData = [...collectedRolesData, currentRoleData];
+
+        if (pendingRoles.length > 0) {
+          const nextRoles = [...pendingRoles];
+          const nextRole = nextRoles.shift();
+          const routeParams = {
+            pendingRoles: nextRoles,
+            selectedRoles,
+            collectedRolesData: newCollectedRolesData,
+          };
+          
+          if (nextRole === 'volunteer') {
+            navigation.navigate('VolunteerSetup' as any, routeParams);
+          } else if (nextRole === 'organization') {
+            navigation.navigate('OrganizationSetup' as any, routeParams);
+          } else if (nextRole === 'sponsor') {
+            navigation.navigate('SponsorSetup' as any, routeParams);
+          } else if (nextRole === 'beneficiary') {
+            navigation.navigate('BeneficiarySetup' as any, routeParams);
+          }
+        } else {
           navigation.navigate('Success' as any, { selectedRoles });
-        } catch (error: any) {
-          Alert.alert('Error', error?.message || 'Failed to save profiles');
-        } finally {
-          setIsSubmitting(false);
         }
+      } catch (error: any) {
+        Alert.alert('Error', error?.message || 'Failed to save profile');
+      } finally {
+        setIsSubmitting(false);
       }
     }
   };

@@ -9,7 +9,7 @@ import {
   Image,
 } from 'react-native';
 import {useNavigation} from '@react-navigation/native';
-import {api} from '../../../api/client';
+import {api, getFullImageUrl} from '../../../api/client';
 import {Colors} from '../../../theme/colors';
 import {Typography} from '../../../theme/typography';
 import {
@@ -93,7 +93,7 @@ export default function MyRequestsScreen() {
                 location={req.location?.address || req.meeting_location}
                 status={req.status.charAt(0).toUpperCase() + req.status.slice(1)}
                 statusColor={req.status === 'pending' ? Colors.warning : Colors.info}
-                helperImage={req.volunteer?.profile_image_url}
+                helperImage={getFullImageUrl(req.volunteer?.profile_image_url) || undefined}
                 onPress={() => navigation.navigate('RequestTracking', { requestId: req.id })}
               />
             ))

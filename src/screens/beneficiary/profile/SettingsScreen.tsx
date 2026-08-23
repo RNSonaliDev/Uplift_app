@@ -11,6 +11,8 @@ import {
 import {useNavigation} from '@react-navigation/native';
 import {Colors} from '../../../theme/colors';
 import {Typography} from '../../../theme/typography';
+import {authApi} from '../../../api/auth';
+import {clearAuthToken} from '../../../api/client';
 import {
   ChevronLeft,
   ChevronRight,
@@ -33,6 +35,20 @@ export default function SettingsScreen() {
   const [emailEnabled, setEmailEnabled] = useState(true);
   const [smsEnabled, setSmsEnabled] = useState(false);
   const [darkModeEnabled, setDarkModeEnabled] = useState(false);
+
+  const handleLogout = async () => {
+    try {
+      await authApi.logout();
+    } catch (e) {
+      console.log('Logout API failed, proceeding to clear token locally', e);
+    } finally {
+      await clearAuthToken();
+      navigation.reset({
+        index: 0,
+        routes: [{name: 'CreateAccount'}],
+      });
+    }
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -87,7 +103,7 @@ export default function SettingsScreen() {
         <View style={styles.sectionCard}>
           <SettingItem icon={<HelpCircle color={Colors.neutral[500]} size={20} />} title="Help Center" />
           <SettingItem icon={<Headphones color={Colors.neutral[500]} size={20} />} title="Contact Support" />
-          <TouchableOpacity style={[styles.itemRow, styles.noBorder]} onPress={() => {}}>
+          <TouchableOpacity style={[styles.itemRow, styles.noBorder]} onPress={handleLogout}>
             <View style={styles.itemLeft}>
               <LogOut color={Colors.error} size={20} />
               <Text style={[styles.itemTitle, {color: Colors.error}]}>Log Out</Text>
