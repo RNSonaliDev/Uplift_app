@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useState, useEffect} from 'react';
 import {
   View,
   Text,
@@ -6,155 +6,176 @@ import {
   ScrollView,
   TouchableOpacity,
   SafeAreaView,
+  Dimensions,
+  ActivityIndicator,
 } from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import {Colors} from '../../../theme/colors';
 import {Typography} from '../../../theme/typography';
 import {
   ChevronLeft,
-  ChevronRight,
   ShoppingCart,
   Pill,
   Car,
-  Coffee,
-  Activity,
+  Soup,
+  Users,
   MoreHorizontal,
 } from 'lucide-react-native';
+import {authApi, CategoryResponse} from '../../../api/auth';
+
+const {width} = Dimensions.get('window');
+const CARD_MARGIN = 8;
+const CARD_WIDTH = (width - 48 - CARD_MARGIN * 2) / 2; // 48 is horizontal padding (24 * 2)
 
 export default function RequestHelpScreen() {
   const navigation = useNavigation<any>();
+
+  const [categories, setCategories] = useState<CategoryResponse[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
+  const fetchCategories = async () => {
+    try {
+      setLoading(true);
+      const data = await authApi.getCategories();
+      setCategories(data);
+    } catch (error) {
+      console.error('Failed to fetch categories', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getIconForCategory = (title: string) => {
+    const t = title.toLowerCase();
+    if (t.includes('groc') || t.includes('shop')) return <ShoppingCart color={Colors.primary[500]} size={32} />;
+    if (t.includes('pharm') || t.includes('med') || t.includes('pill')) return <Pill color={Colors.primary[500]} size={32} />;
+    if (t.includes('meal') || t.includes('food') || t.includes('soup')) return <Soup color={Colors.secondary[500]} size={32} />;
+    if (t.includes('trans') || t.includes('drive') || t.includes('car')) return <Car color={Colors.primary[500]} size={32} />;
+    if (t.includes('comp') || t.includes('people') || t.includes('user')) return <Users color={Colors.primary[500]} size={32} />;
+    return <MoreHorizontal color={Colors.primary[500]} size={32} />;
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <ChevronLeft color={Colors.neutral[0]} size={28} />
+          <ChevronLeft color={Colors.neutral[900]} size={28} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Request Help</Text>
         <View style={{width: 28}} /> {/* Spacer for centering */}
       </View>
 
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-        <Text style={styles.title}>How can we help you?</Text>
+        <Text style={styles.title}>What do you need help with?</Text>
+        <Text style={styles.subtitle}>Choose a category to get started</Text>
         
-        <View style={styles.list}>
-          <HelpOptionItem
-            icon={<ShoppingCart color={Colors.primary[500]} size={24} />}
-            title="Grocery Assistance"
-            subtitle="Get help with grocery shopping and delivery."
-            onPress={() => navigation.navigate('RequestDetails')}
-          />
-          <HelpOptionItem
-            icon={<Pill color={Colors.primary[500]} size={24} />}
-            title="Pharmacy Pickup"
-            subtitle="We'll pick up and deliver your medications."
-            onPress={() => navigation.navigate('RequestDetails')}
-          />
-          <HelpOptionItem
-            icon={<Car color={Colors.primary[500]} size={24} />}
-            title="Transportation"
-            subtitle="Need a ride to appointments or errands."
-            onPress={() => navigation.navigate('RequestDetails')}
-          />
-          <HelpOptionItem
-            icon={<Coffee color={Colors.primary[500]} size={24} />}
-            title="Meal Delivery"
-            subtitle="Nutritious meals delivered to you."
-            onPress={() => navigation.navigate('RequestDetails')}
-          />
-          <HelpOptionItem
-            icon={<Activity color={Colors.primary[500]} size={24} />}
-            title="Wellness Check"
-            subtitle="Someone will check in to see how you're doing."
-            onPress={() => navigation.navigate('RequestDetails')}
-          />
-          <HelpOptionItem
-            icon={<MoreHorizontal color={Colors.primary[500]} size={24} />}
-            title="Other Assistance"
-            subtitle="Describe your need and we'll help."
-            onPress={() => navigation.navigate('RequestDetails')}
-          />
-        </View>
+        {loading ? (
+          <ActivityIndicator size="large" color={Colors.primary[500]} style={{marginTop: 40}} />
+        ) : (
+          <View style={styles.grid}>
+            {categories.map((cat) => (
+              <HelpCategoryCard
+                key={cat.id.toString()}
+                icon={getIconForCategory(cat.title)}
+                title={cat.title}
+                onPress={() => navigation.navigate('RequestsTab', {
+                  screen: 'CreateRequest',
+                  params: { category_id: cat.id.toString() }
+                })}
+              />
+            ))}
+          </View>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-const HelpOptionItem = ({icon, title, subtitle, onPress}: {icon: React.ReactNode, title: string, subtitle: string, onPress: () => void}) => (
-  <TouchableOpacity style={styles.optionItem} onPress={onPress}>
+const HelpCategoryCard = ({icon, title, onPress}: {icon: React.ReactNode, title: string, onPress: () => void}) => (
+  <TouchableOpacity style={styles.card} onPress={onPress}>
     <View style={styles.iconContainer}>{icon}</View>
-    <View style={styles.textContainer}>
-      <Text style={styles.optionTitle}>{title}</Text>
-      <Text style={styles.optionSubtitle}>{subtitle}</Text>
-    </View>
-    <ChevronRight color={Colors.neutral[400]} size={20} />
+    <Text style={styles.cardTitle} numberOfLines={2} textAlign="center">{title}</Text>
   </TouchableOpacity>
 );
 
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: Colors.primary[500],
+    backgroundColor: Colors.neutral[0],
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 16,
+    paddingVertical: 12,
   },
   backBtn: {
     padding: 4,
   },
   headerTitle: {
     ...Typography.h5,
-    color: Colors.neutral[0],
+    color: Colors.neutral[900],
+    fontWeight: 'bold',
   },
   container: {
     flex: 1,
     backgroundColor: Colors.neutral[0],
   },
   content: {
-    padding: 24,
+    paddingHorizontal: 24,
+    paddingTop: 16,
     paddingBottom: 40,
   },
   title: {
     ...Typography.h4,
     color: Colors.neutral[900],
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
+  subtitle: {
+    ...Typography.bodyMedium,
+    color: Colors.neutral[500],
     marginBottom: 24,
   },
-  list: {
-    gap: 16,
-  },
-  optionItem: {
+  grid: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    marginHorizontal: -CARD_MARGIN,
+  },
+  card: {
+    width: CARD_WIDTH,
+    backgroundColor: Colors.neutral[0],
+    borderRadius: 16,
+    padding: 24,
+    marginHorizontal: CARD_MARGIN,
+    marginBottom: 16,
     alignItems: 'center',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.neutral[100],
+    justifyContent: 'center',
+    shadowColor: Colors.neutral[900],
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.05,
+    shadowRadius: 12,
+    elevation: 3,
+    borderWidth: 1,
+    borderColor: Colors.neutral[100],
+    minHeight: 140,
   },
   iconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: Colors.primary[50],
-    justifyContent: 'center',
+    marginBottom: 16,
     alignItems: 'center',
-    marginRight: 16,
+    justifyContent: 'center',
   },
-  textContainer: {
-    flex: 1,
-    paddingRight: 16,
-  },
-  optionTitle: {
-    ...Typography.labelLarge,
+  cardTitle: {
+    ...Typography.labelMedium,
     color: Colors.neutral[900],
-    marginBottom: 4,
-  },
-  optionSubtitle: {
-    ...Typography.caption,
-    color: Colors.neutral[500],
-    lineHeight: 18,
+    fontWeight: '600',
+    textAlign: 'center',
   },
 });

@@ -3,6 +3,8 @@ import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import MyRequestsScreen from '../screens/beneficiary/requests/MyRequestsScreen';
 import RequestTrackingScreen from '../screens/beneficiary/requests/RequestTrackingScreen';
 
+import CreateRequestScreen from '../screens/beneficiary/requests/CreateRequestScreen';
+
 const Stack = createNativeStackNavigator();
 
 export default function BeneficiaryRequestsStack() {
@@ -10,6 +12,7 @@ export default function BeneficiaryRequestsStack() {
     <Stack.Navigator screenOptions={{headerShown: false}}>
       <Stack.Screen name="MyRequests" component={MyRequestsScreen} />
       <Stack.Screen name="RequestTracking" component={RequestTrackingScreen} />
+      <Stack.Screen name="CreateRequest" component={CreateRequestScreen} />
     </Stack.Navigator>
   );
 }

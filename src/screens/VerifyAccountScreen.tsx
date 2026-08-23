@@ -20,6 +20,7 @@ import {Popup} from '../components';
 import {Colors} from '../theme/colors';
 import {FontFamily, FontSize} from '../theme/typography';
 import {authApi} from '../api';
+import {persistAuthToken} from '../api/client';
 import {Spacing, BorderRadius} from '../theme/spacing';
 import {
   wp,
@@ -277,6 +278,7 @@ type RootStackParamList = {
   VerifyAccount: { emailOrPhone: string };
   CreateProfile: { verificationToken: string, emailOrPhone: string };
   SelectRoles: undefined;
+  BeneficiaryFlow: undefined;
 };
 
 type NavigationProps = NativeStackNavigationProp<RootStackParamList>;
@@ -292,7 +294,10 @@ export const VerifyAccountScreen: React.FC = () => {
   
   const email = isEmail ? contactValue : undefined;
   // If it's not a valid email and not a valid phone, we fallback to treating it as a phone, but typically it should be validated before this screen.
-  const phoneNumber = !isEmail ? contactValue : undefined;
+  let phoneNumber = !isEmail ? contactValue : undefined;
+  if (phoneNumber && !phoneNumber.startsWith('+')) {
+    phoneNumber = phoneNumber.startsWith('1') && phoneNumber.length > 10 ? `+${phoneNumber}` : `+1 ${phoneNumber}`;
+  }
 
   const contactTypeText = isEmail ? 'email address' : 'phone number';
   const [otp, setOtp] = useState<string[]>(Array(OTP_LENGTH).fill(''));
@@ -384,7 +389,12 @@ export const VerifyAccountScreen: React.FC = () => {
         },
       });
 
-      if (response.verification_token) {
+      if (response.user_exists) {
+        if (response.access_token) {
+          await persistAuthToken(response.access_token);
+        }
+        navigation.navigate('BeneficiaryFlow');
+      } else if (response.verification_token) {
         navigation.navigate('CreateProfile', {
           verificationToken: response.verification_token,
           emailOrPhone: contactValue

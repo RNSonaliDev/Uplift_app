@@ -9,6 +9,7 @@ import {
   Image,
 } from 'react-native';
 import {useNavigation} from '@react-navigation/native';
+import {api} from '../../../api/client';
 import {Colors} from '../../../theme/colors';
 import {Typography} from '../../../theme/typography';
 import {
@@ -17,11 +18,34 @@ import {
   ShoppingCart,
   Pill,
   Car,
+  Plus,
 } from 'lucide-react-native';
 
 export default function MyRequestsScreen() {
   const navigation = useNavigation<any>();
   const [activeTab, setActiveTab] = useState<'Active' | 'History'>('Active');
+  const [requests, setRequests] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  React.useEffect(() => {
+    fetchRequests();
+  }, []);
+
+  const fetchRequests = async () => {
+    try {
+      setLoading(true);
+      const data = await api.get<any[]>('/help_requests');
+      setRequests(data);
+    } catch (error) {
+      console.error('Failed to fetch requests', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const activeRequests = requests.filter(r => r.status === 'pending' || r.status === 'accepted' || r.status === 'assigned');
+  const historyRequests = requests.filter(r => r.status === 'completed' || r.status === 'cancelled');
+  const displayRequests = activeTab === 'Active' ? activeRequests : historyRequests;
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -55,44 +79,38 @@ export default function MyRequestsScreen() {
         </View>
 
         <ScrollView contentContainerStyle={styles.content}>
-          {activeTab === 'Active' ? (
-            <>
+          {loading ? (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyStateText}>Loading...</Text>
+            </View>
+          ) : displayRequests.length > 0 ? (
+            displayRequests.map((req: any) => (
               <RequestCard 
+                key={req.id.toString()}
                 icon={<ShoppingCart color={Colors.primary[500]} size={24} />}
-                title="Grocery Assistance"
-                date="May 22, 2024 · 2:00 PM"
-                location="Central Park - Main Entrance\nNew York, NY 10022"
-                status="Accepted"
-                statusColor={Colors.success}
-                helperImage="https://i.pravatar.cc/150?u=sarah"
-                onPress={() => navigation.navigate('RequestTracking')}
+                title={req.category?.title || 'Help Request'}
+                date={req.preferred_date}
+                location={req.location?.address || req.meeting_location}
+                status={req.status.charAt(0).toUpperCase() + req.status.slice(1)}
+                statusColor={req.status === 'pending' ? Colors.warning : Colors.info}
+                helperImage={req.volunteer?.profile_image_url}
+                onPress={() => navigation.navigate('RequestTracking', { requestId: req.id })}
               />
-              <RequestCard 
-                icon={<Pill color={Colors.primary[500]} size={24} />}
-                title="Pharmacy Pickup"
-                date="May 25, 2024 · 11:00 AM"
-                location="CVS Pharmacy\n123 5th Ave, New York, NY 10001"
-                status="Pending"
-                statusColor={Colors.warning}
-                onPress={() => navigation.navigate('RequestTracking')}
-              />
-              <RequestCard 
-                icon={<Car color={Colors.primary[500]} size={24} />}
-                title="Transportation"
-                date="May 28, 2024 · 3:30 PM"
-                location="From: 123 Main St, NY\nTo: Downtown Hospital"
-                status="Confirmed"
-                statusColor={Colors.info}
-                onPress={() => navigation.navigate('RequestTracking')}
-              />
-            </>
+            ))
           ) : (
             <View style={styles.emptyState}>
-              <Text style={styles.emptyStateText}>No history found.</Text>
+              <Text style={styles.emptyStateText}>No requests found.</Text>
             </View>
           )}
         </ScrollView>
       </View>
+      
+      <TouchableOpacity 
+        style={styles.fab} 
+        onPress={() => navigation.navigate('CreateRequest')}
+      >
+        <Plus color={Colors.neutral[0]} size={24} />
+      </TouchableOpacity>
     </SafeAreaView>
   );
 }
@@ -240,5 +258,21 @@ const styles = StyleSheet.create({
   emptyStateText: {
     ...Typography.bodyMedium,
     color: Colors.neutral[500],
+  },
+  fab: {
+    position: 'absolute',
+    bottom: 24,
+    right: 24,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: Colors.primary[500],
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: Colors.neutral[900],
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 4,
   },
 });

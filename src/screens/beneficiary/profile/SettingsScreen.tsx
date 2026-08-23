@@ -48,7 +48,7 @@ export default function SettingsScreen() {
         
         <Text style={styles.sectionTitle}>Account</Text>
         <View style={styles.sectionCard}>
-          <SettingItem icon={<User color={Colors.neutral[500]} size={20} />} title="Edit Profile" />
+          <SettingItem icon={<User color={Colors.neutral[500]} size={20} />} title="Edit Profile" onPress={() => navigation.navigate('EditProfile')} />
           <SettingItem icon={<Lock color={Colors.neutral[500]} size={20} />} title="Change Password" />
           <SettingItem icon={<Shield color={Colors.neutral[500]} size={20} />} title="Privacy Policy" />
           <SettingItem icon={<FileText color={Colors.neutral[500]} size={20} />} title="Terms of Service" noBorder />

@@ -34,6 +34,8 @@ export interface VerifyOtpResponse {
   verification_token?: string;
   user_exists?: boolean;
   token?: string; 
+  access_token?: string;
+  refresh_token?: string;
 }
 
 export interface RegistrationResponse {
@@ -100,6 +102,9 @@ export const authApi = {
   },
   getProfile: () => {
     return api.get<UserProfileResponse>('/profile');
+  },
+  updateProfile: (payload: any) => {
+    return api.patch<UserProfileResponse>('/role_profile', payload);
   },
   getCategories: () => {
     return api.get<CategoryResponse[]>('/categories');

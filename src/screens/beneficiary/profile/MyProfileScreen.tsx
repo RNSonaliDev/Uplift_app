@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useState, useEffect} from 'react';
 import {
   View,
   Text,
@@ -7,8 +7,10 @@ import {
   TouchableOpacity,
   SafeAreaView,
   Image,
+  ActivityIndicator,
 } from 'react-native';
 import {useNavigation} from '@react-navigation/native';
+import {authApi, UserProfileResponse} from '../../../api/auth';
 import {Colors} from '../../../theme/colors';
 import {Typography} from '../../../theme/typography';
 import {
@@ -25,6 +27,22 @@ import {
 
 export default function MyProfileScreen() {
   const navigation = useNavigation<any>();
+  const [profile, setProfile] = useState<UserProfileResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const data = await authApi.getProfile();
+        setProfile(data);
+      } catch (error) {
+        console.error('Failed to fetch profile', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProfile();
+  }, []);
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -37,7 +55,7 @@ export default function MyProfileScreen() {
           <ChevronLeft color={Colors.neutral[0]} size={28} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>My Profile</Text>
-        <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.navigate('Settings')}>
+        <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.navigate('EditProfile')}>
           <Edit2 color={Colors.neutral[0]} size={24} />
         </TouchableOpacity>
       </View>
@@ -45,19 +63,29 @@ export default function MyProfileScreen() {
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
         {/* Profile Info */}
         <View style={styles.profileSection}>
-          <View style={styles.avatarContainer}>
-            <Image 
-              source={{uri: 'https://i.pravatar.cc/150?u=sarah'}} 
-              style={styles.avatar} 
-            />
-            <TouchableOpacity style={styles.cameraBtn}>
-              <Camera color={Colors.primary[500]} size={16} />
-            </TouchableOpacity>
-          </View>
-          
-          <Text style={styles.name}>Sarah Johnson</Text>
-          <Text style={styles.contactInfo}>sarah.johnson@email.com</Text>
-          <Text style={styles.contactInfo}>(212) 555-0189</Text>
+          {loading ? (
+            <ActivityIndicator size="large" color={Colors.primary[500]} style={{ marginVertical: 40 }} />
+          ) : profile ? (
+            <>
+              <View style={styles.avatarContainer}>
+                <Image 
+                  source={{uri: profile.profile_image_url || 'https://i.pravatar.cc/150?u=placeholder'}} 
+                  style={styles.avatar} 
+                />
+                <TouchableOpacity style={styles.cameraBtn}>
+                  <Camera color={Colors.primary[500]} size={16} />
+                </TouchableOpacity>
+              </View>
+              
+              <Text style={styles.name}>{profile.first_name} {profile.last_name}</Text>
+              <Text style={styles.contactInfo}>{profile.email}</Text>
+              <Text style={styles.contactInfo}>
+                {profile.country_code ? `${profile.country_code} ${profile.phone}` : profile.phone}
+              </Text>
+            </>
+          ) : (
+            <Text style={styles.contactInfo}>Failed to load profile.</Text>
+          )}
         </View>
 
         {/* Menu Items */}
@@ -65,7 +93,7 @@ export default function MyProfileScreen() {
           <MenuItem 
             icon={<User color={Colors.neutral[500]} size={24} />} 
             title="Personal Information" 
-            onPress={() => {}} 
+            onPress={() => navigation.navigate('EditProfile')} 
           />
           <MenuItem 
             icon={<MapPin color={Colors.neutral[500]} size={24} />} 
@@ -138,6 +166,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.neutral[0],
     alignItems: 'center',
     paddingVertical: 32,
+    paddingHorizontal: 24,
     borderBottomLeftRadius: 32,
     borderBottomRightRadius: 32,
     shadowColor: Colors.neutral[900],
@@ -179,11 +208,13 @@ const styles = StyleSheet.create({
     ...Typography.h4,
     color: Colors.neutral[900],
     marginBottom: 4,
+    textAlign: 'center',
   },
   contactInfo: {
     ...Typography.bodyMedium,
     color: Colors.neutral[500],
     marginBottom: 2,
+    textAlign: 'center',
   },
   menuContainer: {
     backgroundColor: Colors.neutral[0],
