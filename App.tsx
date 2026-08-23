@@ -24,6 +24,7 @@ import {SuccessScreen} from './src/screens/SuccessScreen';
 import {DashboardRoleSelectionScreen} from './src/screens/DashboardRoleSelectionScreen';
 import {Colors} from './src/theme/colors';
 import {BeneficiaryTabNavigator} from './src/navigation/BeneficiaryTabNavigator';
+import {VolunteerTabNavigator} from './src/navigation/VolunteerTabNavigator';
 
 type RootStackParamList = {
   Splash: undefined;
@@ -40,6 +41,7 @@ type RootStackParamList = {
   Success: { selectedRoles?: string[] } | undefined;
   DashboardRoleSelection: { selectedRoles: string[] };
   BeneficiaryFlow: undefined;
+  VolunteerFlow: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -64,6 +66,7 @@ function App() {
             <Stack.Screen name="Success" component={SuccessScreen} />
             <Stack.Screen name="DashboardRoleSelection" component={DashboardRoleSelectionScreen} />
             <Stack.Screen name="BeneficiaryFlow" component={BeneficiaryTabNavigator} />
+            <Stack.Screen name="VolunteerFlow" component={VolunteerTabNavigator} />
           </Stack.Navigator>
         </NavigationContainer>
       </SafeAreaView>

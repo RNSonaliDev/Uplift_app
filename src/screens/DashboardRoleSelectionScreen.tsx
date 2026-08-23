@@ -28,6 +28,7 @@ import {
 // ── Navigation Types ──────────────────────────────────────
 type RootStackParamList = {
   BeneficiaryFlow: undefined;
+  VolunteerFlow: undefined;
   DashboardRoleSelection: { selectedRoles: string[] };
 };
 
@@ -211,10 +212,11 @@ export const DashboardRoleSelectionScreen: React.FC = () => {
       setIsLoading(true);
       await authApi.setDefaultRole({ default_role: role });
       
-      // Navigate to the respective dashboard
-      // Currently relying on BeneficiaryFlow for all since others aren't built yet
-      // Replace with specific flows (e.g., VolunteerFlow, SponsorFlow) once available
-      navigation.navigate('BeneficiaryFlow');
+      if (role === 'volunteer') {
+        navigation.navigate('VolunteerFlow');
+      } else {
+        navigation.navigate('BeneficiaryFlow');
+      }
     } catch (error: any) {
       Alert.alert('Error', error?.message || 'Failed to set default role.');
     } finally {

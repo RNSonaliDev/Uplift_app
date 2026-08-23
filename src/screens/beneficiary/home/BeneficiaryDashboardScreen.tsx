@@ -10,10 +10,11 @@ import {
 import {useNavigation, useFocusEffect} from '@react-navigation/native';
 import Svg, {Path, Circle} from 'react-native-svg';
 import {api} from '../../../api/client';
-import {authApi, CategoryResponse} from '../../../api/auth';
+import {authApi, CategoryResponse, UserProfileResponse} from '../../../api/auth';
 import {Colors} from '../../../theme/colors';
 import {Typography} from '../../../theme/typography';
 import {
+  ArrowRightLeft,
   Bell,
   Plus,
   List,
@@ -33,17 +34,22 @@ export default function BeneficiaryDashboardScreen() {
   const [upcomingRequest, setUpcomingRequest] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [categories, setCategories] = useState<CategoryResponse[]>([]);
+  const [profile, setProfile] = useState<UserProfileResponse | null>(null);
 
   React.useEffect(() => {
-    const fetchCategories = async () => {
+    const fetchData = async () => {
       try {
-        const data = await authApi.getCategories();
-        setCategories(data);
+        const [catData, profData] = await Promise.all([
+          authApi.getCategories(),
+          authApi.getProfile()
+        ]);
+        setCategories(catData);
+        setProfile(profData);
       } catch (error) {
-        console.error('Failed to fetch categories', error);
+        console.error('Failed to fetch data', error);
       }
     };
-    fetchCategories();
+    fetchData();
   }, []);
 
   useFocusEffect(
@@ -87,10 +93,18 @@ export default function BeneficiaryDashboardScreen() {
               </Svg>
               <Text style={styles.brandText}>Uplift</Text>
             </View>
-            <TouchableOpacity style={styles.notificationBtn}>
-              <Bell color={Colors.neutral[0]} size={24} />
-              <View style={styles.notificationDot} />
-            </TouchableOpacity>
+            <View style={{flexDirection: 'row', alignItems: 'center'}}>
+              <TouchableOpacity 
+                style={styles.notificationBtn}
+                onPress={() => profile && navigation.navigate('DashboardRoleSelection', { selectedRoles: profile.selected_roles || [] })}
+              >
+                <ArrowRightLeft color={Colors.neutral[0]} size={22} />
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.notificationBtn}>
+                <Bell color={Colors.neutral[0]} size={24} />
+                <View style={styles.notificationDot} />
+              </TouchableOpacity>
+            </View>
           </View>
           <View>
             <Text style={styles.welcomeText}>Welcome back,</Text>
