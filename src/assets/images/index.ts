@@ -3,3 +3,4 @@ export const backgroundimage = require('./backgroundimage.jpeg');
 export const friendImage = require('./friendImage.jpeg')
 export const logo = require('./Logo-light.png')
 export const whatsappImage = require("./WhatsApp.jpeg")
+export const button_user = require("./button_user.png") 

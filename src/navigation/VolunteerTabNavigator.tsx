@@ -23,6 +23,7 @@ export function VolunteerTabNavigator() {
   return (
     <Tab.Navigator
       screenOptions={{
+        unmountOnBlur: true,
         headerShown: false,
         tabBarActiveTintColor: Colors.primary[500],
         tabBarInactiveTintColor: Colors.neutral[400],

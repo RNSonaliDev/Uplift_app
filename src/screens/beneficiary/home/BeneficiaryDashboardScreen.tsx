@@ -203,7 +203,10 @@ export default function BeneficiaryDashboardScreen() {
                   key={category.id}
                   icon={<IconComponent color={Colors.primary[500]} size={24} />}
                   title={category.title}
-                  onPress={() => navigation.navigate('RequestHelp', { category_id: category.id.toString() })}
+                  onPress={() => navigation.navigate('RequestsTab', {
+                  screen: 'CreateRequest',
+                  params: { category_id: category.id.toString() }
+                })}
                 />
               );
             })

@@ -582,7 +582,7 @@ export const VolunteerSetupScreen: React.FC = () => {
                 </View>
                 <View style={styles.pillContainer}>
                   <AppText variant="caption" color={Colors.primary[600]} weight="semiBold">
-                    {Math.round(radiusWithin)} miles{Math.round(radiusWithin) === 20 ? ' (default)' : ''}
+                    {Math.round(radiusWithin)} miles
                   </AppText>
                 </View>
               </View>

@@ -17,6 +17,7 @@ import {authApi, UserProfileResponse} from '../../../api/auth';
 import {Colors} from '../../../theme/colors';
 import {Typography} from '../../../theme/typography';
 import {horizontalScale, verticalScale, moderateScale} from '../../../utils/responsive';
+import { button_user } from '../../../assets/images';
 import {
   ChevronLeft,
   Edit2,
@@ -78,6 +79,9 @@ export default function MyProfileScreen() {
     ]);
   };
 
+  const userRoles = profile?.roles?.map((r: any) => r) || [];
+  console.log("@@@ userRolesuserRoles===", userRoles)
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.header}>
@@ -103,7 +107,11 @@ export default function MyProfileScreen() {
             <>
               <View style={styles.avatarContainer}>
                 <Image 
-                  source={{uri: getFullImageUrl(profile.profile_image_url) || 'https://i.pravatar.cc/150?u=placeholder'}} 
+                  source={
+                    profile.profile_image_url 
+                      ? { uri: getFullImageUrl(profile.profile_image_url) } 
+                      : button_user
+                  }
                   style={styles.avatar} 
                 />
                 {/* <TouchableOpacity style={styles.cameraBtn}>
@@ -149,11 +157,13 @@ export default function MyProfileScreen() {
             title="Add Role" 
             onPress={() => navigation.navigate('SelectRoles', { fromProfile: true })} 
           />
-          <MenuItem 
-            icon={<SettingsIcon color={Colors.neutral[500]} size={24} />} 
-            title="Change Role" 
-            onPress={() => profile && navigation.navigate('DashboardRoleSelection', { selectedRoles: profile.selected_roles || profile.roles?.map((r: any) => r.role) || [] })} 
-          />
+          {userRoles.length > 1 && (
+            <MenuItem 
+              icon={<SettingsIcon color={Colors.neutral[500]} size={24} />} 
+              title="Switch Role" 
+              onPress={() => profile && navigation.navigate('DashboardRoleSelection', { selectedRoles: userRoles })} 
+            />
+          )}
           <MenuItem 
             icon={<Key color={Colors.neutral[500]} size={24} />} 
             title="Change Password" 

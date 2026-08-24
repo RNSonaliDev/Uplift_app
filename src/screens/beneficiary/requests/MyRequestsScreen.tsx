@@ -111,7 +111,7 @@ export default function MyRequestsScreen() {
       
       <TouchableOpacity 
         style={styles.fab} 
-        onPress={() => navigation.navigate('CreateRequest')}
+        onPress={() => navigation.navigate('HomeTab', { screen: 'RequestHelp' })}
       >
         <Plus color={Colors.neutral[0]} size={24} />
       </TouchableOpacity>

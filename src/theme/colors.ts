@@ -13,10 +13,10 @@ export const Colors = {
     100: '#E0DEFF',
     200: '#C2BCFF',
     300: '#9E94FF',
-    400: '#6D5DF6', // Purple from logo
-    500: '#442BD2', // Main Brand Blue
-    600: '#3730A3',
-    700: '#312E81',
+    400: '#8678F9', 
+    500: '#6D5DF6', // Main Brand Purple (from logo)
+    600: '#5243C9',
+    700: '#442BD2', // Old Main Brand Blue
     800: '#23215E',
     900: '#0F172A', // Dark Navy for text
   },
@@ -69,7 +69,7 @@ export const Colors = {
   success: '#22C55E',
   error: '#EF4444',
   warning: '#F59E0B',
-  info: '#442BD2',
+  info: '#6D5DF6',
 
   // Background
   background: {

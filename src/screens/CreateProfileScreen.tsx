@@ -8,6 +8,7 @@ import {
   KeyboardAvoidingView,
   Image,
   Alert,
+  TouchableWithoutFeedback,
 } from 'react-native';
 import {useNavigation, useRoute, RouteProp} from '@react-navigation/native';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
@@ -18,6 +19,7 @@ import {AppText} from '../components/AppText';
 import {Button} from '../components/Button';
 import {Input} from '../components/Input';
 import {UpliftLogo} from '../components/UpliftLogo';
+import {button_user} from '../assets/images';
 import {authApi} from '../api';
 import {Colors} from '../theme/colors';
 import {persistAuthToken} from '../api/client';
@@ -326,187 +328,160 @@ export const CreateProfileScreen: React.FC = () => {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled">
           
-          {/* Header with Back Button */}
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => navigation.goBack()}
-            hitSlop={{top: 12, bottom: 12, left: 12, right: 12}}>
-            <BackArrowIcon size={moderateScale(24)} />
-          </TouchableOpacity>
-
-          {/* Logo & Title */}
-          <View style={styles.headerSection}>
-            {/* <UpliftLogo size={moderateScale(0.8, 0.3)} /> */}
-            <AppText variant="h2" center color={Colors.primary[900]} style={styles.title}>
-              Create Your Profile
-            </AppText>
-            <AppText
-              variant="bodyMedium"
-              center
-              color={Colors.neutral[500]}
-              style={styles.subtitle}>
-              Tell us a little about yourself. This helps us{'\n'}personalize your experience and keep you safe.
-            </AppText>
-          </View>
-
-          {/* Profile Photo Section */}
-          <View style={styles.sectionContainer}>
-            <AppText variant="labelLarge" color={Colors.primary[900]} weight="bold" style={styles.sectionLabel}>
-              Profile Photo
-            </AppText>
-            <View style={styles.photoUploadContainer}>
-              <TouchableOpacity style={styles.photoCircle} onPress={handleSelectPhoto}>
-                {profilePhoto ? (
-                  <Image source={{ uri: profilePhoto }} style={styles.photoImage} />
-                ) : (
-                  <CameraIcon />
-                )}
+          <TouchableWithoutFeedback onPress={() => {
+            if (showPhoneInfo) setShowPhoneInfo(false);
+          }}>
+            <View style={{flex: 1}}>
+              {/* Header with Back Button */}
+              <TouchableOpacity
+                style={styles.backButton}
+                onPress={() => navigation.goBack()}
+                hitSlop={{top: 12, bottom: 12, left: 12, right: 12}}>
+                <BackArrowIcon size={moderateScale(24)} />
               </TouchableOpacity>
-              <View style={styles.photoTextContainer}>
-                <AppText variant="bodySmall" color={Colors.neutral[700]}>
-                  Add a clear photo of yourself{'\n'}so others can recognize you.
+
+              {/* Logo & Title */}
+              <View style={styles.headerSection}>
+                {/* <UpliftLogo size={moderateScale(0.8, 0.3)} /> */}
+                <AppText variant="h2" center color={Colors.primary[900]} style={styles.title}>
+                  Create Your Profile
                 </AppText>
-                <TouchableOpacity style={{marginTop: 8}} onPress={handleSelectPhoto}>
-                  <AppText variant="labelMedium" color={Colors.primary[500]} weight="bold">
-                    {profilePhoto ? 'Change Photo' : 'Add Photo'}
-                  </AppText>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-
-          {/* Form Fields */}
-          <View style={styles.sectionContainer}>
-              <View style={styles.nameColumn}>
-                <Input
-                  label="First name"
-                  placeholder="Enter first name"
-                  leftIcon={<UserOutlineIcon />}
-                  value={firstName}
-                  onChangeText={(text) => {
-                    setFirstName(text);
-                    if (errors.firstName) setErrors({...errors, firstName: ''});
-                  }}
-                  error={errors.firstName}
-                />
-              </View>
-              <View style={styles.nameSpacer} />
-              <View style={styles.nameColumn}>
-                <Input
-                  label="Last name"
-                  placeholder="Enter last name"
-                  leftIcon={<UserOutlineIcon />}
-                  value={lastName}
-                  onChangeText={(text) => {
-                    setLastName(text);
-                    if (errors.lastName) setErrors({...errors, lastName: ''});
-                  }}
-                  error={errors.lastName}
-                />
-              </View>
-
-            <Input
-              label="Email address"
-              placeholder="Enter your email address"
-              leftIcon={<MailOutlineIcon />}
-              value={email}
-              onChangeText={(text) => {
-                setEmail(text);
-                if (errors.email) setErrors({...errors, email: ''});
-              }}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              error={errors.email}
-              disabled={isEmail}
-            />
-
-            {/* Phone Number with Tooltip */}
-            <View style={styles.phoneInputWrapper}>
-              <View style={styles.labelRow}>
-                <AppText variant="labelMedium" color={errors.phoneNumber ? Colors.error : Colors.neutral[700]} style={{marginBottom: Spacing.xs}}>
-                  Phone number
+                <AppText
+                  variant="bodyMedium"
+                  center
+                  color={Colors.neutral[500]}
+                  style={styles.subtitle}>
+                  Tell us a little about yourself. This helps us{'\n'}personalize your experience and keep you safe.
                 </AppText>
-                <TouchableOpacity 
-                  style={{marginLeft: 6, marginBottom: Spacing.xs}}
-                  onPress={() => setShowPhoneInfo(!showPhoneInfo)}
-                >
-                  <InfoCircleIcon size={18} color={Colors.primary[500]} />
-                </TouchableOpacity>
               </View>
 
-              <Input
-                placeholder="(201) 555-0123"
-                leftIcon={<PhonePrefixPrefix />}
-                value={phoneNumber}
-                onChangeText={(text) => {
-                  setPhoneNumber(text);
-                  if (errors.phoneNumber) setErrors({...errors, phoneNumber: ''});
-                }}
-                keyboardType="phone-pad"
-                maxLength={10}
-                error={errors.phoneNumber}
-                disabled={!isEmail}
-              />
-
-              {/* Floating Tooltip */}
-              {showPhoneInfo && (
-                <View style={styles.tooltipContainer}>
-                  {/* Left pointing triangle */}
-                  <View style={styles.tooltipTriangle} />
-                  <AppText variant="caption" color={Colors.neutral[800]} style={{lineHeight: 18}}>
-                    We use your phone number to verify your identity and enable important safety notifications.
-                  </AppText>
+              {/* Profile Photo Section */}
+              <View style={styles.sectionContainer}>
+                <AppText variant="labelLarge" color={Colors.primary[900]} weight="bold" style={styles.sectionLabel}>
+                  Profile Photo
+                </AppText>
+                <View style={styles.photoUploadContainer}>
+                  <TouchableOpacity style={styles.photoCircle} onPress={handleSelectPhoto}>
+                    {profilePhoto ? (
+                      <Image source={{ uri: profilePhoto }} style={styles.photoImage} />
+                    ) : (
+                      <Image source={button_user} style={styles.photoImage} />
+                    )}
+                  </TouchableOpacity>
+                  <View style={styles.photoTextContainer}>
+                    <AppText variant="bodySmall" color={Colors.neutral[700]}>
+                      Add a clear photo of yourself{'\n'}so others can recognize you.
+                    </AppText>
+                    <TouchableOpacity style={{marginTop: 8}} onPress={handleSelectPhoto}>
+                      <AppText variant="labelMedium" color={Colors.primary[500]} weight="bold">
+                        {profilePhoto ? 'Change Photo' : 'Add Photo'}
+                      </AppText>
+                    </TouchableOpacity>
+                  </View>
                 </View>
-              )}
+              </View>
+
+              {/* Form Fields */}
+              <View style={styles.sectionContainer}>
+                  <View style={styles.nameColumn}>
+                    <Input
+                      label="First name"
+                      placeholder="Enter first name"
+                      leftIcon={<UserOutlineIcon />}
+                      value={firstName}
+                      onChangeText={(text) => {
+                        setFirstName(text);
+                        if (errors.firstName) setErrors({...errors, firstName: ''});
+                      }}
+                      error={errors.firstName}
+                    />
+                  </View>
+                  <View style={styles.nameSpacer} />
+                  <View style={styles.nameColumn}>
+                    <Input
+                      label="Last name"
+                      placeholder="Enter last name"
+                      leftIcon={<UserOutlineIcon />}
+                      value={lastName}
+                      onChangeText={(text) => {
+                        setLastName(text);
+                        if (errors.lastName) setErrors({...errors, lastName: ''});
+                      }}
+                      error={errors.lastName}
+                    />
+                  </View>
+
+                <Input
+                  label="Email address"
+                  placeholder="Enter your email address"
+                  leftIcon={<MailOutlineIcon />}
+                  value={email}
+                  onChangeText={(text) => {
+                    setEmail(text);
+                    if (errors.email) setErrors({...errors, email: ''});
+                  }}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  error={errors.email}
+                  disabled={isEmail}
+                />
+
+                {/* Phone Number with Tooltip */}
+                <View style={styles.phoneInputWrapper}>
+                  <View style={styles.labelRow}>
+                    <AppText variant="labelMedium" color={errors.phoneNumber ? Colors.error : Colors.neutral[700]} style={{marginBottom: Spacing.xs}}>
+                      Phone number
+                    </AppText>
+                    <TouchableOpacity 
+                      style={{marginLeft: 6, marginBottom: Spacing.xs}}
+                      onPress={() => setShowPhoneInfo(!showPhoneInfo)}
+                    >
+                      <InfoCircleIcon size={18} color={Colors.primary[500]} />
+                    </TouchableOpacity>
+                  </View>
+
+                  <Input
+                    placeholder="(201) 555-0123"
+                    leftIcon={<PhonePrefixPrefix />}
+                    value={phoneNumber}
+                    onChangeText={(text) => {
+                      setPhoneNumber(text);
+                      if (errors.phoneNumber) setErrors({...errors, phoneNumber: ''});
+                    }}
+                    keyboardType="phone-pad"
+                    maxLength={10}
+                    error={errors.phoneNumber}
+                    disabled={!isEmail}
+                  />
+
+                  {/* Floating Tooltip */}
+                  {showPhoneInfo && (
+                    <View style={styles.tooltipContainer}>
+                      {/* Left pointing triangle */}
+                      <View style={styles.tooltipTriangle} />
+                      <AppText variant="caption" color={Colors.neutral[800]} style={{lineHeight: 18}}>
+                        We use your phone number to verify your identity and enable important safety notifications.
+                      </AppText>
+                    </View>
+                  )}
+                </View>
+              </View>
+
+              {/* Spacer */}
+              <View style={styles.spacer} />
+
+              {/* Save & Continue Button */}
+              <Button
+                title="Save & Continue"
+                color="primary"
+                size="lg"
+                fullWidth
+                loading={isSubmitting}
+                onPress={handleSaveAndContinue}
+                style={styles.continueButton}
+              />
             </View>
-          </View>
-
-          {/* Emergency Contact Section */}
-          {/* <View style={styles.sectionContainer}>
-            <AppText variant="h3" color={Colors.primary[900]} weight="bold" style={styles.sectionHeader}>
-              Emergency Contact
-            </AppText>
-
-            <Input
-              label="Contact name"
-              placeholder="Enter contact name"
-              leftIcon={<UserOutlineIcon />}
-              value={contactName}
-              onChangeText={setContactName}
-            />
-
-            <Input
-              label="Contact phone"
-              placeholder="(201) 555-0198"
-              leftIcon={<PhonePrefixPrefix />}
-              value={contactPhone}
-              onChangeText={setContactPhone}
-              keyboardType="phone-pad"
-              maxLength={10}
-            />
-
-            <Input
-              label="Contact address"
-              placeholder="Enter contact address"
-              leftIcon={<LocationPinIcon />}
-              value={contactAddress}
-              onChangeText={setContactAddress}
-            />
-          </View> */}
-
-          {/* Spacer */}
-          <View style={styles.spacer} />
-
-          {/* Save & Continue Button */}
-          <Button
-            title="Save & Continue"
-            color="primary"
-            size="lg"
-            fullWidth
-            loading={isSubmitting}
-            onPress={handleSaveAndContinue}
-            style={styles.continueButton}
-          />
+          </TouchableWithoutFeedback>
         </ScrollView>
       </KeyboardAvoidingView>
     </View>

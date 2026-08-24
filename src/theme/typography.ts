@@ -144,16 +144,13 @@ export const Typography: Record<string, TextStyle> = {
   buttonLarge: {
     fontFamily: FontFamily.semiBold,
     fontSize: FontSize.lg,
-    lineHeight: LineHeight.lg,
   },
   buttonMedium: {
     fontFamily: FontFamily.semiBold,
     fontSize: FontSize.md,
-    lineHeight: LineHeight.md,
   },
   buttonSmall: {
     fontFamily: FontFamily.semiBold,
     fontSize: FontSize.sm,
-    lineHeight: LineHeight.sm,
   },
 } as const;

@@ -101,12 +101,12 @@ const LockIcon: React.FC<{size?: number}> = ({size = 16}) => (
       width="14"
       height="10"
       rx="2"
-      stroke={Colors.neutral[400]}
+      stroke={Colors.primary[500]}
       strokeWidth="1.5"
     />
     <Path
       d="M8 11V7C8 4.79 9.79 3 12 3C14.21 3 16 4.79 16 7V11"
-      stroke={Colors.neutral[400]}
+      stroke={Colors.primary[500]}
       strokeWidth="1.5"
       strokeLinecap="round"
     />
@@ -555,7 +555,7 @@ export const VerifyAccountScreen: React.FC = () => {
 
           {/* Security Note */}
           <View style={styles.securityNote}>
-            <LockIcon size={moderateScale(16)} />
+            <LockIcon size={moderateScale(16)}  />
             <AppText
               variant="bodySmall"
               color={Colors.neutral[500]}

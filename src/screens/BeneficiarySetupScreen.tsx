@@ -239,6 +239,8 @@ export const BeneficiarySetupScreen: React.FC = () => {
 
   const handleContinue = async () => {
     if (validate()) {
+      const formattedDob = `${dateVal.getFullYear()}-${String(dateVal.getMonth() + 1).padStart(2, '0')}-${String(dateVal.getDate()).padStart(2, '0')}`;
+
       const currentRoleData = {
         role: 'beneficiary',
         profile: {
@@ -246,7 +248,7 @@ export const BeneficiarySetupScreen: React.FC = () => {
           last_name: lastName,
           email: email,
           phone: `+1${phoneNumber.replace(/\D/g, '')}`,
-          dob: dob,
+          dob: formattedDob,
           zip_code: zipCode,
           notes: notes,
         }

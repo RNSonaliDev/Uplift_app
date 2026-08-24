@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useState} from 'react';
 import {
   View,
   StyleSheet,
@@ -10,6 +10,7 @@ import {useNavigation, useRoute, RouteProp} from '@react-navigation/native';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import Svg, {Path, Circle, Rect} from 'react-native-svg';
 
+import {authApi} from '../api';
 import {AppText} from '../components/AppText';
 import {Button} from '../components/Button';
 import {Colors} from '../theme/colors';
@@ -141,15 +142,29 @@ export const SuccessScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProps>();
   const route = useRoute<SuccessScreenRouteProp>();
   const selectedRoles = route.params?.selectedRoles || [];
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     if (selectedRoles.length > 1) {
-      navigation.navigate('DashboardRoleSelection', { selectedRoles });
-    } else {
+      navigation.replace('DashboardRoleSelection', { selectedRoles });
+    } else if (selectedRoles.length === 1) {
       const role = selectedRoles[0];
-      // For now, if it's beneficiary or any other role, route to BeneficiaryFlow as placeholder if others aren't built
-      // Or in real app, route to role-specific flow
-      navigation.navigate('BeneficiaryFlow');
+      try {
+        setIsLoading(true);
+        await authApi.setDefaultRole({ default_role: role });
+      } catch (error) {
+        console.error('Failed to set default role:', error);
+      } finally {
+        setIsLoading(false);
+      }
+      
+      if (role === 'volunteer') navigation.replace('VolunteerFlow' as any);
+      else if (role === 'sponsor') navigation.replace('SponsorFlow' as any);
+      else if (role === 'organization') navigation.replace('OrganizationFlow' as any);
+      else if (role === 'beneficiary') navigation.replace('BeneficiaryFlow' as any);
+      else navigation.replace('Welcome');
+    } else {
+      navigation.replace('Welcome');
     }
   };
 
@@ -211,6 +226,8 @@ export const SuccessScreen: React.FC = () => {
           color="primary"
           size="lg"
           fullWidth
+          loading={isLoading}
+          disabled={isLoading}
           onPress={handleContinue}
           style={styles.continueButton}
         />
