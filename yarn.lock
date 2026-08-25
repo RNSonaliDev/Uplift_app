@@ -2826,6 +2826,7 @@ __metadata:
     react-native-safe-area-context: ^5.5.2
     react-native-screens: ^4.26.2
     react-native-svg: ^15.15.5
+    react-native-toast-message: ^2.4.0
     react-test-renderer: 19.2.3
     typescript: ^5.8.3
   languageName: unknown
@@ -7603,6 +7604,16 @@ __metadata:
     react: "*"
     react-native: "*"
   checksum: 78f5aa54150be40075af77bea0d01f0f25c942bb3a8114c25386426f6af114d3602e7ccae94da4ba6ff0f85f6087b544c7067ab3415dd600924995c730aa4a60
+  languageName: node
+  linkType: hard
+
+"react-native-toast-message@npm:^2.4.0":
+  version: 2.4.0
+  resolution: "react-native-toast-message@npm:2.4.0"
+  peerDependencies:
+    react: "*"
+    react-native: "*"
+  checksum: d573f26371736ac21bcb9b7b9884fcf1a3739d95f2ef346aba818130f451f5506ed582f65e1bd16d1a0d5306a405e676c8737d0937214e04968ecc75ad426dca
   languageName: node
   linkType: hard
 

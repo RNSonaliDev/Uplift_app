@@ -12,15 +12,16 @@ import {useNavigation, useFocusEffect} from '@react-navigation/native';
 import {api, getFullImageUrl} from '../../../api/client';
 import {Colors} from '../../../theme/colors';
 import {Typography} from '../../../theme/typography';
-import {formatDate} from '../../../utils/dateFormatter';
+import {formatDate, formatTime12Hour} from '../../../utils/dateFormatter';
 import {horizontalScale, verticalScale, moderateScale} from '../../../utils/responsive';
 import {
   ChevronLeft,
-  ChevronRight,
   ShoppingCart,
   Pill,
   Car,
   Plus,
+  Calendar,
+  MapPin
 } from 'lucide-react-native';
 
 export default function MyRequestsScreen() {
@@ -93,7 +94,9 @@ export default function MyRequestsScreen() {
                 key={req.id.toString()}
                 icon={<ShoppingCart color={Colors.primary[500]} size={24} />}
                 title={req.category?.title || 'Help Request'}
+                referenceNumber={req.reference_number || req.id}
                 date={formatDate(req.preferred_date)}
+                time={req.preferred_start_time && req.preferred_end_time ? `${formatTime12Hour(req.preferred_start_time)} - ${formatTime12Hour(req.preferred_end_time)}` : ''}
                 location={req.location?.address || req.meeting_location}
                 status={req.status.charAt(0).toUpperCase() + req.status.slice(1)}
                 statusColor={req.status === 'pending' ? Colors.warning : Colors.info}
@@ -108,42 +111,56 @@ export default function MyRequestsScreen() {
           )}
         </ScrollView>
       </View>
-      
-      <TouchableOpacity 
-        style={styles.fab} 
-        onPress={() => navigation.navigate('HomeTab', { screen: 'RequestHelp' })}
-      >
-        <Plus color={Colors.neutral[0]} size={24} />
-      </TouchableOpacity>
     </SafeAreaView>
   );
 }
 
 const RequestCard = ({
-  icon, title, date, location, status, statusColor, helperImage, onPress
+  icon, title, referenceNumber, date, time, location, status, statusColor, helperImage, onPress
 }: {
-  icon: React.ReactNode, title: string, date: string, location: string, status: string, statusColor: string, helperImage?: string, onPress: () => void
-}) => (
-  <TouchableOpacity style={styles.card} onPress={onPress}>
-    <View style={styles.cardHeader}>
-      <View style={styles.iconContainer}>{icon}</View>
-      <View style={styles.cardTitleContainer}>
-        <Text style={styles.cardTitle}>{title}</Text>
-        <Text style={styles.cardDate}>{date}</Text>
+  icon: React.ReactNode, title: string, referenceNumber: string, date: string, time: string, location: string, status: string, statusColor: string, helperImage?: string, onPress: () => void
+}) => {
+  const getBadgeColors = () => {
+    const s = status.toLowerCase();
+    if (s === 'confirmed' || s === 'completed' || s === 'accepted') return { bg: '#DCFCE7', text: '#16A34A' }; // Green
+    if (s === 'pending') return { bg: '#FEF3C7', text: '#D97706' }; // Orange
+    return { bg: '#E0DEFF', text: '#6D5DF6' }; // Primary
+  };
+  const badge = getBadgeColors();
+
+  return (
+    <TouchableOpacity style={styles.card} onPress={onPress}>
+      <View style={styles.cardTopRow}>
+        <View style={styles.iconContainer}>{icon}</View>
+        <View style={styles.cardContent}>
+          <Text style={styles.cardTitle}>{title}</Text>
+          {referenceNumber ? (
+            <Text style={[styles.infoText, { marginBottom: 6 }]}>#{referenceNumber}</Text>
+          ) : null}
+          
+          <View style={[styles.infoRow, { alignItems: 'flex-start' }]}>
+            <Calendar color={Colors.neutral[400]} size={14} style={[styles.infoIcon, { marginTop: 2 }]} />
+            <Text style={[styles.infoText, { flex: 1, lineHeight: 18 }]}>
+              {date}
+              {time ? <Text style={styles.infoDot}> • {time}</Text> : null}
+            </Text>
+          </View>
+          
+          <View style={[styles.infoRow, { alignItems: 'flex-start', marginTop: 6 }]}>
+            <MapPin color={Colors.neutral[400]} size={14} style={[styles.infoIcon, { marginTop: 2 }]} />
+            <Text style={[styles.infoText, { flex: 1, lineHeight: 18 }]}>{location}</Text>
+          </View>
+        </View>
       </View>
-      <ChevronRight color={Colors.primary[300]} size={20} />
-    </View>
-    <View style={styles.cardBody}>
-      <Text style={styles.cardLocation}>{location}</Text>
-    </View>
-    <View style={styles.cardFooter}>
-      <Text style={[styles.statusText, {color: statusColor}]}>{status}</Text>
-      {helperImage && (
-        <Image source={{uri: helperImage}} style={styles.helperAvatar} />
-      )}
-    </View>
-  </TouchableOpacity>
-);
+      
+      <View style={styles.cardFooterAligned}>
+        <View style={[styles.statusBadge, { backgroundColor: badge.bg }]}>
+          <Text style={[styles.statusBadgeText, { color: badge.text }]}>{status}</Text>
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
+};
 
 const styles = StyleSheet.create({
   safeArea: {
@@ -198,62 +215,68 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: Colors.neutral[0],
     borderRadius: moderateScale(16),
-    padding: moderateScale(20),
+    padding: moderateScale(16),
     marginBottom: verticalScale(16),
+    borderWidth: 1,
+    borderColor: Colors.neutral[100],
     shadowColor: Colors.neutral[900],
     shadowOffset: {width: 0, height: verticalScale(2)},
     shadowOpacity: 0.05,
     shadowRadius: moderateScale(8),
     elevation: 2,
   },
-  cardHeader: {
+  cardTopRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: verticalScale(12),
   },
   iconContainer: {
-    width: moderateScale(40),
-    height: moderateScale(40),
-    borderRadius: moderateScale(20),
+    width: moderateScale(48),
+    height: moderateScale(48),
+    borderRadius: moderateScale(12),
     backgroundColor: Colors.primary[50],
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: horizontalScale(12),
+    marginRight: horizontalScale(16),
   },
-  cardTitleContainer: {
+  cardContent: {
     flex: 1,
   },
   cardTitle: {
-    ...Typography.labelMedium,
+    ...Typography.labelLarge,
+    fontFamily: 'Inter-SemiBold',
+    fontWeight: '600',
     color: Colors.neutral[900],
-    marginBottom: verticalScale(2),
+    marginBottom: verticalScale(4),
   },
-  cardDate: {
-    ...Typography.caption,
-    color: Colors.neutral[500],
-  },
-  cardBody: {
-    marginLeft: horizontalScale(52),
-    marginBottom: verticalScale(12),
-  },
-  cardLocation: {
-    ...Typography.caption,
-    color: Colors.neutral[500],
-    lineHeight: verticalScale(18),
-  },
-  cardFooter: {
-    marginLeft: horizontalScale(52),
+  infoRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
   },
-  statusText: {
-    ...Typography.labelMedium,
+  infoIcon: {
+    marginRight: horizontalScale(6),
   },
-  helperAvatar: {
-    width: moderateScale(24),
-    height: moderateScale(24),
+  infoText: {
+    ...Typography.bodySmall,
+    color: Colors.neutral[600],
+  },
+  infoDot: {
+    ...Typography.bodySmall,
+    color: Colors.neutral[400],
+    marginHorizontal: horizontalScale(6),
+  },
+  cardFooterAligned: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    marginTop: verticalScale(8),
+  },
+  statusBadge: {
+    paddingHorizontal: horizontalScale(12),
+    paddingVertical: verticalScale(4),
     borderRadius: moderateScale(12),
+  },
+  statusBadgeText: {
+    ...Typography.labelSmall,
+    fontFamily: 'Inter-SemiBold',
+    fontWeight: '600',
   },
   emptyState: {
     padding: moderateScale(40),

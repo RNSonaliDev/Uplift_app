@@ -1,9 +1,9 @@
 import React from 'react';
 import {View, StyleSheet, SafeAreaView} from 'react-native';
 import {useNavigation, useRoute} from '@react-navigation/native';
-import {Check, ShoppingBag, Pill, FileText} from 'lucide-react-native';
+import {Check, ShoppingCart, Pill, Soup, Car, Users, MoreHorizontal, Calendar, Clock, MapPin} from 'lucide-react-native';
 import {AppText} from '../../../components/AppText';
-import {formatDate} from '../../../utils/dateFormatter';
+import {formatDate, formatTime12Hour} from '../../../utils/dateFormatter';
 import {Button} from '../../../components/Button';
 import {Colors} from '../../../theme/colors';
 import {
@@ -17,11 +17,14 @@ export default function RequestAcceptedScreen() {
   const route = useRoute<any>();
   const request = route.params?.request || {};
 
-  const getCategoryIcon = (title: string) => {
+  const getCategoryIcon = (title: string, size = 20) => {
     const t = title?.toLowerCase() || '';
-    if (t.includes('pharmacy') || t.includes('medical') || t.includes('pill')) return <Pill color={Colors.primary[500]} size={20} />;
-    if (t.includes('grocery') || t.includes('food')) return <ShoppingBag color={Colors.primary[500]} size={20} />;
-    return <FileText color={Colors.primary[500]} size={20} />;
+    if (t.includes('groc') || t.includes('shop')) return <ShoppingCart color={Colors.primary[500]} size={size} />;
+    if (t.includes('pharm') || t.includes('med') || t.includes('pill')) return <Pill color={Colors.primary[500]} size={size} />;
+    if (t.includes('meal') || t.includes('food') || t.includes('soup')) return <Soup color={Colors.secondary[500]} size={size} />;
+    if (t.includes('trans') || t.includes('drive') || t.includes('car')) return <Car color={Colors.primary[500]} size={size} />;
+    if (t.includes('comp') || t.includes('people') || t.includes('user')) return <Users color={Colors.primary[500]} size={size} />;
+    return <MoreHorizontal color={Colors.primary[500]} size={size} />;
   };
 
   const ConfettiDots = () => {
@@ -81,25 +84,43 @@ export default function RequestAcceptedScreen() {
         <View style={styles.summaryCard}>
           <View style={styles.cardHeader}>
             <View style={styles.iconContainer}>
-              {getCategoryIcon(request.category?.title)}
+              {getCategoryIcon(request.category?.title, 24)}
             </View>
-            <AppText variant="h6" color={Colors.neutral[900]}>
-              {request.category?.title || 'Help Request'}
-            </AppText>
+            <View style={{flex: 1}}>
+              <AppText variant="labelLarge" color={Colors.neutral[900]}>
+                {request.category?.title || 'Help Request'}
+              </AppText>
+              <AppText variant="bodySmall" color={Colors.neutral[500]} style={{marginTop: 4}}>
+                #{request.reference_number || request.id}
+              </AppText>
+            </View>
           </View>
           
+          <View style={styles.divider} />
+          
           <View style={styles.cardDetails}>
-            <AppText variant="labelMedium" color={Colors.neutral[800]} style={styles.detailText}>
-              {formatDate(request.preferred_date)}
-            </AppText>
-            {request.hours_required && (
-              <AppText variant="labelMedium" color={Colors.neutral[800]} style={styles.detailText}>
-                {request.hours_required} Hours
+            <View style={styles.detailRow}>
+              <Calendar color={Colors.neutral[500]} size={20} />
+              <AppText variant="bodyMedium" color={Colors.neutral[700]} style={styles.detailText}>
+                {formatDate(request.preferred_date)}
               </AppText>
-            )}
-            <AppText variant="labelMedium" color={Colors.neutral[800]} style={styles.detailText} numberOfLines={2}>
-              {request.location?.address || request.meeting_location}
-            </AppText>
+            </View>
+
+            {(request.preferred_start_time && request.preferred_end_time) ? (
+              <View style={styles.detailRow}>
+                <Clock color={Colors.neutral[500]} size={20} />
+                <AppText variant="bodyMedium" color={Colors.neutral[700]} style={styles.detailText}>
+                  {formatTime12Hour(request.preferred_start_time)} - {formatTime12Hour(request.preferred_end_time)}
+                </AppText>
+              </View>
+            ) : null}
+
+            <View style={styles.detailRow}>
+              <MapPin color={Colors.neutral[500]} size={20} />
+              <AppText variant="bodyMedium" color={Colors.neutral[700]} style={styles.detailText} numberOfLines={2}>
+                {request.location?.address || request.meeting_location}
+              </AppText>
+            </View>
           </View>
         </View>
       </View>
@@ -157,10 +178,10 @@ const styles = StyleSheet.create({
   summaryCard: {
     width: '100%',
     backgroundColor: Colors.neutral[0],
-    borderRadius: 16,
+    borderRadius: 20,
     padding: moderateScale(20),
     borderWidth: 1,
-    borderColor: Colors.neutral[200],
+    borderColor: Colors.neutral[100],
     shadowColor: Colors.neutral[900],
     shadowOffset: {width: 0, height: 4},
     shadowOpacity: 0.05,
@@ -173,19 +194,29 @@ const styles = StyleSheet.create({
     marginBottom: verticalScale(16),
   },
   iconContainer: {
-    width: moderateScale(40),
-    height: moderateScale(40),
-    borderRadius: 12,
+    width: moderateScale(48),
+    height: moderateScale(48),
+    borderRadius: 24,
     backgroundColor: Colors.primary[50],
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: horizontalScale(12),
+    marginRight: horizontalScale(16),
+  },
+  divider: {
+    height: 1,
+    backgroundColor: Colors.neutral[100],
+    marginBottom: verticalScale(16),
   },
   cardDetails: {
-    paddingLeft: horizontalScale(52),
     gap: verticalScale(12),
   },
+  detailRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
   detailText: {
+    marginLeft: horizontalScale(12),
+    flex: 1,
     lineHeight: 22,
   },
   footer: {

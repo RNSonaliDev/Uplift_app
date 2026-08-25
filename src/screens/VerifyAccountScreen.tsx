@@ -16,7 +16,7 @@ import {AppText} from '../components/AppText';
 import {Button} from '../components/Button';
 import {Input} from '../components/Input';
 import {UpliftLogo} from '../components/UpliftLogo';
-import {Popup} from '../components';
+import Toast from 'react-native-toast-message';
 import {Colors} from '../theme/colors';
 import {FontFamily, FontSize} from '../theme/typography';
 import {authApi} from '../api';
@@ -306,18 +306,6 @@ export const VerifyAccountScreen: React.FC = () => {
   const [isVerifying, setIsVerifying] = useState(false);
   const [isResending, setIsResending] = useState(false);
 
-  const [popupConfig, setPopupConfig] = useState<{
-    visible: boolean;
-    type: 'success' | 'error' | 'info';
-    title: string;
-    message: string;
-  }>({
-    visible: false,
-    type: 'error',
-    title: '',
-    message: '',
-  });
-
   useEffect(() => {
     if (timer <= 0) {
       setCanResend(true);
@@ -348,18 +336,16 @@ export const VerifyAccountScreen: React.FC = () => {
       setTimer(RESEND_TIMER_SECONDS);
       setCanResend(false);
       setOtp(Array(OTP_LENGTH).fill(''));
-      setPopupConfig({
-        visible: true,
+      Toast.show({
         type: 'success',
-        title: 'Success',
-        message: 'Verification code resent successfully',
+        text1: 'Success',
+        text2: 'Verification code resent successfully',
       });
     } catch (error: any) {
-      setPopupConfig({
-        visible: true,
+      Toast.show({
         type: 'error',
-        title: 'Error',
-        message: error?.message || 'Failed to resend code',
+        text1: 'Error',
+        text2: error?.data?.errors?.[0] || error?.message || 'Failed to resend code',
       });
     } finally {
       setIsResending(false);
@@ -435,11 +421,10 @@ export const VerifyAccountScreen: React.FC = () => {
         throw new Error('Verification token missing from response');
       }
     } catch (error: any) {
-      setPopupConfig({
-        visible: true,
+      Toast.show({
         type: 'error',
-        title: 'Error',
-        message: error?.message || 'Invalid verification code',
+        text1: 'Error',
+        text2: error?.data?.errors?.[0] || error?.message || 'Invalid verification code',
       });
     } finally {
       setIsVerifying(false);
@@ -565,14 +550,6 @@ export const VerifyAccountScreen: React.FC = () => {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-
-      <Popup
-        visible={popupConfig.visible}
-        type={popupConfig.type}
-        title={popupConfig.title}
-        message={popupConfig.message}
-        onClose={() => setPopupConfig({ ...popupConfig, visible: false })}
-      />
     </View>
   );
 };

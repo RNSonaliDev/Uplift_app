@@ -29,8 +29,6 @@ export function BeneficiaryTabNavigator() {
         },
         tabBarLabelStyle: {
           ...Typography.caption,
-          fontFamily: FontFamily.light,
-          fontWeight: "200"
         },
       }}>
       <Tab.Screen
@@ -40,6 +38,12 @@ export function BeneficiaryTabNavigator() {
           tabBarLabel: 'Home',
           tabBarIcon: ({color, size}) => <Home color={color} size={24} />,
         }}
+        listeners={({navigation}) => ({
+          tabPress: (e) => {
+            e.preventDefault();
+            navigation.navigate('HomeTab', { screen: 'BeneficiaryDashboard' });
+          },
+        })}
       />
       <Tab.Screen
         name="RequestsTab"
@@ -48,6 +52,12 @@ export function BeneficiaryTabNavigator() {
           tabBarLabel: 'Requests',
           tabBarIcon: ({color, size}) => <List color={color} size={24} />,
         }}
+        listeners={({navigation}) => ({
+          tabPress: (e) => {
+            e.preventDefault();
+            navigation.navigate('RequestsTab', { screen: 'MyRequests' });
+          },
+        })}
       />
       <Tab.Screen
         name="ProfileTab"
@@ -56,6 +66,12 @@ export function BeneficiaryTabNavigator() {
           tabBarLabel: 'Profile',
           tabBarIcon: ({color, size}) => <User color={color} size={24} />,
         }}
+        listeners={({navigation}) => ({
+          tabPress: (e) => {
+            e.preventDefault();
+            navigation.navigate('ProfileTab', { screen: 'MyProfile' });
+          },
+        })}
       />
     </Tab.Navigator>
   );

@@ -7,7 +7,7 @@ import {
   SectionList,
 } from 'react-native';
 import {useNavigation, useFocusEffect} from '@react-navigation/native';
-import {ArrowLeft, ShoppingBag, Pill, FileText} from 'lucide-react-native';
+import {ArrowLeft, ShoppingCart, Pill, Soup, Car, Users, MoreHorizontal, Clock, MapPin} from 'lucide-react-native';
 import {AppText} from '../../../components/AppText';
 import {Colors} from '../../../theme/colors';
 import {api} from '../../../api/client';
@@ -16,7 +16,7 @@ import {
   verticalScale,
   moderateScale,
 } from '../../../utils/responsive';
-import {formatDate} from '../../../utils/dateFormatter';
+import {formatDate, formatTime12Hour} from '../../../utils/dateFormatter';
 
 type Tab = 'Upcoming' | 'In Progress' | 'Completed';
 
@@ -44,11 +44,14 @@ export default function MyScheduleScreen() {
     }
   };
 
-  const getCategoryIcon = (title: string) => {
+  const getCategoryIcon = (title: string, size = 20) => {
     const t = title?.toLowerCase() || '';
-    if (t.includes('pharmacy') || t.includes('medical') || t.includes('pill')) return <Pill color={Colors.primary[500]} size={20} />;
-    if (t.includes('grocery') || t.includes('food')) return <ShoppingBag color={Colors.primary[500]} size={20} />;
-    return <FileText color={Colors.primary[500]} size={20} />;
+    if (t.includes('groc') || t.includes('shop')) return <ShoppingCart color={Colors.primary[500]} size={size} />;
+    if (t.includes('pharm') || t.includes('med') || t.includes('pill')) return <Pill color={Colors.primary[500]} size={size} />;
+    if (t.includes('meal') || t.includes('food') || t.includes('soup')) return <Soup color={Colors.secondary[500]} size={size} />;
+    if (t.includes('trans') || t.includes('drive') || t.includes('car')) return <Car color={Colors.primary[500]} size={size} />;
+    if (t.includes('comp') || t.includes('people') || t.includes('user')) return <Users color={Colors.primary[500]} size={size} />;
+    return <MoreHorizontal color={Colors.primary[500]} size={size} />;
   };
 
   // Process data for SectionList
@@ -86,28 +89,41 @@ export default function MyScheduleScreen() {
       style={styles.card}
       onPress={() => {
         if (activeTab === 'Upcoming') {
-          navigation.navigate('RequestDetails', { request: item });
+          navigation.navigate('RequestDetails', { request: item, forceAction: 'start' });
         } else if (activeTab === 'In Progress') {
-          navigation.navigate('RequestDetails', { request: item });
+          navigation.navigate('RequestDetails', { request: item, forceAction: 'complete' });
         } else if (activeTab === 'Completed') {
-          navigation.navigate('RequestDetails', { request: item });
+          navigation.navigate('RequestDetails', { request: item, forceAction: 'rate' });
         }
       }}
       activeOpacity={0.7}
     >
       <View style={styles.iconContainer}>
-        {getCategoryIcon(item.category?.title)}
+        {getCategoryIcon(item.category?.title, 24)}
       </View>
       <View style={styles.cardInfo}>
-        <AppText variant="labelLarge" color={Colors.neutral[900]}>
+        <AppText variant="labelLarge" color={Colors.neutral[900]} style={{marginBottom: 2}}>
           {item.category?.title || 'Help Request'}
         </AppText>
-        <AppText variant="bodyMedium" color={Colors.neutral[700]} style={{marginTop: verticalScale(4)}}>
-          {item.hours_required}
+        <AppText variant="bodySmall" color={Colors.neutral[500]} style={{marginBottom: 8}}>
+          #{item.reference_number || item.id}
         </AppText>
-        <AppText variant="bodyMedium" color={Colors.neutral[700]} style={{marginTop: verticalScale(2)}}>
-          {item.location?.address || item.meeting_location || 'Location TBD'}
-        </AppText>
+        
+        {item.preferred_start_time && item.preferred_end_time ? (
+          <View style={{flexDirection: 'row', alignItems: 'flex-start', marginBottom: 6}}>
+            <Clock color={Colors.neutral[400]} size={14} style={{marginTop: 2, marginRight: 6}} />
+            <AppText variant="bodySmall" color={Colors.neutral[600]} style={{flex: 1, lineHeight: 18}}>
+              {formatTime12Hour(item.preferred_start_time)} - {formatTime12Hour(item.preferred_end_time)}
+            </AppText>
+          </View>
+        ) : null}
+
+        <View style={{flexDirection: 'row', alignItems: 'flex-start'}}>
+          <MapPin color={Colors.neutral[400]} size={14} style={{marginTop: 2, marginRight: 6}} />
+          <AppText variant="bodySmall" color={Colors.neutral[600]} style={{flex: 1, lineHeight: 18}} numberOfLines={2}>
+            {item.location?.address || item.meeting_location || 'Location TBD'}
+          </AppText>
+        </View>
       </View>
     </TouchableOpacity>
   );

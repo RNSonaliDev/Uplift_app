@@ -8,6 +8,7 @@ import {
   Alert,
   ScrollView,
 } from 'react-native';
+import Toast from 'react-native-toast-message';
 import {useNavigation, useRoute} from '@react-navigation/native';
 import {Star, ChevronLeft} from 'lucide-react-native';
 import {AppText} from '../../../components/AppText';
@@ -31,7 +32,11 @@ export default function RateHelperScreen() {
 
   const handleSubmit = async () => {
     if (rating === 0) {
-      Alert.alert('Required', 'Please select a star rating.');
+      Toast.show({
+        type: 'error',
+        text1: 'Required',
+        text2: 'Please select a star rating.'
+      });
       return;
     }
 
@@ -46,16 +51,20 @@ export default function RateHelperScreen() {
         },
       });
       
-      Alert.alert('Success', 'Thank you for your feedback!', [
-        { 
-          text: 'OK', 
-          onPress: () => {
-            navigation.navigate('MyRequests');
-          } 
+      Toast.show({
+        type: 'success',
+        text1: 'Success',
+        text2: 'Thank you for your feedback!',
+        onHide: () => {
+          navigation.navigate('MyRequests');
         }
-      ]);
+      });
     } catch (error: any) {
-      Alert.alert('Error', error?.message || 'Failed to submit rating.');
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: error?.data?.errors?.[0] || error?.message || 'Failed to submit rating.'
+      });
     } finally {
       setLoading(false);
     }

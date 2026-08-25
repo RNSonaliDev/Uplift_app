@@ -7,6 +7,7 @@ export interface CategoryResponse {
   status: string;
   logo_url: string;
   updated_at: string;
+  category_type?: string;
 }
 
 export interface RequestOtpPayload {

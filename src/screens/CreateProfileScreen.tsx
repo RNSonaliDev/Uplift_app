@@ -7,9 +7,9 @@ import {
   TouchableOpacity,
   KeyboardAvoidingView,
   Image,
-  Alert,
   TouchableWithoutFeedback,
 } from 'react-native';
+import Toast from 'react-native-toast-message';
 import {useNavigation, useRoute, RouteProp} from '@react-navigation/native';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import Svg, {Path, Circle, Rect, Polyline} from 'react-native-svg';
@@ -300,7 +300,11 @@ export const CreateProfileScreen: React.FC = () => {
       
       navigation.navigate('SelectRoles');
     } catch (error: any) {
-      Alert.alert('Error', error?.message || 'Failed to create profile');
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: error?.data?.errors?.[0] || error?.message || 'Failed to create profile'
+      });
     } finally {
       setIsSubmitting(false);
     }

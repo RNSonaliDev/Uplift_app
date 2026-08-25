@@ -9,8 +9,10 @@ import {
   Image,
   TextInput,
   PanResponder,
-  Alert,
+  Modal,
+  FlatList,
 } from 'react-native';
+import Toast from 'react-native-toast-message';
 import {useNavigation, useRoute} from '@react-navigation/native';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import Svg, {Path, Circle, Rect, Polyline} from 'react-native-svg';
@@ -174,7 +176,7 @@ export const BeneficiarySetupScreen: React.FC = () => {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [dob, setDob] = useState('');
   const [dateOpen, setDateOpen] = useState(false);
-  const [dateVal, setDateVal] = useState(new Date());
+  const [dateVal, setDateVal] = useState(new Date(2000, 0, 1));
   const [zipCode, setZipCode] = useState('');
   const [notes, setNotes] = useState('');
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
@@ -287,7 +289,11 @@ export const BeneficiarySetupScreen: React.FC = () => {
           navigation.navigate('Success' as any, { selectedRoles });
         }
       } catch (error: any) {
-        Alert.alert('Error', error?.message || 'Failed to save profile');
+        Toast.show({
+          type: 'error',
+          text1: 'Error',
+          text2: error?.data?.errors?.[0] || error?.message || 'Failed to save profile'
+        });
       } finally {
         setIsSubmitting(false);
       }
@@ -441,7 +447,7 @@ export const BeneficiarySetupScreen: React.FC = () => {
               mode="date"
               open={dateOpen}
               date={dateVal}
-              maximumDate={new Date()}
+              maximumDate={new Date(new Date().setDate(new Date().getDate() - 1))}
               onConfirm={(selectedDate) => {
                 setDateOpen(false);
                 setDateVal(selectedDate);

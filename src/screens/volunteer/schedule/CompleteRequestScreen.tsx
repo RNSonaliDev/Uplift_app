@@ -5,9 +5,9 @@ import {
   SafeAreaView,
   TouchableOpacity,
   TextInput,
-  Alert,
   ScrollView,
 } from 'react-native';
+import Toast from 'react-native-toast-message';
 import {useNavigation, useRoute} from '@react-navigation/native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {ArrowLeft, Circle, CircleDot} from 'lucide-react-native';
@@ -43,38 +43,40 @@ export default function CompleteRequestScreen() {
       setLoading(true);
       await api.post(`/help_requests/${request.id}/complete`);
       
-      Alert.alert('Success', 'Request marked as completed!', [
-        { text: 'OK', onPress: () => navigation.navigate('RateExperience', { request }) }
-      ]);
+      Toast.show({
+        type: 'success',
+        text1: 'Success',
+        text2: 'Request marked as completed!',
+        onHide: () => navigation.navigate('RateExperience', { request })
+      });
     } catch (error: any) {
-      Alert.alert('Error', error?.message || 'Failed to complete request.');
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: error?.data?.errors?.[0] || error?.message || 'Failed to complete request.'
+      });
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <View style={styles.container}>
-      {/* Header Background */}
-      <View style={[styles.headerBackground, { paddingTop: verticalScale(16) }]}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-            <ArrowLeft color={Colors.neutral[0]} size={24} />
-          </TouchableOpacity>
-          <AppText variant="h4" color={Colors.neutral[0]} style={styles.headerTitle}>
-            Complete Request
-          </AppText>
-          <View style={styles.backButtonPlaceholder} />
-        </View>
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+          <ArrowLeft color={Colors.neutral[900]} size={24} />
+        </TouchableOpacity>
+        <AppText variant="h6" color={Colors.neutral[900]} style={styles.headerTitle}>
+          Complete Request
+        </AppText>
+        <View style={styles.backButtonPlaceholder} />
       </View>
 
       <ScrollView 
         contentContainerStyle={styles.scrollContent} 
         bounces={false}
-        // style={{ zIndex: 1 }}
       >
-        {/* Overlapping Card */}
-        <View style={styles.card}>
+        <View style={styles.content}>
           
           <AppText variant="h5" color={Colors.neutral[900]} style={styles.questionTitle}>
             How did the assistance go?
@@ -132,24 +134,21 @@ export default function CompleteRequestScreen() {
           />
         </View>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
     flex: 1,
-    backgroundColor: Colors.neutral[50], // Base background behind everything
-  },
-  headerBackground: {
-    backgroundColor: Colors.primary[500],
-    // paddingBottom: verticalScale(64), // Extra padding so card overlaps
+    backgroundColor: Colors.neutral[0],
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: horizontalScale(16),
+    paddingVertical: verticalScale(12),
   },
   backButton: {
     padding: moderateScale(8),
@@ -158,24 +157,14 @@ const styles = StyleSheet.create({
     width: moderateScale(40),
   },
   headerTitle: {
-    // flex: 1,
-    textAlign: 'center',
   },
   scrollContent: {
-    // flexGrow: 1,
-    paddingHorizontal: horizontalScale(16),
+    paddingHorizontal: horizontalScale(24),
+    paddingTop: verticalScale(24),
+    paddingBottom: verticalScale(40),
   },
-  card: {
-    backgroundColor: Colors.neutral[0],
-    borderRadius: 24,
-    padding: moderateScale(24),
-    marginTop: verticalScale(40), // Pull up to overlap header
-    shadowColor: Colors.neutral[900],
-    shadowOffset: {width: 0, height: 8},
-    shadowOpacity: 0.1,
-    shadowRadius: 24,
-    elevation: 8,
-    marginBottom: verticalScale(32),
+  content: {
+    flex: 1,
   },
   questionTitle: {
     marginBottom: verticalScale(16),

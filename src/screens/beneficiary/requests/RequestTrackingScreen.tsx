@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   Alert,
 } from 'react-native';
+import Toast from 'react-native-toast-message';
 import {useNavigation, useRoute} from '@react-navigation/native';
 import {api} from '../../../api/client';
 import {Colors} from '../../../theme/colors';
@@ -20,8 +21,9 @@ import {
   Circle,
   Car,
   Calendar,
+  MapPin,
 } from 'lucide-react-native';
-import {formatDate} from '../../../utils/dateFormatter';
+import {formatDate, formatTime12Hour} from '../../../utils/dateFormatter';
 
 export default function RequestTrackingScreen() {
   const navigation = useNavigation<any>();
@@ -49,11 +51,18 @@ export default function RequestTrackingScreen() {
           try {
             setLoading(true);
             await api.post(`/help_requests/${requestId}/cancel`);
-            Alert.alert('Success', 'Your request has been cancelled.', [
-              {text: 'OK', onPress: () => navigation.goBack()}
-            ]);
+            Toast.show({
+              type: 'success',
+              text1: 'Success',
+              text2: 'Your request has been cancelled.',
+              onHide: () => navigation.goBack()
+            });
           } catch (error: any) {
-            Alert.alert('Error', error?.message || 'Failed to cancel request');
+            Toast.show({
+              type: 'error',
+              text1: 'Error',
+              text2: error?.data?.errors?.[0] || error?.message || 'Failed to cancel request'
+            });
             setLoading(false);
           }
         },
@@ -96,11 +105,26 @@ export default function RequestTrackingScreen() {
               </View>
               <View style={styles.cardTitleContainer}>
                 <Text style={styles.cardTitle}>{requestDetail.category?.title || 'Help Request'}</Text>
-                <View style={styles.dateRow}>
-                  <Calendar color={Colors.neutral[500]} size={16} />
-                  <Text style={styles.cardDate}>{formatDate(requestDetail.preferred_date)}</Text>
+                <Text style={[styles.cardId, { marginBottom: 8 }]}>Request ID: {requestDetail.reference_number || `#${requestDetail.id}`}</Text>
+                
+                <View style={[styles.dateRow, { alignItems: 'flex-start' }]}>
+                  <Calendar color={Colors.neutral[500]} size={16} style={{ marginTop: 2 }} />
+                  <Text style={[styles.cardDate, { flex: 1 }]}>
+                    {formatDate(requestDetail.preferred_date)}
+                    {requestDetail.preferred_start_time && requestDetail.preferred_end_time ? (
+                      <Text> • {formatTime12Hour(requestDetail.preferred_start_time)} - {formatTime12Hour(requestDetail.preferred_end_time)}</Text>
+                    ) : null}
+                  </Text>
                 </View>
-                <Text style={styles.cardId}>Request ID: {requestDetail.reference_number || `#${requestDetail.id}`}</Text>
+
+                {(requestDetail.location?.address || requestDetail.meeting_location) ? (
+                  <View style={[styles.dateRow, { alignItems: 'flex-start', marginTop: 6 }]}>
+                    <MapPin color={Colors.neutral[500]} size={16} style={{ marginTop: 2 }} />
+                    <Text style={[styles.cardDate, { flex: 1, lineHeight: 22 }]}>
+                      {requestDetail.location?.address || requestDetail.meeting_location}
+                    </Text>
+                  </View>
+                ) : null}
               </View>
             </View>
           </View>

@@ -14,7 +14,7 @@ import {AppText} from '../components/AppText';
 import {Button} from '../components/Button';
 import {Input} from '../components/Input';
 import {UpliftLogo} from '../components/UpliftLogo';
-import {Popup} from '../components';
+import Toast from 'react-native-toast-message';
 import {authApi} from '../api';
 import {Colors} from '../theme/colors';
 import {Spacing, BorderRadius} from '../theme/spacing';
@@ -171,17 +171,6 @@ type NavigationProps = NativeStackNavigationProp<RootStackParamList>;
 export const LoginScreen: React.FC = () => {
   const [emailOrPhone, setEmailOrPhone] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [popupConfig, setPopupConfig] = useState<{
-    visible: boolean;
-    type: 'success' | 'error' | 'info';
-    title: string;
-    message: string;
-  }>({
-    visible: false,
-    type: 'info',
-    title: '',
-    message: '',
-  });
   const navigation = useNavigation<NavigationProps>();
 
   const handleContinue = async () => {
@@ -197,11 +186,10 @@ export const LoginScreen: React.FC = () => {
 
       navigation.navigate('VerifyAccount', { emailOrPhone });
     } catch (error: any) {
-      setPopupConfig({
-        visible: true,
+      Toast.show({
         type: 'error',
-        title: 'Error',
-        message: error?.message || 'Something went wrong',
+        text1: 'Error',
+        text2: error?.data?.errors?.[0] || error?.message || 'Something went wrong',
       });
     } finally {
       setIsLoading(false);
@@ -302,31 +290,28 @@ export const LoginScreen: React.FC = () => {
             <SocialButton
               icon={<GoogleIcon size={moderateScale(22)} />}
               label="Continue with Google"
-              onPress={() => setPopupConfig({
-                visible: true,
+              onPress={() => Toast.show({
                 type: 'info',
-                title: 'Coming Soon',
-                message: 'This feature is not yet available. Please check back later!'
+                text1: 'Coming Soon',
+                text2: 'This feature is not yet available. Please check back later!'
               })}
             />
             <SocialButton
               icon={<FacebookIcon size={moderateScale(22)} />}
               label="Continue with Facebook"
-              onPress={() => setPopupConfig({
-                visible: true,
+              onPress={() => Toast.show({
                 type: 'info',
-                title: 'Coming Soon',
-                message: 'This feature is not yet available. Please check back later!'
+                text1: 'Coming Soon',
+                text2: 'This feature is not yet available. Please check back later!'
               })}
             />
             <SocialButton
               icon={<AppleIcon size={moderateScale(22)} />}
               label="Continue with Apple"
-              onPress={() => setPopupConfig({
-                visible: true,
+              onPress={() => Toast.show({
                 type: 'info',
-                title: 'Coming Soon',
-                message: 'This feature is not yet available. Please check back later!'
+                text1: 'Coming Soon',
+                text2: 'This feature is not yet available. Please check back later!'
               })}
             />
           </View>
@@ -347,14 +332,6 @@ export const LoginScreen: React.FC = () => {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-
-      <Popup 
-        visible={popupConfig.visible}
-        type={popupConfig.type}
-        title={popupConfig.title}
-        message={popupConfig.message}
-        onClose={() => setPopupConfig({ ...popupConfig, visible: false })}
-      />
     </View>
   );
 };

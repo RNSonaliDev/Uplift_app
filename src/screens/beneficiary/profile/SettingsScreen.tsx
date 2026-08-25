@@ -117,7 +117,7 @@ const SettingToggle = ({ icon, title, value, onValueChange, noBorder }: any) => 
     <Switch
       value={value}
       onValueChange={onValueChange}
-      trackColor={{ false: Colors.neutral[200], true: Colors.primary[500] }}
+      trackColor={{ false: Colors.neutral[500], true: Colors.primary[500] }}
       thumbColor={Colors.neutral[0]}
     />
   </View>

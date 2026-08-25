@@ -7,14 +7,14 @@ import {
   ScrollView,
   Image,
   Alert,
-  Text,
   TextInput,
 } from 'react-native';
+import Toast from 'react-native-toast-message';
 import {useNavigation, useRoute} from '@react-navigation/native';
 import {Colors} from '../../../theme/colors';
 import {FontFamily} from '../../../theme/typography';
 import {AppText} from '../../../components/AppText';
-import {formatDate} from '../../../utils/dateFormatter';
+import {formatDate, formatTime12Hour} from '../../../utils/dateFormatter';
 import {Button} from '../../../components/Button';
 import {
   ArrowLeft,
@@ -33,12 +33,19 @@ import {
 import {api, getFullImageUrl} from '../../../api/client';
 
 export default function RequestDetailsScreen() {
-  const navigation = useNavigation();
+  const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const request = route.params?.request || {};
+  const forceAction = route.params?.forceAction;
+
   const [isAccepting, setIsAccepting] = useState(false);
   const [otp, setOtp] = useState('');
   const [isStarting, setIsStarting] = useState(false);
+
+  const showAcceptBtn = !forceAction && (!request.status || request.status.toLowerCase() === 'pending');
+  const showStartBtn = forceAction === 'start' || request.status?.toLowerCase() === 'accepted';
+  const showCompleteBtn = forceAction === 'complete' || request.status?.toLowerCase() === 'in_progress';
+  const showRateBtn = forceAction === 'rate' || (request.status?.toLowerCase() === 'completed' && (!request.ratings || request.ratings.length === 0));
 
   const handleAccept = async () => {
     if (!request.id) return;
@@ -47,7 +54,11 @@ export default function RequestDetailsScreen() {
       await api.post(`/help_requests/${request.id}/accept`);
       navigation.navigate('RequestAccepted', { request });
     } catch (error: any) {
-      Alert.alert('Error', error?.message || 'Failed to accept request.');
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: error?.data?.errors?.[0] || error?.message || 'Failed to accept request.'
+      });
     } finally {
       setIsAccepting(false);
     }
@@ -55,7 +66,11 @@ export default function RequestDetailsScreen() {
 
   const handleStartRequest = async () => {
     if (otp.length !== 6) {
-      Alert.alert('Invalid Code', 'Please enter a valid 6-digit start code.');
+      Toast.show({
+        type: 'error',
+        text1: 'Invalid Code',
+        text2: 'Please enter a valid 6-digit start code.'
+      });
       return;
     }
     if (!request.id) return;
@@ -63,11 +78,18 @@ export default function RequestDetailsScreen() {
     try {
       setIsStarting(true);
       await api.post(`/help_requests/${request.id}/start`, { start_code: otp });
-      Alert.alert('Success', 'Task started successfully!', [
-        { text: 'OK', onPress: () => navigation.goBack() }
-      ]);
+      Toast.show({
+        type: 'success',
+        text1: 'Success',
+        text2: 'Task started successfully!',
+        onHide: () => navigation.goBack()
+      });
     } catch (error: any) {
-      Alert.alert('Error', error?.message || 'Failed to start request.');
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: error?.data?.errors?.[0] || error?.message || 'Failed to start request.'
+      });
     } finally {
       setIsStarting(false);
     }
@@ -80,20 +102,17 @@ export default function RequestDetailsScreen() {
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.iconButton}>
           <ArrowLeft color={Colors.neutral[900]} size={24} />
         </TouchableOpacity>
+        <AppText variant="h6" color={Colors.neutral[900]}>Request Details</AppText>
+        <View style={{width: 40}} />
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        {/* Badges */}
-        <View style={styles.badgesRow}>
-          <Text></Text>
+        
+        {/* Category Badge */}
+        <View style={{alignItems: 'center', marginVertical: verticalScale(16)}}>
           <View style={styles.categoryBadge}>
             <AppText variant="labelMedium" color={Colors.primary[600]}>
-              {request.category?.title}
-            </AppText>
-          </View>
-          <View style={styles.newBadge}>
-            <AppText variant="labelMedium" color={Colors.warning[500]}>
-              {request.status ? request.status.charAt(0).toUpperCase() + request.status.slice(1) : 'New'}
+              {request.category?.title || 'Grocery Assistance'}
             </AppText>
           </View>
         </View>
@@ -117,7 +136,7 @@ export default function RequestDetailsScreen() {
             )}
           </View>
           <View style={styles.profileInfo}>
-            <AppText variant="h5" color={Colors.neutral[900]} style={{marginBottom: verticalScale(4)}}>
+            <AppText variant="labelLarge" color={Colors.neutral[900]} style={{marginBottom: 4}}>
               {request.beneficiary?.first_name ? `${request.beneficiary.first_name} ${request.beneficiary.last_name || ''}` : 'Sarah Johnson'}
             </AppText>
           </View>
@@ -127,57 +146,77 @@ export default function RequestDetailsScreen() {
 
         {/* Request Details Section */}
         <View style={styles.detailsSection}>
-          <AppText variant="h5" color={Colors.neutral[900]} style={{marginBottom: verticalScale(20)}}>
-            Request Details
-          </AppText>
-
-          <View style={styles.detailItem}>
-            <Calendar color={Colors.neutral[500]} size={24} />
-            <View style={styles.detailContentColumn}>
-              <AppText variant="bodyMedium" color={Colors.neutral[600]}>Date</AppText>
-              <AppText variant="bodyMedium" color={Colors.neutral[900]} style={{fontFamily: FontFamily.medium, marginTop: verticalScale(4), lineHeight: 22}}>
-                {formatDate(request.preferred_date)}
-              </AppText>
-            </View>
+          <View style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: verticalScale(16)}}>
+            <AppText variant="labelLarge" color={Colors.neutral[900]}>
+              Request Details
+            </AppText>
+            <AppText variant="bodySmall" color={Colors.neutral[500]}>
+              #{request.reference_number || request.id}
+            </AppText>
           </View>
 
-          <View style={styles.detailItem}>
-            <Clock color={Colors.neutral[500]} size={24} />
-            <View style={styles.detailContentColumn}>
-              <AppText variant="bodyMedium" color={Colors.neutral[600]}>Time</AppText>
-              <AppText variant="bodyMedium" color={Colors.neutral[900]} style={{fontFamily: FontFamily.medium, marginTop: verticalScale(4), lineHeight: 22}}>
-                {request.hours_required}
-              </AppText>
-            </View>
-          </View>
-
-          <View style={styles.detailItem}>
-            <MapPin color={Colors.neutral[500]} size={24} />
-            <View style={styles.detailContentColumn}>
-              <AppText variant="bodyMedium" color={Colors.neutral[600]}>Location</AppText>
-              <AppText variant="bodyMedium" color={Colors.neutral[900]} style={{fontFamily: FontFamily.medium, marginTop: verticalScale(4), lineHeight: 22}}>
-                {request.location?.address}
-              </AppText>
-            </View>
-          </View>
-
-          {request.notes ? (
-            <View style={styles.detailItem}>
-              <FileText color={Colors.neutral[500]} size={24} />
-              <View style={styles.detailContentColumn}>
-                <AppText variant="bodyMedium" color={Colors.neutral[600]}>Note</AppText>
-                <AppText variant="bodyMedium" color={Colors.neutral[900]} style={{marginTop: verticalScale(4), lineHeight: 22}}>
-                  {request.notes}
-                </AppText>
-              </View>
-            </View>
+          {request.title ? (
+            <AppText variant="h6" color={Colors.neutral[900]} style={{marginBottom: verticalScale(8)}}>
+              {request.title}
+            </AppText>
           ) : null}
 
+          {request.description ? (
+            <AppText variant="bodyMedium" color={Colors.neutral[600]} style={{marginBottom: verticalScale(20), lineHeight: 22}}>
+              {request.description}
+            </AppText>
+          ) : null}
+
+          {/* Date */}
+          <View style={styles.detailRowItem}>
+            <View style={styles.detailLabelRow}>
+              <Calendar color={Colors.neutral[600]} size={20} />
+              <AppText variant="bodyMedium" color={Colors.neutral[900]} style={{marginLeft: 8, fontFamily: FontFamily.medium}}>Date</AppText>
+            </View>
+            <AppText variant="bodyMedium" color={Colors.neutral[600]}>
+              {formatDate(request.preferred_date) || 'May 22, 2024'}
+            </AppText>
+          </View>
+
+          {/* Time */}
+          <View style={styles.detailRowItem}>
+            <View style={styles.detailLabelRow}>
+              <Clock color={Colors.neutral[600]} size={20} />
+              <AppText variant="bodyMedium" color={Colors.neutral[900]} style={{marginLeft: 8, fontFamily: FontFamily.medium}}>Time</AppText>
+            </View>
+            <AppText variant="bodyMedium" color={Colors.neutral[600]}>
+              {request.preferred_start_time ? `${formatTime12Hour(request.preferred_start_time)} - ${formatTime12Hour(request.preferred_end_time)}` : '2:00 PM - 3:00 PM'}
+            </AppText>
+          </View>
+
+          {/* Location */}
+          <View style={styles.detailColumnItem}>
+            <View style={styles.detailLabelRow}>
+              <MapPin color={Colors.neutral[600]} size={20} />
+              <AppText variant="bodyMedium" color={Colors.neutral[900]} style={{marginLeft: 8, fontFamily: FontFamily.medium}}>Location</AppText>
+            </View>
+            <AppText variant="bodyMedium" color={Colors.neutral[600]} style={{marginLeft: 28, marginTop: 4, lineHeight: 22}}>
+              {request.location?.address}
+            </AppText>
+          </View>
+
+          {/* Notes */}
+          {request.notes ? (
+            <View style={styles.detailColumnItem}>
+              <View style={styles.detailLabelRow}>
+                <FileText color={Colors.neutral[600]} size={20} />
+                <AppText variant="bodyMedium" color={Colors.neutral[900]} style={{marginLeft: 8, fontFamily: FontFamily.medium}}>Notes</AppText>
+              </View>
+              <AppText variant="bodyMedium" color={Colors.neutral[600]} style={{marginLeft: 28, marginTop: 4, lineHeight: 22}}>
+                {request.notes}
+              </AppText>
+            </View>
+          ) : null}
         </View>
       </ScrollView>
 
       {/* Action Buttons */}
-      {!['accepted', 'in_progress', 'completed', 'cancelled'].includes(request.status?.toLowerCase()) && (
+      {showAcceptBtn && (
         <View style={styles.actionContainer}>
           <Button 
             title="Accept Request" 
@@ -188,7 +227,7 @@ export default function RequestDetailsScreen() {
         </View>
       )}
 
-      {request.status?.toLowerCase() === 'accepted' && (
+      {showStartBtn && (
         <View style={styles.actionContainer}>
           <View style={styles.otpInputContainer}>
             <AppText variant="bodyMedium" color={Colors.neutral[600]} style={{marginBottom: 12}} center>
@@ -214,7 +253,7 @@ export default function RequestDetailsScreen() {
         </View>
       )}
 
-      {request.status?.toLowerCase() === 'in_progress' && (
+      {showCompleteBtn && (
         <View style={styles.actionContainer}>
           <Button 
             title="Complete Request" 
@@ -224,7 +263,7 @@ export default function RequestDetailsScreen() {
         </View>
       )}
 
-      {request.status?.toLowerCase() === 'completed' && (!request.ratings || request.ratings.length === 0) && (
+      {showRateBtn && (
         <View style={styles.actionContainer}>
           <Button 
             title="Rate Experience" 
@@ -246,46 +285,32 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: horizontalScale(24),
-    // paddingVertical: verticalScale(16),
+    paddingHorizontal: horizontalScale(16),
+    paddingVertical: verticalScale(12),
   },
   iconButton: {
     padding: moderateScale(8),
-    marginLeft: -moderateScale(8),
   },
   scrollContent: {
     paddingHorizontal: horizontalScale(24),
-    // paddingTop: verticalScale(8),
     paddingBottom: verticalScale(40),
-  },
-  badgesRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: "space-between",
-    marginBottom: verticalScale(16),
-    gap: horizontalScale(12),
   },
   categoryBadge: {
     backgroundColor: Colors.primary[50],
-    paddingHorizontal: horizontalScale(16),
-    paddingVertical: verticalScale(6),
-    borderRadius: 20,
-  },
-  newBadge: {
-    backgroundColor: Colors.warning[50],
-    paddingHorizontal: horizontalScale(12),
-    paddingVertical: verticalScale(6),
-    borderRadius: 20,
+    paddingHorizontal: horizontalScale(24),
+    paddingVertical: verticalScale(10),
+    borderRadius: 24,
   },
   profileSection: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: verticalScale(20),
+    marginTop: verticalScale(8),
   },
   avatarContainer: {
-    width: moderateScale(64),
-    height: moderateScale(64),
-    borderRadius: moderateScale(32),
+    width: moderateScale(56),
+    height: moderateScale(56),
+    borderRadius: moderateScale(28),
     overflow: 'hidden',
     backgroundColor: Colors.neutral[100],
     marginRight: horizontalScale(16),
@@ -297,10 +322,6 @@ const styles = StyleSheet.create({
   profileInfo: {
     flex: 1,
   },
-  ratingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
   divider: {
     height: 1,
     backgroundColor: Colors.neutral[100],
@@ -309,29 +330,24 @@ const styles = StyleSheet.create({
   detailsSection: {
     flex: 1,
   },
-  detailItem: {
+  detailRowItem: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     marginBottom: verticalScale(16),
   },
-  detailContentRow: {
-    flex: 1,
-    marginLeft: horizontalScale(16),
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+  detailColumnItem: {
+    marginBottom: verticalScale(20),
   },
-  detailContentColumn: {
-    flex: 1,
-    marginLeft: horizontalScale(16),
+  detailLabelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   actionContainer: {
     paddingHorizontal: horizontalScale(24),
     paddingTop: verticalScale(16),
-    paddingBottom: verticalScale(32), // Accounts for bottom safe area
+    paddingBottom: verticalScale(32), 
     backgroundColor: Colors.neutral[0],
-    borderTopWidth: 1,
-    borderTopColor: Colors.neutral[100],
   },
   otpInputContainer: {
     marginBottom: verticalScale(20),
@@ -352,6 +368,5 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   acceptBtn: {
-    marginBottom: verticalScale(12),
   },
 });

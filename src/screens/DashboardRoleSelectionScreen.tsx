@@ -6,10 +6,10 @@ import {
   ScrollView,
   TouchableOpacity,
   Pressable,
-  Alert,
   ActivityIndicator,
   Dimensions,
 } from 'react-native';
+import Toast from 'react-native-toast-message';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Svg, { Path, Circle } from 'react-native-svg';
@@ -30,7 +30,7 @@ import {
 type RootStackParamList = {
   BeneficiaryFlow: undefined;
   VolunteerFlow: undefined;
-  DashboardRoleSelection: { selectedRoles: string[] };
+  DashboardRoleSelection: { selectedRoles: string[], currentRole?: string };
 };
 
 type NavigationProps = NativeStackNavigationProp<RootStackParamList>;
@@ -206,6 +206,20 @@ export const DashboardRoleSelectionScreen: React.FC = () => {
   const route = useRoute<DashboardRoleSelectionRouteProp>();
   const selectedRoles = route.params?.selectedRoles || [];
   const [isLoading, setIsLoading] = useState(false);
+  const [currentRole, setCurrentRole] = useState<string | null>(route.params?.currentRole || null);
+
+  React.useEffect(() => {
+    const fetchProfile = async () => {
+      if (currentRole) return;
+      try {
+        const profile = await authApi.getProfile();
+        setCurrentRole(profile.default_role);
+      } catch (e) {
+        // ignore
+      }
+    };
+    fetchProfile();
+  }, [currentRole]);
 
   const handleRoleSelect = async (role: string) => {
     try {
@@ -230,7 +244,11 @@ export const DashboardRoleSelectionScreen: React.FC = () => {
         navigation.replace('DashboardRoleSelection', { selectedRoles });
       }
     } catch (error: any) {
-      Alert.alert('Error', error?.message || 'Failed to set default role.');
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: error?.data?.errors?.[0] || error?.message || 'Failed to set default role.'
+      });
     } finally {
       setIsLoading(false);
     }
@@ -267,7 +285,7 @@ export const DashboardRoleSelectionScreen: React.FC = () => {
               key={`${role}-${index}`}
               role={role}
               onPress={() => handleRoleSelect(role)}
-              disabled={isLoading}
+              disabled={isLoading || role === currentRole}
             />
           ))}
         </View>

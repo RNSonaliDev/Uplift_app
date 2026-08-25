@@ -10,6 +10,7 @@ import {
   Alert,
   PanResponder,
 } from 'react-native';
+import Toast from 'react-native-toast-message';
 import {useNavigation, useRoute} from '@react-navigation/native';
 import DatePicker from 'react-native-date-picker';
 import {Colors} from '../../../theme/colors';
@@ -77,7 +78,7 @@ export default function EditProfileScreen() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
-  const [date, setDate] = useState(new Date());
+  const [date, setDate] = useState(new Date(2000, 0, 1));
   const [formData, setFormData] = useState({
     first_name: '',
     last_name: '',
@@ -140,11 +141,18 @@ export default function EditProfileScreen() {
           }
         }
       });
-      Alert.alert('Success', 'Profile updated successfully', [
-        {text: 'OK', onPress: () => navigation.goBack()}
-      ]);
+      Toast.show({
+        type: 'success',
+        text1: 'Success',
+        text2: 'Profile updated successfully',
+        onHide: () => navigation.goBack()
+      });
     } catch (error: any) {
-      Alert.alert('Error', error?.message || 'Failed to update profile');
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: error?.data?.errors?.[0] || error?.message || 'Failed to update profile'
+      });
     } finally {
       setSaving(false);
     }
@@ -281,6 +289,7 @@ export default function EditProfileScreen() {
         open={isDatePickerOpen}
         date={date}
         mode="date"
+        maximumDate={new Date(new Date().setDate(new Date().getDate() - 1))}
         onConfirm={(selectedDate) => {
           setIsDatePickerOpen(false);
           setDate(selectedDate);

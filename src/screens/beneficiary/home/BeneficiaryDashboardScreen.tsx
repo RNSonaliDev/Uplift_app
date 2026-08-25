@@ -51,7 +51,8 @@ export default function BeneficiaryDashboardScreen() {
             authApi.getProfile()
           ]);
           if (!isActive) return;
-          setCategories(catData);
+          const beneficiaryCategories = catData.filter(c => c.category_type === 'beneficiary');
+          setCategories(beneficiaryCategories);
           setProfile(profData);
         } catch (error) {
           console.error('Failed to fetch data', error);

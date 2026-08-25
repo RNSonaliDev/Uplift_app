@@ -27,31 +27,31 @@ export const FontFamily = {
 } as const;
 
 export const FontSize = {
-  xs: fontScale(10),
-  sm: fontScale(12),
-  md: fontScale(14),
-  lg: fontScale(16),
-  xl: fontScale(18),
-  '2xl': fontScale(20),
-  '3xl': fontScale(24),
-  '4xl': fontScale(28),
-  '5xl': fontScale(32),
-  '6xl': fontScale(36),
-  '7xl': fontScale(48),
+  xs: fontScale(12),
+  sm: fontScale(14),
+  md: fontScale(16),
+  lg: fontScale(18),
+  xl: fontScale(20),
+  '2xl': fontScale(22),
+  '3xl': fontScale(26),
+  '4xl': fontScale(30),
+  '5xl': fontScale(36),
+  '6xl': fontScale(40),
+  '7xl': fontScale(52),
 } as const;
 
 export const LineHeight = {
-  xs: verticalScale(14),
-  sm: verticalScale(16),
-  md: verticalScale(20),
-  lg: verticalScale(24),
-  xl: verticalScale(28),
-  '2xl': verticalScale(28),
-  '3xl': verticalScale(32),
-  '4xl': verticalScale(36),
-  '5xl': verticalScale(40),
-  '6xl': verticalScale(44),
-  '7xl': verticalScale(56),
+  xs: verticalScale(16),
+  sm: verticalScale(20),
+  md: verticalScale(24),
+  lg: verticalScale(28),
+  xl: verticalScale(30),
+  '2xl': verticalScale(32),
+  '3xl': verticalScale(36),
+  '4xl': verticalScale(40),
+  '5xl': verticalScale(46),
+  '6xl': verticalScale(52),
+  '7xl': verticalScale(64),
 } as const;
 
 export const Typography: Record<string, TextStyle> = {

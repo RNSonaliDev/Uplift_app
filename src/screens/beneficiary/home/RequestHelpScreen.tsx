@@ -25,8 +25,8 @@ import {
 import {authApi, CategoryResponse} from '../../../api/auth';
 
 const {width} = Dimensions.get('window');
-const CARD_MARGIN = horizontalScale(8);
-const CARD_WIDTH = (width - horizontalScale(48) - CARD_MARGIN * 2) / 2; // 48 is horizontal padding (24 * 2)
+const CARD_GAP = horizontalScale(16);
+const CARD_WIDTH = Math.floor((width - horizontalScale(48) - CARD_GAP) / 2); // 48 is horizontal padding (24 * 2)
 
 export default function RequestHelpScreen() {
   const navigation = useNavigation<any>();
@@ -42,7 +42,8 @@ export default function RequestHelpScreen() {
     try {
       setLoading(true);
       const data = await authApi.getCategories();
-      setCategories(data);
+      const beneficiaryCategories = data.filter((cat) => cat.category_type === 'beneficiary');
+      setCategories(beneficiaryCategories);
     } catch (error) {
       console.error('Failed to fetch categories', error);
     } finally {
@@ -145,14 +146,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
-    marginHorizontal: -CARD_MARGIN,
   },
   card: {
     width: CARD_WIDTH,
     backgroundColor: Colors.neutral[0],
     borderRadius: moderateScale(16),
     padding: moderateScale(24),
-    marginHorizontal: CARD_MARGIN,
     marginBottom: verticalScale(16),
     alignItems: 'center',
     justifyContent: 'center',

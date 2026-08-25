@@ -34,6 +34,8 @@ export default function CreateRequestScreen() {
     category_id: route.params?.category_id || '',
     description: '',
     preferred_date: '',
+    preferred_start_time: '',
+    preferred_end_time: '',
     hours_required: '',
     meeting_location: '',
     latitude: '',
@@ -48,6 +50,21 @@ export default function CreateRequestScreen() {
 
   const [date, setDate] = useState(new Date());
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+
+  const [startTime, setStartTime] = useState(new Date());
+  const [isStartTimePickerOpen, setIsStartTimePickerOpen] = useState(false);
+  const [endTime, setEndTime] = useState(new Date());
+  const [isEndTimePickerOpen, setIsEndTimePickerOpen] = useState(false);
+
+  const formatTime = (dateToFormat: Date) => {
+    let hours = dateToFormat.getHours();
+    const minutes = String(dateToFormat.getMinutes()).padStart(2, '0');
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12;
+    hours = hours ? hours : 12; // the hour '0' should be '12'
+    const strHours = String(hours).padStart(2, '0');
+    return `${strHours}:${minutes} ${ampm}`;
+  };
 
   React.useEffect(() => {
     fetchCategories();
@@ -83,7 +100,9 @@ export default function CreateRequestScreen() {
     if (!formData.category_id) newErrors.category_id = 'Required';
     if (!formData.description) newErrors.description = 'Required';
     if (!formData.preferred_date) newErrors.preferred_date = 'Required';
-    if (!formData.hours_required) newErrors.hours_required = 'Required';
+    if (!formData.preferred_start_time) newErrors.preferred_start_time = 'Required';
+    if (!formData.preferred_end_time) newErrors.preferred_end_time = 'Required';
+    // if (!formData.hours_required) newErrors.hours_required = 'Required';
     if (!formData.meeting_location) newErrors.meeting_location = 'Required';
     
     // Basic validation for numbers
@@ -163,14 +182,43 @@ export default function CreateRequestScreen() {
             </View>
           </TouchableOpacity>
 
-          <Input
+          <View style={styles.row}>
+            <View style={[styles.halfInput, {marginRight: Spacing.sm}]}>
+              <TouchableOpacity onPress={() => setIsStartTimePickerOpen(true)} activeOpacity={0.7}>
+                <View pointerEvents="none">
+                  <Input
+                    label="Start Time"
+                    placeholder="HH:MM AM"
+                    value={formData.preferred_start_time}
+                    editable={false}
+                    error={errors.preferred_start_time}
+                  />
+                </View>
+              </TouchableOpacity>
+            </View>
+            <View style={[styles.halfInput, {marginLeft: Spacing.sm}]}>
+              <TouchableOpacity onPress={() => setIsEndTimePickerOpen(true)} activeOpacity={0.7}>
+                <View pointerEvents="none">
+                  <Input
+                    label="End Time"
+                    placeholder="HH:MM AM"
+                    value={formData.preferred_end_time}
+                    editable={false}
+                    error={errors.preferred_end_time}
+                  />
+                </View>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {/* <Input
             label="Hours Required"
             placeholder="e.g. 2"
             value={formData.hours_required}
             onChangeText={v => handleChange('hours_required', v)}
             keyboardType="numeric"
             error={errors.hours_required}
-          />
+          /> */}
 
           <Input
             label="Meeting Location"
@@ -193,6 +241,7 @@ export default function CreateRequestScreen() {
         modal
         open={isDatePickerOpen}
         date={date}
+        minimumDate={new Date()}
         mode="date"
         onConfirm={(selectedDate) => {
           setIsDatePickerOpen(false);
@@ -204,6 +253,36 @@ export default function CreateRequestScreen() {
         }}
         onCancel={() => {
           setIsDatePickerOpen(false);
+        }}
+      />
+
+      <DatePicker
+        modal
+        open={isStartTimePickerOpen}
+        date={startTime}
+        mode="time"
+        onConfirm={(selectedTime) => {
+          setIsStartTimePickerOpen(false);
+          setStartTime(selectedTime);
+          handleChange('preferred_start_time', formatTime(selectedTime));
+        }}
+        onCancel={() => {
+          setIsStartTimePickerOpen(false);
+        }}
+      />
+
+      <DatePicker
+        modal
+        open={isEndTimePickerOpen}
+        date={endTime}
+        mode="time"
+        onConfirm={(selectedTime) => {
+          setIsEndTimePickerOpen(false);
+          setEndTime(selectedTime);
+          handleChange('preferred_end_time', formatTime(selectedTime));
+        }}
+        onCancel={() => {
+          setIsEndTimePickerOpen(false);
         }}
       />
 

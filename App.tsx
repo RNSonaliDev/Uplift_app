@@ -7,6 +7,7 @@ import React from 'react';
 import {SafeAreaProvider, SafeAreaView} from 'react-native-safe-area-context';
 import {NavigationContainer} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
+import Toast, {BaseToast, ErrorToast, ToastConfig} from 'react-native-toast-message';
 
 import {WelcomeScreen} from './src/screens/WelcomeScreen';
 import {CreateAccountScreen} from './src/screens/CreateAccountScreen';
@@ -48,6 +49,65 @@ type RootStackParamList = {
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
+/*
+  Custom toast config to increase font sizes
+*/
+const toastConfig: ToastConfig = {
+  success: (props) => (
+    <BaseToast
+      {...props}
+      style={{ borderLeftColor: Colors.primary[500] || 'green', height: 'auto', minHeight: 60, paddingVertical: 10 }}
+      contentContainerStyle={{ paddingHorizontal: 15 }}
+      text1NumberOfLines={0}
+      text2NumberOfLines={0}
+      text1Style={{
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: Colors.neutral[900] || '#000'
+      }}
+      text2Style={{
+        fontSize: 14,
+        color: Colors.neutral[600] || '#444'
+      }}
+    />
+  ),
+  error: (props) => (
+    <ErrorToast
+      {...props}
+      style={{ height: 'auto', minHeight: 60, paddingVertical: 10 }}
+      text1NumberOfLines={0}
+      text2NumberOfLines={0}
+      text1Style={{
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: Colors.neutral[900] || '#000'
+      }}
+      text2Style={{
+        fontSize: 14,
+        color: Colors.neutral[600] || '#444'
+      }}
+    />
+  ),
+  info: (props) => (
+    <BaseToast
+      {...props}
+      style={{ borderLeftColor: '#87CEFA', height: 'auto', minHeight: 60, paddingVertical: 10 }}
+      contentContainerStyle={{ paddingHorizontal: 15 }}
+      text1NumberOfLines={0}
+      text2NumberOfLines={0}
+      text1Style={{
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: Colors.neutral[900] || '#000'
+      }}
+      text2Style={{
+        fontSize: 14,
+        color: Colors.neutral[600] || '#444'
+      }}
+    />
+  )
+};
+
 function App() {
   return (
     <SafeAreaProvider>
@@ -74,6 +134,7 @@ function App() {
           </Stack.Navigator>
         </NavigationContainer>
       </SafeAreaView>
+      <Toast position="bottom" bottomOffset={60} config={toastConfig} />
     </SafeAreaProvider>
   );
 }

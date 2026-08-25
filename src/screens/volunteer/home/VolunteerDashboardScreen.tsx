@@ -34,17 +34,20 @@ export default function VolunteerDashboardScreen() {
   const navigation = useNavigation<any>();
   const [profile, setProfile] = useState<UserProfileResponse | null>(null);
   const [requests, setRequests] = useState<any[]>([]);
+  const [stats, setStats] = useState<any>(null);
   const [loadingRequests, setLoadingRequests] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [profData, reqData] = await Promise.all([
+        const [profData, reqData, statsData] = await Promise.all([
           authApi.getProfile(),
-          api.get<any[]>('/help_requests/browse')
+          api.get<any[]>('/help_requests/browse'),
+          api.get<any>('/dashboard/stats?role=volunteer')
         ]);
         setProfile(profData);
         setRequests(reqData || []);
+        setStats(statsData);
       } catch (error) {
         console.error('Failed to fetch data', error);
       } finally {
@@ -88,17 +91,17 @@ export default function VolunteerDashboardScreen() {
             
             <View style={styles.statsRow}>
               <View style={styles.statItem}>
-                <AppText variant="h3" style={styles.statNumber}>128</AppText>
+                <AppText variant="h3" style={styles.statNumber}>{stats?.hours_completed || 0}</AppText>
                 <AppText variant="caption" style={styles.statLabel} center>Hours{'\n'}Contributed</AppText>
               </View>
               <View style={styles.statDivider} />
               <View style={styles.statItem}>
-                <AppText variant="h3" style={styles.statNumber}>24</AppText>
+                <AppText variant="h3" style={styles.statNumber}>{stats?.requests_completed || 0}</AppText>
                 <AppText variant="caption" style={styles.statLabel} center>Requests{'\n'}Completed</AppText>
               </View>
               <View style={styles.statDivider} />
               <View style={styles.statItem}>
-                <AppText variant="h3" style={styles.statNumber}>8</AppText>
+                <AppText variant="h3" style={styles.statNumber}>{stats?.community_help || 0}</AppText>
                 <AppText variant="caption" style={styles.statLabel} center>Communities{'\n'}Helped</AppText>
               </View>
             </View>
@@ -187,16 +190,11 @@ export default function VolunteerDashboardScreen() {
               label="My Schedule"
               onPress={() => navigation.navigate('ScheduleTab')}
             />
-            <QuickAction 
-              icon={<Heart color={Colors.neutral[600]} size={24} />} 
-              label="My Impact"
-              onPress={() => navigation.navigate('ImpactTab')}
-            />
-            <QuickAction 
+            {/* <QuickAction 
               icon={<MessageSquare color={Colors.neutral[600]} size={24} />} 
               label="Messages"
               onPress={() => {}}
-            />
+            /> */}
             <QuickAction 
               icon={<User color={Colors.neutral[600]} size={24} />} 
               label="My Profile"
@@ -345,7 +343,7 @@ const styles = StyleSheet.create({
   },
   quickActionsGrid: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: "flex-start"
   },
   quickActionItem: {
     alignItems: 'center',

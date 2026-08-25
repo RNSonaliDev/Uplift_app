@@ -37,7 +37,6 @@ export function VolunteerTabNavigator() {
         },
         tabBarLabelStyle: {
           ...Typography.caption,
-          fontFamily: FontFamily.medium,
         },
       }}>
       <Tab.Screen
@@ -47,6 +46,12 @@ export function VolunteerTabNavigator() {
           tabBarLabel: 'Home',
           tabBarIcon: ({color}) => <Home color={color} size={24} />,
         }}
+        listeners={({navigation}) => ({
+          tabPress: (e) => {
+            e.preventDefault();
+            navigation.navigate('HomeTab', { screen: 'VolunteerDashboard' });
+          },
+        })}
       />
       <Tab.Screen
         name="RequestsTab"
@@ -55,6 +60,12 @@ export function VolunteerTabNavigator() {
           tabBarLabel: 'Requests',
           tabBarIcon: ({color}) => <Search color={color} size={24} />,
         }}
+        listeners={({navigation}) => ({
+          tabPress: (e) => {
+            e.preventDefault();
+            navigation.navigate('RequestsTab', { screen: 'BrowseRequests' });
+          },
+        })}
       />
       <Tab.Screen
         name="ScheduleTab"
@@ -63,14 +74,12 @@ export function VolunteerTabNavigator() {
           tabBarLabel: 'Schedule',
           tabBarIcon: ({color}) => <Calendar color={color} size={24} />,
         }}
-      />
-      <Tab.Screen
-        name="ImpactTab"
-        component={DummyScreen}
-        options={{
-          tabBarLabel: 'Impact',
-          tabBarIcon: ({color}) => <Heart color={color} size={24} />,
-        }}
+        listeners={({navigation}) => ({
+          tabPress: (e) => {
+            e.preventDefault();
+            navigation.navigate('ScheduleTab', { screen: 'MySchedule' });
+          },
+        })}
       />
       <Tab.Screen
         name="ProfileTab"
@@ -79,6 +88,12 @@ export function VolunteerTabNavigator() {
           tabBarLabel: 'Profile',
           tabBarIcon: ({color}) => <User color={color} size={24} />,
         }}
+        listeners={({navigation}) => ({
+          tabPress: (e) => {
+            e.preventDefault();
+            navigation.navigate('ProfileTab', { screen: 'MyProfile' });
+          },
+        })}
       />
     </Tab.Navigator>
   );

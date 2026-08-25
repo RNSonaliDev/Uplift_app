@@ -5,9 +5,9 @@ import {
   SafeAreaView,
   TouchableOpacity,
   TextInput,
-  Alert,
   ScrollView,
 } from 'react-native';
+import Toast from 'react-native-toast-message';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { Star } from 'lucide-react-native';
 import { AppText } from '../../../components/AppText';
@@ -31,7 +31,11 @@ export default function RateExperienceScreen() {
 
   const handleSubmit = async () => {
     if (rating === 0) {
-      Alert.alert('Required', 'Please select a star rating.');
+      Toast.show({
+        type: 'error',
+        text1: 'Required',
+        text2: 'Please select a star rating.'
+      });
       return;
     }
 
@@ -46,17 +50,20 @@ export default function RateExperienceScreen() {
         },
       });
 
-      Alert.alert('Success', 'Thank you for your feedback!', [
-        {
-          text: 'OK',
-          onPress: () => {
-            // Navigate back to the main Schedule tab
-            navigation.navigate('MySchedule');
-          }
+      Toast.show({
+        type: 'success',
+        text1: 'Success',
+        text2: 'Thank you for your feedback!',
+        onHide: () => {
+          navigation.navigate('MySchedule');
         }
-      ]);
+      });
     } catch (error: any) {
-      Alert.alert('Error', error?.message || 'Failed to submit rating.');
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: error?.data?.errors?.[0] || error?.message || 'Failed to submit rating.'
+      });
     } finally {
       setLoading(false);
     }

@@ -5,8 +5,8 @@ import {
   SafeAreaView,
   TouchableOpacity,
   TextInput,
-  Alert,
 } from 'react-native';
+import Toast from 'react-native-toast-message';
 import {useNavigation, useRoute} from '@react-navigation/native';
 import {ArrowLeft, ShieldCheck} from 'lucide-react-native';
 import {AppText} from '../../../components/AppText';
@@ -28,12 +28,20 @@ export default function StartRequestScreen() {
 
   const handleStartTask = async () => {
     if (code.length !== 6) {
-      Alert.alert('Invalid Code', 'Please enter a valid 6-digit start code.');
+      Toast.show({
+        type: 'error',
+        text1: 'Invalid Code',
+        text2: 'Please enter a valid 6-digit start code.'
+      });
       return;
     }
 
     if (!request.id) {
-      Alert.alert('Error', 'Missing request ID.');
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Missing request ID.'
+      });
       return;
     }
 
@@ -42,11 +50,18 @@ export default function StartRequestScreen() {
       await api.post(`/help_requests/${request.id}/start`, {
         start_code: code
       });
-      Alert.alert('Success', 'Task started successfully!', [
-        { text: 'OK', onPress: () => navigation.goBack() }
-      ]);
+      Toast.show({
+        type: 'success',
+        text1: 'Success',
+        text2: 'Task started successfully!',
+        onHide: () => navigation.goBack()
+      });
     } catch (error: any) {
-      Alert.alert('Error', error?.message || 'Failed to start request.');
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: error?.data?.errors?.[0] || error?.message || 'Failed to start request.'
+      });
     } finally {
       setLoading(false);
     }
