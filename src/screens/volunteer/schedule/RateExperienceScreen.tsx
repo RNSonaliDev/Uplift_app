@@ -153,6 +153,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: verticalScale(24),
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.neutral[200],
   },
   badge: {
     width: moderateScale(32),

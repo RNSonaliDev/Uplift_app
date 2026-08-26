@@ -41,6 +41,14 @@ export default function BeneficiaryDashboardScreen() {
   const [categories, setCategories] = useState<CategoryResponse[]>([]);
   const [profile, setProfile] = useState<UserProfileResponse | null>(null);
 
+  const getBadgeColors = (status: string) => {
+    if (!status) return { bg: '#E0DEFF', text: '#6D5DF6' };
+    const s = status.toLowerCase();
+    if (s === 'confirmed' || s === 'completed' || s === 'accepted') return { bg: '#DCFCE7', text: '#16A34A' };
+    if (s === 'pending') return { bg: '#FEF3C7', text: '#D97706' };
+    return { bg: '#E0DEFF', text: '#6D5DF6' };
+  };
+
   useFocusEffect(
     useCallback(() => {
       let isActive = true;
@@ -96,8 +104,15 @@ export default function BeneficiaryDashboardScreen() {
         {/* Header Section */}
         <View style={styles.header}>
           <View style={styles.headerTopRow}>
-            <View style={styles.logoContainer}>
-              <AppText variant="h5" style={styles.nameText}>Welcome back, {profile?.first_name || 'User'}</AppText>
+            <View style={{flexDirection: 'row', alignItems: 'center', flex: 1}}>
+              <View style={{marginLeft: 16, justifyContent: 'center'}}>
+                <AppText variant="bodyLarge" style={styles.welcomeText}>
+                  Welcome back,
+                </AppText>
+                <AppText variant="bodyLarge" style={[styles.nameText, {fontWeight: "400"}]}>
+                  {profile ? `${profile.first_name}` : 'User'}
+                </AppText>
+              </View>
             </View>
             <View style={{flexDirection: 'row', alignItems: 'center'}}>
               {/* <TouchableOpacity 
@@ -136,15 +151,30 @@ export default function BeneficiaryDashboardScreen() {
                   )}
                 </View>
                 <View style={styles.cardTitleContainer}>
-                  <Text style={styles.cardTitle}>{upcomingRequest.category?.title}</Text>
-                  <View style={styles.row}>
-                    <Calendar color={Colors.neutral[500]} size={14} />
-                    <Text style={styles.cardSubtitle}> {formatDate(upcomingRequest.preferred_date)}{upcomingRequest.preferred_start_time ? ` • ${formatTime12Hour(upcomingRequest.preferred_start_time)}${upcomingRequest.preferred_end_time ? ` - ${formatTime12Hour(upcomingRequest.preferred_end_time)}` : ''}` : ''}</Text>
+                  <Text style={[styles.cardTitle, { marginBottom: 4 }]}>{upcomingRequest.category?.title}</Text>
+                  <Text style={{ ...Typography.caption, color: Colors.neutral[600], marginBottom: 6 }}>
+                    #{upcomingRequest.reference_number || upcomingRequest.id}
+                  </Text>
+                </View>
+                {upcomingRequest.status && (
+                  <View style={[styles.statusBadge, { backgroundColor: getBadgeColors(upcomingRequest.status).bg, alignSelf: 'flex-start' }]}>
+                    <Text style={[styles.statusBadgeText, { color: getBadgeColors(upcomingRequest.status).text }]}>
+                      {upcomingRequest.status.charAt(0).toUpperCase() + upcomingRequest.status.slice(1)}
+                    </Text>
                   </View>
-                  <View style={styles.row}>
+                )}
+              </View>
+
+              <View style={{ marginBottom: 16 }}>
+                <View style={styles.row}>
+                  <Calendar color={Colors.neutral[500]} size={14} />
+                  <Text style={styles.cardSubtitle}> {formatDate(upcomingRequest.preferred_date)}{upcomingRequest.preferred_start_time ? ` • ${formatTime12Hour(upcomingRequest.preferred_start_time)}${upcomingRequest.preferred_end_time ? ` - ${formatTime12Hour(upcomingRequest.preferred_end_time)}` : ''}` : ''}</Text>
+                </View>
+                <View style={[styles.row, { alignItems: 'flex-start' }]}>
+                  <View style={{ marginTop: 2 }}>
                     <MapPin color={Colors.neutral[500]} size={14} />
-                    <Text style={styles.cardSubtitle} numberOfLines={2}> {upcomingRequest.location?.address || upcomingRequest.meeting_location || 'Location TBD'}</Text>
                   </View>
+                  <Text style={[styles.cardSubtitle, { flex: 1, marginLeft: 6 }]} numberOfLines={1}>{upcomingRequest.location?.address || upcomingRequest.meeting_location || 'Location TBD'}</Text>
                 </View>
               </View>
               
@@ -268,7 +298,7 @@ const styles = StyleSheet.create({
   header: {
     paddingHorizontal: horizontalScale(24),
     paddingTop: verticalScale(16),
-    paddingBottom: verticalScale(40),
+    // paddingBottom: verticalScale(40),
   },
   headerTopRow: {
     flexDirection: 'row',
@@ -350,8 +380,10 @@ const styles = StyleSheet.create({
   },
   cardTitle: {
     ...Typography.labelLarge,
+    fontFamily: 'Inter-SemiBold',
+    fontWeight: '600',
     color: Colors.neutral[900],
-    marginBottom: verticalScale(8),
+    marginBottom: verticalScale(4),
   },
   row: {
     flexDirection: 'row',
@@ -360,13 +392,23 @@ const styles = StyleSheet.create({
   },
   cardSubtitle: {
     ...Typography.caption,
-    color: Colors.neutral[500],
+    color: Colors.neutral[600],
     marginLeft: horizontalScale(4),
   },
   cardSubtext: {
     ...Typography.caption,
     color: Colors.neutral[500],
     marginLeft: horizontalScale(18),
+  },
+  statusBadge: {
+    paddingHorizontal: horizontalScale(12),
+    paddingVertical: verticalScale(4),
+    borderRadius: moderateScale(12),
+  },
+  statusBadgeText: {
+    ...Typography.labelSmall,
+    fontFamily: 'Inter-SemiBold',
+    fontWeight: '600',
   },
   requestHelpBtn: {
     backgroundColor: Colors.primary[500],

@@ -70,38 +70,25 @@ export default function VolunteerDashboardScreen() {
         <View style={styles.header}>
           <View style={styles.headerTop}>
             <View style={{flexDirection: 'row', alignItems: 'center', flex: 1}}>
-              <Image
-                source={profile?.profile_image_url ? { uri: getFullImageUrl(profile.profile_image_url) } : button_user}
-                style={styles.avatar}
-              />
               <View style={{marginLeft: 16, justifyContent: 'center'}}>
-                <AppText variant="h5" style={styles.nameText}>
-                  {profile ? `${profile.first_name} ${profile.last_name}` : name}
+                <AppText variant="bodyLarge" style={styles.welcomeText}>
+                  Welcome back,
                 </AppText>
-                
-                <View style={{flexDirection: 'row', alignItems: 'center', marginTop: 4}}>
-                  <Star color="#FCD34D" fill="#FCD34D" size={14} />
-                  <AppText variant="bodySmall" style={{color: Colors.neutral[0], marginLeft: 4}}>
-                    4.9 (120)
-                  </AppText>
-                </View>
-                
-                <AppText variant="caption" style={{color: Colors.neutral[200], marginTop: 2}}>
-                  Joined Jan 2024
+                <AppText variant="bodyLarge" style={[styles.nameText, {fontWeight: "400"}]}>
+                  {profile ? `${profile.first_name}` : name}
                 </AppText>
               </View>
             </View>
             
-            <TouchableOpacity style={styles.bellIcon} onPress={() => {}}>
+            {/* <TouchableOpacity style={styles.bellIcon} onPress={() => {}}>
               <Bell color={Colors.neutral[0]} size={24} />
-            </TouchableOpacity>
+            </TouchableOpacity> */}
           </View>
         </View>
 
         {/* Floating Impact Card */}
         <View style={styles.impactCardWrapper}>
           <View style={styles.impactCard}>
-            <AppText variant="labelMedium" style={styles.impactTitle}>Your Impact</AppText>
             
             <View style={styles.statsRow}>
               <View style={styles.statItem}>

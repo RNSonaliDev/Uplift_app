@@ -11,16 +11,20 @@ import {
   FlatList,
   ActivityIndicator,
   SafeAreaView,
+  Image,
+  Dimensions,
+  Text,
 } from 'react-native';
 import {useNavigation, useRoute} from '@react-navigation/native';
 import {Colors} from '../../../theme/colors';
+import {Typography, FontFamily} from '../../../theme/typography';
 import {AppText} from '../../../components/AppText';
 import {Input} from '../../../components/Input';
 import {Button} from '../../../components/Button';
 import DatePicker from 'react-native-date-picker';
-import {api} from '../../../api/client';
+import {api, getFullImageUrl} from '../../../api/client';
 import {authApi, CategoryResponse} from '../../../api/auth';
-import {ChevronLeft} from 'lucide-react-native';
+import {ChevronLeft, ShoppingCart} from 'lucide-react-native';
 import {Spacing} from '../../../theme/spacing';
 import {horizontalScale, verticalScale, moderateScale} from '../../../utils/responsive';
 
@@ -74,7 +78,8 @@ export default function CreateRequestScreen() {
     try {
       setLoadingCategories(true);
       const data = await authApi.getCategories();
-      setCategories(data);
+      const beneficiaryCategories = data.filter((cat) => cat.category_type === 'beneficiary');
+      setCategories(beneficiaryCategories);
     } catch (error) {
       console.error('Failed to fetch categories', error);
     } finally {
@@ -104,6 +109,15 @@ export default function CreateRequestScreen() {
     if (!formData.preferred_end_time) newErrors.preferred_end_time = 'Required';
     // if (!formData.hours_required) newErrors.hours_required = 'Required';
     if (!formData.meeting_location) newErrors.meeting_location = 'Required';
+    
+    if (formData.preferred_start_time && formData.preferred_end_time) {
+      const startMinutes = startTime.getHours() * 60 + startTime.getMinutes();
+      const endMinutes = endTime.getHours() * 60 + endTime.getMinutes();
+      
+      if (endMinutes - startMinutes < 60) {
+        newErrors.preferred_end_time = 'Must be at least 1 hour after start time';
+      }
+    }
     
     // Basic validation for numbers
     if (formData.latitude && isNaN(Number(formData.latitude))) newErrors.latitude = 'Must be a number';
@@ -143,7 +157,7 @@ export default function CreateRequestScreen() {
           <TouchableOpacity onPress={() => setIsCategoryModalVisible(true)} activeOpacity={0.7}>
             <View pointerEvents="none">
               <Input
-                label="Category"
+                label="What can we help you?"
                 placeholder="Select a Category"
                 value={formData.category_id ? getCategoryName(formData.category_id) : ''}
                 editable={false}
@@ -153,7 +167,7 @@ export default function CreateRequestScreen() {
           </TouchableOpacity>
 
           <Input
-            label="Title"
+            label={formData.category_id ? `Tell us what kind of ${getCategoryName(formData.category_id)} help you need` : "Tell us what kind of help you need"}
             placeholder="e.g. Grocery Pickup"
             value={formData.title}
             onChangeText={v => handleChange('title', v)}
@@ -161,7 +175,7 @@ export default function CreateRequestScreen() {
           />
 
           <Input
-            label="Description"
+            label="Information for your volunteer."
             placeholder="e.g. Need groceries picked up"
             value={formData.description}
             onChangeText={v => handleChange('description', v)}
@@ -305,6 +319,8 @@ export default function CreateRequestScreen() {
               <FlatList
                 data={categories}
                 keyExtractor={item => item.id.toString()}
+                numColumns={2}
+                contentContainerStyle={{ padding: moderateScale(8) }}
                 renderItem={({item}) => (
                   <TouchableOpacity
                     style={styles.categoryItem}
@@ -312,7 +328,18 @@ export default function CreateRequestScreen() {
                       handleChange('category_id', item.id.toString());
                       setIsCategoryModalVisible(false);
                     }}>
-                    <AppText>{item.title}</AppText>
+                    <View style={styles.iconContainer}>
+                      {item.logo_url ? (
+                        <Image 
+                          source={{ uri: getFullImageUrl(item.logo_url) as string }}
+                          style={{ width: 32, height: 32 }}
+                          resizeMode="contain"
+                        />
+                      ) : (
+                        <ShoppingCart color={Colors.primary[500]} size={32} />
+                      )}
+                    </View>
+                    <Text style={styles.cardTitle} numberOfLines={2}>{item.title}</Text>
                   </TouchableOpacity>
                 )}
               />
@@ -386,8 +413,31 @@ const styles = StyleSheet.create({
     borderBottomColor: Colors.neutral[200],
   },
   categoryItem: {
-    padding: moderateScale(20),
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.neutral[100],
+    flex: 1,
+    margin: moderateScale(8),
+    backgroundColor: Colors.neutral[0],
+    borderRadius: moderateScale(16),
+    padding: moderateScale(24),
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: Colors.neutral[900],
+    shadowOffset: {width: 0, height: verticalScale(4)},
+    shadowOpacity: 0.05,
+    shadowRadius: moderateScale(12),
+    elevation: 3,
+    borderWidth: 1,
+    borderColor: Colors.neutral[100],
+    minHeight: verticalScale(140),
+  },
+  iconContainer: {
+    marginBottom: verticalScale(16),
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cardTitle: {
+    ...Typography.labelMedium,
+    color: Colors.neutral[900],
+    fontFamily: FontFamily.semiBold,
+    textAlign: 'center',
   },
 });

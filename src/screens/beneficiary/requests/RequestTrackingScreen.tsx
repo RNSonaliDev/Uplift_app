@@ -8,10 +8,11 @@ import {
   SafeAreaView,
   ActivityIndicator,
   Alert,
+  Image,
 } from 'react-native';
 import Toast from 'react-native-toast-message';
 import {useNavigation, useRoute} from '@react-navigation/native';
-import {api} from '../../../api/client';
+import {api, getFullImageUrl} from '../../../api/client';
 import {Colors} from '../../../theme/colors';
 import {Typography} from '../../../theme/typography';
 import {
@@ -116,7 +117,15 @@ export default function RequestTrackingScreen() {
           <View style={styles.card}>
             <View style={styles.cardHeader}>
               <View style={styles.categoryIconCircle}>
-                {getCategoryIcon(requestDetail.category?.title, 24)}
+                {requestDetail.category?.logo_url ? (
+                  <Image 
+                    source={{ uri: getFullImageUrl(requestDetail.category.logo_url) as string }}
+                    style={{ width: 32, height: 32 }}
+                    resizeMode="contain"
+                  />
+                ) : (
+                  getCategoryIcon(requestDetail.category?.title, 24)
+                )}
               </View>
               <View style={styles.cardHeaderRight}>
                 <Text style={styles.cardTitle}>{requestDetail.category?.title || 'Help Request'}</Text>
@@ -127,43 +136,54 @@ export default function RequestTrackingScreen() {
             <View style={styles.divider} />
             
             <View style={styles.cardDetails}>
-              <View style={styles.detailRow}>
-                <Calendar color={Colors.neutral[500]} size={20} />
-                <Text style={styles.detailText}>
+              <View style={[styles.detailRow, { alignItems: 'flex-start' }]}>
+                <View style={{ marginTop: 2 }}>
+                  <Calendar color={Colors.neutral[500]} size={20} />
+                </View>
+                <Text style={[styles.detailText, { flex: 1 }]}>
                   {formatDate(requestDetail.preferred_date)} • {(requestDetail.preferred_start_time || requestDetail.start_time) ? `${formatTime12Hour(requestDetail.preferred_start_time || requestDetail.start_time)}${(requestDetail.preferred_end_time || requestDetail.end_time) ? ` - ${formatTime12Hour(requestDetail.preferred_end_time || requestDetail.end_time)}` : ''}` : (requestDetail.preferred_time || (requestDetail.hours_required ? `${requestDetail.hours_required} hours` : 'Time TBD'))}
                 </Text>
               </View>
-              <View style={styles.detailRow}>
-                <MapPin color={Colors.neutral[500]} size={20} />
-                <Text style={styles.detailText}>
-                  {requestDetail.location?.address || requestDetail.meeting_location || 'Location TBD'}
-                </Text>
+              <View style={[styles.detailRow, { alignItems: 'flex-start' }]}>
+                <View style={{ marginTop: 2 }}>
+                  <MapPin color={Colors.neutral[500]} size={20} />
+                </View>
+                <Text style={[styles.detailText, { flex: 1 }]}>{requestDetail.location?.address || requestDetail.meeting_location || 'Location TBD'}</Text>
               </View>
             </View>
           </View>
 
-          <View style={styles.timelineContainer}>
-            <TimelineItem 
-              status="completed" 
-              title="Request Submitted" 
-              time={new Date(requestDetail.created_at).toLocaleString()}
-            />
-            <TimelineItem 
-              status={['accepted', 'assigned', 'in_progress', 'completed'].includes(requestDetail.status) ? 'completed' : 'pending'} 
-              title="Request Accepted" 
-              description={requestDetail.volunteer ? `${requestDetail.volunteer.first_name} will help you.` : 'Waiting for a helper to accept.'}
-            />
-            <TimelineItem 
-              status={['completed'].includes(requestDetail.status) ? 'completed' : requestDetail.status === 'in_progress' ? 'active' : 'pending'} 
-              title="In Progress / Arrived" 
-            />
-            <TimelineItem 
-              status={requestDetail.status === 'completed' ? 'completed' : 'pending'} 
-              title="Completed" 
-              description={requestDetail.status === 'completed' ? 'Thanks you! Your request is completed.' : 'We will notify you when completed.'}
-              isLast
-            />
-          </View>
+          {requestDetail.status === 'cancelled' ? (
+            <View style={[styles.timelineContainer, { paddingVertical: 24, paddingHorizontal: 16, backgroundColor: Colors.error + '10', borderRadius: 12, alignItems: 'center', marginTop: 16 }]}>
+              <Text style={{ ...Typography.h5, color: Colors.error, marginBottom: 8 }}>Request Cancelled</Text>
+              <Text style={{ ...Typography.bodyMedium, color: Colors.neutral[600], textAlign: 'center' }}>
+                This request was cancelled and is no longer active.
+              </Text>
+            </View>
+          ) : (
+            <View style={styles.timelineContainer}>
+              <TimelineItem 
+                status="completed" 
+                title="Request Submitted" 
+                time={new Date(requestDetail.created_at).toLocaleString()}
+              />
+              <TimelineItem 
+                status={['accepted', 'assigned', 'in_progress', 'completed'].includes(requestDetail.status) ? 'completed' : 'pending'} 
+                title="Request Accepted" 
+                description={requestDetail.volunteer ? `${requestDetail.volunteer.first_name} will help you.` : 'Waiting for a helper to accept.'}
+              />
+              <TimelineItem 
+                status={['completed'].includes(requestDetail.status) ? 'completed' : requestDetail.status === 'in_progress' ? 'active' : 'pending'} 
+                title="In Progress / Arrived" 
+              />
+              <TimelineItem 
+                status={requestDetail.status === 'completed' ? 'completed' : 'pending'} 
+                title="Completed" 
+                description={requestDetail.status === 'completed' ? 'Thanks you! Your request is completed.' : 'We will notify you when completed.'}
+                isLast
+              />
+            </View>
+          )}
 
           <View style={styles.bottomContainer}>
             {requestDetail.volunteer && requestDetail.status !== 'completed' && (
@@ -244,6 +264,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.neutral[200],
   },
   backBtn: {
     padding: 4,
@@ -314,7 +336,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   detailText: {
-    ...Typography.bodyLarge,
+    ...Typography.bodySmall,
     color: Colors.neutral[700],
     marginLeft: 12,
   },

@@ -174,13 +174,7 @@ export default function MyScheduleScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.header}>
-        {navigation.canGoBack() ? (
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-            <ArrowLeft color={Colors.neutral[900]} size={24} />
-          </TouchableOpacity>
-        ) : (
-          <View style={styles.backButtonPlaceholder} />
-        )}
+        <View style={styles.backButtonPlaceholder} />
         <AppText variant="h4" color={Colors.neutral[900]} style={styles.headerTitle}>
           My Schedule
         </AppText>
@@ -196,7 +190,7 @@ export default function MyScheduleScreen() {
           <AppText 
             variant="bodyMedium" 
             color={activeTab === 'Upcoming' ? Colors.neutral[0] : Colors.neutral[700]}
-            style={{fontWeight: activeTab === 'Upcoming' ? '600' : '400'}}
+            style={{fontWeight: activeTab === 'Upcoming' ? '400' : '400'}}
           >
             Upcoming
           </AppText>
@@ -209,7 +203,7 @@ export default function MyScheduleScreen() {
           <AppText 
             variant="bodyMedium" 
             color={activeTab === 'In Progress' ? Colors.neutral[0] : Colors.neutral[700]}
-            style={{fontWeight: activeTab === 'In Progress' ? '600' : '400'}}
+            style={{fontWeight: activeTab === 'In Progress' ? '400' : '400'}}
           >
             In Progress
           </AppText>
@@ -222,7 +216,7 @@ export default function MyScheduleScreen() {
           <AppText 
             variant="bodyMedium" 
             color={activeTab === 'Completed' ? Colors.neutral[0] : Colors.neutral[700]}
-            style={{fontWeight: activeTab === 'Completed' ? '600' : '400'}}
+            style={{fontWeight: activeTab === 'Completed' ? '400' : '400'}}
           >
             Completed
           </AppText>
@@ -264,6 +258,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: horizontalScale(16),
     paddingVertical: verticalScale(16),
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.neutral[200],
   },
   backButton: {
     padding: moderateScale(8),
@@ -282,6 +278,7 @@ const styles = StyleSheet.create({
     padding: moderateScale(4),
     marginHorizontal: horizontalScale(24),
     marginBottom: verticalScale(24),
+    marginTop: verticalScale(24),
   },
   segmentButton: {
     flex: 1,

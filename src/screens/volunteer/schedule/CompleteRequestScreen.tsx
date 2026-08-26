@@ -149,6 +149,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: horizontalScale(16),
     paddingVertical: verticalScale(12),
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.neutral[200],
   },
   backButton: {
     padding: moderateScale(8),

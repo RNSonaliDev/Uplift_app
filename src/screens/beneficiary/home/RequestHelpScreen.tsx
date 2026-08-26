@@ -8,6 +8,7 @@ import {
   SafeAreaView,
   Dimensions,
   ActivityIndicator,
+  Image,
 } from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import {Colors} from '../../../theme/colors';
@@ -23,6 +24,7 @@ import {
   MoreHorizontal,
 } from 'lucide-react-native';
 import {authApi, CategoryResponse} from '../../../api/auth';
+import {api, getFullImageUrl} from '../../../api/client';
 
 const {width} = Dimensions.get('window');
 const CARD_GAP = horizontalScale(16);
@@ -82,7 +84,13 @@ export default function RequestHelpScreen() {
             {categories.map((cat) => (
               <HelpCategoryCard
                 key={cat.id.toString()}
-                icon={getIconForCategory(cat.title)}
+                icon={cat.logo_url ? (
+                  <Image 
+                    source={{ uri: getFullImageUrl(cat.logo_url) as string }}
+                    style={{ width: 32, height: 32 }}
+                    resizeMode="contain"
+                  />
+                ) : getIconForCategory(cat.title)}
                 title={cat.title}
                 onPress={() => navigation.navigate('RequestsTab', {
                   screen: 'CreateRequest',
@@ -115,6 +123,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: horizontalScale(16),
     paddingVertical: verticalScale(12),
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.neutral[200],
   },
   backBtn: {
     padding: moderateScale(4),

@@ -92,7 +92,15 @@ export default function MyRequestsScreen() {
             displayRequests.map((req: any) => (
               <RequestCard 
                 key={req.id.toString()}
-                icon={<ShoppingCart color={Colors.primary[500]} size={24} />}
+                icon={req.category?.logo_url ? (
+                  <Image 
+                    source={{ uri: getFullImageUrl(req.category.logo_url) as string }}
+                    style={{ width: 24, height: 24 }}
+                    resizeMode="contain"
+                  />
+                ) : (
+                  <ShoppingCart color={Colors.primary[500]} size={24} />
+                )}
                 title={req.category?.title || 'Help Request'}
                 referenceNumber={req.reference_number || req.id}
                 date={formatDate(req.preferred_date)}
@@ -110,6 +118,12 @@ export default function MyRequestsScreen() {
             </View>
           )}
         </ScrollView>
+        <TouchableOpacity 
+          style={styles.fab} 
+          onPress={() => navigation.navigate('HomeTab', { screen: 'RequestHelp' })}
+        >
+          <Plus color={Colors.neutral[0]} size={24} />
+        </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
@@ -137,25 +151,24 @@ const RequestCard = ({
           {referenceNumber ? (
             <Text style={[styles.infoText, { marginBottom: 6 }]}>#{referenceNumber}</Text>
           ) : null}
-          
-          <View style={[styles.infoRow, { alignItems: 'flex-start' }]}>
-            <Calendar color={Colors.neutral[400]} size={14} style={[styles.infoIcon, { marginTop: 2 }]} />
-            <Text style={[styles.infoText, { flex: 1, lineHeight: 18 }]}>
-              {date}
-              {time ? <Text style={styles.infoDot}> • {time}</Text> : null}
-            </Text>
-          </View>
-          
-          <View style={[styles.infoRow, { alignItems: 'flex-start', marginTop: 6 }]}>
-            <MapPin color={Colors.neutral[400]} size={14} style={[styles.infoIcon, { marginTop: 2 }]} />
-            <Text style={[styles.infoText, { flex: 1, lineHeight: 18 }]}>{location}</Text>
-          </View>
+        </View>
+        <View style={[styles.statusBadge, { backgroundColor: badge.bg, alignSelf: 'flex-start' }]}>
+          <Text style={[styles.statusBadgeText, { color: badge.text }]}>{status}</Text>
         </View>
       </View>
       
-      <View style={styles.cardFooterAligned}>
-        <View style={[styles.statusBadge, { backgroundColor: badge.bg }]}>
-          <Text style={[styles.statusBadgeText, { color: badge.text }]}>{status}</Text>
+      <View style={{ marginTop: 8 }}>
+        <View style={[styles.infoRow, { alignItems: 'flex-start' }]}>
+          <Calendar color={Colors.neutral[400]} size={14} style={[styles.infoIcon, { marginTop: 2 }]} />
+          <Text style={[styles.infoText, { flex: 1, lineHeight: 18 }]}>
+            {date}
+            {time ? <Text style={styles.infoDot}> • {time}</Text> : null}
+          </Text>
+        </View>
+        
+        <View style={[styles.infoRow, { alignItems: 'flex-start', marginTop: 6 }]}>
+          <MapPin color={Colors.neutral[400]} size={14} style={[styles.infoIcon, { marginTop: 2 }]} />
+          <Text style={[styles.infoText, { flex: 1, lineHeight: 18 }]} numberOfLines={1}>{location}</Text>
         </View>
       </View>
     </TouchableOpacity>
@@ -173,6 +186,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: horizontalScale(16),
     paddingVertical: verticalScale(16),
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.neutral[200],
   },
   backBtn: {
     padding: moderateScale(4),
@@ -255,7 +270,7 @@ const styles = StyleSheet.create({
     marginRight: horizontalScale(6),
   },
   infoText: {
-    ...Typography.bodySmall,
+    ...Typography.caption,
     color: Colors.neutral[600],
   },
   infoDot: {

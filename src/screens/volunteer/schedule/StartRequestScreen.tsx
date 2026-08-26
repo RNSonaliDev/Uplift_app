@@ -168,6 +168,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: horizontalScale(16),
     paddingVertical: verticalScale(16),
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.neutral[200],
   },
   iconButton: {
     padding: moderateScale(8),

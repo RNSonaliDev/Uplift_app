@@ -154,6 +154,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: horizontalScale(16),
     paddingVertical: verticalScale(16),
     backgroundColor: Colors.neutral[50],
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.neutral[200],
   },
   iconButton: {
     padding: moderateScale(4),

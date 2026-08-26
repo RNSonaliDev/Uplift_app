@@ -146,6 +146,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.neutral[200],
   },
   iconBtn: {
     padding: 4,

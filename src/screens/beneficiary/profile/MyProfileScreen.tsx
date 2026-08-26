@@ -9,17 +9,16 @@ import {
   Image,
   ActivityIndicator,
   Alert,
-  Modal,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {useNavigation, useFocusEffect} from '@react-navigation/native';
 import {api, getFullImageUrl} from '../../../api/client';
 import {authApi, UserProfileResponse} from '../../../api/auth';
-import {contentApi} from '../../../api';
 import {Colors} from '../../../theme/colors';
 import {Typography} from '../../../theme/typography';
 import {horizontalScale, verticalScale, moderateScale, hp} from '../../../utils/responsive';
 import { button_user } from '../../../assets/images';
+import {AppText} from '../../../components/AppText';
 import {
   ChevronLeft,
   Edit2,
@@ -46,9 +45,6 @@ export default function MyProfileScreen() {
   const navigation = useNavigation<any>();
   const [profile, setProfile] = useState<UserProfileResponse | null>(null);
   const [loading, setLoading] = useState(true);
-  const [modalConfig, setModalConfig] = useState<{visible: boolean, type: 'terms' | 'privacy'}>({visible: false, type: 'terms'});
-  const [content, setContent] = useState<string | null>(null);
-  const [isContentLoading, setIsContentLoading] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -88,37 +84,13 @@ export default function MyProfileScreen() {
     ]);
   };
 
-  const openTerms = async () => {
-    setModalConfig({visible: true, type: 'terms'});
-    setContent(null);
-    setIsContentLoading(true);
-    try {
-      const res = await contentApi.getTermsOfService();
-      const cleanText = res.body ? res.body.replace(/<[^>]*>?/gm, '') : 'No content available.';
-      setContent(cleanText);
-    } catch (error) {
-      setContent('Failed to load Terms of Service. Please try again later.');
-    } finally {
-      setIsContentLoading(false);
-    }
+  const openTerms = () => {
+    navigation.navigate('LegalContent', { type: 'terms' });
   };
 
-  const openPrivacy = async () => {
-    setModalConfig({visible: true, type: 'privacy'});
-    setContent(null);
-    setIsContentLoading(true);
-    try {
-      const res = await contentApi.getPrivacyPolicy();
-      const cleanText = res.body ? res.body.replace(/<[^>]*>?/gm, '') : 'No content available.';
-      setContent(cleanText);
-    } catch (error) {
-      setContent('Failed to load Privacy Policy. Please try again later.');
-    } finally {
-      setIsContentLoading(false);
-    }
+  const openPrivacy = () => {
+    navigation.navigate('LegalContent', { type: 'privacy' });
   };
-
-  const closeModal = () => setModalConfig({...modalConfig, visible: false});
 
   const userRoles = profile?.roles?.map((r: any) => r) || [];
   console.log("@@@ userRolesuserRoles===", userRoles)
@@ -150,21 +122,21 @@ export default function MyProfileScreen() {
               </View>
               
               <View style={styles.profileInfo}>
-                <Text style={styles.name}>{profile.first_name} {profile.last_name}</Text>
+                <AppText variant="h4" style={styles.name} numberOfLines={1}>{profile.first_name}</AppText>
                 <View style={styles.contactRow}>
                   <Mail color={Colors.neutral[0]} size={16} />
-                  <Text style={[styles.contactInfo, {marginLeft: 8}]} numberOfLines={1}>{profile.email}</Text>
+                  <AppText variant="bodyMedium" style={[styles.contactInfo, {marginLeft: 8}]} numberOfLines={1}>{profile.email}</AppText>
                 </View>
                 <View style={styles.contactRow}>
                   <Phone color={Colors.neutral[0]} size={16} />
-                  <Text style={[styles.contactInfo, {marginLeft: 8}]} numberOfLines={1}>
-                    {profile.country_code ? `${profile.country_code} ${profile.phone}` : profile.phone}
-                  </Text>
+                  <AppText variant="bodyMedium" style={[styles.contactInfo, {marginLeft: 8}]} numberOfLines={1}>
+                    {profile.country_code ? `${profile.phone}` : profile.phone}
+                  </AppText>
                 </View>
               </View>
             </>
           ) : (
-            <Text style={styles.contactInfo}>Failed to load profile.</Text>
+            <AppText variant="bodyMedium" style={styles.contactInfo}>Failed to load profile.</AppText>
           )}
         </View>
       </View>
@@ -242,32 +214,6 @@ export default function MyProfileScreen() {
           <Text style={styles.footerText}>Thank you for being a part of the Uplift community.</Text>
         </View>
       </ScrollView>
-
-      {/* Terms & Privacy Modal */}
-      <Modal visible={modalConfig.visible} animationType="slide" transparent={true} onRequestClose={closeModal}>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>
-                {modalConfig.type === 'terms' ? 'Terms of Service' : 'Privacy Policy'}
-              </Text>
-              <TouchableOpacity onPress={closeModal} style={styles.closeButton}>
-                <Text style={styles.closeButtonText}>Close</Text>
-              </TouchableOpacity>
-            </View>
-            <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
-              {isContentLoading ? (
-                <ActivityIndicator size="large" color={Colors.primary[500]} style={{marginTop: verticalScale(40)}} />
-              ) : (
-                <Text style={styles.modalText}>
-                  {content}
-                </Text>
-              )}
-            </ScrollView>
-          </View>
-        </View>
-      </Modal>
-
     </SafeAreaView>
   );
 }
@@ -303,7 +249,7 @@ const styles = StyleSheet.create({
   },
   profileRow: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     marginTop: verticalScale(8),
     paddingHorizontal: horizontalScale(8),
   },
@@ -311,20 +257,20 @@ const styles = StyleSheet.create({
     marginRight: horizontalScale(16),
   },
   avatar: {
-    width: moderateScale(72),
-    height: moderateScale(72),
-    borderRadius: moderateScale(36),
+    width: moderateScale(80),
+    height: moderateScale(80),
+    borderRadius: moderateScale(40),
     // borderWidth: moderateScale(3),
     // borderColor: Colors.neutral[0],
   },
   profileInfo: {
     flex: 1,
-    justifyContent: 'flex-start',
+    justifyContent: 'center',
   },
   name: {
     ...Typography.h4,
     color: Colors.neutral[0],
-    marginBottom: verticalScale(4),
+    marginBottom: 0,
   },
   ratingRow: {
     flexDirection: 'row',
@@ -348,7 +294,7 @@ const styles = StyleSheet.create({
   contactRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: verticalScale(4),
+    marginBottom: 0,
   },
   container: {
     flex: 1,
@@ -399,44 +345,5 @@ const styles = StyleSheet.create({
     color: Colors.neutral[500],
     textAlign: 'center',
     lineHeight: verticalScale(22),
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end',
-  },
-  modalContent: {
-    backgroundColor: Colors.neutral[0],
-    borderTopLeftRadius: moderateScale(24),
-    borderTopRightRadius: moderateScale(24),
-    maxHeight: hp(80),
-    paddingBottom: verticalScale(32),
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: horizontalScale(20),
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.neutral[200],
-  },
-  modalTitle: {
-    ...Typography.h5,
-    color: Colors.neutral[900],
-  },
-  closeButton: {
-    padding: moderateScale(4),
-  },
-  closeButtonText: {
-    ...Typography.bodyMedium,
-    color: Colors.primary[500],
-  },
-  modalBody: {
-    paddingHorizontal: horizontalScale(20),
-    paddingVertical: verticalScale(16),
-  },
-  modalText: {
-    ...Typography.bodyMedium,
-    color: Colors.neutral[600],
   },
 });
