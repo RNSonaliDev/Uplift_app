@@ -14,7 +14,7 @@ export const Colors = {
     200: '#C2BCFF',
     300: '#9E94FF',
     400: '#8678F9', 
-    500: '#6D5DF6', // Main Brand Purple (from logo)
+    500: '#5B4DFF',//'#6D5DF6', // Main Brand Purple (from logo)
     600: '#5243C9',
     700: '#442BD2', // Old Main Brand Blue
     800: '#23215E',

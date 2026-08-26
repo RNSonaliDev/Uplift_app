@@ -10,13 +10,13 @@ import {
 } from 'react-native';
 import {useNavigation, useFocusEffect} from '@react-navigation/native';
 import Svg, {Path, Circle} from 'react-native-svg';
-import {api} from '../../../api/client';
+import {api, getFullImageUrl} from '../../../api/client';
 import {authApi, CategoryResponse, UserProfileResponse} from '../../../api/auth';
 import {AppText} from '../../../components/AppText';
 import {Colors} from '../../../theme/colors';
 import {Typography, FontFamily} from '../../../theme/typography';
 import {horizontalScale, verticalScale, moderateScale} from '../../../utils/responsive';
-import {formatDate} from '../../../utils/dateFormatter';
+import {formatDate, formatTime12Hour} from '../../../utils/dateFormatter';
 import {logo} from '../../../assets/images';
 import {
   ArrowRightLeft,
@@ -97,8 +97,7 @@ export default function BeneficiaryDashboardScreen() {
         <View style={styles.header}>
           <View style={styles.headerTopRow}>
             <View style={styles.logoContainer}>
-              <AppText variant="bodyMedium" style={styles.welcomeText}>Welcome back,</AppText>
-              <AppText variant="h3" style={styles.nameText}>{profile?.first_name || 'User'}</AppText>
+              <AppText variant="h5" style={styles.nameText}>Welcome back, {profile?.first_name || 'User'}</AppText>
             </View>
             <View style={{flexDirection: 'row', alignItems: 'center'}}>
               {/* <TouchableOpacity 
@@ -107,10 +106,10 @@ export default function BeneficiaryDashboardScreen() {
               >
                 <ArrowRightLeft color={Colors.neutral[0]} size={22} />
               </TouchableOpacity> */}
-              <TouchableOpacity style={styles.notificationBtn}>
+              {/* <TouchableOpacity style={styles.notificationBtn}>
                 <Bell color={Colors.neutral[0]} size={24} />
                 <View style={styles.notificationDot} />
-              </TouchableOpacity>
+              </TouchableOpacity> */}
             </View>
           </View>
         </View>
@@ -126,13 +125,21 @@ export default function BeneficiaryDashboardScreen() {
             <View style={styles.card}>
               <View style={styles.cardHeader}>
                 <View style={styles.iconContainer}>
-                  <ShoppingCart color={Colors.primary[500]} size={24} />
+                  {upcomingRequest.category?.logo_url ? (
+                    <Image 
+                      source={{ uri: getFullImageUrl(upcomingRequest.category.logo_url) as string }}
+                      style={{ width: 24, height: 24 }}
+                      resizeMode="contain"
+                    />
+                  ) : (
+                    <ShoppingCart color={Colors.primary[500]} size={24} />
+                  )}
                 </View>
                 <View style={styles.cardTitleContainer}>
                   <Text style={styles.cardTitle}>{upcomingRequest.category?.title}</Text>
                   <View style={styles.row}>
                     <Calendar color={Colors.neutral[500]} size={14} />
-                    <Text style={styles.cardSubtitle}> {formatDate(upcomingRequest.preferred_date)}</Text>
+                    <Text style={styles.cardSubtitle}> {formatDate(upcomingRequest.preferred_date)}{upcomingRequest.preferred_start_time ? ` • ${formatTime12Hour(upcomingRequest.preferred_start_time)}${upcomingRequest.preferred_end_time ? ` - ${formatTime12Hour(upcomingRequest.preferred_end_time)}` : ''}` : ''}</Text>
                   </View>
                   <View style={styles.row}>
                     <MapPin color={Colors.neutral[500]} size={14} />
@@ -162,23 +169,23 @@ export default function BeneficiaryDashboardScreen() {
           )}
 
           {/* Quick Actions */}
-          <Text style={styles.sectionTitle}>Quick Actions</Text>
+          {/* <Text style={styles.sectionTitle}>Quick Actions</Text> */}
           <View style={styles.quickActionsContainer}>
-            <QuickActionItem 
+            {/* <QuickActionItem 
               icon={<FileText color={Colors.neutral[700]} size={24} strokeWidth={1.5} />} 
               label="My Requests" 
               onPress={() => navigation.navigate('RequestsTab' as never)}
-            />
+            /> */}
             {/* <QuickActionItem 
               icon={<MessageSquare color={Colors.neutral[700]} size={24} strokeWidth={1.5} />} 
               label="Message" 
               onPress={() => navigation.navigate('MessagesTab' as never)}
             /> */}
-            <QuickActionItem 
+            {/* <QuickActionItem 
               icon={<User color={Colors.neutral[700]} size={24} strokeWidth={1.5} />} 
               label="My Profile" 
               onPress={() => navigation.navigate('ProfileTab' as never)}
-            />
+            /> */}
             {/* <QuickActionItem 
               icon={<Heart color={Colors.neutral[700]} size={24} strokeWidth={1.5} />} 
               label="Donate" 
@@ -202,7 +209,17 @@ export default function BeneficiaryDashboardScreen() {
               return (
                 <HelpCategoryItem 
                   key={category.id}
-                  icon={<IconComponent color={Colors.primary[500]} size={24} />}
+                  icon={
+                    category.logo_url ? (
+                      <Image 
+                        source={{ uri: getFullImageUrl(category.logo_url) as string }}
+                        style={{ width: 24, height: 24 }}
+                        resizeMode="contain"
+                      />
+                    ) : (
+                      <IconComponent color={Colors.primary[500]} size={24} />
+                    )
+                  }
                   title={category.title}
                   onPress={() => navigation.navigate('RequestsTab', {
                   screen: 'CreateRequest',

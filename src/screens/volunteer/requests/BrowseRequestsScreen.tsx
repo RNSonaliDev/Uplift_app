@@ -7,11 +7,12 @@ import {
   TextInput,
   ScrollView,
   FlatList,
+  Image,
 } from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import {Colors} from '../../../theme/colors';
 import {AppText} from '../../../components/AppText';
-import {formatDate} from '../../../utils/dateFormatter';
+import {formatDate, formatTime12Hour} from '../../../utils/dateFormatter';
 import {
   Search,
   Filter,
@@ -23,7 +24,7 @@ import {
   FileText,
 } from 'lucide-react-native';
 import {authApi, CategoryResponse} from '../../../api/auth';
-import {api} from '../../../api/client';
+import {api, getFullImageUrl} from '../../../api/client';
 import {
   horizontalScale,
   verticalScale,
@@ -76,10 +77,23 @@ export default function BrowseRequestsScreen() {
     return <FileText color={Colors.primary[500]} size={20} />;
   };
 
+  const formatStatus = (status: string) => {
+    if (!status) return 'New';
+    if (status.toLowerCase() === 'in_progress') return 'In Progress';
+    return status.charAt(0).toUpperCase() + status.slice(1).replace('_', ' ');
+  };
+
+  const getStatusColors = (status: string) => {
+    const s = status?.toLowerCase() || '';
+    if (s === 'in_progress') return { bg: Colors.primary[50], text: Colors.primary[700] };
+    if (s === 'completed') return { bg: Colors.secondary[50], text: Colors.secondary[700] };
+    // pending, accepted, new
+    return { bg: Colors.accent[50], text: Colors.accent[700] };
+  };
+
   const renderRequestCard = ({item}: {item: any}) => {
-    const displayStatus = item.status 
-      ? item.status.charAt(0).toUpperCase() + item.status.slice(1) 
-      : 'New';
+    const displayStatus = formatStatus(item.status);
+    const statusColors = getStatusColors(item.status);
 
     return (
       <TouchableOpacity 
@@ -88,13 +102,27 @@ export default function BrowseRequestsScreen() {
         activeOpacity={0.7}
       >
         <View style={styles.cardHeader}>
-          <View style={styles.categoryBadge}>
-            <AppText variant="labelMedium" color={Colors.primary[600]}>
+          <View style={styles.requestIconContainer}>
+            {item.category?.logo_url ? (
+              <Image 
+                source={{ uri: getFullImageUrl(item.category.logo_url) as string }}
+                style={{ width: 24, height: 24 }}
+                resizeMode="contain"
+              />
+            ) : (
+              <ShoppingBag color={Colors.primary[500]} size={20} />
+            )}
+          </View>
+          <View style={{flex: 1}}>
+            <AppText variant="labelLarge" color={Colors.neutral[900]}>
               {item.category?.title || 'Help Request'}
             </AppText>
+            <AppText variant="bodySmall" color={Colors.neutral[500]} style={{marginTop: 4}}>
+              #{item.reference_number || item.id}
+            </AppText>
           </View>
-          <View style={styles.newBadge}>
-            <AppText variant="labelMedium" color={Colors.warning[500]}>
+          <View style={[styles.newBadge, { backgroundColor: statusColors.bg }]}>
+            <AppText variant="labelMedium" color={statusColors.text}>
               {displayStatus}
             </AppText>
           </View>
@@ -104,13 +132,7 @@ export default function BrowseRequestsScreen() {
           <View style={styles.detailRow}>
             <Calendar color={Colors.neutral[400]} size={16} />
             <AppText variant="bodyMedium" color={Colors.neutral[600]} style={styles.detailText}>
-              {formatDate(item.preferred_date)}
-            </AppText>
-          </View>
-          <View style={styles.detailRow}>
-            <Clock color={Colors.neutral[400]} size={16} />
-            <AppText variant="bodyMedium" color={Colors.neutral[600]} style={styles.detailText}>
-              {item.hours_required ? `${item.hours_required} hours` : item.preferred_time}
+              {formatDate(item.preferred_date)} • {(item.preferred_start_time || item.start_time) ? `${formatTime12Hour(item.preferred_start_time || item.start_time)}${(item.preferred_end_time || item.end_time) ? ` - ${formatTime12Hour(item.preferred_end_time || item.end_time)}` : ''}` : (item.preferred_time || (item.hours_required ? `${item.hours_required} hours` : 'Time TBD'))}
             </AppText>
           </View>
           <View style={styles.detailRow}>
@@ -275,9 +297,18 @@ const styles = StyleSheet.create({
   },
   cardHeader: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
     marginBottom: verticalScale(16),
-    gap: horizontalScale(8),
+  },
+  requestIconContainer: {
+    width: moderateScale(40),
+    height: moderateScale(40),
+    borderRadius: 20,
+    backgroundColor: Colors.primary[50],
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: horizontalScale(12),
   },
   categoryBadge: {
     backgroundColor: Colors.primary[50],
@@ -286,7 +317,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   newBadge: {
-    backgroundColor: Colors.warning[50],
     paddingHorizontal: horizontalScale(10),
     paddingVertical: verticalScale(4),
     borderRadius: 12,
@@ -300,6 +330,7 @@ const styles = StyleSheet.create({
   },
   detailText: {
     marginLeft: horizontalScale(8),
+    flex: 1,
   },
   emptyContainer: {
     alignItems: 'center',

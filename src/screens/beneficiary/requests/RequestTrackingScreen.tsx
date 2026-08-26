@@ -22,6 +22,11 @@ import {
   Car,
   Calendar,
   MapPin,
+  Pill,
+  Soup,
+  Users,
+  MoreHorizontal,
+  Clock,
 } from 'lucide-react-native';
 import {formatDate, formatTime12Hour} from '../../../utils/dateFormatter';
 
@@ -70,6 +75,16 @@ export default function RequestTrackingScreen() {
     ]);
   };
 
+  const getCategoryIcon = (title: string, size = 20) => {
+    const t = title?.toLowerCase() || '';
+    if (t.includes('groc') || t.includes('shop')) return <ShoppingCart color={Colors.neutral[900]} size={size} />;
+    if (t.includes('pharm') || t.includes('med') || t.includes('pill')) return <Pill color={Colors.neutral[900]} size={size} />;
+    if (t.includes('meal') || t.includes('food') || t.includes('soup')) return <Soup color={Colors.neutral[900]} size={size} />;
+    if (t.includes('trans') || t.includes('drive') || t.includes('car')) return <Car color={Colors.neutral[900]} size={size} />;
+    if (t.includes('comp') || t.includes('people') || t.includes('user')) return <Users color={Colors.neutral[900]} size={size} />;
+    return <MoreHorizontal color={Colors.neutral[900]} size={size} />;
+  };
+
   const fetchRequestDetails = async () => {
     try {
       setLoading(true);
@@ -100,31 +115,29 @@ export default function RequestTrackingScreen() {
         <ScrollView style={styles.container} contentContainerStyle={styles.content}>
           <View style={styles.card}>
             <View style={styles.cardHeader}>
-              <View style={styles.iconContainer}>
-                <ShoppingCart color={Colors.primary[500]} size={24} />
+              <View style={styles.categoryIconCircle}>
+                {getCategoryIcon(requestDetail.category?.title, 24)}
               </View>
-              <View style={styles.cardTitleContainer}>
+              <View style={styles.cardHeaderRight}>
                 <Text style={styles.cardTitle}>{requestDetail.category?.title || 'Help Request'}</Text>
-                <Text style={[styles.cardId, { marginBottom: 8 }]}>Request ID: {requestDetail.reference_number || `#${requestDetail.id}`}</Text>
-                
-                <View style={[styles.dateRow, { alignItems: 'flex-start' }]}>
-                  <Calendar color={Colors.neutral[500]} size={16} style={{ marginTop: 2 }} />
-                  <Text style={[styles.cardDate, { flex: 1 }]}>
-                    {formatDate(requestDetail.preferred_date)}
-                    {requestDetail.preferred_start_time && requestDetail.preferred_end_time ? (
-                      <Text> • {formatTime12Hour(requestDetail.preferred_start_time)} - {formatTime12Hour(requestDetail.preferred_end_time)}</Text>
-                    ) : null}
-                  </Text>
-                </View>
-
-                {(requestDetail.location?.address || requestDetail.meeting_location) ? (
-                  <View style={[styles.dateRow, { alignItems: 'flex-start', marginTop: 6 }]}>
-                    <MapPin color={Colors.neutral[500]} size={16} style={{ marginTop: 2 }} />
-                    <Text style={[styles.cardDate, { flex: 1, lineHeight: 22 }]}>
-                      {requestDetail.location?.address || requestDetail.meeting_location}
-                    </Text>
-                  </View>
-                ) : null}
+                <Text style={styles.cardId}>#{requestDetail.reference_number || requestDetail.id}</Text>
+              </View>
+            </View>
+            
+            <View style={styles.divider} />
+            
+            <View style={styles.cardDetails}>
+              <View style={styles.detailRow}>
+                <Calendar color={Colors.neutral[500]} size={20} />
+                <Text style={styles.detailText}>
+                  {formatDate(requestDetail.preferred_date)} • {(requestDetail.preferred_start_time || requestDetail.start_time) ? `${formatTime12Hour(requestDetail.preferred_start_time || requestDetail.start_time)}${(requestDetail.preferred_end_time || requestDetail.end_time) ? ` - ${formatTime12Hour(requestDetail.preferred_end_time || requestDetail.end_time)}` : ''}` : (requestDetail.preferred_time || (requestDetail.hours_required ? `${requestDetail.hours_required} hours` : 'Time TBD'))}
+                </Text>
+              </View>
+              <View style={styles.detailRow}>
+                <MapPin color={Colors.neutral[500]} size={20} />
+                <Text style={styles.detailText}>
+                  {requestDetail.location?.address || requestDetail.meeting_location || 'Location TBD'}
+                </Text>
               </View>
             </View>
           </View>
@@ -250,42 +263,60 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   card: {
-    marginBottom: 32,
+    backgroundColor: Colors.neutral[0],
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: Colors.neutral[100],
+    shadowColor: Colors.neutral[900],
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.05,
+    shadowRadius: 12,
+    elevation: 2,
   },
   cardHeader: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
+    marginBottom: 16,
   },
-  iconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+  categoryIconCircle: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     backgroundColor: Colors.primary[50],
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 16,
   },
-  cardTitleContainer: {
+  cardHeaderRight: {
     flex: 1,
   },
   cardTitle: {
-    ...Typography.labelLarge,
+    ...Typography.h5,
     color: Colors.neutral[900],
     marginBottom: 4,
   },
-  dateRow: {
+  cardId: {
+    ...Typography.bodyMedium,
+    color: Colors.neutral[500],
+  },
+  divider: {
+    height: 1,
+    backgroundColor: Colors.neutral[100],
+    marginBottom: 16,
+  },
+  cardDetails: {
+    gap: 12,
+  },
+  detailRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    marginBottom: 2,
   },
-  cardDate: {
-    ...Typography.caption,
+  detailText: {
+    ...Typography.bodyLarge,
     color: Colors.neutral[700],
-  },
-  cardId: {
-    ...Typography.caption,
-    color: Colors.neutral[500],
+    marginLeft: 12,
   },
   timelineContainer: {
     paddingLeft: 8,

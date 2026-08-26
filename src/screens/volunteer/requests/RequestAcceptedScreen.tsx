@@ -1,5 +1,5 @@
 import React from 'react';
-import {View, StyleSheet, SafeAreaView} from 'react-native';
+import {View, StyleSheet, SafeAreaView, Image} from 'react-native';
 import {useNavigation, useRoute} from '@react-navigation/native';
 import {Check, ShoppingCart, Pill, Soup, Car, Users, MoreHorizontal, Calendar, Clock, MapPin} from 'lucide-react-native';
 import {AppText} from '../../../components/AppText';
@@ -11,6 +11,7 @@ import {
   verticalScale,
   moderateScale,
 } from '../../../utils/responsive';
+import {getFullImageUrl} from '../../../api/client';
 
 export default function RequestAcceptedScreen() {
   const navigation = useNavigation<any>();
@@ -84,7 +85,15 @@ export default function RequestAcceptedScreen() {
         <View style={styles.summaryCard}>
           <View style={styles.cardHeader}>
             <View style={styles.iconContainer}>
-              {getCategoryIcon(request.category?.title, 24)}
+              {request.category?.logo_url ? (
+                <Image 
+                  source={{ uri: getFullImageUrl(request.category.logo_url) as string }}
+                  style={{ width: 24, height: 24 }}
+                  resizeMode="contain"
+                />
+              ) : (
+                getCategoryIcon(request.category?.title, 24)
+              )}
             </View>
             <View style={{flex: 1}}>
               <AppText variant="labelLarge" color={Colors.neutral[900]}>

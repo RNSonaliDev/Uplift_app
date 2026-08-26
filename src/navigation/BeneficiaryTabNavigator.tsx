@@ -28,7 +28,7 @@ export function BeneficiaryTabNavigator() {
           paddingTop: 8,
         },
         tabBarLabelStyle: {
-          ...Typography.caption,
+          // ...Typography.caption,
         },
       }}>
       <Tab.Screen

@@ -39,6 +39,7 @@ import {
   HelpCircle,
   Headphones,
   Star,
+  Mail,
 } from 'lucide-react-native';
 
 export default function MyProfileScreen() {
@@ -127,9 +128,9 @@ export default function MyProfileScreen() {
       <View style={styles.purpleHeader}>
         <View style={styles.headerTop}>
           <View />
-          <TouchableOpacity style={styles.iconBtn} onPress={() => {}}>
+          {/* <TouchableOpacity style={styles.iconBtn} onPress={() => {}}>
             <Bell color={Colors.neutral[0]} size={24} />
-          </TouchableOpacity>
+          </TouchableOpacity> */}
         </View>
 
         <View style={styles.profileRow}>
@@ -150,10 +151,16 @@ export default function MyProfileScreen() {
               
               <View style={styles.profileInfo}>
                 <Text style={styles.name}>{profile.first_name} {profile.last_name}</Text>
-                <Text style={styles.contactInfo}>{profile.email}</Text>
-                <Text style={styles.contactInfo}>
-                  {profile.country_code ? `${profile.country_code} ${profile.phone}` : profile.phone}
-                </Text>
+                <View style={styles.contactRow}>
+                  <Mail color={Colors.neutral[0]} size={16} />
+                  <Text style={[styles.contactInfo, {marginLeft: 8}]} numberOfLines={1}>{profile.email}</Text>
+                </View>
+                <View style={styles.contactRow}>
+                  <Phone color={Colors.neutral[0]} size={16} />
+                  <Text style={[styles.contactInfo, {marginLeft: 8}]} numberOfLines={1}>
+                    {profile.country_code ? `${profile.country_code} ${profile.phone}` : profile.phone}
+                  </Text>
+                </View>
               </View>
             </>
           ) : (
@@ -296,7 +303,7 @@ const styles = StyleSheet.create({
   },
   profileRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     marginTop: verticalScale(8),
     paddingHorizontal: horizontalScale(8),
   },
@@ -312,7 +319,7 @@ const styles = StyleSheet.create({
   },
   profileInfo: {
     flex: 1,
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
   },
   name: {
     ...Typography.h4,
@@ -336,6 +343,12 @@ const styles = StyleSheet.create({
   contactInfo: {
     ...Typography.bodyMedium,
     color: Colors.neutral[0],
+    flex: 1,
+  },
+  contactRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: verticalScale(4),
   },
   container: {
     flex: 1,

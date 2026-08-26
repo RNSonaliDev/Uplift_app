@@ -5,12 +5,14 @@ import {
   ScrollView,
   SafeAreaView,
   TouchableOpacity,
+  Image,
 } from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import {Colors} from '../../../theme/colors';
 import {AppText} from '../../../components/AppText';
-import {formatDate} from '../../../utils/dateFormatter';
+import {formatDate, formatTime12Hour} from '../../../utils/dateFormatter';
 import {Button} from '../../../components/Button';
+import { button_user } from '../../../assets/images';
 import {
   Bell,
   Calendar,
@@ -21,9 +23,10 @@ import {
   MapPin,
   Clock,
   ArrowRightLeft,
+  Star,
 } from 'lucide-react-native';
 import {authApi, UserProfileResponse} from '../../../api/auth';
-import {api} from '../../../api/client';
+import {api, getFullImageUrl} from '../../../api/client';
 import {
   horizontalScale,
   verticalScale,
@@ -66,21 +69,32 @@ export default function VolunteerDashboardScreen() {
         {/* Header Section */}
         <View style={styles.header}>
           <View style={styles.headerTop}>
-            <View>
-              <AppText variant="bodyMedium" style={styles.welcomeText}>Welcome back,</AppText>
-              <AppText variant="h3" style={styles.nameText}>{name}</AppText>
+            <View style={{flexDirection: 'row', alignItems: 'center', flex: 1}}>
+              <Image
+                source={profile?.profile_image_url ? { uri: getFullImageUrl(profile.profile_image_url) } : button_user}
+                style={styles.avatar}
+              />
+              <View style={{marginLeft: 16, justifyContent: 'center'}}>
+                <AppText variant="h5" style={styles.nameText}>
+                  {profile ? `${profile.first_name} ${profile.last_name}` : name}
+                </AppText>
+                
+                <View style={{flexDirection: 'row', alignItems: 'center', marginTop: 4}}>
+                  <Star color="#FCD34D" fill="#FCD34D" size={14} />
+                  <AppText variant="bodySmall" style={{color: Colors.neutral[0], marginLeft: 4}}>
+                    4.9 (120)
+                  </AppText>
+                </View>
+                
+                <AppText variant="caption" style={{color: Colors.neutral[200], marginTop: 2}}>
+                  Joined Jan 2024
+                </AppText>
+              </View>
             </View>
-            <View style={{flexDirection: 'row', alignItems: 'center'}}>
-              {/* <TouchableOpacity 
-                style={styles.bellIcon}
-                onPress={() => profile && navigation.navigate('DashboardRoleSelection', { selectedRoles: profile.selected_roles || [] })}
-              >
-                <ArrowRightLeft color={Colors.neutral[0]} size={22} />
-              </TouchableOpacity> */}
-              <TouchableOpacity style={styles.bellIcon}>
-                <Bell color={Colors.neutral[0]} size={24} />
-              </TouchableOpacity>
-            </View>
+            
+            <TouchableOpacity style={styles.bellIcon} onPress={() => {}}>
+              <Bell color={Colors.neutral[0]} size={24} />
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -123,7 +137,25 @@ export default function VolunteerDashboardScreen() {
               <AppText variant="bodyMedium" color={Colors.neutral[500]}>Loading requests...</AppText>
             </View>
           ) : requests.length > 0 ? (
-            requests.slice(0, 3).map((request, index) => (
+            requests.slice(0, 3).map((request, index) => {
+              const formatStatus = (status: string) => {
+                if (!status) return 'Pending';
+                if (status.toLowerCase() === 'in_progress') return 'In Progress';
+                return status.charAt(0).toUpperCase() + status.slice(1).replace('_', ' ');
+              };
+
+              const getStatusColors = (status: string) => {
+                const s = status?.toLowerCase() || '';
+                if (s === 'in_progress') return { bg: Colors.primary[50], text: Colors.primary[700] };
+                if (s === 'completed') return { bg: Colors.secondary[50], text: Colors.secondary[700] };
+                // pending, accepted, new
+                return { bg: Colors.accent[50], text: Colors.accent[700] };
+              };
+
+              const displayStatus = formatStatus(request.status);
+              const statusColors = getStatusColors(request.status);
+
+              return (
               <TouchableOpacity 
                 key={request.id || index} 
                 style={styles.requestCard}
@@ -132,28 +164,37 @@ export default function VolunteerDashboardScreen() {
               >
                 <View style={styles.requestHeader}>
                   <View style={styles.requestIconContainer}>
-                    <ShoppingBag color={Colors.primary[500]} size={20} />
+                    {request.category?.logo_url ? (
+                      <Image 
+                        source={{ uri: getFullImageUrl(request.category.logo_url) as string }}
+                        style={{ width: 24, height: 24 }}
+                        resizeMode="contain"
+                      />
+                    ) : (
+                      <ShoppingBag color={Colors.primary[500]} size={20} />
+                    )}
                   </View>
                   <View style={styles.requestTitleInfo}>
                     <AppText variant="labelLarge">{request.category?.title || 'Help Request'}</AppText>
+                    <AppText variant="bodySmall" color={Colors.neutral[500]}>#{request.reference_number || request.id}</AppText>
                   </View>
-                  <View style={styles.statusBadge}>
-                    <AppText variant="labelMedium" color={Colors.warning[500]}>
-                      {request.status ? request.status.charAt(0).toUpperCase() + request.status.slice(1) : 'Pending'}
+                  <View style={[styles.statusBadge, { backgroundColor: statusColors.bg }]}>
+                    <AppText variant="labelMedium" color={statusColors.text}>
+                      {displayStatus}
                     </AppText>
                   </View>
                 </View>
                 
                 <View style={styles.requestDetails}>
                   <View style={styles.detailRow}>
-                    <Clock color={Colors.neutral[400]} size={16} />
+                    <Calendar color={Colors.neutral[400]} size={16} />
                     <AppText variant="bodyMedium" color={Colors.neutral[500]} style={styles.detailText}>
-                      {formatDate(request.preferred_date)}
+                      {formatDate(request.preferred_date)} • {(request.preferred_start_time || request.start_time) ? `${formatTime12Hour(request.preferred_start_time || request.start_time)}${(request.preferred_end_time || request.end_time) ? ` - ${formatTime12Hour(request.preferred_end_time || request.end_time)}` : ''}` : (request.preferred_time || (request.hours_required ? `${request.hours_required} hours` : 'Time TBD'))}
                     </AppText>
                   </View>
                   <View style={styles.detailRow}>
                     <MapPin color={Colors.neutral[400]} size={16} />
-                    <AppText variant="bodyMedium" color={Colors.neutral[500]} style={styles.detailText}>
+                    <AppText variant="bodyMedium" color={Colors.neutral[500]} style={styles.detailText} numberOfLines={1}>
                       {request.location?.address || request.meeting_location || 'Location TBD'}
                     </AppText>
                   </View>
@@ -167,7 +208,7 @@ export default function VolunteerDashboardScreen() {
                   )}
                 </View>
               </TouchableOpacity>
-            ))
+            )})
           ) : (
             <View style={[styles.requestCard, {alignItems: 'center', justifyContent: 'center', paddingVertical: 40}]}>
               <AppText variant="bodyMedium" color={Colors.neutral[500]}>No pending requests nearby.</AppText>
@@ -183,23 +224,23 @@ export default function VolunteerDashboardScreen() {
 
         {/* Quick Actions */}
         <View style={[styles.sectionContainer, {marginBottom: verticalScale(40)}]}>
-          <AppText variant="h5" style={{marginBottom: verticalScale(16)}}>Quick Actions</AppText>
+          {/* <AppText variant="h5" style={{marginBottom: verticalScale(16)}}>Quick Actions</AppText> */}
           <View style={styles.quickActionsGrid}>
-            <QuickAction 
+            {/* <QuickAction 
               icon={<Calendar color={Colors.neutral[600]} size={24} />} 
               label="My Schedule"
               onPress={() => navigation.navigate('ScheduleTab')}
-            />
+            /> */}
             {/* <QuickAction 
               icon={<MessageSquare color={Colors.neutral[600]} size={24} />} 
               label="Messages"
               onPress={() => {}}
             /> */}
-            <QuickAction 
+            {/* <QuickAction 
               icon={<User color={Colors.neutral[600]} size={24} />} 
               label="My Profile"
               onPress={() => navigation.navigate('ProfileTab')}
-            />
+            /> */}
           </View>
         </View>
         
@@ -244,6 +285,13 @@ const styles = StyleSheet.create({
   },
   nameText: {
     color: Colors.neutral[0],
+  },
+  avatar: {
+    width: moderateScale(60),
+    height: moderateScale(60),
+    borderRadius: moderateScale(30),
+    borderWidth: 2,
+    borderColor: Colors.neutral[0],
   },
   bellIcon: {
     padding: 8,
@@ -307,7 +355,7 @@ const styles = StyleSheet.create({
   },
   requestHeader: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     marginBottom: verticalScale(16),
   },
   requestIconContainer: {
@@ -323,7 +371,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   statusBadge: {
-    backgroundColor: Colors.warning[50],
     paddingHorizontal: horizontalScale(8),
     paddingVertical: verticalScale(4),
     borderRadius: 12,
@@ -337,6 +384,7 @@ const styles = StyleSheet.create({
   },
   detailText: {
     marginLeft: horizontalScale(8),
+    flex: 1,
   },
   browseBtn: {
     marginTop: verticalScale(8),

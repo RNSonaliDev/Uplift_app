@@ -5,12 +5,13 @@ import {
   SafeAreaView,
   TouchableOpacity,
   SectionList,
+  Image,
 } from 'react-native';
 import {useNavigation, useFocusEffect} from '@react-navigation/native';
-import {ArrowLeft, ShoppingCart, Pill, Soup, Car, Users, MoreHorizontal, Clock, MapPin} from 'lucide-react-native';
+import {ArrowLeft, ShoppingCart, Pill, Soup, Car, Users, MoreHorizontal, Clock, MapPin, FileText, ShoppingBag} from 'lucide-react-native';
 import {AppText} from '../../../components/AppText';
 import {Colors} from '../../../theme/colors';
-import {api} from '../../../api/client';
+import {api, getFullImageUrl} from '../../../api/client';
 import {
   horizontalScale,
   verticalScale,
@@ -84,49 +85,91 @@ export default function MyScheduleScreen() {
     }));
   };
 
-  const renderCard = ({item}: {item: any}) => (
-    <TouchableOpacity 
-      style={styles.card}
-      onPress={() => {
-        if (activeTab === 'Upcoming') {
-          navigation.navigate('RequestDetails', { request: item, forceAction: 'start' });
-        } else if (activeTab === 'In Progress') {
-          navigation.navigate('RequestDetails', { request: item, forceAction: 'complete' });
-        } else if (activeTab === 'Completed') {
-          navigation.navigate('RequestDetails', { request: item, forceAction: 'rate' });
-        }
-      }}
-      activeOpacity={0.7}
-    >
-      <View style={styles.iconContainer}>
-        {getCategoryIcon(item.category?.title, 24)}
-      </View>
-      <View style={styles.cardInfo}>
-        <AppText variant="labelLarge" color={Colors.neutral[900]} style={{marginBottom: 2}}>
-          {item.category?.title || 'Help Request'}
-        </AppText>
-        <AppText variant="bodySmall" color={Colors.neutral[500]} style={{marginBottom: 8}}>
-          #{item.reference_number || item.id}
-        </AppText>
-        
-        {item.preferred_start_time && item.preferred_end_time ? (
-          <View style={{flexDirection: 'row', alignItems: 'flex-start', marginBottom: 6}}>
-            <Clock color={Colors.neutral[400]} size={14} style={{marginTop: 2, marginRight: 6}} />
-            <AppText variant="bodySmall" color={Colors.neutral[600]} style={{flex: 1, lineHeight: 18}}>
-              {formatTime12Hour(item.preferred_start_time)} - {formatTime12Hour(item.preferred_end_time)}
+  const formatStatus = (status: string) => {
+    if (!status) return 'New';
+    if (status.toLowerCase() === 'in_progress') return 'In Progress';
+    return status.charAt(0).toUpperCase() + status.slice(1).replace('_', ' ');
+  };
+
+  const getStatusColors = (status: string) => {
+    const s = status?.toLowerCase() || '';
+    if (s === 'in_progress') return { bg: Colors.primary[50], text: Colors.primary[700] };
+    if (s === 'completed') return { bg: Colors.secondary[50], text: Colors.secondary[700] };
+    // pending, accepted, new
+    return { bg: Colors.accent[50], text: Colors.accent[700] };
+  };
+
+  const renderCard = ({item}: {item: any}) => {
+    const displayStatus = formatStatus(item.status);
+    const statusColors = getStatusColors(item.status);
+
+    return (
+      <TouchableOpacity 
+        style={styles.card}
+        onPress={() => {
+          if (activeTab === 'Upcoming') {
+            navigation.navigate('RequestDetails', { request: item, forceAction: 'start' });
+          } else if (activeTab === 'In Progress') {
+            navigation.navigate('RequestDetails', { request: item, forceAction: 'complete' });
+          } else if (activeTab === 'Completed') {
+            navigation.navigate('RequestDetails', { request: item, forceAction: 'rate' });
+          }
+        }}
+        activeOpacity={0.7}
+      >
+        <View style={styles.cardHeader}>
+          <View style={styles.requestIconContainer}>
+            {item.category?.logo_url ? (
+              <Image 
+                source={{ uri: getFullImageUrl(item.category.logo_url) as string }}
+                style={{ width: 24, height: 24 }}
+                resizeMode="contain"
+              />
+            ) : (
+              <ShoppingBag color={Colors.primary[500]} size={20} />
+            )}
+          </View>
+          <View style={{flex: 1}}>
+            <AppText variant="labelLarge" color={Colors.neutral[900]}>
+              {item.category?.title || 'Help Request'}
+            </AppText>
+            <AppText variant="bodySmall" color={Colors.neutral[500]} style={{marginTop: 5}}>
+              #{item.reference_number || item.id}
             </AppText>
           </View>
-        ) : null}
-
-        <View style={{flexDirection: 'row', alignItems: 'flex-start'}}>
-          <MapPin color={Colors.neutral[400]} size={14} style={{marginTop: 2, marginRight: 6}} />
-          <AppText variant="bodySmall" color={Colors.neutral[600]} style={{flex: 1, lineHeight: 18}} numberOfLines={2}>
-            {item.location?.address || item.meeting_location || 'Location TBD'}
-          </AppText>
+          <View style={[styles.newBadge, { backgroundColor: statusColors.bg }]}>
+            <AppText variant="labelMedium" color={statusColors.text}>
+              {displayStatus}
+            </AppText>
+          </View>
         </View>
-      </View>
-    </TouchableOpacity>
-  );
+        
+        <View style={styles.cardDetails}>
+          <View style={styles.detailRow}>
+            <Clock color={Colors.neutral[400]} size={16} />
+            <AppText variant="bodyMedium" color={Colors.neutral[600]} style={styles.detailText}>
+              {(item.preferred_start_time || item.start_time) ? `${formatTime12Hour(item.preferred_start_time || item.start_time)}${(item.preferred_end_time || item.end_time) ? ` - ${formatTime12Hour(item.preferred_end_time || item.end_time)}` : ''}` : (item.preferred_time || (item.hours_required ? `${item.hours_required} hours` : 'Time TBD'))}
+            </AppText>
+          </View>
+          <View style={styles.detailRow}>
+            <MapPin color={Colors.neutral[400]} size={16} />
+            <AppText variant="bodyMedium" color={Colors.neutral[600]} style={styles.detailText} numberOfLines={1}>
+              {item.location?.address || item.meeting_location || 'Location TBD'}
+            </AppText>
+          </View>
+          {item.distance_km != null && (
+            <View style={styles.detailRow}>
+              <MapPin color={Colors.neutral[400]} size={16} />
+              <AppText variant="bodyMedium" color={Colors.neutral[600]} style={styles.detailText}>
+                {/* Treating distance_km as miles for display as per design */}
+                {item.distance_km.toFixed(1)} mi
+              </AppText>
+            </View>
+          )}
+        </View>
+      </TouchableOpacity>
+    );
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -270,10 +313,9 @@ const styles = StyleSheet.create({
     marginBottom: verticalScale(16),
   },
   card: {
-    flexDirection: 'row',
     backgroundColor: Colors.neutral[0],
     borderRadius: 16,
-    padding: moderateScale(16),
+    padding: moderateScale(20),
     marginBottom: verticalScale(16),
     borderWidth: 1,
     borderColor: Colors.neutral[200],
@@ -283,16 +325,41 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 2,
   },
-  iconContainer: {
+  cardHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    marginBottom: verticalScale(16),
+  },
+  requestIconContainer: {
     width: moderateScale(40),
     height: moderateScale(40),
-    borderRadius: 12,
+    borderRadius: 20,
     backgroundColor: Colors.primary[50],
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: horizontalScale(16),
+    marginRight: horizontalScale(12),
   },
-  cardInfo: {
+  categoryBadge: {
+    backgroundColor: Colors.primary[50],
+    paddingHorizontal: horizontalScale(10),
+    paddingVertical: verticalScale(4),
+    borderRadius: 12,
+  },
+  newBadge: {
+    paddingHorizontal: horizontalScale(10),
+    paddingVertical: verticalScale(4),
+    borderRadius: 12,
+  },
+  cardDetails: {
+    gap: verticalScale(8),
+  },
+  detailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  detailText: {
+    marginLeft: horizontalScale(8),
     flex: 1,
   },
 });
