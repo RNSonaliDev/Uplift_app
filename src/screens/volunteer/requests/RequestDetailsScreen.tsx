@@ -17,7 +17,7 @@ import {AppText} from '../../../components/AppText';
 import {formatDate, formatTime12Hour} from '../../../utils/dateFormatter';
 import {Button} from '../../../components/Button';
 import {
-  ArrowLeft,
+  ChevronLeft,
   MoreHorizontal,
   Calendar,
   Clock,
@@ -100,22 +100,14 @@ export default function RequestDetailsScreen() {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.iconButton}>
-          <ArrowLeft color={Colors.neutral[900]} size={24} />
+          <ChevronLeft color={Colors.neutral[900]} size={28} strokeWidth={2} />
         </TouchableOpacity>
-        <AppText variant="h6" color={Colors.neutral[900]}>Request Details</AppText>
+        {/* <AppText variant="h6" color={Colors.neutral[900]}>Request Details</AppText> */}
         <View style={{width: 40}} />
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         
-        {/* Category Badge */}
-        <View style={{alignItems: 'center', marginVertical: verticalScale(16)}}>
-          <View style={styles.categoryBadge}>
-            <AppText variant="labelMedium" color={Colors.primary[600]}>
-              {request.category?.title || 'Grocery Assistance'}
-            </AppText>
-          </View>
-        </View>
 
         {/* Profile Section */}
         <View style={styles.profileSection}>
@@ -146,13 +138,20 @@ export default function RequestDetailsScreen() {
 
         {/* Request Details Section */}
         <View style={styles.detailsSection}>
-          <View style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: verticalScale(16)}}>
-            <AppText variant="labelLarge" color={Colors.neutral[900]}>
-              Request Details
-            </AppText>
-            <AppText variant="bodySmall" color={Colors.neutral[500]}>
-              #{request.reference_number || request.id}
-            </AppText>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: verticalScale(16)}}>
+            <View>
+              <AppText variant="labelLarge" color={Colors.neutral[900]}>
+                Request Details
+              </AppText>
+              <AppText variant="bodySmall" color={Colors.neutral[500]} style={{ marginTop: 2 }}>
+                #{request.reference_number || request.id}
+              </AppText>
+            </View>
+            <View style={[styles.categoryBadge, { paddingHorizontal: horizontalScale(16), paddingVertical: verticalScale(6) }]}>
+              <AppText variant="labelMedium" color={Colors.primary[600]}>
+                {request.category?.title || 'Shopping'}
+              </AppText>
+            </View>
           </View>
 
           {request.title ? (

@@ -26,6 +26,7 @@ import {Colors} from './src/theme/colors';
 import {BeneficiaryTabNavigator} from './src/navigation/BeneficiaryTabNavigator';
 import {VolunteerTabNavigator} from './src/navigation/VolunteerTabNavigator';
 import {DummyTabNavigator} from './src/navigation/DummyTabNavigator';
+import LegalContentScreen from './src/screens/beneficiary/profile/LegalContentScreen';
 
 type RootStackParamList = {
   Splash: undefined;
@@ -45,6 +46,7 @@ type RootStackParamList = {
   VolunteerFlow: undefined;
   OrganizationFlow: undefined;
   SponsorFlow: undefined;
+  LegalContent: { type: 'terms' | 'privacy' };
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -52,21 +54,37 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 /*
   Custom toast config to increase font sizes
 */
+const toastStyle = {
+  height: 'auto', 
+  minHeight: 70, 
+  paddingVertical: 12,
+  borderLeftWidth: 8,
+  borderRadius: 12,
+  backgroundColor: Colors.neutral[0],
+  shadowColor: '#000',
+  shadowOffset: { width: 0, height: 6 },
+  shadowOpacity: 0.15,
+  shadowRadius: 10,
+  elevation: 8,
+};
+
 const toastConfig: ToastConfig = {
   success: (props) => (
     <BaseToast
       {...props}
-      style={{ borderLeftColor: Colors.primary[500] || 'green', height: 'auto', minHeight: 60, paddingVertical: 10 }}
-      contentContainerStyle={{ paddingHorizontal: 15 }}
+      style={[toastStyle, { borderLeftColor: Colors.primary[500] || '#4CAF50' }]}
+      contentContainerStyle={{ paddingHorizontal: 16 }}
       text1NumberOfLines={0}
       text2NumberOfLines={0}
       text1Style={{
-        fontSize: 16,
-        fontWeight: 'bold',
-        color: Colors.neutral[900] || '#000'
+        fontSize: 18,
+        fontWeight: '800',
+        color: Colors.neutral[900] || '#000',
+        marginBottom: 4,
       }}
       text2Style={{
-        fontSize: 14,
+        fontSize: 15,
+        fontWeight: '500',
         color: Colors.neutral[600] || '#444'
       }}
     />
@@ -74,16 +92,19 @@ const toastConfig: ToastConfig = {
   error: (props) => (
     <ErrorToast
       {...props}
-      style={{ height: 'auto', minHeight: 60, paddingVertical: 10 }}
+      style={[toastStyle, { borderLeftColor: Colors.error || '#F44336' }]}
+      contentContainerStyle={{ paddingHorizontal: 16 }}
       text1NumberOfLines={0}
       text2NumberOfLines={0}
       text1Style={{
-        fontSize: 16,
-        fontWeight: 'bold',
-        color: Colors.neutral[900] || '#000'
+        fontSize: 18,
+        fontWeight: '800',
+        color: Colors.neutral[900] || '#000',
+        marginBottom: 4,
       }}
       text2Style={{
-        fontSize: 14,
+        fontSize: 15,
+        fontWeight: '500',
         color: Colors.neutral[600] || '#444'
       }}
     />
@@ -91,17 +112,19 @@ const toastConfig: ToastConfig = {
   info: (props) => (
     <BaseToast
       {...props}
-      style={{ borderLeftColor: '#87CEFA', height: 'auto', minHeight: 60, paddingVertical: 10 }}
-      contentContainerStyle={{ paddingHorizontal: 15 }}
+      style={[toastStyle, { borderLeftColor: '#2196F3' }]}
+      contentContainerStyle={{ paddingHorizontal: 16 }}
       text1NumberOfLines={0}
       text2NumberOfLines={0}
       text1Style={{
-        fontSize: 16,
-        fontWeight: 'bold',
-        color: Colors.neutral[900] || '#000'
+        fontSize: 18,
+        fontWeight: '800',
+        color: Colors.neutral[900] || '#000',
+        marginBottom: 4,
       }}
       text2Style={{
-        fontSize: 14,
+        fontSize: 15,
+        fontWeight: '500',
         color: Colors.neutral[600] || '#444'
       }}
     />
@@ -131,6 +154,7 @@ function App() {
             <Stack.Screen name="VolunteerFlow" component={VolunteerTabNavigator} />
             <Stack.Screen name="OrganizationFlow" component={DummyTabNavigator} />
             <Stack.Screen name="SponsorFlow" component={DummyTabNavigator} />
+            <Stack.Screen name="LegalContent" component={LegalContentScreen} />
           </Stack.Navigator>
         </NavigationContainer>
       </SafeAreaView>

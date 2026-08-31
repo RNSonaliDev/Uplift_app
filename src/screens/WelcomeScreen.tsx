@@ -36,48 +36,20 @@ type RootStackParamList = {
   CreateAccount: undefined;
   VerifyAccount: { emailOrPhone: string };
   SelectRoles: undefined;
+  LegalContent: { type: 'terms' | 'privacy' };
 };
 
 type NavigationProps = NativeStackNavigationProp<RootStackParamList>;
 
 export const WelcomeScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProps>();
-  const [modalConfig, setModalConfig] = useState<{visible: boolean, type: 'terms' | 'privacy'}>({visible: false, type: 'terms'});
-  const [content, setContent] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-
-  const openTerms = async () => {
-    setModalConfig({visible: true, type: 'terms'});
-    setContent(null);
-    setIsLoading(true);
-    try {
-      const res = await contentApi.getTermsOfService();
-      // Basic HTML stripping if the server returns HTML instead of plain text
-      const cleanText = res.body ? res.body.replace(/<[^>]*>?/gm, '') : 'No content available.';
-      setContent(cleanText);
-    } catch (error) {
-      setContent('Failed to load Terms of Service. Please try again later.');
-    } finally {
-      setIsLoading(false);
-    }
+  const openTerms = () => {
+    navigation.navigate('LegalContent', { type: 'terms' });
   };
 
-  const openPrivacy = async () => {
-    setModalConfig({visible: true, type: 'privacy'});
-    setContent(null);
-    setIsLoading(true);
-    try {
-      const res = await contentApi.getPrivacyPolicy();
-      const cleanText = res.body ? res.body.replace(/<[^>]*>?/gm, '') : 'No content available.';
-      setContent(cleanText);
-    } catch (error) {
-      setContent('Failed to load Privacy Policy. Please try again later.');
-    } finally {
-      setIsLoading(false);
-    }
+  const openPrivacy = () => {
+    navigation.navigate('LegalContent', { type: 'privacy' });
   };
-
-  const closeModal = () => setModalConfig({...modalConfig, visible: false});
 
   return (
     <View style={styles.container}>
@@ -176,30 +148,7 @@ export const WelcomeScreen: React.FC = () => {
         </View>
       </ScrollView>
 
-      {/* Terms & Privacy Modal */}
-      <Modal visible={modalConfig.visible} animationType="slide" transparent={true} onRequestClose={closeModal}>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <AppText variant="h3" weight="bold">
-                {modalConfig.type === 'terms' ? 'Terms of Service' : 'Privacy Policy'}
-              </AppText>
-              <TouchableOpacity onPress={closeModal} style={styles.closeButton}>
-                <AppText color={Colors.primary[500]} weight="semiBold">Close</AppText>
-              </TouchableOpacity>
-            </View>
-            <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
-              {isLoading ? (
-                <ActivityIndicator size="large" color={Colors.primary[500]} style={{marginTop: verticalScale(40)}} />
-              ) : (
-                <AppText variant="bodyMedium" color={Colors.neutral[600]}>
-                  {content}
-                </AppText>
-              )}
-            </ScrollView>
-          </View>
-        </View>
-      </Modal>
+
 
     </View>
   );
@@ -261,31 +210,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: verticalScale(2),
   },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end',
-  },
-  modalContent: {
-    backgroundColor: Colors.neutral[0],
-    borderTopLeftRadius: BorderRadius.xl,
-    borderTopRightRadius: BorderRadius.xl,
-    maxHeight: hp(80),
-    paddingBottom: verticalScale(32),
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: horizontalScale(20),
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.neutral[200],
-  },
-  closeButton: {
-    padding: moderateScale(4),
-  },
-  modalBody: {
-    paddingHorizontal: horizontalScale(20),
-    paddingVertical: verticalScale(16),
-  },
+
 });

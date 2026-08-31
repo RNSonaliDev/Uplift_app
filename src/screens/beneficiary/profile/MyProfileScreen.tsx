@@ -75,9 +75,10 @@ export default function MyProfileScreen() {
             console.log('Logout API failed', e);
           }
           await AsyncStorage.removeItem('UPLIFT_AUTH_TOKEN');
+          // navigation.replace('Welcome');
           navigation.reset({
             index: 0,
-            routes: [{name: 'Login'}],
+            routes: [{name: 'Welcome'}],
           });
         }
       },
@@ -111,14 +112,20 @@ export default function MyProfileScreen() {
           ) : profile ? (
             <>
               <View style={styles.avatarContainer}>
-                <Image 
-                  source={
-                    profile.profile_image_url 
-                      ? { uri: getFullImageUrl(profile.profile_image_url) } 
-                      : button_user
-                  }
-                  style={styles.avatar} 
-                />
+                {profile.profile_image_url ? (
+                  <Image 
+                    source={{ uri: getFullImageUrl(profile.profile_image_url) }}
+                    style={styles.avatar} 
+                  />
+                ) : (
+                  <View style={[styles.avatar, {justifyContent: 'center', alignItems: 'center', backgroundColor: Colors.neutral[0]}]}>
+                    <AppText variant="h2" color={Colors.primary[500]}>
+                      {profile.first_name 
+                        ? `${profile.first_name.charAt(0)}${profile.last_name ? profile.last_name.charAt(0) : ''}`.toUpperCase() 
+                        : 'U'}
+                    </AppText>
+                  </View>
+                )}
               </View>
               
               <View style={styles.profileInfo}>

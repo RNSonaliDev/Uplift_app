@@ -45,13 +45,13 @@ type RootStackParamList = {
 type NavigationProps = NativeStackNavigationProp<RootStackParamList>;
 
 // ── Icon Components ──────────────────────────────────────
+import { ArrowLeft } from 'lucide-react-native';
+
 const BackArrowIcon: React.FC<{size?: number; color?: string}> = ({
   size = 24,
-  color = Colors.primary[500],
+  color = Colors.neutral[900],
 }) => (
-  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M15 18L9 12L15 6" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-  </Svg>
+  <ArrowLeft size={size} color={color} />
 );
 
 const UserOutlineIcon: React.FC<{size?: number; color?: string}> = ({
@@ -268,7 +268,10 @@ export const VolunteerSetupScreen: React.FC = () => {
           const digits = profile.phone.replace('+1', '');
           setPhoneNumber(digits);
         }
-        setCategories(cats || []);
+        const volunteerCategories = (cats || []).filter(
+          c => c.category_type && c.category_type.toLowerCase() === 'beneficiary'
+        );
+        setCategories(volunteerCategories);
       } catch (error) {
         // Handle error or ignore
       }
@@ -303,9 +306,9 @@ export const VolunteerSetupScreen: React.FC = () => {
       newErrors.zipCode = 'ZIP code must be 5 digits';
     }
 
-    if (selectedCategories.length === 0) {
-      newErrors.category = 'Please select at least one category';
-    }
+    // if (selectedCategories.length === 0) {
+    //   newErrors.category = 'Please select at least one category';
+    // }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -529,7 +532,7 @@ export const VolunteerSetupScreen: React.FC = () => {
               error={errors.zipCode}
             />
 
-            <View style={{ marginBottom: Spacing.lg }}>
+            {/* <View style={{ marginBottom: Spacing.lg }}>
               <View style={styles.labelRow}>
                 <AppText variant="labelMedium" color={Colors.neutral[700]}>
                   Category / Type of Help
@@ -558,7 +561,7 @@ export const VolunteerSetupScreen: React.FC = () => {
                   />
                 </View>
               </TouchableOpacity>
-            </View>
+            </View> */}
 
             <Input
               label="Community Service Hours Goal per Week (Optional)"

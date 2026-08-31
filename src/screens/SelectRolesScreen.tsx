@@ -230,7 +230,14 @@ const RoleCard: React.FC<RoleCardProps> = ({
           )}
         </View>
       </View>
-      <AppText variant="h5" color={Colors.neutral[900]} style={styles.roleTitle}>
+      <AppText 
+        variant="h6" 
+        color={Colors.neutral[900]} 
+        style={styles.roleTitle}
+        // numberOfLines={1}
+        // minimumFontScale={0.8}
+        // adjustsFontSizeToFit
+        >
         {title}
       </AppText>
       <AppText
