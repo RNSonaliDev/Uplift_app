@@ -4,6 +4,7 @@
  * @format
  */
 import React from 'react';
+import { View } from 'react-native';
 import {SafeAreaProvider, SafeAreaView} from 'react-native-safe-area-context';
 import {NavigationContainer} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
@@ -134,7 +135,7 @@ const toastConfig: ToastConfig = {
 function App() {
   return (
     <SafeAreaProvider>
-      <SafeAreaView style={{flex: 1, backgroundColor: Colors.neutral[0]}}>
+      <View style={{flex: 1, backgroundColor: Colors.neutral[0]}}>
         <NavigationContainer>
           <Stack.Navigator screenOptions={{headerShown: false}}>
             <Stack.Screen name="Splash" component={SplashScreen} />
@@ -157,7 +158,7 @@ function App() {
             <Stack.Screen name="LegalContent" component={LegalContentScreen} />
           </Stack.Navigator>
         </NavigationContainer>
-      </SafeAreaView>
+      </View>
       <Toast position="bottom" bottomOffset={60} config={toastConfig} />
     </SafeAreaProvider>
   );

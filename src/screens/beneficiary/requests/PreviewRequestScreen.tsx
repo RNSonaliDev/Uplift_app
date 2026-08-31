@@ -46,7 +46,15 @@ export default function PreviewRequestScreen() {
       };
 
       const response: any = await api.post('/help_requests', payload);
-      navigation.navigate('RequestSubmitted', { referenceNumber: response?.reference_number });
+      navigation.reset({
+        index: 0,
+        routes: [
+          {
+            name: 'RequestSubmitted',
+            params: { referenceNumber: response?.reference_number },
+          }
+        ],
+      });
     } catch (error: any) {
       Toast.show({
         type: 'error',

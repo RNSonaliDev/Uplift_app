@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useState, useCallback} from 'react';
 import {
   View,
   StyleSheet,
@@ -10,7 +10,7 @@ import {
   TextInput,
 } from 'react-native';
 import Toast from 'react-native-toast-message';
-import {useNavigation, useRoute} from '@react-navigation/native';
+import {useNavigation, useRoute, useFocusEffect} from '@react-navigation/native';
 import {Colors} from '../../../theme/colors';
 import {FontFamily} from '../../../theme/typography';
 import {AppText} from '../../../components/AppText';
@@ -35,12 +35,30 @@ import {api, getFullImageUrl} from '../../../api/client';
 export default function RequestDetailsScreen() {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
-  const request = route.params?.request || {};
+  const [request, setRequest] = useState<any>(route.params?.request || {});
   const forceAction = route.params?.forceAction;
 
   const [isAccepting, setIsAccepting] = useState(false);
   const [otp, setOtp] = useState('');
   const [isStarting, setIsStarting] = useState(false);
+
+  useFocusEffect(
+    useCallback(() => {
+      const fetchRequest = async () => {
+        if (request.id) {
+          try {
+            const data = await api.get(`/help_requests/${request.id}`);
+            if (data) {
+              setRequest(data);
+            }
+          } catch (e) {
+            console.error('Failed to fetch request details', e);
+          }
+        }
+      };
+      fetchRequest();
+    }, [request.id])
+  );
 
   const showAcceptBtn = !forceAction && (!request.status || request.status.toLowerCase() === 'pending');
   const showStartBtn = forceAction === 'start' || request.status?.toLowerCase() === 'accepted';

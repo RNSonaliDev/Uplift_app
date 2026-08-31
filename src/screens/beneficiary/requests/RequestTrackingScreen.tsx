@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, {useState, useCallback} from 'react';
 import {
   View,
   Text,
@@ -11,7 +11,7 @@ import {
   Image,
 } from 'react-native';
 import Toast from 'react-native-toast-message';
-import {useNavigation, useRoute} from '@react-navigation/native';
+import {useNavigation, useRoute, useFocusEffect} from '@react-navigation/native';
 import {api, getFullImageUrl} from '../../../api/client';
 import {Colors} from '../../../theme/colors';
 import {Typography} from '../../../theme/typography';
@@ -39,13 +39,15 @@ export default function RequestTrackingScreen() {
   const [requestDetail, setRequestDetail] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (requestId) {
-      fetchRequestDetails();
-    } else {
-      setLoading(false);
-    }
-  }, [requestId]);
+  useFocusEffect(
+    useCallback(() => {
+      if (requestId) {
+        fetchRequestDetails();
+      } else {
+        setLoading(false);
+      }
+    }, [requestId])
+  );
 
   const handleCancel = () => {
     Alert.alert('Cancel Request', 'Are you sure you want to cancel this request?', [

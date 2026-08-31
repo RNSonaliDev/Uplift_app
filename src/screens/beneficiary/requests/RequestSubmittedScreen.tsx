@@ -60,7 +60,13 @@ export default function RequestSubmittedScreen() {
         <View style={styles.footer}>
           <Button
             title="Back to Home"
-            onPress={() => navigation.popToTop()}
+            onPress={() => {
+              navigation.reset({
+                index: 0,
+                routes: [{ name: 'MyRequests' }],
+              });
+              navigation.navigate('HomeTab', { screen: 'BeneficiaryDashboard' });
+            }}
           />
         </View>
       </View>

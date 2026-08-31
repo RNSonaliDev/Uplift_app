@@ -12,6 +12,8 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {useNavigation, useFocusEffect} from '@react-navigation/native';
+import { launchImageLibrary } from 'react-native-image-picker';
+import Toast from 'react-native-toast-message';
 import {api, getFullImageUrl} from '../../../api/client';
 import {authApi, UserProfileResponse} from '../../../api/auth';
 import {Colors} from '../../../theme/colors';
@@ -45,6 +47,7 @@ export default function MyProfileScreen() {
   const navigation = useNavigation<any>();
   const [profile, setProfile] = useState<UserProfileResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -61,6 +64,48 @@ export default function MyProfileScreen() {
       fetchProfile();
     }, [])
   );
+
+  const handleUpdateImage = async () => {
+    try {
+      const result = await launchImageLibrary({
+        mediaType: 'photo',
+        quality: 0.8,
+      });
+      
+      if (result.assets && result.assets.length > 0) {
+        const photo = result.assets[0];
+        if (!photo.uri) return;
+        
+        setIsUploadingImage(true);
+        const formData = new FormData();
+        formData.append('profile[profile_image]', {
+          uri: photo.uri,
+          type: photo.type || 'image/jpeg',
+          name: photo.fileName || 'profile.jpg',
+        } as any);
+
+        const response = await authApi.updateBaseProfile(formData);
+        
+        if (response) {
+          setProfile(response);
+          Toast.show({
+            type: 'success',
+            text1: 'Success',
+            text2: 'Profile image updated successfully',
+          });
+        }
+      }
+    } catch (error: any) {
+      console.error('Update image failed:', error);
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: error?.data?.errors?.[0] || error?.message || 'Failed to update profile image'
+      });
+    } finally {
+      setIsUploadingImage(false);
+    }
+  };
 
   const handleLogout = async () => {
     Alert.alert('Logout', 'Are you sure you want to logout?', [
@@ -112,20 +157,25 @@ export default function MyProfileScreen() {
           ) : profile ? (
             <>
               <View style={styles.avatarContainer}>
-                {profile.profile_image_url ? (
-                  <Image 
-                    source={{ uri: getFullImageUrl(profile.profile_image_url) }}
-                    style={styles.avatar} 
-                  />
-                ) : (
-                  <View style={[styles.avatar, {justifyContent: 'center', alignItems: 'center', backgroundColor: Colors.neutral[0]}]}>
-                    <AppText variant="h2" color={Colors.primary[500]}>
-                      {profile.first_name 
-                        ? `${profile.first_name.charAt(0)}${profile.last_name ? profile.last_name.charAt(0) : ''}`.toUpperCase() 
-                        : 'U'}
-                    </AppText>
+                <TouchableOpacity onPress={handleUpdateImage} disabled={isUploadingImage}>
+                  {profile.profile_image_url ? (
+                    <Image 
+                      source={{ uri: getFullImageUrl(profile.profile_image_url) }}
+                      style={styles.avatar} 
+                    />
+                  ) : (
+                    <View style={[styles.avatar, {justifyContent: 'center', alignItems: 'center', backgroundColor: Colors.neutral[0]}]}>
+                      <AppText variant="h2" color={Colors.primary[500]}>
+                        {profile.first_name 
+                          ? `${profile.first_name.charAt(0)}${profile.last_name ? profile.last_name.charAt(0) : ''}`.toUpperCase() 
+                          : 'U'}
+                      </AppText>
+                    </View>
+                  )}
+                  <View style={styles.editBadge}>
+                    <Camera color={Colors.neutral[0]} size={14} />
                   </View>
-                )}
+                </TouchableOpacity>
               </View>
               
               <View style={styles.profileInfo}>
@@ -269,6 +319,26 @@ const styles = StyleSheet.create({
     borderRadius: moderateScale(40),
     // borderWidth: moderateScale(3),
     // borderColor: Colors.neutral[0],
+  },
+  imageOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    borderRadius: moderateScale(40),
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  editBadge: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    backgroundColor: Colors.primary[600],
+    width: moderateScale(26),
+    height: moderateScale(26),
+    borderRadius: moderateScale(13),
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: Colors.primary[500],
   },
   profileInfo: {
     flex: 1,

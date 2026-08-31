@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, {useState, useCallback} from 'react';
 import {
   View,
   StyleSheet,
@@ -9,7 +9,7 @@ import {
   FlatList,
   Image,
 } from 'react-native';
-import {useNavigation} from '@react-navigation/native';
+import {useNavigation, useFocusEffect} from '@react-navigation/native';
 import {Colors} from '../../../theme/colors';
 import {AppText} from '../../../components/AppText';
 import {formatDate, formatTime12Hour} from '../../../utils/dateFormatter';
@@ -39,24 +39,26 @@ export default function BrowseRequestsScreen() {
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState<number | null>(null);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        const [catData, reqData] = await Promise.all([
-          authApi.getCategories(),
-          api.get<any[]>('/help_requests/browse')
-        ]);
-        setCategories(catData);
-        setRequests(reqData || []);
-      } catch (error) {
-        console.error('Failed to fetch data', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      const fetchData = async () => {
+        try {
+          setLoading(true);
+          const [catData, reqData] = await Promise.all([
+            authApi.getCategories(),
+            api.get<any[]>('/help_requests/browse')
+          ]);
+          setCategories(catData);
+          setRequests(reqData || []);
+        } catch (error) {
+          console.error('Failed to fetch data', error);
+        } finally {
+          setLoading(false);
+        }
+      };
+      fetchData();
+    }, [])
+  );
 
   const filteredRequests = requests.filter(req => {
     // Search query

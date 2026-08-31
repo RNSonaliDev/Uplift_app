@@ -9,6 +9,7 @@ import {
   ImageBackground,
   Modal,
   ActivityIndicator,
+  SafeAreaView,
 } from 'react-native';
 import {AppText} from '../components/AppText';
 import {Button} from '../components/Button';
@@ -52,7 +53,7 @@ export const WelcomeScreen: React.FC = () => {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={Colors.neutral[0]} />
       <ScrollView
         contentContainerStyle={styles.scrollContent}
@@ -150,7 +151,7 @@ export const WelcomeScreen: React.FC = () => {
 
 
 
-    </View>
+    </SafeAreaView>
   );
 };
 

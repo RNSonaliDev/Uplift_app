@@ -133,4 +133,14 @@ export const authApi = {
   setDefaultRole: (payload: { default_role: string }) => {
     return api.patch<{message: string}>('/profile/default_role', payload);
   },
+  updateProfileImage: (data: FormData) => {
+    return api.patch<UserProfileResponse>('/profile', data);
+  },
+  updateBaseProfile: (data: FormData) => {
+    return api.put<UserProfileResponse>('/profile', data, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+  },
 };

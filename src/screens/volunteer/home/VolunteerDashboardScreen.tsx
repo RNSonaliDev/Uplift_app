@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, {useState, useCallback} from 'react';
 import {
   View,
   StyleSheet,
@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
   Image,
 } from 'react-native';
-import {useNavigation} from '@react-navigation/native';
+import {useNavigation, useFocusEffect} from '@react-navigation/native';
 import {Colors} from '../../../theme/colors';
 import {AppText} from '../../../components/AppText';
 import {formatDate, formatTime12Hour} from '../../../utils/dateFormatter';
@@ -40,25 +40,27 @@ export default function VolunteerDashboardScreen() {
   const [stats, setStats] = useState<any>(null);
   const [loadingRequests, setLoadingRequests] = useState(true);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [profData, reqData, statsData] = await Promise.all([
-          authApi.getProfile(),
-          api.get<any[]>('/help_requests/browse'),
-          api.get<any>('/dashboard/stats?role=volunteer')
-        ]);
-        setProfile(profData);
-        setRequests(reqData || []);
-        setStats(statsData);
-      } catch (error) {
-        console.error('Failed to fetch data', error);
-      } finally {
-        setLoadingRequests(false);
-      }
-    };
-    fetchData();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      const fetchData = async () => {
+        try {
+          const [profData, reqData, statsData] = await Promise.all([
+            authApi.getProfile(),
+            api.get<any[]>('/help_requests/browse'),
+            api.get<any>('/dashboard/stats?role=volunteer')
+          ]);
+          setProfile(profData);
+          setRequests(reqData || []);
+          setStats(statsData);
+        } catch (error) {
+          console.error('Failed to fetch data', error);
+        } finally {
+          setLoadingRequests(false);
+        }
+      };
+      fetchData();
+    }, [])
+  );
 
   const name = profile?.first_name || 'Volunteer';
 
