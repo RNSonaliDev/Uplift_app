@@ -11,7 +11,7 @@ import {useNavigation, useRoute} from '@react-navigation/native';
 import {Colors} from '../../../theme/colors';
 import {AppText} from '../../../components/AppText';
 import {Button} from '../../../components/Button';
-import {ChevronLeft, ClipboardList, Calendar, Clock, MapPin} from 'lucide-react-native';
+import {ChevronLeft, ClipboardList, Calendar, Clock, MapPin, Type} from 'lucide-react-native';
 import {
   horizontalScale,
   verticalScale,
@@ -117,6 +117,11 @@ export default function PreviewRequestScreen() {
             categoryTitle || 'N/A'
           )}
           {renderInlineRow(
+            <Type color={Colors.neutral[700]} size={20} />, 
+            'Title', 
+            formData?.title || 'N/A'
+          )}
+          {renderInlineRow(
             <Calendar color={Colors.neutral[700]} size={20} />, 
             'Date', 
             formatDate(formData?.preferred_date)
@@ -132,7 +137,7 @@ export default function PreviewRequestScreen() {
             formData?.meeting_location || 'N/A'
           )}
           {renderNotesRow(
-            'Notes',
+            'Description',
             formData?.description || 'N/A'
           )}
         </View>

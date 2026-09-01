@@ -298,7 +298,7 @@ export const SelectRolesScreen: React.FC = () => {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={Colors.neutral[0]} />
       <ScrollView
         contentContainerStyle={styles.scrollContent}
@@ -414,7 +414,7 @@ export const SelectRolesScreen: React.FC = () => {
           style={styles.continueButton}
         />
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 };
 

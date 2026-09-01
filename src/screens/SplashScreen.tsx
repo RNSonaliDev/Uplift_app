@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { View, StyleSheet, Image, StatusBar, Animated, Text, Dimensions } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { loadAuthToken } from '../api/client';
@@ -149,7 +150,7 @@ export const SplashScreen: React.FC = () => {
   }, [navigation, logoScale, logoOpacity, textTranslateY, textOpacity, circle1Scale, circle2Scale]);
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={Colors.neutral[0]} />
       
       {/* Background Image with very low opacity for texture */}
@@ -203,7 +204,7 @@ export const SplashScreen: React.FC = () => {
         >
         </Animated.View>
       </View>
-    </View>
+    </SafeAreaView>
   );
 };
 

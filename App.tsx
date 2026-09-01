@@ -19,8 +19,9 @@ import {SplashScreen} from './src/screens/SplashScreen';
 import {LoginScreen} from './src/screens/LoginScreen';
 import {OrganizationSetupScreen} from './src/screens/OrganizationSetupScreen';
 import {SponsorSetupScreen} from './src/screens/SponsorSetupScreen';
-import {VolunteerSetupScreen} from './src/screens/VolunteerSetupScreen';
-import {BeneficiarySetupScreen} from './src/screens/BeneficiarySetupScreen';
+import { VolunteerSetupScreen } from './src/screens/VolunteerSetupScreen';
+import { BeneficiarySetupScreen } from './src/screens/BeneficiarySetupScreen';
+import { ParentVerificationScreen } from './src/screens/ParentVerificationScreen';
 import {SuccessScreen} from './src/screens/SuccessScreen';
 import {DashboardRoleSelectionScreen} from './src/screens/DashboardRoleSelectionScreen';
 import {Colors} from './src/theme/colors';
@@ -34,13 +35,14 @@ type RootStackParamList = {
   Welcome: undefined;
   Login: undefined;
   CreateAccount: undefined;
-  VerifyAccount: { emailOrPhone: string };
-  CreateProfile: undefined;
+  VerifyAccount: { emailOrPhone: string, dob?: string, parentEmail?: string };
+  CreateProfile: { verificationToken: string, emailOrPhone: string, dob?: string, parentEmail?: string };
   SelectRoles: undefined;
   OrganizationSetup: undefined;
   SponsorSetup: undefined;
   VolunteerSetup: undefined;
   BeneficiarySetup: undefined;
+  ParentVerification: { parentEmail: string };
   Success: { selectedRoles?: string[] } | undefined;
   DashboardRoleSelection: { selectedRoles: string[] };
   BeneficiaryFlow: undefined;
@@ -149,6 +151,7 @@ function App() {
             <Stack.Screen name="SponsorSetup" component={SponsorSetupScreen} />
             <Stack.Screen name="VolunteerSetup" component={VolunteerSetupScreen} />
             <Stack.Screen name="BeneficiarySetup" component={BeneficiarySetupScreen} />
+        <Stack.Screen name="ParentVerification" component={ParentVerificationScreen} />
             <Stack.Screen name="Success" component={SuccessScreen} />
             <Stack.Screen name="DashboardRoleSelection" component={DashboardRoleSelectionScreen} />
             <Stack.Screen name="BeneficiaryFlow" component={BeneficiaryTabNavigator} />

@@ -2093,6 +2093,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@react-native-community/geolocation@npm:^3.4.0":
+  version: 3.4.0
+  resolution: "@react-native-community/geolocation@npm:3.4.0"
+  peerDependencies:
+    react: "*"
+    react-native: "*"
+  checksum: 4a1a334de5b8345ee5ca9af987718a4cdd0b401b6d024268330c98736eccd0bebf45fd1d4cb396558f429a4670e5b29da0b5b7ebd4e51ca12972d4b08b55d4bc
+  languageName: node
+  linkType: hard
+
 "@react-native/assets-registry@npm:0.86.2":
   version: 0.86.2
   resolution: "@react-native/assets-registry@npm:0.86.2"
@@ -2549,6 +2559,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/geojson@npm:^7946.0.13":
+  version: 7946.0.16
+  resolution: "@types/geojson@npm:7946.0.16"
+  checksum: d66e5e023f43b3e7121448117af1930af7d06410a32a585a8bc9c6bb5d97e0d656cd93d99e31fa432976c32e98d4b780f82bf1fd1acd20ccf952eb6b8e39edf2
+  languageName: node
+  linkType: hard
+
 "@types/graceful-fs@npm:^4.1.3":
   version: 4.1.9
   resolution: "@types/graceful-fs@npm:4.1.9"
@@ -2803,6 +2820,7 @@ __metadata:
     "@react-native-community/cli": 20.1.0
     "@react-native-community/cli-platform-android": 20.1.0
     "@react-native-community/cli-platform-ios": 20.1.0
+    "@react-native-community/geolocation": ^3.4.0
     "@react-native/babel-preset": 0.86.2
     "@react-native/eslint-config": 0.86.2
     "@react-native/jest-preset": 0.86.2
@@ -2822,7 +2840,9 @@ __metadata:
     react: 19.2.3
     react-native: 0.86.2
     react-native-date-picker: ^5.0.13
+    react-native-google-places-autocomplete: ^2.6.4
     react-native-image-picker: ^8.2.1
+    react-native-maps: ^1.29.0
     react-native-safe-area-context: ^5.5.2
     react-native-screens: ^4.26.2
     react-native-svg: ^15.15.5
@@ -7463,6 +7483,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"qs@npm:^6.14.1":
+  version: 6.16.0
+  resolution: "qs@npm:6.16.0"
+  dependencies:
+    es-define-property: ^1.0.1
+    side-channel: ^1.1.1
+  checksum: fb97665d1b481fadbcb17cc056f1af95ae93328195bf9536a56142137f4d9cc16fe2a1dab9cd17186c9fa69a7e6fa64a3766f71ffaa7c248ec5555f34d21047b
+  languageName: node
+  linkType: hard
+
 "qs@npm:~6.15.1":
   version: 6.15.3
   resolution: "qs@npm:6.15.3"
@@ -7561,6 +7591,19 @@ __metadata:
   languageName: node
   linkType: hard
 
+"react-native-google-places-autocomplete@npm:^2.6.4":
+  version: 2.6.4
+  resolution: "react-native-google-places-autocomplete@npm:2.6.4"
+  dependencies:
+    lodash.debounce: ^4.0.8
+    qs: ^6.14.1
+    react-native-uuid: ^2.0.3
+  peerDependencies:
+    react-native: ">= 0.59"
+  checksum: 76823d7edd441564935e1e0da88c76f720f0e629419d453831e6bb8551a475d3c89c86aaba5319aa614b4b150485a95f20fd40247b18145e7ff1b1c686976d95
+  languageName: node
+  linkType: hard
+
 "react-native-image-picker@npm:^8.2.1":
   version: 8.2.1
   resolution: "react-native-image-picker@npm:8.2.1"
@@ -7568,6 +7611,22 @@ __metadata:
     react: "*"
     react-native: "*"
   checksum: fc85bc278c0ba5ccef8cbacfce3001e994b34b0895be34e0c884021d2215802c2e553c5e97ff7f21a30e502be60000f90cf9555e9c2a19c71fdc76120d30e158
+  languageName: node
+  linkType: hard
+
+"react-native-maps@npm:^1.29.0":
+  version: 1.29.0
+  resolution: "react-native-maps@npm:1.29.0"
+  dependencies:
+    "@types/geojson": ^7946.0.13
+  peerDependencies:
+    react: ">= 18.3.1"
+    react-native: ">= 0.76.0"
+    react-native-web: ">= 0.11"
+  peerDependenciesMeta:
+    react-native-web:
+      optional: true
+  checksum: d67dfb48e1abc608e9923e7aab627045a48ff05639238a9c2dd24e8f22bcd88fa24d2c3e704becf561fb00ee869d5e4052c3f65f28f257e6ddbfb62b51b00986
   languageName: node
   linkType: hard
 
@@ -7614,6 +7673,13 @@ __metadata:
     react: "*"
     react-native: "*"
   checksum: d573f26371736ac21bcb9b7b9884fcf1a3739d95f2ef346aba818130f451f5506ed582f65e1bd16d1a0d5306a405e676c8737d0937214e04968ecc75ad426dca
+  languageName: node
+  linkType: hard
+
+"react-native-uuid@npm:^2.0.3":
+  version: 2.0.4
+  resolution: "react-native-uuid@npm:2.0.4"
+  checksum: 185e40054aa615eaa734d3d051e9b90f6ffa38038b0de4732c6907fac33294a91200e2ed3fc100c9160bce1e50b5b0d94b7e551b0ee471a5c231d9fb4eceb47b
   languageName: node
   linkType: hard
 
