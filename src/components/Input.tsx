@@ -139,6 +139,7 @@ const styles = StyleSheet.create({
     color: Colors.neutral[900],
     paddingVertical: Spacing.md,
     paddingHorizontal: Spacing.xs,
+    letterSpacing: 0,
   },
   leftIcon: {
     marginRight: Spacing.sm,

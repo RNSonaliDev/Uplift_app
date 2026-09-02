@@ -526,10 +526,12 @@ export const VolunteerSetupScreen: React.FC = () => {
               leftIcon={<LocationPinIcon />}
               value={zipCode}
               onChangeText={(text) => {
-                setZipCode(text);
+                const numeric = text.replace(/[^0-9]/g, '');
+                setZipCode(numeric);
                 if (errors.zipCode) setErrors({...errors, zipCode: ''});
               }}
               keyboardType="number-pad"
+              maxLength={5}
               error={errors.zipCode}
             />
 
@@ -570,8 +572,12 @@ export const VolunteerSetupScreen: React.FC = () => {
               leftIcon={<ClockIcon />}
               rightIcon={<AppText variant="caption" color={Colors.neutral[500]}>hrs/week</AppText>}
               value={hours}
-              onChangeText={setHours}
+              onChangeText={(text) => {
+                const numeric = text.replace(/[^0-9]/g, '');
+                setHours(numeric);
+              }}
               keyboardType="number-pad"
+              maxLength={3}
             />
           </View>
 

@@ -16,6 +16,7 @@ import {FontFamily} from '../../../theme/typography';
 import {AppText} from '../../../components/AppText';
 import {formatDate, formatTime12Hour} from '../../../utils/dateFormatter';
 import {Button} from '../../../components/Button';
+import {TaskParentConfirmationModal} from '../../../components';
 import {
   ChevronLeft,
   MoreHorizontal,
@@ -24,6 +25,7 @@ import {
   MapPin,
   FileText,
   Star,
+  Type,
 } from 'lucide-react-native';
 import {
   horizontalScale,
@@ -42,6 +44,10 @@ export default function RequestDetailsScreen() {
   const [otp, setOtp] = useState('');
   const [isStarting, setIsStarting] = useState(false);
 
+  const [requiresParentAccept, setRequiresParentAccept] = useState(false);
+  const [isParentModalVisible, setIsParentModalVisible] = useState(false);
+  const [parentEmail, setParentEmail] = useState('');
+
   useFocusEffect(
     useCallback(() => {
       const fetchRequest = async () => {
@@ -56,7 +62,20 @@ export default function RequestDetailsScreen() {
           }
         }
       };
+      const fetchProfile = async () => {
+        try {
+          const profileData = await api.get('/profile');
+          console.log('profileData', profileData);
+          if ((profileData as any)?.teen_requires_parent_consent) {
+             setRequiresParentAccept(true);
+             setParentEmail((profileData as any)?.parent_email || '');
+          }
+        } catch (e) {
+          console.error('Failed to fetch profile', e);
+        }
+      };
       fetchRequest();
+      fetchProfile();
     }, [request.id])
   );
 
@@ -65,17 +84,43 @@ export default function RequestDetailsScreen() {
   const showCompleteBtn = forceAction === 'complete' || request.status?.toLowerCase() === 'in_progress';
   const showRateBtn = forceAction === 'rate' || (request.status?.toLowerCase() === 'completed' && (!request.ratings || request.ratings.length === 0));
 
-  const handleAccept = async () => {
+  const handleAcceptClick = async () => {
+    if (!request.id) return;
+    if (requiresParentAccept) {
+      setIsParentModalVisible(true);
+    } else {
+      try {
+        setIsAccepting(true);
+        await api.post(`/help_requests/${request.id}/accept`);
+        navigation.navigate('RequestAccepted', { request });
+      } catch (error: any) {
+        Toast.show({
+          type: 'error',
+          text1: 'Error',
+          text2: error?.data?.errors?.[0] || error?.message || 'Failed to accept request.'
+        });
+      } finally {
+        setIsAccepting(false);
+      }
+    }
+  };
+
+  const handleConfirmAccept = async () => {
     if (!request.id) return;
     try {
       setIsAccepting(true);
-      await api.post(`/help_requests/${request.id}/accept`);
-      navigation.navigate('RequestAccepted', { request });
+      await api.post(`/help_requests/${request.id}/send_parent_accept_code`);
+      Toast.show({
+        type: 'info',
+        text1: 'Approval Required',
+        text2: 'An email has been sent to your parent.',
+      });
+      navigation.navigate('ParentTaskVerification', { request, parentEmail });
     } catch (error: any) {
       Toast.show({
         type: 'error',
         text1: 'Error',
-        text2: error?.data?.errors?.[0] || error?.message || 'Failed to accept request.'
+        text2: error?.data?.errors?.[0] || error?.message || 'Failed to send parent approval code.'
       });
     } finally {
       setIsAccepting(false);
@@ -140,14 +185,14 @@ export default function RequestDetailsScreen() {
                 <AppText variant="h6" color={Colors.neutral[600]}>
                   {request.beneficiary?.first_name 
                     ? `${request.beneficiary.first_name.charAt(0)}${request.beneficiary.last_name ? request.beneficiary.last_name.charAt(0) : ''}`.toUpperCase() 
-                    : 'SJ'}
+                    : ''}
                 </AppText>
               </View>
             )}
           </View>
           <View style={styles.profileInfo}>
             <AppText variant="labelLarge" color={Colors.neutral[900]} style={{marginBottom: 4}}>
-              {request.beneficiary?.first_name ? `${request.beneficiary.first_name} ${request.beneficiary.last_name || ''}` : 'Sarah Johnson'}
+              {request.beneficiary?.first_name ? `${request.beneficiary.first_name} ${request.beneficiary.last_name || ''}` : ''}
             </AppText>
           </View>
         </View>
@@ -173,15 +218,15 @@ export default function RequestDetailsScreen() {
           </View>
 
           {request.title ? (
-            <AppText variant="h6" color={Colors.neutral[900]} style={{marginBottom: verticalScale(8)}}>
-              {request.title}
-            </AppText>
-          ) : null}
-
-          {request.description ? (
-            <AppText variant="bodyMedium" color={Colors.neutral[600]} style={{marginBottom: verticalScale(20), lineHeight: 22}}>
-              {request.description}
-            </AppText>
+            <View style={styles.detailRowItem}>
+              <View style={styles.detailLabelRow}>
+                <Type color={Colors.neutral[600]} size={20} />
+                <AppText variant="bodyMedium" color={Colors.neutral[900]} style={{marginLeft: 8, fontFamily: FontFamily.medium}}>Title</AppText>
+              </View>
+              <AppText variant="bodyMedium" color={Colors.neutral[600]} style={{flex: 1, textAlign: 'right', marginLeft: 16}}>
+                {request.title}
+              </AppText>
+            </View>
           ) : null}
 
           {/* Date */}
@@ -190,7 +235,7 @@ export default function RequestDetailsScreen() {
               <Calendar color={Colors.neutral[600]} size={20} />
               <AppText variant="bodyMedium" color={Colors.neutral[900]} style={{marginLeft: 8, fontFamily: FontFamily.medium}}>Date</AppText>
             </View>
-            <AppText variant="bodyMedium" color={Colors.neutral[600]}>
+            <AppText variant="bodyMedium" color={Colors.neutral[600]} style={{flex: 1, textAlign: 'right', marginLeft: 16}}>
               {formatDate(request.preferred_date) || 'May 22, 2024'}
             </AppText>
           </View>
@@ -201,10 +246,23 @@ export default function RequestDetailsScreen() {
               <Clock color={Colors.neutral[600]} size={20} />
               <AppText variant="bodyMedium" color={Colors.neutral[900]} style={{marginLeft: 8, fontFamily: FontFamily.medium}}>Time</AppText>
             </View>
-            <AppText variant="bodyMedium" color={Colors.neutral[600]}>
+            <AppText variant="bodyMedium" color={Colors.neutral[600]} style={{flex: 1, textAlign: 'right', marginLeft: 16}}>
               {request.preferred_start_time ? `${formatTime12Hour(request.preferred_start_time)} - ${formatTime12Hour(request.preferred_end_time)}` : '2:00 PM - 3:00 PM'}
             </AppText>
           </View>
+
+          {/* Description */}
+          {request.description ? (
+            <View style={styles.detailColumnItem}>
+              <View style={styles.detailLabelRow}>
+                <FileText color={Colors.neutral[600]} size={20} />
+                <AppText variant="bodyMedium" color={Colors.neutral[900]} style={{marginLeft: 8, fontFamily: FontFamily.medium}}>Description</AppText>
+              </View>
+              <AppText variant="bodyMedium" color={Colors.neutral[600]} style={{marginLeft: 28, marginTop: 4, lineHeight: 22}}>
+                {request.description}
+              </AppText>
+            </View>
+          ) : null}
 
           {/* Location */}
           <View style={styles.detailColumnItem}>
@@ -232,12 +290,11 @@ export default function RequestDetailsScreen() {
         </View>
       </ScrollView>
 
-      {/* Action Buttons */}
       {showAcceptBtn && (
         <View style={styles.actionContainer}>
           <Button 
             title="Accept Request" 
-            onPress={handleAccept} 
+            onPress={handleAcceptClick} 
             loading={isAccepting}
             style={styles.acceptBtn} 
           />
@@ -289,6 +346,12 @@ export default function RequestDetailsScreen() {
           />
         </View>
       )}
+
+      <TaskParentConfirmationModal 
+        visible={isParentModalVisible}
+        onClose={() => setIsParentModalVisible(false)}
+        onConfirm={handleConfirmAccept}
+      />
     </SafeAreaView>
   );
 }
@@ -349,7 +412,7 @@ const styles = StyleSheet.create({
   },
   detailRowItem: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     justifyContent: 'space-between',
     marginBottom: verticalScale(16),
   },

@@ -18,7 +18,6 @@ import {useNavigation, useRoute} from '@react-navigation/native';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import Svg, {Path, Circle, Rect, Polyline} from 'react-native-svg';
 import { launchImageLibrary } from 'react-native-image-picker';
-import DatePicker from 'react-native-date-picker';
 
 import {AppText} from '../components/AppText';
 import {Button} from '../components/Button';
@@ -113,24 +112,6 @@ const InfoCircleIcon: React.FC<{size?: number; color?: string}> = ({
   </Svg>
 );
 
-const CalendarIcon: React.FC<{size?: number; color?: string}> = ({
-  size = 22,
-  color = Colors.primary[500],
-}) => (
-  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Rect x="3" y="4" width="18" height="18" rx="2" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-    <Path d="M16 2V6" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-    <Path d="M8 2V6" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-    <Path d="M3 10H21" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-    <Path d="M8 14H8.01" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-    <Path d="M12 14H12.01" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-    <Path d="M16 14H16.01" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-    <Path d="M8 18H8.01" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-    <Path d="M12 18H12.01" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-    <Path d="M16 18H16.01" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-  </Svg>
-);
-
 const MailOutlineIcon: React.FC<{size?: number; color?: string}> = ({
   size = 22,
   color = Colors.primary[500],
@@ -175,10 +156,8 @@ export const BeneficiarySetupScreen: React.FC = () => {
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
-  const [dob, setDob] = useState('');
-  const [dateOpen, setDateOpen] = useState(false);
-  const [dateVal, setDateVal] = useState(new Date(2000, 0, 1));
   const [zipCode, setZipCode] = useState('');
+  const [dob, setDob] = useState('');
   const [notes, setNotes] = useState('');
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
 
@@ -194,6 +173,9 @@ export const BeneficiarySetupScreen: React.FC = () => {
         if (profile.phone) {
           const digits = profile.phone.replace('+1', '');
           setPhoneNumber(digits);
+        }
+        if (profile.date_of_birth) {
+          setDob(profile.date_of_birth);
         }
       } catch (error) {
         // Handle error or ignore
@@ -221,8 +203,6 @@ export const BeneficiarySetupScreen: React.FC = () => {
       newErrors.phoneNumber = 'Phone number must be at least 10 digits';
     }
 
-    if (!dob.trim()) newErrors.dob = 'Date of birth is required';
-
     const zipDigits = zipCode.replace(/\D/g, '');
     if (!zipCode.trim()) {
       newErrors.zipCode = 'ZIP code is required';
@@ -242,8 +222,6 @@ export const BeneficiarySetupScreen: React.FC = () => {
 
   const handleContinue = async () => {
     if (validate()) {
-      const formattedDob = `${dateVal.getFullYear()}-${String(dateVal.getMonth() + 1).padStart(2, '0')}-${String(dateVal.getDate()).padStart(2, '0')}`;
-
       const currentRoleData = {
         role: 'beneficiary',
         profile: {
@@ -251,9 +229,9 @@ export const BeneficiarySetupScreen: React.FC = () => {
           last_name: lastName,
           email: email,
           phone: `+1${phoneNumber.replace(/\D/g, '')}`,
-          dob: formattedDob,
           zip_code: zipCode,
           notes: notes,
+          ...(dob ? { dob } : {}),
         }
       };
 
@@ -427,41 +405,6 @@ export const BeneficiarySetupScreen: React.FC = () => {
                 </View>
               )}
             </View>
-
-            <TouchableOpacity activeOpacity={0.8} onPress={() => setDateOpen(true)}>
-              <View pointerEvents="none">
-                <Input
-                  label="Date of Birth"
-                  placeholder="MM / DD / YYYY"
-                  leftIcon={<CalendarIcon />}
-                  rightIcon={<CalendarIcon color={Colors.primary[500]} />}
-                  value={dob}
-                  onChangeText={setDob}
-                  error={errors.dob}
-                  editable={false}
-                />
-              </View>
-            </TouchableOpacity>
-
-            <DatePicker
-              modal
-              mode="date"
-              open={dateOpen}
-              date={dateVal}
-              maximumDate={new Date(new Date().setDate(new Date().getDate() - 1))}
-              onConfirm={(selectedDate) => {
-                setDateOpen(false);
-                setDateVal(selectedDate);
-                const m = String(selectedDate.getMonth() + 1).padStart(2, '0');
-                const d = String(selectedDate.getDate()).padStart(2, '0');
-                const y = selectedDate.getFullYear();
-                setDob(`${m} / ${d} / ${y}`);
-                if (errors.dob) setErrors({...errors, dob: ''});
-              }}
-              onCancel={() => {
-                setDateOpen(false);
-              }}
-            />
 
             <Input
               label="ZIP Code"

@@ -9,6 +9,7 @@ import {
   Platform,
   Alert,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, {Path, Circle, Rect, G} from 'react-native-svg';
 import {AppText} from '../components/AppText';
 import {Button} from '../components/Button';
@@ -197,7 +198,7 @@ export const CreateAccountScreen: React.FC = () => {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={Colors.neutral[0]} />
       <KeyboardAvoidingView
         style={styles.flex}
@@ -332,7 +333,7 @@ export const CreateAccountScreen: React.FC = () => {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-    </View>
+    </SafeAreaView>
   );
 };
 

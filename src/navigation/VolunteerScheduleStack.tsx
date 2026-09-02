@@ -6,6 +6,7 @@ import CompleteRequestScreen from '../screens/volunteer/schedule/CompleteRequest
 import RateExperienceScreen from '../screens/volunteer/schedule/RateExperienceScreen';
 import RequestDetailsScreen from '../screens/volunteer/requests/RequestDetailsScreen';
 import RequestAcceptedScreen from '../screens/volunteer/requests/RequestAcceptedScreen';
+import { ParentTaskVerificationScreen } from '../screens/volunteer/requests/ParentTaskVerificationScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -18,6 +19,7 @@ export default function VolunteerScheduleStack() {
       <Stack.Screen name="RateExperience" component={RateExperienceScreen} />
       <Stack.Screen name="RequestDetails" component={RequestDetailsScreen} />
       <Stack.Screen name="RequestAccepted" component={RequestAcceptedScreen} />
+      <Stack.Screen name="ParentTaskVerification" component={ParentTaskVerificationScreen} />
     </Stack.Navigator>
   );
 }

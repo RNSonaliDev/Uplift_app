@@ -53,6 +53,7 @@ export interface VerifyOtpResponse {
     email_verified?: boolean;
     phone_verified?: boolean;
     profile_image_url?: string;
+    parent_email?: string;
   };
 }
 
@@ -60,6 +61,16 @@ export interface RegistrationResponse {
   message: string;
   token?: string;
   auth_token?: string;
+  access_token?: string;
+  user?: {
+    id: number;
+    first_name: string;
+    last_name: string;
+    email: string;
+    phone: string;
+    registration_step?: string;
+    parent_email?: string;
+  };
 }
 
 export interface RoleProfilePayload {
@@ -142,5 +153,11 @@ export const authApi = {
         'Content-Type': 'multipart/form-data'
       }
     });
+  },
+  sendParentVerification: () => {
+    return api.post<{message: string}>('/auth/parent_verification');
+  },
+  verifyParentVerification: (payload: { parent_verification: { code: string } }) => {
+    return api.post<VerifyOtpResponse>('/auth/parent_verification/verify', payload);
   },
 };

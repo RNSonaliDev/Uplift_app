@@ -8,6 +8,7 @@ import {
   KeyboardAvoidingView,
   Image,
   TouchableWithoutFeedback,
+  Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
@@ -15,6 +16,7 @@ import {useNavigation, useRoute, RouteProp} from '@react-navigation/native';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import Svg, {Path, Circle, Rect, Polyline} from 'react-native-svg';
 import { launchImageLibrary } from 'react-native-image-picker';
+import DatePicker from 'react-native-date-picker';
 
 import {AppText} from '../components/AppText';
 import {Button} from '../components/Button';
@@ -38,8 +40,8 @@ import {
 type RootStackParamList = {
   Welcome: undefined;
   CreateAccount: undefined;
-  VerifyAccount: {emailOrPhone: string};
-  CreateProfile: undefined;
+  VerifyAccount: {emailOrPhone: string, dob?: string, parentEmail?: string};
+  CreateProfile: { verificationToken: string, emailOrPhone: string, dob?: string, parentEmail?: string };
   SelectRoles: undefined;
 };
 
@@ -203,6 +205,34 @@ const MailOutlineIcon: React.FC<{size?: number; color?: string}> = ({
   </Svg>
 );
 
+const CalendarIcon: React.FC<{size?: number}> = ({size = 24}) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Rect x="3" y="4" width="18" height="18" rx="2" ry="2" stroke={Colors.primary[500]} strokeWidth="1.5" />
+    <Path d="M16 2v4M8 2v4M3 10h18" stroke={Colors.primary[500]} strokeWidth="1.5" strokeLinecap="round" />
+  </Svg>
+);
+
+const MailIcon: React.FC<{size?: number}> = ({size = 24}) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Rect
+      x="3"
+      y="5"
+      width="18"
+      height="14"
+      rx="2"
+      stroke={Colors.primary[500]}
+      strokeWidth="1.5"
+    />
+    <Path
+      d="M3 7L12 13L21 7"
+      stroke={Colors.primary[500]}
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </Svg>
+);
+
 // ── Custom Components ──────────────────────────────────
 const PhonePrefixPrefix = () => (
   <View style={styles.phonePrefixContainer}>
@@ -228,14 +258,23 @@ export const CreateProfileScreen: React.FC = () => {
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState(isEmail ? emailOrPhone : '');
   const [phoneNumber, setPhoneNumber] = useState(!isEmail ? emailOrPhone.replace('+1', '') : '');
-  const [contactName, setContactName] = useState('');
+  const [dob, setDob] = useState<Date | null>(route.params?.dob ? new Date(route.params.dob) : null);
+  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+  const [parentEmail, setParentEmail] = useState(route.params?.parentEmail || '');
+  const [showParentVerificationModal, setShowParentVerificationModal] = useState(false);
+  const [isSendingParentVerification, setIsSendingParentVerification] = useState(false);
   const [contactPhone, setContactPhone] = useState('');
   const [contactAddress, setContactAddress] = useState('');
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<{[key: string]: string}>({});
 
-  // Info tooltip visibility
+  // const age = dob ? (new Date().getTime() - dob.getTime()) / (1000 * 60 * 60 * 24 * 365.25) : null;
+  const age = dob
+  ? (new Date().getTime() - (dob.getTime() - 24 * 60 * 60 * 1000)) /
+    (1000 * 60 * 60 * 24 * 365.25)
+  : null;
+const is14To17 = age !== null && age >= 14 && age < 18 ;  // Info tooltip visibility
   const [showPhoneInfo, setShowPhoneInfo] = useState(false);
 
   const validate = () => {
@@ -257,11 +296,45 @@ export const CreateProfileScreen: React.FC = () => {
       newErrors.phoneNumber = 'Phone number must be at least 10 digits';
     }
 
+    if (!dob) {
+      newErrors.dob = 'Date of birth is required';
+    } 
+
+    if (is14To17) {
+      if (!parentEmail.trim()) {
+        newErrors.parentEmail = 'Parent email is required';
+      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(parentEmail)) {
+        newErrors.parentEmail = 'Please enter a valid email address';
+      }
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSaveAndContinue = async () => {
+  const handleSendParentVerification = async () => {
+    try {
+      setIsSendingParentVerification(true);
+      await authApi.sendParentVerification();
+      setShowParentVerificationModal(false);
+      Toast.show({
+        type: 'success',
+        text1: 'Success',
+        text2: 'Verification code sent to parent email',
+      });
+      navigation.navigate('ParentVerification' as any, { parentEmail });
+    } catch (error: any) {
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: error?.data?.errors?.[0] || error?.message || 'Failed to send verification',
+      });
+    } finally {
+      setIsSendingParentVerification(false);
+    }
+  };
+
+  const handleCreateProfile = async () => {
     // Validation
     if (!validate()) {
       return;
@@ -276,6 +349,14 @@ export const CreateProfileScreen: React.FC = () => {
       formData.append('phone', `+1${phoneNumber}`);
       formData.append('country_code', 'US');
       
+      if (dob) {
+        formData.append('date_of_birth', dob.toISOString().split('T')[0]);
+      }
+      
+      if (is14To17 && parentEmail) {
+        formData.append('parent_email', parentEmail);
+      }
+
       if (profilePhoto) {
         formData.append('profile_image', {
           uri: profilePhoto,
@@ -293,13 +374,51 @@ export const CreateProfileScreen: React.FC = () => {
       const response = await authApi.register(formData, verificationToken);
       
       console.log('register response', response);
-      const token = response?.access_token
+      const token = response?.access_token || response?.token;
       console.log('register token', token);
       if (token) {
         await persistAuthToken(token);
       }
       
-      navigation.navigate('SelectRoles');
+      const pendingRoles = response?.user?.pending_roles || [];
+      
+      if (response?.user?.registration_step === 'parent_verification') {
+        setShowParentVerificationModal(true);
+      } else if (pendingRoles.length > 0) {
+        const nextRoles = [...pendingRoles];
+        const nextRole = nextRoles.shift();
+        const routeParams = {
+          pendingRoles: nextRoles,
+          selectedRoles: response?.user?.selected_roles || pendingRoles,
+          collectedRolesData: [],
+        };
+        
+        if (nextRole === 'volunteer') {
+          navigation.navigate('VolunteerSetup' as any, routeParams);
+        } else if (nextRole === 'organization') {
+          navigation.navigate('OrganizationSetup' as any, routeParams);
+        } else if (nextRole === 'sponsor') {
+          navigation.navigate('SponsorSetup' as any, routeParams);
+        } else if (nextRole === 'beneficiary') {
+          navigation.navigate('BeneficiarySetup' as any, routeParams);
+        }
+      } else if (response?.user?.registration_step === 'role_setup') {
+        navigation.navigate('SelectRoles');
+      } else if (response?.user?.default_role) {
+        if (response.user.default_role === 'volunteer') {
+          navigation.replace('VolunteerFlow' as any);
+        } else if (response.user.default_role === 'sponsor') {
+          navigation.replace('SponsorFlow' as any);
+        } else if (response.user.default_role === 'organization') {
+          navigation.replace('OrganizationFlow' as any);
+        } else if (response.user.default_role === 'beneficiary') {
+          navigation.replace('BeneficiaryFlow' as any);
+        } else {
+          navigation.replace('Welcome');
+        }
+      } else {
+        navigation.navigate('SelectRoles');
+      }
     } catch (error: any) {
       Toast.show({
         type: 'error',
@@ -470,6 +589,41 @@ export const CreateProfileScreen: React.FC = () => {
                     </View>
                   )}
                 </View>
+
+                {/* Date of Birth Input */}
+                <TouchableOpacity onPress={() => setIsDatePickerOpen(true)} activeOpacity={0.7} style={{marginTop: verticalScale(16)}}>
+                  <View pointerEvents="none">
+                    <Input
+                      label="Date of Birth"
+                      placeholder="MM/DD/YYYY"
+                      leftIcon={<CalendarIcon size={moderateScale(22)} />}
+                      value={dob ? `${dob.getMonth() + 1}/${dob.getDate()}/${dob.getFullYear()}` : ''}
+                      editable={false}
+                      error={errors.dob}
+                    />
+                  </View>
+                </TouchableOpacity>
+
+                {is14To17 && (
+                  <View style={{marginTop: verticalScale(16)}}>
+                    <Input
+                      label="Parent/Guardian Email Address"
+                      placeholder="Enter parent's email address"
+                      leftIcon={<MailOutlineIcon size={moderateScale(22)} />}
+                      value={parentEmail}
+                      onChangeText={(text) => {
+                        setParentEmail(text);
+                        if (errors.parentEmail) setErrors({...errors, parentEmail: ''});
+                      }}
+                      keyboardType="email-address"
+                      autoCapitalize="none"
+                      error={errors.parentEmail}
+                    />
+                    <AppText variant="bodySmall" color={Colors.neutral[500]} style={{marginTop: 4, paddingHorizontal: 4}}>
+                      Since you are under 18, we require a parent's email to approve your account.
+                    </AppText>
+                  </View>
+                )}
               </View>
 
               {/* Spacer */}
@@ -482,13 +636,53 @@ export const CreateProfileScreen: React.FC = () => {
                 size="lg"
                 fullWidth
                 loading={isSubmitting}
-                onPress={handleSaveAndContinue}
+                onPress={handleCreateProfile}
                 style={styles.continueButton}
               />
             </View>
           </TouchableWithoutFeedback>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      <DatePicker
+        modal
+        open={isDatePickerOpen}
+        date={dob || new Date(new Date().setFullYear(new Date().getFullYear() - 14))}
+        mode="date"
+        maximumDate={new Date()}
+        onConfirm={(date) => {
+          setIsDatePickerOpen(false);
+          setDob(date);
+          if (errors.dob) setErrors({...errors, dob: ''});
+        }}
+        onCancel={() => {
+          setIsDatePickerOpen(false);
+        }}
+      />
+
+      <Modal
+        visible={showParentVerificationModal}
+        transparent
+        animationType="fade"
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalIconContainer}>
+              <MailIcon size={32} />
+            </View>
+            <AppText variant="h4" center style={{marginBottom: 8}}>Parent Verification</AppText>
+            <AppText variant="bodyMedium" color={Colors.neutral[600]} center style={{marginBottom: 24}}>
+              A verification code will be sent to your parent's email{parentEmail ? `:\n${parentEmail}` : '.'}
+            </AppText>
+            <Button
+              title="Continue"
+              onPress={handleSendParentVerification}
+              loading={isSendingParentVerification}
+              style={{width: '100%'}}
+            />
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -497,6 +691,29 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.neutral[0],
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: horizontalScale(24),
+  },
+  modalContent: {
+    backgroundColor: Colors.neutral[0],
+    borderRadius: BorderRadius.lg,
+    padding: moderateScale(24),
+    width: '100%',
+    alignItems: 'center',
+  },
+  modalIconContainer: {
+    width: moderateScale(64),
+    height: moderateScale(64),
+    borderRadius: moderateScale(32),
+    backgroundColor: Colors.primary[50],
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: verticalScale(16),
   },
   flex: {
     flex: 1,

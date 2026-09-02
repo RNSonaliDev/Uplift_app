@@ -197,21 +197,21 @@ export const SuccessScreen: React.FC = () => {
         <View style={styles.checklistCard}>
           <View style={styles.checklistItem}>
             <VerifiedProfileIcon />
-            <AppText variant="bodyMedium" color={Colors.neutral[800]} style={styles.checklistText}>
+            <AppText variant="bodySmall" color={Colors.neutral[800]} style={styles.checklistText}>
               Your profile is verified
             </AppText>
           </View>
           
           <View style={styles.checklistItem}>
             <RolesSetIcon />
-            <AppText variant="bodyMedium" color={Colors.neutral[800]} style={styles.checklistText}>
+            <AppText variant="bodySmall" color={Colors.neutral[800]} style={styles.checklistText}>
               Your roles are set
             </AppText>
           </View>
           
           <View style={styles.checklistItem}>
             <SettingsUpdateIcon />
-            <AppText variant="bodyMedium" color={Colors.neutral[800]} style={styles.checklistText}>
+            <AppText variant="bodySmall" color={Colors.neutral[800]} style={styles.checklistText}>
               You can update anytime{'\n'}in settings
             </AppText>
           </View>
@@ -248,13 +248,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   illustrationContainer: {
-    marginTop: verticalScale(40),
+    // marginTop: verticalScale(40),
     alignItems: 'center',
     justifyContent: 'center',
   },
   textSection: {
     alignItems: 'center',
-    marginTop: verticalScale(16),
+    // marginTop: verticalScale(16),
   },
   title: {
     marginBottom: verticalScale(16),

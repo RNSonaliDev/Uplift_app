@@ -15,16 +15,15 @@ import {
 } from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import Svg, {Path, Circle, Rect} from 'react-native-svg';
-import {AppText} from '../components/AppText';
-import {Button} from '../components/Button';
-import {Input} from '../components/Input';
-import {UpliftLogo} from '../components/UpliftLogo';
+import {AppText} from '../../../components/AppText';
+import {Button} from '../../../components/Button';
+import {Input} from '../../../components/Input';
+import {UpliftLogo} from '../../../components/UpliftLogo';
 import Toast from 'react-native-toast-message';
-import {Colors} from '../theme/colors';
-import {FontFamily, FontSize} from '../theme/typography';
-import {authApi} from '../api';
-import {persistAuthToken} from '../api/client';
-import {Spacing, BorderRadius} from '../theme/spacing';
+import {Colors} from '../../../theme/colors';
+import {FontFamily, FontSize} from '../../../theme/typography';
+import {api} from '../../../api/client';
+import {Spacing, BorderRadius} from '../../../theme/spacing';
 import {
   wp,
   hp,
@@ -33,7 +32,7 @@ import {
   verticalScale,
   horizontalScale,
   isIOS,
-} from '../utils/responsive';
+} from '../../../utils/responsive';
 
 const OTP_LENGTH = 6;
 const RESEND_TIMER_SECONDS = 45;
@@ -297,12 +296,19 @@ type RootStackParamList = {
 type NavigationProps = NativeStackNavigationProp<RootStackParamList>;
 type ParentVerificationRouteProp = RouteProp<RootStackParamList, 'ParentVerification'>;
 
-export const ParentVerificationScreen: React.FC = () => {
+export const ParentTaskVerificationScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProps>();
-  const route = useRoute<ParentVerificationRouteProp>();
+  const route = useRoute<any>();
   
   const parentEmail = route.params?.parentEmail || '';
+  const request = route.params?.request;
   const [otp, setOtp] = useState<string[]>(Array(OTP_LENGTH).fill(''));
+  const [error, setError] = useState<string>('');
+  
+  const handleOtpChange = (newOtp: string[]) => {
+    setOtp(newOtp);
+    if (error) setError('');
+  };
   const [timer, setTimer] = useState(RESEND_TIMER_SECONDS);
   const [canResend, setCanResend] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
@@ -328,7 +334,7 @@ export const ParentVerificationScreen: React.FC = () => {
     
     try {
       setIsResending(true);
-      await authApi.sendParentVerification();
+      await api.post(`/help_requests/${request.id}/send_parent_accept_code`);
 
       setTimer(RESEND_TIMER_SECONDS);
       setCanResend(false);
@@ -361,63 +367,17 @@ export const ParentVerificationScreen: React.FC = () => {
     if (!isOtpComplete) return;
 
     try {
+      setError('');
       setIsVerifying(true);
       const code = otp.join('');
       
-      const response = await authApi.verifyParentVerification({
-        parent_verification: {
-          code,
-        }
+      await api.post(`/help_requests/${request.id}/accept`, {
+        parent_accept_code: code,
       });
-      console.log("@@@@responseresponseresponseresponse ========================", response.registration_step)
-        if (response.access_token) {
-          await persistAuthToken(response.access_token);
-        }
-
-        const pendingRoles = response?.pending_roles || [];
-        
-        if (pendingRoles.length > 0) {
-          const nextRoles = [...pendingRoles];
-          const nextRole = nextRoles.shift();
-          const routeParams = {
-            pendingRoles: nextRoles,
-            selectedRoles: response?.selected_roles || pendingRoles,
-            collectedRolesData: [],
-          };
-          
-          if (nextRole === 'volunteer') {
-            navigation.navigate('VolunteerSetup' as any, routeParams);
-          } else if (nextRole === 'organization') {
-            navigation.navigate('OrganizationSetup' as any, routeParams);
-          } else if (nextRole === 'sponsor') {
-            navigation.navigate('SponsorSetup' as any, routeParams);
-          } else if (nextRole === 'beneficiary') {
-            navigation.navigate('BeneficiarySetup' as any, routeParams);
-          }
-        } else if (response?.registration_step === 'role_setup') {
-          navigation.navigate('SelectRoles' as any);
-        } else if (response?.default_role) {
-            if (response.default_role === 'volunteer') {
-              navigation.replace('VolunteerFlow' as any);
-            } else if (response.default_role === 'sponsor') {
-              navigation.replace('SponsorFlow' as any);
-            } else if (response.default_role === 'organization') {
-              navigation.replace('OrganizationFlow' as any);
-            } else if (response.default_role === 'beneficiary') {
-              navigation.replace('BeneficiaryFlow' as any);
-            } else {
-              navigation.replace('Welcome');
-            }
-        
-      } else {
-        navigation.replace('Welcome');
-      }
+      
+      navigation.replace('RequestAccepted', { request });
     } catch (error: any) {
-      Toast.show({
-        type: 'error',
-        text1: 'Error',
-        text2: error?.data?.errors?.[0] || error?.message || 'Invalid verification code',
-      });
+      setError(error?.data?.errors?.[0] || error?.message || 'Invalid verification code');
     } finally {
       setIsVerifying(false);
     }
@@ -465,7 +425,12 @@ export const ParentVerificationScreen: React.FC = () => {
           </View>
 
           <View style={styles.otpSection}>
-            <OtpInput length={OTP_LENGTH} value={otp} onChange={setOtp} />
+            <OtpInput length={OTP_LENGTH} value={otp} onChange={handleOtpChange} />
+            {error ? (
+              <AppText variant="bodySmall" color={Colors.error} style={{marginTop: 8, textAlign: 'center'}}>
+                {error}
+              </AppText>
+            ) : null}
           </View>
 
           <View style={styles.resendSection}>

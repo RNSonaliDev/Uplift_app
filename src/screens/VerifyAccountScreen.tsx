@@ -9,6 +9,9 @@ import {
   KeyboardAvoidingView,
   NativeSyntheticEvent,
   TextInputKeyPressEventData,
+  Modal,
+  Keyboard,
+  Platform,
 } from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import Svg, {Path, Circle, Rect} from 'react-native-svg';
@@ -49,6 +52,16 @@ const BackArrowIcon: React.FC<{size?: number; color?: string}> = ({
       strokeLinecap="round"
       strokeLinejoin="round"
     />
+  </Svg>
+);
+
+const EditIcon: React.FC<{size?: number; color?: string}> = ({
+  size = 20,
+  color = Colors.primary[500],
+}) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    <Path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
   </Svg>
 );
 
@@ -238,14 +251,12 @@ const ContactInfoRow: React.FC<ContactInfoRowProps> = ({
       <AppText variant="labelMedium" color={Colors.neutral[500]}>
         {label}
       </AppText>
-      <AppText variant="labelMedium" color={Colors.neutral[900]}>
+      <AppText variant="labelMedium" color={Colors.neutral[900]} numberOfLines={1}>
         {value}
       </AppText>
     </View>
-    <TouchableOpacity onPress={onChangePress}>
-      <AppText variant="labelMedium" color={Colors.primary[500]}>
-        Change
-      </AppText>
+    <TouchableOpacity onPress={onChangePress} hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}>
+      <EditIcon size={moderateScale(20)} color={Colors.primary[500]} />
     </TouchableOpacity>
   </View>
 );
@@ -264,6 +275,7 @@ const contactStyles = StyleSheet.create({
   },
   textContainer: {
     flex: 1,
+    marginRight: moderateScale(12),
   },
 });
 
@@ -275,8 +287,8 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 type RootStackParamList = {
   Welcome: undefined;
   CreateAccount: undefined;
-  VerifyAccount: { emailOrPhone: string };
-  CreateProfile: { verificationToken: string, emailOrPhone: string };
+  VerifyAccount: { emailOrPhone: string, dob?: string, parentEmail?: string };
+  CreateProfile: { verificationToken: string, emailOrPhone: string, dob?: string, parentEmail?: string };
   SelectRoles: undefined;
   BeneficiaryFlow: undefined;
 };
@@ -293,7 +305,6 @@ export const VerifyAccountScreen: React.FC = () => {
   const isPhone = /^(?:\+1|1)?\s?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}$/.test(contactValue);
   
   const email = isEmail ? contactValue : undefined;
-  // If it's not a valid email and not a valid phone, we fallback to treating it as a phone, but typically it should be validated before this screen.
   let phoneNumber = !isEmail ? contactValue : undefined;
   if (phoneNumber && !phoneNumber.startsWith('+')) {
     phoneNumber = phoneNumber.startsWith('1') && phoneNumber.length > 10 ? `+${phoneNumber}` : `+1 ${phoneNumber}`;
@@ -305,6 +316,9 @@ export const VerifyAccountScreen: React.FC = () => {
   const [canResend, setCanResend] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
   const [isResending, setIsResending] = useState(false);
+  const [showParentVerificationModal, setShowParentVerificationModal] = useState(false);
+  const [isSendingParentVerification, setIsSendingParentVerification] = useState(false);
+  const [parentEmail, setParentEmail] = useState<string | null>(null);
 
   useEffect(() => {
     if (timer <= 0) {
@@ -360,6 +374,28 @@ export const VerifyAccountScreen: React.FC = () => {
 
   const isOtpComplete = otp.every(digit => digit !== '');
 
+  const handleSendParentVerification = async () => {
+    try {
+      setIsSendingParentVerification(true);
+      await authApi.sendParentVerification();
+      setShowParentVerificationModal(false);
+      Toast.show({
+        type: 'success',
+        text1: 'Success',
+        text2: 'Verification code sent to parent email',
+      });
+      navigation.navigate('ParentVerification' as any, { parentEmail: parentEmail || '' });
+    } catch (error: any) {
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: error?.data?.errors?.[0] || error?.message || 'Failed to send verification',
+      });
+    } finally {
+      setIsSendingParentVerification(false);
+    }
+  };
+
   const handleVerify = async () => {
     if (!isOtpComplete) return;
 
@@ -382,7 +418,12 @@ export const VerifyAccountScreen: React.FC = () => {
 
         const pendingRoles = response.user?.pending_roles || [];
         
-        if (pendingRoles.length > 0) {
+        if (response.user?.registration_step === 'parent_verification') {
+          if (response.user.parent_email) {
+            setParentEmail(response.user.parent_email);
+          }
+          setShowParentVerificationModal(true);
+        } else if (pendingRoles.length > 0) {
           const nextRoles = [...pendingRoles];
           const nextRole = nextRoles.shift();
           const routeParams = {
@@ -400,7 +441,9 @@ export const VerifyAccountScreen: React.FC = () => {
           } else if (nextRole === 'beneficiary') {
             navigation.navigate('BeneficiarySetup' as any, routeParams);
           }
-        } else if (response.user.default_role) {
+        } else if (response.user?.registration_step === 'role_setup') {
+          navigation.navigate('SelectRoles' as any);
+        } else if (response.user?.default_role) {
             if (response.user.default_role === 'volunteer') {
               navigation.replace('VolunteerFlow' as any);
             } else if (response.user.default_role === 'sponsor') {
@@ -415,7 +458,9 @@ export const VerifyAccountScreen: React.FC = () => {
       } else if (response.verification_token) {
         navigation.navigate('CreateProfile', {
           verificationToken: response.verification_token,
-          emailOrPhone: contactValue
+          emailOrPhone: contactValue,
+          dob: route.params?.dob,
+          parentEmail: route.params?.parentEmail,
         });
       } else {
         throw new Error('Verification token missing from response');
@@ -432,16 +477,15 @@ export const VerifyAccountScreen: React.FC = () => {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={Colors.neutral[0]} />
       <KeyboardAvoidingView
-        style={styles.flex}
+        style={styles.keyboardAvoid}
         behavior={isIOS ? 'padding' : undefined}>
         <ScrollView
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled">
-          {/* Header with Back Button */}
           <TouchableOpacity
             style={styles.backButton}
             onPress={() => navigation.goBack()}
@@ -449,12 +493,10 @@ export const VerifyAccountScreen: React.FC = () => {
             <BackArrowIcon size={moderateScale(24)} />
           </TouchableOpacity>
 
-          {/* Logo */}
           <View style={styles.logoSection}>
             <UpliftLogo size={moderateScale(0.9, 0.3)} />
           </View>
 
-          {/* Title & Subtitle */}
           <AppText variant="h2" center color={Colors.primary[900]} style={styles.title}>
             Verify Your Account
           </AppText>
@@ -466,7 +508,6 @@ export const VerifyAccountScreen: React.FC = () => {
             Enter the 6-digit verification code{'\n'}we sent to your {contactTypeText}.
           </AppText>
 
-          {/* Contact Info Cards */}
           <View style={styles.contactSection}>
             {isEmail && (
               <ContactInfoRow
@@ -476,7 +517,6 @@ export const VerifyAccountScreen: React.FC = () => {
                 onChangePress={() => navigation.goBack()}
               />
             )}
-            {isEmail && !isEmail && <View style={{height: verticalScale(8)}} />}
             {!isEmail && (
               <ContactInfoRow
                 icon={<PhoneIcon size={moderateScale(22)} />}
@@ -487,12 +527,10 @@ export const VerifyAccountScreen: React.FC = () => {
             )}
           </View>
 
-          {/* OTP Input */}
           <View style={styles.otpSection}>
             <OtpInput length={OTP_LENGTH} value={otp} onChange={setOtp} />
           </View>
 
-          {/* Resend Code */}
           <View style={styles.resendSection}>
             <AppText variant="bodySmall" color={Colors.neutral[500]}>
               Didn't receive the code?
@@ -523,10 +561,8 @@ export const VerifyAccountScreen: React.FC = () => {
             )}
           </View>
 
-          {/* Spacer to push verify button down */}
           <View style={styles.spacer} />
 
-          {/* Verify Button */}
           <Button
             title="Verify & Continue"
             color="primary"
@@ -538,7 +574,6 @@ export const VerifyAccountScreen: React.FC = () => {
             style={styles.verifyButton}
           />
 
-          {/* Security Note */}
           <View style={styles.securityNote}>
             <LockIcon size={moderateScale(16)}  />
             <AppText
@@ -550,7 +585,31 @@ export const VerifyAccountScreen: React.FC = () => {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-    </View>
+
+      <Modal
+        visible={showParentVerificationModal}
+        transparent
+        animationType="fade"
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalIconContainer}>
+              <MailIcon size={32} />
+            </View>
+            <AppText variant="h4" center style={{marginBottom: 8}}>Parent Verification</AppText>
+            <AppText variant="bodyMedium" color={Colors.neutral[600]} center style={{marginBottom: 24}}>
+              A verification code will be sent to your parent's email{parentEmail ? `:\n${parentEmail}` : '.'}
+            </AppText>
+            <Button
+              title="Continue"
+              onPress={handleSendParentVerification}
+              loading={isSendingParentVerification}
+              style={{width: '100%'}}
+            />
+          </View>
+        </View>
+      </Modal>
+    </SafeAreaView>
   );
 };
 
@@ -559,7 +618,30 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.neutral[0],
   },
-  flex: {
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: horizontalScale(24),
+  },
+  modalContent: {
+    backgroundColor: Colors.neutral[0],
+    borderRadius: BorderRadius.lg,
+    padding: moderateScale(24),
+    width: '100%',
+    alignItems: 'center',
+  },
+  modalIconContainer: {
+    width: moderateScale(64),
+    height: moderateScale(64),
+    borderRadius: moderateScale(32),
+    backgroundColor: Colors.primary[50],
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: verticalScale(16),
+  },
+  keyboardAvoid: {
     flex: 1,
   },
   scrollContent: {
