@@ -25,7 +25,6 @@ import {
   MapPin,
   FileText,
   Star,
-  Type,
 } from 'lucide-react-native';
 import {
   horizontalScale,
@@ -158,6 +157,27 @@ export default function RequestDetailsScreen() {
     }
   };
 
+    const handleComplete = async () => {
+      if (!request.id) return;
+      try {
+        await api.post(`/help_requests/${request.id}/complete`);
+        
+        Toast.show({
+          type: 'success',
+          text1: 'Success',
+          text2: 'Request marked as completed!',
+          onHide: () => navigation.navigate('RateExperience', { request })
+        });
+      } catch (error: any) {
+        Toast.show({
+          type: 'error',
+          text1: 'Error',
+          text2: error?.data?.errors?.[0] || error?.message || 'Failed to complete request.'
+        });
+      } finally {
+      }
+    };
+
   return (
     <SafeAreaView style={styles.safeArea}>
       {/* Header */}
@@ -220,7 +240,7 @@ export default function RequestDetailsScreen() {
           {request.title ? (
             <View style={styles.detailRowItem}>
               <View style={styles.detailLabelRow}>
-                <Type color={Colors.neutral[600]} size={20} />
+                <FileText color={Colors.neutral[600]} size={20} />
                 <AppText variant="bodyMedium" color={Colors.neutral[900]} style={{marginLeft: 8, fontFamily: FontFamily.medium}}>Title</AppText>
               </View>
               <AppText variant="bodyMedium" color={Colors.neutral[600]} style={{flex: 1, textAlign: 'right', marginLeft: 16}}>
@@ -274,6 +294,19 @@ export default function RequestDetailsScreen() {
               {request.location?.address}
             </AppText>
           </View>
+
+          {/* Distance */}
+          {request.service_radius_km != null ? (
+            <View style={styles.detailRowItem}>
+              <View style={styles.detailLabelRow}>
+                <MapPin color={Colors.neutral[600]} size={20} />
+                <AppText variant="bodyMedium" color={Colors.neutral[900]} style={{marginLeft: 8, fontFamily: FontFamily.medium}}>Distance</AppText>
+              </View>
+              <AppText variant="bodyMedium" color={Colors.neutral[600]} style={{flex: 1, textAlign: 'right', marginLeft: 16}}>
+                {parseFloat(request.service_radius_km).toFixed(1)} km
+              </AppText>
+            </View>
+          ) : null}
 
           {/* Notes */}
           {request.notes ? (
@@ -331,7 +364,7 @@ export default function RequestDetailsScreen() {
         <View style={styles.actionContainer}>
           <Button 
             title="Complete Request" 
-            onPress={() => navigation.navigate('CompleteRequest', { request })} 
+            onPress={() => handleComplete()} 
             style={styles.acceptBtn} 
           />
         </View>

@@ -110,6 +110,7 @@ export default function CreateRequestScreen() {
       const response = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${GOOGLE_MAPS_API_KEY}`);
       const data = await response.json();
       if (data.results && data.results.length > 0) {
+        console.log("Address", data.results[0]);
         const address = data.results[0].formatted_address;
         handleChange('meeting_location', address);
         googlePlacesRef.current?.setAddressText(address);
@@ -254,7 +255,7 @@ export default function CreateRequestScreen() {
             <View pointerEvents="none">
               <Input
                 label="Preferred Date"
-                placeholder="DD-MM-YYYY"
+                placeholder="DD/MM/YYYY"
                 value={formData.preferred_date}
                 editable={false}
                 error={errors.preferred_date}
@@ -401,7 +402,7 @@ export default function CreateRequestScreen() {
           const day = String(selectedDate.getDate()).padStart(2, '0');
           const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
           const year = selectedDate.getFullYear();
-          handleChange('preferred_date', `${day}-${month}-${year}`);
+          handleChange('preferred_date', `${day}/${month}/${year}`);
         }}
         onCancel={() => {
           setIsDatePickerOpen(false);

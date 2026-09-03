@@ -131,7 +131,7 @@ export const Popup: React.FC<PopupProps> = ({
           </View>
 
           <AppText
-            variant="h3"
+            variant="h4"
             color={Colors.neutral[900]}
             style={styles.title}
           >

@@ -94,7 +94,7 @@ export default function EditProfileScreen() {
     if (!dobStr) return '';
     const parts = dobStr.split('-');
     if (parts.length === 3) {
-      return `${parts[2]}-${parts[1]}-${parts[0]}`;
+      return `${parts[2].padStart(2, '0')}/${parts[1].padStart(2, '0')}/${parts[0]}`;
     }
     return dobStr;
   };
@@ -111,7 +111,7 @@ export default function EditProfileScreen() {
           phone: data.phone || '',
           email: data.email || '',
           zip_code: roleProfile.zip_code || '',
-          dob: roleProfile.dob || '',
+          dob: data.date_of_birth || '',
           service_radius: roleProfile.service_radius ? String(roleProfile.service_radius) : '',
           hours_goal_per_week: roleProfile.hours_goal_per_week ? String(roleProfile.hours_goal_per_week) : '',
         });
@@ -176,40 +176,36 @@ export default function EditProfileScreen() {
             label="First Name"
             value={formData.first_name}
             onChangeText={v => handleChange('first_name', v)}
-            disabled
+            disabled={false}
           />
           <Input
             label="Last Name"
             value={formData.last_name}
             onChangeText={v => handleChange('last_name', v)}
-            disabled
+            disabled={false}
           />
           <Input
             label="Email Address"
             value={formData.email}
-            disabled
+            disabled={true}
           />
           <Input
             label="Phone Number"
             value={formData.phone}
             onChangeText={v => handleChange('phone', v)}
             keyboardType="phone-pad"
-            disabled
+            disabled={true}
+          />
+          <Input
+            label="Date of Birth"
+            value={getDisplayDob(formData.dob)}
+            leftIcon={<Calendar color={Colors.neutral[400]} size={20} />}
+            disabled={true}
           />
 
           {currentRole === 'beneficiary' && (
             <>
-              <TouchableOpacity onPress={() => setIsDatePickerOpen(true)} activeOpacity={0.7}>
-                <View pointerEvents="none">
-                  <Input
-                    label="Date of Birth (DD-MM-YYYY)"
-                    value={getDisplayDob(formData.dob)}
-                    leftIcon={<Calendar color={Colors.neutral[400]} size={20} />}
-                    rightIcon={<Calendar color={Colors.primary[500]} size={20} />}
-                    editable={false}
-                  />
-                </View>
-              </TouchableOpacity>
+
               <Input
                 label="ZIP Code"
                 value={formData.zip_code}

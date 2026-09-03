@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   SafeAreaView,
   Image,
+  RefreshControl,
 } from 'react-native';
 import {useNavigation, useFocusEffect} from '@react-navigation/native';
 import Svg, {Path, Circle} from 'react-native-svg';
@@ -17,6 +18,7 @@ import {Colors} from '../../../theme/colors';
 import {Typography, FontFamily} from '../../../theme/typography';
 import {horizontalScale, verticalScale, moderateScale} from '../../../utils/responsive';
 import {formatDate, formatTime12Hour} from '../../../utils/dateFormatter';
+import {CategoryIcon} from '../../../components/CategoryIcon';
 import {logo} from '../../../assets/images';
 import {
   ArrowRightLeft,
@@ -49,58 +51,49 @@ export default function BeneficiaryDashboardScreen() {
     return { bg: '#E0DEFF', text: '#6D5DF6' };
   };
 
+  const [refreshing, setRefreshing] = useState(false);
+
+  const fetchData = useCallback(async () => {
+    try {
+      setLoading(true);
+      const [catData, profData, reqData] = await Promise.all([
+        authApi.getCategories(),
+        authApi.getProfile(),
+        api.get<any[]>('/help_requests?scope=beneficiary')
+      ]);
+      const beneficiaryCategories = catData.filter(c => c.category_type === 'beneficiary');
+      setCategories(beneficiaryCategories);
+      setProfile(profData);
+      const active = reqData.find(r => r.status === 'pending' || r.status === 'accepted' || r.status === 'assigned');
+      setUpcomingRequest(active || null);
+    } catch (error) {
+      console.error('Failed to fetch data', error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   useFocusEffect(
     useCallback(() => {
-      let isActive = true;
-      const fetchData = async () => {
-        try {
-          const [catData, profData] = await Promise.all([
-            authApi.getCategories(),
-            authApi.getProfile()
-          ]);
-          if (!isActive) return;
-          const beneficiaryCategories = catData.filter(c => c.category_type === 'beneficiary');
-          setCategories(beneficiaryCategories);
-          setProfile(profData);
-        } catch (error) {
-          console.error('Failed to fetch data', error);
-        }
-      };
       fetchData();
-      return () => { isActive = false; };
-    }, [])
+    }, [fetchData])
   );
 
-  useFocusEffect(
-    useCallback(() => {
-      let isActive = true;
-      const fetchRequests = async () => {
-        try {
-          setLoading(true);
-          const data = await api.get<any[]>('/help_requests');
-          if (!isActive) return;
-          const active = data.find(r => r.status === 'pending' || r.status === 'accepted' || r.status === 'assigned');
-          setUpcomingRequest(active || null);
-        } catch (error) {
-          console.error('Failed to fetch requests', error);
-        } finally {
-          if (isActive) {
-            setLoading(false);
-          }
-        }
-      };
-
-      fetchRequests();
-
-      return () => {
-        isActive = false;
-      };
-    }, [])
-  );
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await fetchData();
+    setRefreshing(false);
+  }, [fetchData]);
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      <ScrollView 
+        style={styles.container} 
+        contentContainerStyle={styles.content}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[Colors.primary[500]]} />
+        }
+      >
         {/* Header Section */}
         <View style={styles.header}>
           <View style={styles.headerTopRow}>
@@ -147,7 +140,7 @@ export default function BeneficiaryDashboardScreen() {
                       resizeMode="contain"
                     />
                   ) : (
-                    <ShoppingCart color={Colors.primary[500]} size={24} />
+                    <CategoryIcon title={upcomingRequest.category?.title} color={Colors.primary[500]} size={24} />
                   )}
                 </View>
                 <View style={styles.cardTitleContainer}>
@@ -227,15 +220,6 @@ export default function BeneficiaryDashboardScreen() {
           <Text style={styles.sectionTitle}>Need Help with?</Text>
           {categories.length > 0 ? (
             categories.map((category) => {
-              let IconComponent = ShoppingCart;
-              if (category.title.toLowerCase().includes('pharmacy') || category.title.toLowerCase().includes('medical') || category.title.toLowerCase().includes('pill')) {
-                IconComponent = Pill;
-              } else if (category.title.toLowerCase().includes('grocery') || category.title.toLowerCase().includes('food')) {
-                IconComponent = ShoppingCart;
-              } else {
-                IconComponent = FileText;
-              }
-
               return (
                 <HelpCategoryItem 
                   key={category.id}
@@ -247,7 +231,7 @@ export default function BeneficiaryDashboardScreen() {
                         resizeMode="contain"
                       />
                     ) : (
-                      <IconComponent color={Colors.primary[500]} size={24} />
+                      <CategoryIcon title={category.title} color={Colors.primary[500]} size={24} />
                     )
                   }
                   title={category.title}

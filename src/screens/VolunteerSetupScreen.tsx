@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useRef} from 'react';
 import {
   View,
   StyleSheet,
@@ -17,7 +17,10 @@ import {useNavigation, useRoute} from '@react-navigation/native';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import Svg, {Path, Circle, Rect, Polyline} from 'react-native-svg';
 import { launchImageLibrary } from 'react-native-image-picker';
-
+import MapView, { Marker, Circle as MapCircle } from 'react-native-maps';
+import { GooglePlacesAutocomplete, GooglePlacesAutocompleteRef } from 'react-native-google-places-autocomplete';
+import Geolocation from '@react-native-community/geolocation';
+import { Navigation, MapPin } from 'lucide-react-native';
 import {AppText} from '../components/AppText';
 import {Button} from '../components/Button';
 import {Input} from '../components/Input';
@@ -46,13 +49,14 @@ type RootStackParamList = {
 type NavigationProps = NativeStackNavigationProp<RootStackParamList>;
 
 // ── Icon Components ──────────────────────────────────────
-import { ArrowLeft } from 'lucide-react-native';
 
 const BackArrowIcon: React.FC<{size?: number; color?: string}> = ({
   size = 24,
-  color = Colors.neutral[900],
+  color = Colors.primary[900],
 }) => (
-  <ArrowLeft size={size} color={color} />
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path d="M15 18L9 12L15 6" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+  </Svg>
 );
 
 const UserOutlineIcon: React.FC<{size?: number; color?: string}> = ({
@@ -253,6 +257,66 @@ export const VolunteerSetupScreen: React.FC = () => {
   const [radiusWithin, setRadiusWithin] = useState(20);
   const [radiusOutside, setRadiusOutside] = useState(10);
 
+  const [address, setAddress] = useState('');
+  const [latitude, setLatitude] = useState('');
+  const [longitude, setLongitude] = useState('');
+  const [region, setRegion] = useState({
+    latitude: 37.78825,
+    longitude: -122.4324,
+    latitudeDelta: 0.0922,
+    longitudeDelta: 0.0421,
+  });
+
+  const GOOGLE_MAPS_API_KEY = 'AIzaSyAd20tmxrXZ1VCyhZx4q9aK0ejZtQtE92s';
+  const googlePlacesRef = useRef<GooglePlacesAutocompleteRef>(null);
+
+  const handleCurrentLocation = () => {
+    Geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude: lat, longitude: lng } = position.coords;
+        setRegion({
+          ...region,
+          latitude: lat,
+          longitude: lng,
+        });
+        setLatitude(lat.toString());
+        setLongitude(lng.toString());
+        setAddress('Current Location');
+        googlePlacesRef.current?.setAddressText('Current Location');
+      },
+      (error) => console.log(error.message),
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
+    );
+  };
+
+  const handleMarkerDragEnd = async (e: any) => {
+    const { latitude: lat, longitude: lng } = e.nativeEvent.coordinate;
+    setRegion({
+      ...region,
+      latitude: lat,
+      longitude: lng,
+    });
+    setLatitude(lat.toString());
+    setLongitude(lng.toString());
+    try {
+      const response = await fetch(
+        `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${GOOGLE_MAPS_API_KEY}`
+      );
+      const data = await response.json();
+      if (data.results && data.results.length > 0) {
+        const fetchedAddress = data.results[0].formatted_address;
+        setAddress(fetchedAddress);
+        googlePlacesRef.current?.setAddressText(fetchedAddress);
+        
+        const zipComponent = data.results[0].address_components.find((c: any) => c.types.includes('postal_code'));
+        if (zipComponent) {
+          setZipCode(zipComponent.long_name);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching reverse geocoding:', error);
+    }
+  };
   const [errors, setErrors] = useState<{[key: string]: string}>({});
 
   useEffect(() => {
@@ -335,9 +399,9 @@ export const VolunteerSetupScreen: React.FC = () => {
           category: selectedCategories.join(','),
           hours_goal_per_week: hours,
           location: {
-            address: 'mnmnmn',
-            latitude: 0.90,
-            longitude: 0.80,
+            address: address,
+            latitude: Number(latitude),
+            longitude: Number(longitude),
             zip_code: zipCode
           }
         }
@@ -518,6 +582,116 @@ export const VolunteerSetupScreen: React.FC = () => {
                   </AppText>
                 </View>
               )}
+            </View>
+
+            <View style={{marginBottom: Spacing.lg}}>
+              <AppText variant="labelMedium" color={Colors.neutral[700]} style={{marginBottom: 8}}>
+                Home Address
+              </AppText>
+              <GooglePlacesAutocomplete
+                ref={googlePlacesRef}
+                placeholder="e.g. 123 Main St, Beverly Hills, CA"
+                fetchDetails={true}
+                onPress={(data, details = null) => {
+                  if (details) {
+                    setAddress(data.description);
+                    setLatitude(details.geometry.location.lat.toString());
+                    setLongitude(details.geometry.location.lng.toString());
+                    setRegion({
+                      ...region,
+                      latitude: details.geometry.location.lat,
+                      longitude: details.geometry.location.lng,
+                    });
+                    
+                    const zipComponent = details.address_components.find((c: any) => c.types.includes('postal_code'));
+                    if (zipComponent) {
+                      setZipCode(zipComponent.long_name);
+                      if (errors.zipCode) setErrors({...errors, zipCode: ''});
+                    }
+                  }
+                }}
+                query={{
+                  key: GOOGLE_MAPS_API_KEY,
+                  language: 'en',
+                }}
+                styles={{
+                  container: { flex: 0 },
+                  textInputContainer: {
+                    backgroundColor: Colors.neutral[0],
+                    borderRadius: 12,
+                    borderWidth: 1,
+                    borderColor: Colors.neutral[300],
+                    height: 52,
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    paddingHorizontal: 12,
+                  },
+                  textInput: {
+                    color: Colors.neutral[900],
+                    fontSize: 16,
+                    height: 50,
+                    marginLeft: 8,
+                    flex: 1,
+                    backgroundColor: 'transparent',
+                  },
+                  listView: {
+                    backgroundColor: Colors.neutral[0],
+                    borderWidth: 1,
+                    borderColor: Colors.neutral[200],
+                    borderRadius: 8,
+                    marginTop: 4,
+                  },
+                }}
+                textInputProps={{
+                  placeholderTextColor: Colors.neutral[400],
+                }}
+                listViewProps={{
+                  nestedScrollEnabled: true,
+                }}
+                renderLeftButton={() => (
+                  <View style={{marginRight: 4}}>
+                    <MapPin color={Colors.primary[500]} size={20} />
+                  </View>
+                )}
+                renderRightButton={() => (
+                  <TouchableOpacity style={{padding: 4}} onPress={handleCurrentLocation}>
+                    <Navigation color={Colors.primary[500]} size={20} />
+                  </TouchableOpacity>
+                )}
+              />
+
+              {(latitude && longitude) ? (
+                <View style={{
+                  height: 200,
+                  marginTop: Spacing.md,
+                  borderRadius: 12,
+                  overflow: 'hidden',
+                  borderWidth: 1,
+                  borderColor: Colors.neutral[200],
+                }}>
+                  <MapView
+                    style={{ flex: 1 }}
+                    region={{
+                      latitude: Number(latitude),
+                      longitude: Number(longitude),
+                      latitudeDelta: 0.01,
+                      longitudeDelta: 0.01,
+                    }}
+                  >
+                    <Marker 
+                      draggable
+                      coordinate={{ latitude: Number(latitude), longitude: Number(longitude) }} 
+                      onDragEnd={handleMarkerDragEnd}
+                    />
+                    <MapCircle
+                      center={{ latitude: Number(latitude), longitude: Number(longitude) }}
+                      radius={radiusWithin * 1609.34}
+                      fillColor="rgba(79, 70, 229, 0.2)"
+                      strokeColor="rgba(79, 70, 229, 0.5)"
+                    />
+                  </MapView>
+                </View>
+              ) : null}
             </View>
 
             <Input

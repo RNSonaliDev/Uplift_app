@@ -13,10 +13,10 @@ import {api, getFullImageUrl} from '../../../api/client';
 import {Colors} from '../../../theme/colors';
 import {Typography} from '../../../theme/typography';
 import {formatDate, formatTime12Hour} from '../../../utils/dateFormatter';
+import {CategoryIcon} from '../../../components/CategoryIcon';
 import {horizontalScale, verticalScale, moderateScale} from '../../../utils/responsive';
 import {
   ChevronLeft,
-  ShoppingCart,
   Pill,
   Car,
   Plus,
@@ -39,7 +39,7 @@ export default function MyRequestsScreen() {
   const fetchRequests = async () => {
     try {
       setLoading(true);
-      const data = await api.get<any[]>('/help_requests');
+      const data = await api.get<any[]>('/help_requests?scope=beneficiary');
       setRequests(data);
     } catch (error) {
       console.error('Failed to fetch requests', error);
@@ -99,7 +99,7 @@ export default function MyRequestsScreen() {
                     resizeMode="contain"
                   />
                 ) : (
-                  <ShoppingCart color={Colors.primary[500]} size={24} />
+                  <CategoryIcon title={req.category?.title} color={Colors.primary[500]} size={24} />
                 )}
                 title={req.category?.title || 'Help Request'}
                 referenceNumber={req.reference_number || req.id}

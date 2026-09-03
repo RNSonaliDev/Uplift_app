@@ -50,16 +50,10 @@ type NavigationProps = NativeStackNavigationProp<RootStackParamList>;
 // ── Icon Components ──────────────────────────────────────
 const BackArrowIcon: React.FC<{size?: number; color?: string}> = ({
   size = 24,
-  color = Colors.primary[500],
+  color = Colors.primary[900],
 }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path
-      d="M15 18L9 12L15 6"
-      stroke={color}
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
+    <Path d="M15 18L9 12L15 6" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
   </Svg>
 );
 
@@ -298,7 +292,9 @@ const is14To17 = age !== null && age >= 14 && age < 18 ;  // Info tooltip visibi
 
     if (!dob) {
       newErrors.dob = 'Date of birth is required';
-    } 
+    } else if (age !== null && age < 14) {
+      newErrors.dob = 'You must be at least 14 years old';
+    }
 
     if (is14To17) {
       if (!parentEmail.trim()) {
@@ -595,9 +591,9 @@ const is14To17 = age !== null && age >= 14 && age < 18 ;  // Info tooltip visibi
                   <View pointerEvents="none">
                     <Input
                       label="Date of Birth"
-                      placeholder="MM/DD/YYYY"
+                      placeholder="DD/MM/YYYY"
                       leftIcon={<CalendarIcon size={moderateScale(22)} />}
-                      value={dob ? `${dob.getMonth() + 1}/${dob.getDate()}/${dob.getFullYear()}` : ''}
+                      value={dob ? `${String(dob.getDate()).padStart(2, '0')}/${String(dob.getMonth() + 1).padStart(2, '0')}/${dob.getFullYear()}` : ''}
                       editable={false}
                       error={errors.dob}
                     />
@@ -649,7 +645,7 @@ const is14To17 = age !== null && age >= 14 && age < 18 ;  // Info tooltip visibi
         open={isDatePickerOpen}
         date={dob || new Date(new Date().setFullYear(new Date().getFullYear() - 14))}
         mode="date"
-        maximumDate={new Date()}
+        maximumDate={new Date(new Date().setFullYear(new Date().getFullYear() - 14))}
         onConfirm={(date) => {
           setIsDatePickerOpen(false);
           setDob(date);

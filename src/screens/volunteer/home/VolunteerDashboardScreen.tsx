@@ -6,12 +6,15 @@ import {
   SafeAreaView,
   TouchableOpacity,
   Image,
+  RefreshControl,
+  StatusBar,
 } from 'react-native';
 import {useNavigation, useFocusEffect} from '@react-navigation/native';
 import {Colors} from '../../../theme/colors';
 import {AppText} from '../../../components/AppText';
 import {formatDate, formatTime12Hour} from '../../../utils/dateFormatter';
 import {Button} from '../../../components/Button';
+import {CategoryIcon} from '../../../components/CategoryIcon';
 import { button_user } from '../../../assets/images';
 import {
   Bell,
@@ -39,34 +42,50 @@ export default function VolunteerDashboardScreen() {
   const [requests, setRequests] = useState<any[]>([]);
   const [stats, setStats] = useState<any>(null);
   const [loadingRequests, setLoadingRequests] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const fetchData = useCallback(async () => {
+    try {
+      const [profData, reqData, statsData] = await Promise.all([
+        authApi.getProfile(),
+        api.get<any[]>('/help_requests/browse'),
+        api.get<any>('/dashboard/stats?role=volunteer')
+      ]);
+      setProfile(profData);
+      setRequests(reqData || []);
+      setStats(statsData);
+    } catch (error) {
+      console.error('Failed to fetch data', error);
+    } finally {
+      setLoadingRequests(false);
+    }
+  }, []);
 
   useFocusEffect(
     useCallback(() => {
-      const fetchData = async () => {
-        try {
-          const [profData, reqData, statsData] = await Promise.all([
-            authApi.getProfile(),
-            api.get<any[]>('/help_requests/browse'),
-            api.get<any>('/dashboard/stats?role=volunteer')
-          ]);
-          setProfile(profData);
-          setRequests(reqData || []);
-          setStats(statsData);
-        } catch (error) {
-          console.error('Failed to fetch data', error);
-        } finally {
-          setLoadingRequests(false);
-        }
-      };
       fetchData();
-    }, [])
+    }, [fetchData])
   );
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await fetchData();
+    setRefreshing(false);
+  }, [fetchData]);
 
   const name = profile?.first_name || 'Volunteer';
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <ScrollView style={styles.container} bounces={false} showsVerticalScrollIndicator={false}>
+      <StatusBar backgroundColor={Colors.primary[500]} barStyle="light-content" />
+      <ScrollView 
+        style={styles.container} 
+        bounces={true} 
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[Colors.primary[500]]} />
+        }
+      >
         
         {/* Header Section */}
         <View style={styles.header}>
@@ -76,7 +95,7 @@ export default function VolunteerDashboardScreen() {
                 <AppText variant="bodyLarge" style={styles.welcomeText}>
                   Welcome back,
                 </AppText>
-                <AppText variant="bodyLarge" style={[styles.nameText, {fontWeight: "400"}]}>
+                <AppText variant="h3" style={styles.nameText}>
                   {profile ? `${profile.first_name}` : name}
                 </AppText>
               </View>
@@ -111,10 +130,10 @@ export default function VolunteerDashboardScreen() {
           </View>
         </View>
 
-        {/* Upcoming Requests Section */}
+        {/* Available Requests Section */}
         <View style={styles.sectionContainer}>
           <View style={styles.sectionHeader}>
-            <AppText variant="h5">Upcoming Requests</AppText>
+            <AppText variant="h5">Available Requests</AppText>
             <TouchableOpacity onPress={() => navigation.navigate('RequestsTab')}>
               <AppText variant="bodyMedium" color={Colors.primary[500]}>View all</AppText>
             </TouchableOpacity>
@@ -160,41 +179,33 @@ export default function VolunteerDashboardScreen() {
                         resizeMode="contain"
                       />
                     ) : (
-                      <ShoppingBag color={Colors.primary[500]} size={20} />
+                      <CategoryIcon title={request.category?.title} color={Colors.primary[500]} size={20} />
                     )}
                   </View>
                   <View style={styles.requestTitleInfo}>
-                    <AppText variant="labelLarge">{request.category?.title || 'Help Request'}</AppText>
-                    <AppText variant="bodySmall" color={Colors.neutral[500]}>#{request.reference_number || request.id}</AppText>
+                    <AppText variant="labelLarge" weight="semiBold" color={Colors.neutral[900]} style={{marginBottom: 4}}>{request.category?.title || 'Help Request'}</AppText>
+                    <AppText variant="caption" color={Colors.neutral[600]} style={{marginBottom: 6}}>#{request.reference_number || request.id}</AppText>
                   </View>
-                  <View style={[styles.statusBadge, { backgroundColor: statusColors.bg }]}>
-                    <AppText variant="labelMedium" color={statusColors.text}>
-                      {displayStatus}
+                  <View style={[styles.statusBadge, { backgroundColor: Colors.accent[50] }]}>
+                    <AppText variant="labelMedium" color={Colors.accent[700]}>
+                      {request.service_radius_km != null ? `${parseFloat(request.service_radius_km)?.toFixed(1)} km` : displayStatus}
                     </AppText>
                   </View>
                 </View>
                 
                 <View style={styles.requestDetails}>
                   <View style={styles.detailRow}>
-                    <Calendar color={Colors.neutral[400]} size={16} />
-                    <AppText variant="bodyMedium" color={Colors.neutral[500]} style={styles.detailText}>
+                    <Calendar color={Colors.neutral[500]} size={14} />
+                    <AppText variant="caption" color={Colors.neutral[600]} style={styles.detailText}>
                       {formatDate(request.preferred_date)} • {(request.preferred_start_time || request.start_time) ? `${formatTime12Hour(request.preferred_start_time || request.start_time)}${(request.preferred_end_time || request.end_time) ? ` - ${formatTime12Hour(request.preferred_end_time || request.end_time)}` : ''}` : (request.preferred_time || (request.hours_required ? `${request.hours_required} hours` : 'Time TBD'))}
                     </AppText>
                   </View>
                   <View style={styles.detailRow}>
-                    <MapPin color={Colors.neutral[400]} size={16} />
-                    <AppText variant="bodyMedium" color={Colors.neutral[500]} style={styles.detailText} numberOfLines={1}>
+                    <MapPin color={Colors.neutral[500]} size={14} />
+                    <AppText variant="caption" color={Colors.neutral[600]} style={styles.detailText} numberOfLines={1}>
                       {request.location?.address || request.meeting_location || 'Location TBD'}
                     </AppText>
                   </View>
-                  {request.distance_km != null && (
-                    <View style={styles.detailRow}>
-                      <MapPin color={Colors.primary[500]} size={16} />
-                      <AppText variant="bodyMedium" color={Colors.primary[600]} style={styles.detailText}>
-                        {request.distance_km.toFixed(1)} km away {request.within_service_radius ? '(In Range)' : ''}
-                      </AppText>
-                    </View>
-                  )}
                 </View>
               </TouchableOpacity>
             )})
@@ -250,10 +261,11 @@ const QuickAction = ({icon, label, onPress}: any) => (
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: Colors.neutral[50],
+    backgroundColor: Colors.primary[500],
   },
   container: {
     flex: 1,
+    backgroundColor: Colors.neutral[50],
   },
   header: {
     backgroundColor: Colors.primary[500],

@@ -7,10 +7,10 @@ export const formatDate = (dateStr?: string) => {
     if (parts.length === 3) {
       // If it looks like YYYY-MM-DD
       if (parts[0].length === 4) {
-        return `${parts[2]}-${parts[1]}-${parts[0]}`; // Convert to DD-MM-YYYY
+        return `${parts[2]}/${parts[1]}/${parts[0]}`; // Convert to DD/MM/YYYY
       }
-      // If it's already DD-MM-YYYY or similar, just return it
-      return dateStr;
+      // If it's already DD-MM-YYYY or similar, just replace dashes with slashes
+      return `${parts[0]}/${parts[1]}/${parts[2]}`;
     }
   }
 
@@ -21,7 +21,7 @@ export const formatDate = (dateStr?: string) => {
       const day = String(d.getDate()).padStart(2, '0');
       const month = String(d.getMonth() + 1).padStart(2, '0');
       const year = d.getFullYear();
-      return `${day}-${month}-${year}`;
+      return `${day}/${month}/${year}`;
     }
   } catch (e) {
     // ignore

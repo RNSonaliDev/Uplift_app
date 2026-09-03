@@ -8,7 +8,7 @@ import {
   Image,
 } from 'react-native';
 import {useNavigation, useFocusEffect} from '@react-navigation/native';
-import {ArrowLeft, ShoppingCart, Pill, Soup, Car, Users, MoreHorizontal, Clock, MapPin, FileText, ShoppingBag} from 'lucide-react-native';
+import { ShoppingCart, Pill, Soup, Car, Users, MoreHorizontal, Clock, MapPin, FileText, Calendar} from 'lucide-react-native';
 import {AppText} from '../../../components/AppText';
 import {Colors} from '../../../theme/colors';
 import {api, getFullImageUrl} from '../../../api/client';
@@ -18,6 +18,7 @@ import {
   moderateScale,
 } from '../../../utils/responsive';
 import {formatDate, formatTime12Hour} from '../../../utils/dateFormatter';
+import {CategoryIcon} from '../../../components/CategoryIcon';
 
 type Tab = 'Upcoming' | 'In Progress' | 'Completed';
 
@@ -36,7 +37,7 @@ export default function MyScheduleScreen() {
   const fetchSchedule = async () => {
     try {
       setLoading(true);
-      const data = await api.get<any[]>('/help_requests');
+      const data = await api.get<any[]>('/help_requests?scope=volunteer');
       setRequests(data || []);
     } catch (error) {
       console.error('Failed to fetch schedule', error);
@@ -126,14 +127,14 @@ export default function MyScheduleScreen() {
                 resizeMode="contain"
               />
             ) : (
-              <ShoppingBag color={Colors.primary[500]} size={20} />
+              <CategoryIcon title={item.category?.title} color={Colors.primary[500]} size={20} />
             )}
           </View>
           <View style={{flex: 1}}>
-            <AppText variant="labelLarge" color={Colors.neutral[900]}>
+            <AppText variant="labelLarge" weight="semiBold" color={Colors.neutral[900]} style={{marginBottom: 4}}>
               {item.category?.title || 'Help Request'}
             </AppText>
-            <AppText variant="bodySmall" color={Colors.neutral[500]} style={{marginTop: 5}}>
+            <AppText variant="caption" color={Colors.neutral[600]} style={{marginBottom: 6}}>
               #{item.reference_number || item.id}
             </AppText>
           </View>
@@ -146,23 +147,22 @@ export default function MyScheduleScreen() {
         
         <View style={styles.cardDetails}>
           <View style={styles.detailRow}>
-            <Clock color={Colors.neutral[400]} size={16} />
-            <AppText variant="bodyMedium" color={Colors.neutral[600]} style={styles.detailText}>
-              {(item.preferred_start_time || item.start_time) ? `${formatTime12Hour(item.preferred_start_time || item.start_time)}${(item.preferred_end_time || item.end_time) ? ` - ${formatTime12Hour(item.preferred_end_time || item.end_time)}` : ''}` : (item.preferred_time || (item.hours_required ? `${item.hours_required} hours` : 'Time TBD'))}
+            <Calendar color={Colors.neutral[500]} size={14} />
+            <AppText variant="caption" color={Colors.neutral[600]} style={styles.detailText}>
+              {formatDate(item.preferred_date)}{((item.preferred_start_time || item.start_time) || item.preferred_time || item.hours_required) ? ' • ' : ''}{(item.preferred_start_time || item.start_time) ? `${formatTime12Hour(item.preferred_start_time || item.start_time)}${(item.preferred_end_time || item.end_time) ? ` - ${formatTime12Hour(item.preferred_end_time || item.end_time)}` : ''}` : (item.preferred_time || (item.hours_required ? `${item.hours_required} hours` : 'Time TBD'))}
             </AppText>
           </View>
           <View style={styles.detailRow}>
-            <MapPin color={Colors.neutral[400]} size={16} />
-            <AppText variant="bodyMedium" color={Colors.neutral[600]} style={styles.detailText} numberOfLines={1}>
+            <MapPin color={Colors.neutral[500]} size={14} />
+            <AppText variant="caption" color={Colors.neutral[600]} style={styles.detailText} numberOfLines={1}>
               {item.location?.address || item.meeting_location || 'Location TBD'}
             </AppText>
           </View>
-          {item.distance_km != null && (
+          {item.service_radius_km != null && (
             <View style={styles.detailRow}>
-              <MapPin color={Colors.neutral[400]} size={16} />
-              <AppText variant="bodyMedium" color={Colors.neutral[600]} style={styles.detailText}>
-                {/* Treating distance_km as miles for display as per design */}
-                {item.distance_km.toFixed(1)} mi
+              <MapPin color={Colors.primary[500]} size={14} />
+              <AppText variant="caption" color={Colors.primary[600]} style={styles.detailText}>
+                {parseFloat(item.service_radius_km).toFixed(1)} km
               </AppText>
             </View>
           )}
@@ -234,11 +234,7 @@ export default function MyScheduleScreen() {
           </View>
         )}
         renderItem={renderCard}
-        renderSectionHeader={({section: {title}}) => (
-          <AppText variant="h5" color={Colors.neutral[900]} style={styles.sectionHeader}>
-            {title}
-          </AppText>
-        )}
+        renderSectionHeader={() => null}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
         stickySectionHeadersEnabled={false}

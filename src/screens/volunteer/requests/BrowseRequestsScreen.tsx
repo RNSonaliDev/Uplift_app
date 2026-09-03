@@ -13,6 +13,7 @@ import {useNavigation, useFocusEffect} from '@react-navigation/native';
 import {Colors} from '../../../theme/colors';
 import {AppText} from '../../../components/AppText';
 import {formatDate, formatTime12Hour} from '../../../utils/dateFormatter';
+import {CategoryIcon} from '../../../components/CategoryIcon';
 import {
   Search,
   Filter,
@@ -112,46 +113,37 @@ export default function BrowseRequestsScreen() {
                 resizeMode="contain"
               />
             ) : (
-              <ShoppingBag color={Colors.primary[500]} size={20} />
+              <CategoryIcon title={item.category?.title} color={Colors.primary[500]} size={20} />
             )}
           </View>
           <View style={{flex: 1}}>
-            <AppText variant="labelLarge" color={Colors.neutral[900]}>
+            <AppText variant="labelLarge" weight="semiBold" color={Colors.neutral[900]} style={{marginBottom: 4}}>
               {item.category?.title || 'Help Request'}
             </AppText>
-            <AppText variant="bodySmall" color={Colors.neutral[500]} style={{marginTop: 4}}>
+            <AppText variant="caption" color={Colors.neutral[600]} style={{marginBottom: 6}}>
               #{item.reference_number || item.id}
             </AppText>
           </View>
-          <View style={[styles.newBadge, { backgroundColor: statusColors.bg }]}>
-            <AppText variant="labelMedium" color={statusColors.text}>
-              {displayStatus}
+          <View style={[styles.newBadge, { backgroundColor: Colors.accent[50] }]}>
+            <AppText variant="labelMedium" color={Colors.accent[700]}>
+              {item.service_radius_km != null ? `${parseFloat(item.service_radius_km).toFixed(1)} km` : displayStatus}
             </AppText>
           </View>
         </View>
         
         <View style={styles.cardDetails}>
           <View style={styles.detailRow}>
-            <Calendar color={Colors.neutral[400]} size={16} />
-            <AppText variant="bodyMedium" color={Colors.neutral[600]} style={styles.detailText}>
+            <Calendar color={Colors.neutral[500]} size={14} />
+            <AppText variant="caption" color={Colors.neutral[600]} style={styles.detailText}>
               {formatDate(item.preferred_date)} • {(item.preferred_start_time || item.start_time) ? `${formatTime12Hour(item.preferred_start_time || item.start_time)}${(item.preferred_end_time || item.end_time) ? ` - ${formatTime12Hour(item.preferred_end_time || item.end_time)}` : ''}` : (item.preferred_time || (item.hours_required ? `${item.hours_required} hours` : 'Time TBD'))}
             </AppText>
           </View>
           <View style={styles.detailRow}>
-            <MapPin color={Colors.neutral[400]} size={16} />
-            <AppText variant="bodyMedium" color={Colors.neutral[600]} style={styles.detailText} numberOfLines={1}>
+            <MapPin color={Colors.neutral[500]} size={14} />
+            <AppText variant="caption" color={Colors.neutral[600]} style={styles.detailText} numberOfLines={1}>
               {item.location?.address || item.meeting_location || 'Location TBD'}
             </AppText>
           </View>
-          {item.distance_km != null && (
-            <View style={styles.detailRow}>
-              <MapPin color={Colors.neutral[400]} size={16} />
-              <AppText variant="bodyMedium" color={Colors.neutral[600]} style={styles.detailText}>
-                {/* Treating distance_km as miles for display as per design */}
-                {item.distance_km.toFixed(1)} mi
-              </AppText>
-            </View>
-          )}
         </View>
       </TouchableOpacity>
     );
