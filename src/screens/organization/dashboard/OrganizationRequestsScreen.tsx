@@ -12,12 +12,14 @@ import {useNavigation, useFocusEffect} from '@react-navigation/native';
 import {api, getFullImageUrl} from '../../../api/client';
 import {Colors} from '../../../theme/colors';
 import {Typography} from '../../../theme/typography';
+import {AppText} from '../../../components/AppText';
 import {formatDate, formatTime12Hour} from '../../../utils/dateFormatter';
 import {CategoryIcon} from '../../../components/CategoryIcon';
 import {horizontalScale, verticalScale, moderateScale} from '../../../utils/responsive';
 import {
   Calendar,
-  MapPin
+  MapPin,
+  Plus
 } from 'lucide-react-native';
 
 export const OrganizationRequestsScreen = () => {
@@ -51,7 +53,7 @@ export const OrganizationRequestsScreen = () => {
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Browse Requests</Text>
+        <AppText variant="bodyLarge" color={Colors.neutral[900]}>Browse Requests</AppText>
       </View>
 
       <View style={styles.container}>
@@ -110,6 +112,13 @@ export const OrganizationRequestsScreen = () => {
             </View>
           )}
         </ScrollView>
+        <TouchableOpacity 
+          style={styles.fab}
+          onPress={() => navigation.navigate('HomeTab', { screen: 'SelectCategory' })}
+          activeOpacity={0.8}
+        >
+          <Plus color="#FFF" size={24} />
+        </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
@@ -278,5 +287,21 @@ const styles = StyleSheet.create({
   emptyStateText: {
     ...Typography.bodyMedium,
     color: Colors.neutral[500],
+  },
+  fab: {
+    position: 'absolute',
+    bottom: 24,
+    right: 24,
+    backgroundColor: Colors.primary[500],
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: Colors.primary[500],
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
   },
 });

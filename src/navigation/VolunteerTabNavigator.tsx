@@ -3,11 +3,12 @@ import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import {View, Text} from 'react-native';
 import {Colors} from '../theme/colors';
 import {Typography, FontFamily} from '../theme/typography';
-import {Home, Search, Calendar, Heart, User} from 'lucide-react-native';
+import {Home, Search, Calendar, Briefcase, User} from 'lucide-react-native';
 
 import VolunteerHomeStack from './VolunteerHomeStack';
 import VolunteerRequestsStack from './VolunteerRequestsStack';
 import VolunteerScheduleStack from './VolunteerScheduleStack';
+import VolunteerJobsStack from './VolunteerJobsStack';
 import BeneficiaryProfileStack from './BeneficiaryProfileStack';
 
 const Tab = createBottomTabNavigator();
@@ -30,7 +31,7 @@ export function VolunteerTabNavigator() {
         const routeName = getFocusedRouteNameFromRoute(route) ?? '';
         const hiddenRoutes = [
           'RequestDetails', 'RequestAccepted', 'ParentTaskVerification', 'StartRequest', 
-          'CompleteRequest', 'RateExperience'
+          'CompleteRequest', 'RateExperience', 'VolunteerJobDetails'
         ];
         const isHidden = hiddenRoutes.includes(routeName);
 
@@ -91,6 +92,20 @@ export function VolunteerTabNavigator() {
           tabPress: (e) => {
             e.preventDefault();
             navigation.navigate('ScheduleTab', { screen: 'MySchedule' });
+          },
+        })}
+      />
+      <Tab.Screen
+        name="JobsTab"
+        component={VolunteerJobsStack}
+        options={{
+          tabBarLabel: 'Jobs',
+          tabBarIcon: ({color}) => <Briefcase color={color} size={24} />,
+        }}
+        listeners={({navigation}) => ({
+          tabPress: (e) => {
+            e.preventDefault();
+            navigation.navigate('JobsTab', { screen: 'BrowseJobs' });
           },
         })}
       />

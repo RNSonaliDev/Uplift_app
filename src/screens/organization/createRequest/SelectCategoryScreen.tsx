@@ -22,6 +22,8 @@ import {
   Users,
   UserCheck,
   Grid,
+  MoreHorizontal,
+  ShoppingCart,
 } from 'lucide-react-native';
 
 import { Colors } from '../../../theme/colors';
@@ -63,14 +65,16 @@ export const SelectCategoryScreen = () => {
 
       {/* Header */}
       <View style={styles.header}>
+        <View style={styles.headerAbsoluteCenter}>
+          <Text style={styles.headerTitle}>Select Category</Text>
+        </View>
         <TouchableOpacity
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
           <ArrowLeft color={Colors.neutral[900]} size={24} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Select Category</Text>
-        <View style={{ width: 40 }} /> {/* Placeholder to center title */}
+        <View style={{ width: 40 }} />
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
@@ -95,8 +99,8 @@ export const SelectCategoryScreen = () => {
           <View style={styles.listContainer}>
             {filteredCategories.map((category) => {
               const titleLower = category.title.toLowerCase();
-              let IconComponent = Grid;
-              if (titleLower.includes('grocer')) IconComponent = ShoppingBag;
+              let IconComponent = MoreHorizontal;
+              if (titleLower.includes('grocer') || titleLower.includes('shop')) IconComponent = ShoppingCart;
               else if (titleLower.includes('pharmac')) IconComponent = Pill;
               else if (titleLower.includes('transport') || titleLower.includes('ride')) IconComponent = Car;
               else if (titleLower.includes('event')) IconComponent = Users;
@@ -107,19 +111,19 @@ export const SelectCategoryScreen = () => {
                   key={category.id}
                   style={styles.categoryCard}
                   onPress={() => handleSelectCategory(category)}
+                  activeOpacity={0.7}
                 >
                   {category.logo_url ? (
-                    <View style={[styles.iconContainer, { backgroundColor: Colors.primary[50], overflow: 'hidden' }]}>
-                      <Image source={{ uri: getFullImageUrl(category.logo_url) || '' }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+                    <View style={[styles.iconContainer, { overflow: 'hidden' }]}>
+                      <Image source={{ uri: getFullImageUrl(category.logo_url) || '' }} style={{ width: '100%', height: '100%' }} resizeMode="contain" />
                     </View>
                   ) : (
-                    <View style={[styles.iconContainer, { backgroundColor: Colors.primary[50] }]}>
-                      <IconComponent color={Colors.primary[600]} size={24} />
+                    <View style={styles.iconContainer}>
+                      <IconComponent color={Colors.primary[600]} size={32} />
                     </View>
                   )}
                   <View style={styles.textContainer}>
-                    <Text style={styles.title}>{category.title}</Text>
-                    <Text style={styles.description}>{category.short_description || category.title}</Text>
+                    <Text style={styles.title} numberOfLines={2}>{category.title}</Text>
                   </View>
                 </TouchableOpacity>
               );
@@ -144,6 +148,17 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderBottomWidth: 1,
     borderBottomColor: Colors.neutral[100],
+    position: 'relative',
+  },
+  headerAbsoluteCenter: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    pointerEvents: 'none',
   },
   backButton: {
     padding: 8,
@@ -178,35 +193,42 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   listContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
     gap: 16,
   },
   categoryCard: {
-    flexDirection: 'row',
+    width: '47%',
+    flexDirection: 'column',
     alignItems: 'center',
+    justifyContent: 'center',
     backgroundColor: Colors.neutral[0],
     borderWidth: 1,
-    borderColor: Colors.neutral[200],
+    borderColor: Colors.neutral[100],
     borderRadius: 16,
-    padding: 16,
+    paddingVertical: 24,
+    paddingHorizontal: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.04,
+    shadowRadius: 12,
+    elevation: 2,
+    minHeight: 140,
   },
   iconContainer: {
     width: 48,
     height: 48,
-    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 16,
+    marginBottom: 16,
   },
   textContainer: {
-    flex: 1,
+    alignItems: 'center',
   },
   title: {
     ...Typography.labelMedium,
     color: Colors.neutral[900],
-    marginBottom: 4,
-  },
-  description: {
-    ...Typography.caption,
-    color: Colors.neutral[500],
+    textAlign: 'center',
   },
 });

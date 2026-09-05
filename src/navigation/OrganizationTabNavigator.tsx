@@ -2,12 +2,13 @@ import React from 'react';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import {View, Text, StyleSheet} from 'react-native';
 import {Colors} from '../theme/colors';
-import {Home, List, Users, MessageSquare, User} from 'lucide-react-native';
+import {Home, List, Users, Briefcase, User} from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import OrganizationHomeStack from './OrganizationHomeStack';
 import BeneficiaryProfileStack from './BeneficiaryProfileStack'; // Reusing profile stack for now
 import {OrganizationRequestsScreen} from '../screens/organization/dashboard/OrganizationRequestsScreen';
+import OrganizationJobsStack from './OrganizationJobsStack';
 
 const Tab = createBottomTabNavigator();
 
@@ -32,7 +33,10 @@ export function OrganizationTabNavigator() {
           'LocationVolunteers',
           'AdditionalInfo',
           'ReviewRequest',
-          'RequestCreated'
+          'RequestCreated',
+          'CreateJob',
+          'JobPreview',
+          'JobDetails'
         ];
         const isHidden = hiddenRoutes.includes(routeName);
 
@@ -82,11 +86,11 @@ export function OrganizationTabNavigator() {
         }}
       />
       <Tab.Screen
-        name="MessagesTab"
-        component={ComingSoonScreen}
+        name="JobsTab"
+        component={OrganizationJobsStack}
         options={{
-          tabBarLabel: 'Messages',
-          tabBarIcon: ({color}) => <MessageSquare color={color} size={24} />,
+          tabBarLabel: 'Jobs',
+          tabBarIcon: ({color}) => <Briefcase color={color} size={24} />,
         }}
       />
       <Tab.Screen
