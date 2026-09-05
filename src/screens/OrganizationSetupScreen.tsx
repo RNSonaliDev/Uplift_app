@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useRef} from 'react';
 import {
   View,
   StyleSheet,
@@ -15,6 +15,10 @@ import Toast from 'react-native-toast-message';
 import {useNavigation, useRoute} from '@react-navigation/native';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import Svg, {Path, Circle, Rect, Polyline} from 'react-native-svg';
+import MapView, { Marker } from 'react-native-maps';
+import { GooglePlacesAutocomplete, GooglePlacesAutocompleteRef } from 'react-native-google-places-autocomplete';
+import Geolocation from '@react-native-community/geolocation';
+import { Navigation } from 'lucide-react-native';
 
 import {AppText} from '../components/AppText';
 import {Button} from '../components/Button';
@@ -219,6 +223,61 @@ export const OrganizationSetupScreen: React.FC = () => {
   const [orgName, setOrgName] = useState('');
   const [orgAddress, setOrgAddress] = useState('');
   const [orgEmail, setOrgEmail] = useState('');
+  
+  const [latitude, setLatitude] = useState('');
+  const [longitude, setLongitude] = useState('');
+  const [region, setRegion] = useState({
+    latitude: 37.78825,
+    longitude: -122.4324,
+    latitudeDelta: 0.0922,
+    longitudeDelta: 0.0421,
+  });
+
+  const GOOGLE_MAPS_API_KEY = 'AIzaSyAd20tmxrXZ1VCyhZx4q9aK0ejZtQtE92s';
+  const googlePlacesRef = useRef<GooglePlacesAutocompleteRef>(null);
+
+  const handleCurrentLocation = () => {
+    Geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude: lat, longitude: lng } = position.coords;
+        setRegion({
+          ...region,
+          latitude: lat,
+          longitude: lng,
+        });
+        setLatitude(lat.toString());
+        setLongitude(lng.toString());
+        setOrgAddress('Current Location');
+        googlePlacesRef.current?.setAddressText('Current Location');
+      },
+      (error) => console.log(error.message),
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
+    );
+  };
+
+  const handleMarkerDragEnd = async (e: any) => {
+    const { latitude: lat, longitude: lng } = e.nativeEvent.coordinate;
+    setRegion({
+      ...region,
+      latitude: lat,
+      longitude: lng,
+    });
+    setLatitude(lat.toString());
+    setLongitude(lng.toString());
+    try {
+      const response = await fetch(
+        `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${GOOGLE_MAPS_API_KEY}`
+      );
+      const data = await response.json();
+      if (data.results && data.results.length > 0) {
+        const fetchedAddress = data.results[0].formatted_address;
+        setOrgAddress(fetchedAddress);
+        googlePlacesRef.current?.setAddressText(fetchedAddress);
+      }
+    } catch (error) {
+      console.error('Error fetching reverse geocoding:', error);
+    }
+  };
   
   const [isTypeModalVisible, setTypeModalVisible] = useState(false);
   
@@ -430,17 +489,113 @@ export const OrganizationSetupScreen: React.FC = () => {
               error={errors.orgEmail}
             />
 
-            <Input
-              label="Organization Address"
-              placeholder="Enter organization address"
-              leftIcon={<LocationPinIcon />}
-              value={orgAddress}
-              onChangeText={(text) => {
-                setOrgAddress(text);
-                if (errors.orgAddress) setErrors({...errors, orgAddress: ''});
-              }}
-              error={errors.orgAddress}
-            />
+            <View style={{marginBottom: Spacing.lg}}>
+              <AppText variant="labelMedium" color={Colors.neutral[700]} style={{marginBottom: 8}}>
+                Organization Address
+              </AppText>
+              <GooglePlacesAutocomplete
+                ref={googlePlacesRef}
+                placeholder="Enter organization address"
+                fetchDetails={true}
+                onPress={(data, details = null) => {
+                  if (details) {
+                    setOrgAddress(data.description);
+                    setLatitude(details.geometry.location.lat.toString());
+                    setLongitude(details.geometry.location.lng.toString());
+                    setRegion({
+                      ...region,
+                      latitude: details.geometry.location.lat,
+                      longitude: details.geometry.location.lng,
+                    });
+                    if (errors.orgAddress) setErrors({...errors, orgAddress: ''});
+                  }
+                }}
+                query={{
+                  key: GOOGLE_MAPS_API_KEY,
+                  language: 'en',
+                }}
+                styles={{
+                  container: { flex: 0 },
+                  textInputContainer: {
+                    backgroundColor: Colors.neutral[0],
+                    borderRadius: 12,
+                    borderWidth: 1,
+                    borderColor: errors.orgAddress ? Colors.error : Colors.neutral[300],
+                    height: 52,
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    paddingHorizontal: 12,
+                  },
+                  textInput: {
+                    color: Colors.neutral[900],
+                    fontSize: 16,
+                    height: 50,
+                    marginLeft: 8,
+                    flex: 1,
+                    backgroundColor: 'transparent',
+                  },
+                  listView: {
+                    backgroundColor: Colors.neutral[0],
+                    borderWidth: 1,
+                    borderColor: Colors.neutral[200],
+                    borderRadius: 8,
+                    marginTop: 4,
+                  },
+                }}
+                textInputProps={{
+                  placeholderTextColor: Colors.neutral[400],
+                  onChangeText: (text) => {
+                    setOrgAddress(text);
+                    if (errors.orgAddress) setErrors({...errors, orgAddress: ''});
+                  }
+                }}
+                listViewProps={{
+                  nestedScrollEnabled: true,
+                }}
+                renderLeftButton={() => (
+                  <View style={{marginRight: 4}}>
+                    <LocationPinIcon color={Colors.primary[500]} size={20} />
+                  </View>
+                )}
+                renderRightButton={() => (
+                  <TouchableOpacity style={{padding: 4}} onPress={handleCurrentLocation}>
+                    <Navigation color={Colors.primary[500]} size={20} />
+                  </TouchableOpacity>
+                )}
+              />
+              {errors.orgAddress ? (
+                <AppText variant="caption" color={Colors.error} style={{marginTop: 4}}>
+                  {errors.orgAddress}
+                </AppText>
+              ) : null}
+
+              {(latitude && longitude) ? (
+                <View style={{
+                  height: 200,
+                  marginTop: Spacing.md,
+                  borderRadius: 12,
+                  overflow: 'hidden',
+                  borderWidth: 1,
+                  borderColor: Colors.neutral[200],
+                }}>
+                  <MapView
+                    style={{ flex: 1 }}
+                    region={{
+                      latitude: Number(latitude),
+                      longitude: Number(longitude),
+                      latitudeDelta: 0.01,
+                      longitudeDelta: 0.01,
+                    }}
+                  >
+                    <Marker 
+                      draggable
+                      coordinate={{ latitude: Number(latitude), longitude: Number(longitude) }} 
+                      onDragEnd={handleMarkerDragEnd}
+                    />
+                  </MapView>
+                </View>
+              ) : null}
+            </View>
           </View>
 
           {/* Primary Contact Section */}

@@ -178,6 +178,33 @@ export default function RequestDetailsScreen() {
       }
     };
 
+    const handleCancelRequest = () => {
+      Alert.alert('Cancel Request', 'Are you sure you want to cancel this request?', [
+        { text: 'No', style: 'cancel' },
+        {
+          text: 'Yes, Cancel',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await api.post(`/help_requests/${request.id}/cancel`);
+              Toast.show({
+                type: 'success',
+                text1: 'Success',
+                text2: 'Request cancelled successfully.',
+                onHide: () => navigation.goBack()
+              });
+            } catch (error: any) {
+              Toast.show({
+                type: 'error',
+                text1: 'Error',
+                text2: error?.data?.errors?.[0] || error?.message || 'Failed to cancel request.'
+              });
+            }
+          }
+        }
+      ]);
+    };
+
   return (
     <SafeAreaView style={styles.safeArea}>
       {/* Header */}
@@ -336,16 +363,16 @@ export default function RequestDetailsScreen() {
 
       {showStartBtn && (
         <View style={styles.actionContainer}>
-          <View style={styles.otpInputContainer}>
-            <AppText variant="bodyMedium" color={Colors.neutral[600]} style={{marginBottom: 12}} center>
-              Enter the 6-digit start code from the beneficiary
+          <View style={styles.otpCard}>
+            <AppText variant="bodyMedium" color={Colors.primary[800]} style={{marginBottom: 16, fontFamily: FontFamily.medium}} center>
+              Enter the 6-digit start code from the {request?.request_type === 'organization' ? 'organization' : 'beneficiary'}
             </AppText>
             <TextInput
-              style={styles.otpInput}
+              style={[styles.otpInput, { backgroundColor: Colors.neutral[0], borderColor: Colors.primary[200], color: Colors.primary[900] }]}
               value={otp}
               onChangeText={(text) => setOtp(text.replace(/[^0-9]/g, '').slice(0, 6))}
               keyboardType="number-pad"
-              placeholder="000000"
+              placeholder="0 0 0 0 0 0"
               placeholderTextColor={Colors.neutral[300]}
               maxLength={6}
             />
@@ -357,6 +384,12 @@ export default function RequestDetailsScreen() {
             disabled={otp.length !== 6 || isStarting}
             style={styles.acceptBtn} 
           />
+          <TouchableOpacity 
+            style={styles.cancelTextBtn} 
+            onPress={handleCancelRequest}
+          >
+            <AppText variant="buttonMedium" style={{ color: Colors.error }}>Cancel Request</AppText>
+          </TouchableOpacity>
         </View>
       )}
 
@@ -462,24 +495,41 @@ const styles = StyleSheet.create({
     paddingBottom: verticalScale(32), 
     backgroundColor: Colors.neutral[0],
   },
-  otpInputContainer: {
-    marginBottom: verticalScale(20),
+  otpCard: {
+    backgroundColor: Colors.primary[50],
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 20,
     alignItems: 'center',
     width: '100%',
+    borderWidth: 1,
+    borderColor: Colors.primary[100],
   },
   otpInput: {
-    backgroundColor: Colors.neutral[50],
+    backgroundColor: Colors.neutral[0],
     borderWidth: 1,
-    borderColor: Colors.neutral[200],
+    borderColor: Colors.primary[200],
     borderRadius: 12,
-    fontSize: 28,
-    fontWeight: '700',
-    color: Colors.neutral[900],
+    fontSize: 32,
+    fontFamily: FontFamily.bold,
+    color: Colors.primary[900],
     textAlign: 'center',
-    letterSpacing: 8,
-    paddingVertical: verticalScale(12),
+    letterSpacing: 12,
+    paddingVertical: verticalScale(16),
     width: '100%',
+    shadowColor: Colors.primary[900],
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
   },
   acceptBtn: {
+  },
+  cancelTextBtn: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 16,
+    paddingVertical: 8,
   },
 });

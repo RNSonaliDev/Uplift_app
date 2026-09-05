@@ -27,6 +27,7 @@ import {DashboardRoleSelectionScreen} from './src/screens/DashboardRoleSelection
 import {Colors} from './src/theme/colors';
 import {BeneficiaryTabNavigator} from './src/navigation/BeneficiaryTabNavigator';
 import {VolunteerTabNavigator} from './src/navigation/VolunteerTabNavigator';
+import {OrganizationTabNavigator} from './src/navigation/OrganizationTabNavigator';
 import {DummyTabNavigator} from './src/navigation/DummyTabNavigator';
 import LegalContentScreen from './src/screens/beneficiary/profile/LegalContentScreen';
 
@@ -156,7 +157,7 @@ function App() {
             <Stack.Screen name="DashboardRoleSelection" component={DashboardRoleSelectionScreen} />
             <Stack.Screen name="BeneficiaryFlow" component={BeneficiaryTabNavigator} />
             <Stack.Screen name="VolunteerFlow" component={VolunteerTabNavigator} />
-            <Stack.Screen name="OrganizationFlow" component={DummyTabNavigator} />
+            <Stack.Screen name="OrganizationFlow" component={OrganizationTabNavigator} />
             <Stack.Screen name="SponsorFlow" component={DummyTabNavigator} />
             <Stack.Screen name="LegalContent" component={LegalContentScreen} />
           </Stack.Navigator>
