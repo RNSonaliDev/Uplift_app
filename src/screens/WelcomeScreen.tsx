@@ -9,8 +9,8 @@ import {
   ImageBackground,
   Modal,
   ActivityIndicator,
-  SafeAreaView,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import {AppText} from '../components/AppText';
 import {Button} from '../components/Button';
 import {UpliftLogo} from '../components/UpliftLogo';

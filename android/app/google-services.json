@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "49775382219",
+    "project_id": "uplift-bacf2",
+    "storage_bucket": "uplift-bacf2.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:49775382219:android:c044a845c85476a987554e",
+        "android_client_info": {
+          "package_name": "com.upliftapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyASdeWuIeqC5ZyJGKt4azdSz5n-0FEsFSY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

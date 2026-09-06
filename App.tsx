@@ -3,7 +3,7 @@
  *
  * @format
  */
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View } from 'react-native';
 import {SafeAreaProvider, SafeAreaView} from 'react-native-safe-area-context';
 import {NavigationContainer} from '@react-navigation/native';
@@ -32,6 +32,7 @@ import {OrganizationTabNavigator} from './src/navigation/OrganizationTabNavigato
 import {SponsorTabNavigator} from './src/navigation/SponsorTabNavigator';
 import {DummyTabNavigator} from './src/navigation/DummyTabNavigator';
 import LegalContentScreen from './src/screens/beneficiary/profile/LegalContentScreen';
+import { pushNotificationService } from './src/services/PushNotificationService';
 
 type RootStackParamList = {
   Splash: undefined;
@@ -138,6 +139,15 @@ const toastConfig: ToastConfig = {
 };
 
 function App() {
+  useEffect(() => {
+    // Request permission and get FCM token on startup
+    pushNotificationService.requestUserPermission();
+    
+    // Listen for foreground notifications
+    const unsubscribe = pushNotificationService.setupForegroundListener();
+    return unsubscribe;
+  }, []);
+
   return (
     <SafeAreaProvider>
       <View style={{flex: 1, backgroundColor: Colors.neutral[0]}}>
