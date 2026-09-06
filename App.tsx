@@ -9,6 +9,7 @@ import {SafeAreaProvider, SafeAreaView} from 'react-native-safe-area-context';
 import {NavigationContainer} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import Toast, {BaseToast, ErrorToast, ToastConfig} from 'react-native-toast-message';
+import { StripeProvider } from '@stripe/stripe-react-native';
 
 import {WelcomeScreen} from './src/screens/WelcomeScreen';
 import {CreateAccountScreen} from './src/screens/CreateAccountScreen';
@@ -140,29 +141,31 @@ function App() {
   return (
     <SafeAreaProvider>
       <View style={{flex: 1, backgroundColor: Colors.neutral[0]}}>
-        <NavigationContainer>
-          <Stack.Navigator screenOptions={{headerShown: false}}>
-            <Stack.Screen name="Splash" component={SplashScreen} />
-            <Stack.Screen name="Welcome" component={WelcomeScreen} />
-            <Stack.Screen name="Login" component={LoginScreen} />
-            <Stack.Screen name="CreateAccount" component={CreateAccountScreen} />
-            <Stack.Screen name="VerifyAccount" component={VerifyAccountScreen} />
-            <Stack.Screen name="CreateProfile" component={CreateProfileScreen} />
-            <Stack.Screen name="SelectRoles" component={SelectRolesScreen} />
-            <Stack.Screen name="OrganizationSetup" component={OrganizationSetupScreen} />
-            <Stack.Screen name="SponsorSetup" component={SponsorSetupScreen} />
-            <Stack.Screen name="VolunteerSetup" component={VolunteerSetupScreen} />
-            <Stack.Screen name="BeneficiarySetup" component={BeneficiarySetupScreen} />
-        <Stack.Screen name="ParentVerification" component={ParentVerificationScreen} />
-            <Stack.Screen name="Success" component={SuccessScreen} />
-            <Stack.Screen name="DashboardRoleSelection" component={DashboardRoleSelectionScreen} />
-            <Stack.Screen name="BeneficiaryFlow" component={BeneficiaryTabNavigator} />
-            <Stack.Screen name="VolunteerFlow" component={VolunteerTabNavigator} />
-            <Stack.Screen name="OrganizationFlow" component={OrganizationTabNavigator} />
-            <Stack.Screen name="SponsorFlow" component={SponsorTabNavigator} />
-            <Stack.Screen name="LegalContent" component={LegalContentScreen} />
-          </Stack.Navigator>
-        </NavigationContainer>
+        <StripeProvider publishableKey="pk_test_51TArmwDqBT5NMvcN8g78pZk3cgvMVs9arm6jF2IdyorlTQYhV3Ra1SL6JPBHDOauwjuEKeELgd5LPPBC39g8xbLi00bjFn0OV8">
+          <NavigationContainer>
+            <Stack.Navigator screenOptions={{headerShown: false}}>
+              <Stack.Screen name="Splash" component={SplashScreen} />
+              <Stack.Screen name="Welcome" component={WelcomeScreen} />
+              <Stack.Screen name="Login" component={LoginScreen} />
+              <Stack.Screen name="CreateAccount" component={CreateAccountScreen} />
+              <Stack.Screen name="VerifyAccount" component={VerifyAccountScreen} />
+              <Stack.Screen name="CreateProfile" component={CreateProfileScreen} />
+              <Stack.Screen name="SelectRoles" component={SelectRolesScreen} />
+              <Stack.Screen name="OrganizationSetup" component={OrganizationSetupScreen} />
+              <Stack.Screen name="SponsorSetup" component={SponsorSetupScreen} />
+              <Stack.Screen name="VolunteerSetup" component={VolunteerSetupScreen} />
+              <Stack.Screen name="BeneficiarySetup" component={BeneficiarySetupScreen} />
+          <Stack.Screen name="ParentVerification" component={ParentVerificationScreen} />
+              <Stack.Screen name="Success" component={SuccessScreen} />
+              <Stack.Screen name="DashboardRoleSelection" component={DashboardRoleSelectionScreen} />
+              <Stack.Screen name="BeneficiaryFlow" component={BeneficiaryTabNavigator} />
+              <Stack.Screen name="VolunteerFlow" component={VolunteerTabNavigator} />
+              <Stack.Screen name="OrganizationFlow" component={OrganizationTabNavigator} />
+              <Stack.Screen name="SponsorFlow" component={SponsorTabNavigator} />
+              <Stack.Screen name="LegalContent" component={LegalContentScreen} />
+            </Stack.Navigator>
+          </NavigationContainer>
+        </StripeProvider>
       </View>
       <Toast position="bottom" bottomOffset={60} config={toastConfig} />
     </SafeAreaProvider>

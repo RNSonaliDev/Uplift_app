@@ -1,19 +1,20 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   StyleSheet,
   TouchableOpacity,
   SafeAreaView,
-  TextInput,
   ScrollView,
+  Alert,
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import { useStripe } from '@stripe/stripe-react-native';
 import { Colors } from '../../../theme/colors';
 import { AppText } from '../../../components/AppText';
 import { Button } from '../../../components/Button';
 import { ChevronLeft, CreditCard, Lock, CheckCircle2 } from 'lucide-react-native';
 import { horizontalScale, verticalScale, moderateScale, fontScale } from '../../../utils/responsive';
-import { FontFamily } from '../../../theme/typography';
+import { stripeApi } from '../../../api/stripe';
 
 export default function PaymentDetailsScreen() {
   const navigation = useNavigation<any>();
@@ -21,14 +22,48 @@ export default function PaymentDetailsScreen() {
   const amount = route.params?.amount || 0;
   const recipientType = route.params?.recipientType || 'none';
 
-  const [cardNumber, setCardNumber] = useState('');
-  const [expiry, setExpiry] = useState('');
-  const [cvv, setCvv] = useState('');
-  const [zipCode, setZipCode] = useState('');
+  const { initPaymentSheet, presentPaymentSheet } = useStripe();
+  const [isReady, setIsReady] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const handlePayNow = () => {
-    // Navigate to Processing Screen
-    navigation.navigate('ProcessingPayment', { amount, recipientType });
+  useEffect(() => {
+    initializePaymentSheet();
+  }, []);
+
+  const initializePaymentSheet = async () => {
+    try {
+      const clientSecret = await stripeApi.createPaymentIntent(amount);
+      const { error } = await initPaymentSheet({
+        merchantDisplayName: 'Uplift',
+        paymentIntentClientSecret: clientSecret,
+        allowsDelayedPaymentMethods: true,
+      });
+      if (error) {
+        Alert.alert(`Error code: ${error.code}`, error.message);
+      } else {
+        setIsReady(true);
+      }
+    } catch (e) {
+      console.error(e);
+      Alert.alert('Error', 'Could not initialize payment.');
+    }
+  };
+
+  const handlePayNow = async () => {
+    if (!isReady) return;
+    
+    setLoading(true);
+    const { error } = await presentPaymentSheet();
+    setLoading(false);
+
+    if (error) {
+      if (error.code !== 'Canceled') {
+        Alert.alert(`Error`, error.message);
+      }
+    } else {
+      // Payment was successful!
+      navigation.navigate('ProcessingPayment', { amount, recipientType });
+    }
   };
 
   return (
@@ -55,13 +90,13 @@ export default function PaymentDetailsScreen() {
             <View style={{flexDirection: 'row', alignItems: 'center'}}>
               <CheckCircle2 color={Colors.primary[500]} size={20} style={{marginRight: 8}} />
               <AppText variant="bodyLarge" weight="semiBold" color={Colors.neutral[900]}>
-                Credit Card
+                Secure Credit Card Payment
               </AppText>
             </View>
             <CreditCard color={Colors.neutral[400]} size={20} />
           </View>
           <AppText variant="caption" color={Colors.neutral[500]} style={styles.methodSubtitle}>
-            We accept Visa, Mastercard, Amex, Discover
+            Powered by Stripe. Tap 'Pay Now' to enter your card details securely.
           </AppText>
           <View style={styles.cardLogos}>
             <AppText variant="caption" weight="bold" color={Colors.primary[700]} style={styles.cardLogoText}>VISA</AppText>
@@ -71,89 +106,11 @@ export default function PaymentDetailsScreen() {
           </View>
         </View>
 
-        {/* Card Information */}
-        <AppText variant="h5" color={Colors.neutral[900]} style={styles.sectionTitle}>
-          Card Information
-        </AppText>
-
-        <View style={styles.inputContainer}>
-          <AppText variant="labelMedium" color={Colors.neutral[700]} style={styles.inputLabel}>
-            Card Number
-          </AppText>
-          <View style={styles.inputWrapper}>
-            <TextInput
-              style={styles.input}
-              value={cardNumber}
-              onChangeText={setCardNumber}
-              keyboardType="number-pad"
-              placeholder="1234 5678 9012 3456"
-              placeholderTextColor={Colors.neutral[400]}
-              maxLength={19}
-            />
-            {cardNumber.length > 0 && (
-              <AppText variant="caption" weight="bold" color={Colors.primary[700]}>VISA</AppText>
-            )}
-          </View>
-        </View>
-
-        <View style={styles.row}>
-          <View style={[styles.inputContainer, {flex: 1, marginRight: horizontalScale(16)}]}>
-            <AppText variant="labelMedium" color={Colors.neutral[700]} style={styles.inputLabel}>
-              Expiry Date
-            </AppText>
-            <View style={styles.inputWrapper}>
-              <TextInput
-                style={styles.input}
-                value={expiry}
-                onChangeText={setExpiry}
-                keyboardType="number-pad"
-                placeholder="MM / YY"
-                placeholderTextColor={Colors.neutral[400]}
-                maxLength={5}
-              />
-            </View>
-          </View>
-          <View style={[styles.inputContainer, {flex: 1}]}>
-            <AppText variant="labelMedium" color={Colors.neutral[700]} style={styles.inputLabel}>
-              CVV
-            </AppText>
-            <View style={styles.inputWrapper}>
-              <TextInput
-                style={styles.input}
-                value={cvv}
-                onChangeText={setCvv}
-                keyboardType="number-pad"
-                placeholder="123"
-                placeholderTextColor={Colors.neutral[400]}
-                maxLength={4}
-                secureTextEntry
-              />
-            </View>
-          </View>
-        </View>
-
-        <View style={styles.inputContainer}>
-          <AppText variant="labelMedium" color={Colors.neutral[700]} style={styles.inputLabel}>
-            Billing ZIP Code
-          </AppText>
-          <View style={styles.inputWrapper}>
-            <TextInput
-              style={styles.input}
-              value={zipCode}
-              onChangeText={setZipCode}
-              keyboardType="number-pad"
-              placeholder="10001"
-              placeholderTextColor={Colors.neutral[400]}
-              maxLength={10}
-            />
-          </View>
-        </View>
-
         {/* Security Alert */}
         <View style={styles.securityAlert}>
           <Lock color={Colors.primary[500]} size={20} />
           <AppText variant="caption" color={Colors.neutral[700]} style={styles.securityText}>
-            Your payment information is secure and never stored on our servers.
+            Your payment information is handled directly by Stripe. It is never stored on our servers.
           </AppText>
         </View>
 
@@ -162,9 +119,9 @@ export default function PaymentDetailsScreen() {
       {/* Footer */}
       <View style={styles.footer}>
         <Button 
-          title={`Pay Now - $${amount}`} 
+          title={isReady ? `Pay Now - $${amount}` : 'Loading...'} 
           onPress={handlePayNow}
-          disabled={!cardNumber || !expiry || !cvv || !zipCode}
+          disabled={!isReady || loading}
         />
       </View>
     </SafeAreaView>
@@ -228,32 +185,6 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
     borderRadius: 4,
     overflow: 'hidden',
-  },
-  row: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  inputContainer: {
-    marginBottom: verticalScale(20),
-  },
-  inputLabel: {
-    marginBottom: verticalScale(8),
-  },
-  inputWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.neutral[0],
-    borderWidth: 1,
-    borderColor: Colors.neutral[200],
-    borderRadius: 12,
-    paddingHorizontal: horizontalScale(16),
-    height: verticalScale(50),
-  },
-  input: {
-    flex: 1,
-    fontFamily: FontFamily.regular,
-    fontSize: fontScale(16),
-    color: Colors.neutral[900],
   },
   securityAlert: {
     flexDirection: 'row',
