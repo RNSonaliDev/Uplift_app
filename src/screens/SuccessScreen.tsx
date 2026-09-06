@@ -146,7 +146,10 @@ export const SuccessScreen: React.FC = () => {
 
   const handleContinue = async () => {
     if (selectedRoles.length > 1) {
-      navigation.replace('DashboardRoleSelection', { selectedRoles });
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'DashboardRoleSelection', params: { selectedRoles } }],
+      });
     } else if (selectedRoles.length === 1) {
       const role = selectedRoles[0];
       try {
@@ -158,13 +161,13 @@ export const SuccessScreen: React.FC = () => {
         setIsLoading(false);
       }
       
-      if (role === 'volunteer') navigation.replace('VolunteerFlow' as any);
-      else if (role === 'sponsor') navigation.replace('SponsorFlow' as any);
-      else if (role === 'organization') navigation.replace('OrganizationFlow' as any);
-      else if (role === 'beneficiary') navigation.replace('BeneficiaryFlow' as any);
-      else navigation.replace('Welcome');
+      if (role === 'volunteer') navigation.reset({ index: 0, routes: [{ name: 'VolunteerFlow' as any }] });
+      else if (role === 'sponsor') navigation.reset({ index: 0, routes: [{ name: 'SponsorFlow' as any }] });
+      else if (role === 'organization') navigation.reset({ index: 0, routes: [{ name: 'OrganizationFlow' as any }] });
+      else if (role === 'beneficiary') navigation.reset({ index: 0, routes: [{ name: 'BeneficiaryFlow' as any }] });
+      else navigation.reset({ index: 0, routes: [{ name: 'Welcome' as any }] });
     } else {
-      navigation.replace('Welcome');
+      navigation.reset({ index: 0, routes: [{ name: 'Welcome' as any }] });
     }
   };
 

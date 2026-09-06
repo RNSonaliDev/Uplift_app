@@ -5,6 +5,8 @@ import SettingsScreen from '../screens/beneficiary/profile/SettingsScreen';
 import EditProfileScreen from '../screens/beneficiary/profile/EditProfileScreen';
 import LegalContentScreen from '../screens/beneficiary/profile/LegalContentScreen';
 
+import EmergencyContactsScreen from '../screens/beneficiary/profile/EmergencyContactsScreen';
+
 const Stack = createNativeStackNavigator();
 
 export default function BeneficiaryProfileStack() {
@@ -14,6 +16,7 @@ export default function BeneficiaryProfileStack() {
       <Stack.Screen name="EditProfile" component={EditProfileScreen} />
       <Stack.Screen name="Settings" component={SettingsScreen} />
       <Stack.Screen name="LegalContent" component={LegalContentScreen} />
+      <Stack.Screen name="EmergencyContacts" component={EmergencyContactsScreen} />
     </Stack.Navigator>
   );
 }

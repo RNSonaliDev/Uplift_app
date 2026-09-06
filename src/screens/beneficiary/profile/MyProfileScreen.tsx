@@ -214,7 +214,7 @@ export default function MyProfileScreen() {
           <MenuItem 
             icon={<Phone color={Colors.neutral[500]} size={24} />} 
             title="Emergency Contacts" 
-            onPress={() => {}} 
+            onPress={() => navigation.navigate('EmergencyContacts')} 
           />
           <MenuItem 
             icon={<Bell color={Colors.neutral[500]} size={24} />} 

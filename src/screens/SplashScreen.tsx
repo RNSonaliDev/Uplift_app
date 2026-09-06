@@ -97,47 +97,47 @@ export const SplashScreen: React.FC = () => {
             };
             
             if (nextRole === 'volunteer') {
-              navigation.replace('VolunteerSetup' as any, routeParams);
+              navigation.reset({ index: 0, routes: [{ name: 'VolunteerSetup' as any, params: routeParams }] });
             } else if (nextRole === 'organization') {
-              navigation.replace('OrganizationSetup' as any, routeParams);
+              navigation.reset({ index: 0, routes: [{ name: 'OrganizationSetup' as any, params: routeParams }] });
             } else if (nextRole === 'sponsor') {
-              navigation.replace('SponsorSetup' as any, routeParams);
+              navigation.reset({ index: 0, routes: [{ name: 'SponsorSetup' as any, params: routeParams }] });
             } else if (nextRole === 'beneficiary') {
-              navigation.replace('BeneficiarySetup' as any, routeParams);
+              navigation.reset({ index: 0, routes: [{ name: 'BeneficiarySetup' as any, params: routeParams }] });
             } else {
-              navigation.replace('Welcome');
+              navigation.reset({ index: 0, routes: [{ name: 'Welcome' }] });
             }
           } else if (profile.default_role) {
             if (profile.default_role === 'volunteer') {
-              navigation.replace('VolunteerFlow' as any);
+              navigation.reset({ index: 0, routes: [{ name: 'VolunteerFlow' as any }] });
             } else if (profile.default_role === 'sponsor') {
-              navigation.replace('SponsorFlow' as any);
+              navigation.reset({ index: 0, routes: [{ name: 'SponsorFlow' as any }] });
             } else if (profile.default_role === 'organization') {
-              navigation.replace('OrganizationFlow' as any);
+              navigation.reset({ index: 0, routes: [{ name: 'OrganizationFlow' as any }] });
             } else if (profile.default_role === 'beneficiary') {
-              navigation.replace('BeneficiaryFlow' as any);
+              navigation.reset({ index: 0, routes: [{ name: 'BeneficiaryFlow' as any }] });
             } else {
-              navigation.replace('DashboardRoleSelection', { selectedRoles });
+              navigation.reset({ index: 0, routes: [{ name: 'DashboardRoleSelection', params: { selectedRoles } }] });
             }
           } else if (selectedRoles.length > 1) {
-            navigation.replace('DashboardRoleSelection', { selectedRoles });
+            navigation.reset({ index: 0, routes: [{ name: 'DashboardRoleSelection', params: { selectedRoles } }] });
           } else if (selectedRoles.length === 1) {
             const role = selectedRoles[0];
-            if (role === 'volunteer') navigation.replace('VolunteerFlow' as any);
-            else if (role === 'sponsor') navigation.replace('SponsorFlow' as any);
-            else if (role === 'organization') navigation.replace('OrganizationFlow' as any);
-            else if (role === 'beneficiary') navigation.replace('BeneficiaryFlow' as any);
-            else navigation.replace('Welcome');
+            if (role === 'volunteer') navigation.reset({ index: 0, routes: [{ name: 'VolunteerFlow' as any }] });
+            else if (role === 'sponsor') navigation.reset({ index: 0, routes: [{ name: 'SponsorFlow' as any }] });
+            else if (role === 'organization') navigation.reset({ index: 0, routes: [{ name: 'OrganizationFlow' as any }] });
+            else if (role === 'beneficiary') navigation.reset({ index: 0, routes: [{ name: 'BeneficiaryFlow' as any }] });
+            else navigation.reset({ index: 0, routes: [{ name: 'Welcome' }] });
           } else {
-            navigation.replace('Welcome');
+            navigation.reset({ index: 0, routes: [{ name: 'Welcome' }] });
           }
         } else {
-          navigation.replace('Welcome');
+          navigation.reset({ index: 0, routes: [{ name: 'Welcome' }] });
         }
       } catch (error) {
         // Token invalid or network error, fallback to Welcome
         console.log('Splash screen token check failed', error);
-        navigation.replace('Welcome');
+        navigation.reset({ index: 0, routes: [{ name: 'Welcome' }] });
       }
     };
 

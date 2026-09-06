@@ -427,27 +427,27 @@ export const VerifyAccountScreen: React.FC = () => {
           };
           
           if (nextRole === 'volunteer') {
-            navigation.navigate('VolunteerSetup' as any, routeParams);
+            navigation.reset({ index: 0, routes: [{ name: 'VolunteerSetup' as any, params: routeParams }] });
           } else if (nextRole === 'organization') {
-            navigation.navigate('OrganizationSetup' as any, routeParams);
+            navigation.reset({ index: 0, routes: [{ name: 'OrganizationSetup' as any, params: routeParams }] });
           } else if (nextRole === 'sponsor') {
-            navigation.navigate('SponsorSetup' as any, routeParams);
+            navigation.reset({ index: 0, routes: [{ name: 'SponsorSetup' as any, params: routeParams }] });
           } else if (nextRole === 'beneficiary') {
-            navigation.navigate('BeneficiarySetup' as any, routeParams);
+            navigation.reset({ index: 0, routes: [{ name: 'BeneficiarySetup' as any, params: routeParams }] });
           }
         } else if (response.user?.registration_step === 'role_setup') {
-          navigation.navigate('SelectRoles' as any);
+          navigation.reset({ index: 0, routes: [{ name: 'SelectRoles' as any }] });
         } else if (response.user?.default_role) {
             if (response.user.default_role === 'volunteer') {
-              navigation.replace('VolunteerFlow' as any);
+              navigation.reset({ index: 0, routes: [{ name: 'VolunteerFlow' as any }] });
             } else if (response.user.default_role === 'sponsor') {
-              navigation.replace('SponsorFlow' as any);
+              navigation.reset({ index: 0, routes: [{ name: 'SponsorFlow' as any }] });
             } else if (response.user.default_role === 'organization') {
-              navigation.replace('OrganizationFlow' as any);
+              navigation.reset({ index: 0, routes: [{ name: 'OrganizationFlow' as any }] });
             } else if (response.user.default_role === 'beneficiary') {
-              navigation.replace('BeneficiaryFlow' as any);
+              navigation.reset({ index: 0, routes: [{ name: 'BeneficiaryFlow' as any }] });
             } else {
-              navigation.replace('Welcome');
+              navigation.reset({ index: 0, routes: [{ name: 'Welcome' }] });
             }}
       } else if (response.verification_token) {
         navigation.navigate('CreateProfile', {
