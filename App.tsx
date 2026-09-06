@@ -28,6 +28,7 @@ import {Colors} from './src/theme/colors';
 import {BeneficiaryTabNavigator} from './src/navigation/BeneficiaryTabNavigator';
 import {VolunteerTabNavigator} from './src/navigation/VolunteerTabNavigator';
 import {OrganizationTabNavigator} from './src/navigation/OrganizationTabNavigator';
+import {SponsorTabNavigator} from './src/navigation/SponsorTabNavigator';
 import {DummyTabNavigator} from './src/navigation/DummyTabNavigator';
 import LegalContentScreen from './src/screens/beneficiary/profile/LegalContentScreen';
 
@@ -158,7 +159,7 @@ function App() {
             <Stack.Screen name="BeneficiaryFlow" component={BeneficiaryTabNavigator} />
             <Stack.Screen name="VolunteerFlow" component={VolunteerTabNavigator} />
             <Stack.Screen name="OrganizationFlow" component={OrganizationTabNavigator} />
-            <Stack.Screen name="SponsorFlow" component={DummyTabNavigator} />
+            <Stack.Screen name="SponsorFlow" component={SponsorTabNavigator} />
             <Stack.Screen name="LegalContent" component={LegalContentScreen} />
           </Stack.Navigator>
         </NavigationContainer>

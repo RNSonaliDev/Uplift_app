@@ -279,10 +279,6 @@ export const SelectRolesScreen: React.FC = () => {
   }, []);
 
   const toggleRole = (role: RoleType) => {
-    if (role === 'sponsor') {
-      Alert.alert('Coming Soon', 'This role is not yet available.');
-      return;
-    }
     setSelectedRoles(prev => {
       if (prev.includes(role)) {
         return prev.filter(r => r !== role);

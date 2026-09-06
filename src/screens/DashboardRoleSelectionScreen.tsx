@@ -228,15 +228,15 @@ export const DashboardRoleSelectionScreen: React.FC = () => {
       // }
 
       if (role === 'volunteer') {
-        navigation.replace('VolunteerFlow' as any);
+        navigation.reset({ index: 0, routes: [{ name: 'VolunteerFlow' as any }] });
       } else if (role === 'sponsor') {
-        navigation.replace('SponsorFlow' as any);
+        navigation.reset({ index: 0, routes: [{ name: 'SponsorFlow' as any }] });
       } else if (role === 'organization') {
-        navigation.replace('OrganizationFlow' as any);
+        navigation.reset({ index: 0, routes: [{ name: 'OrganizationFlow' as any }] });
       } else if (role === 'beneficiary') {
-        navigation.replace('BeneficiaryFlow' as any);
+        navigation.reset({ index: 0, routes: [{ name: 'BeneficiaryFlow' as any }] });
       } else {
-        navigation.replace('DashboardRoleSelection', { selectedRoles });
+        navigation.reset({ index: 0, routes: [{ name: 'DashboardRoleSelection' as any, params: { selectedRoles } }] });
       }
     } catch (error: any) {
       Toast.show({

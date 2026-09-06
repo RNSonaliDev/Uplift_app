@@ -1,20 +1,7 @@
 export const formatDate = (dateStr?: string) => {
   if (!dateStr) return '';
   
-  // If it contains dashes, let's parse it
-  if (dateStr.includes('-')) {
-    const parts = dateStr.split('-');
-    if (parts.length === 3) {
-      // If it looks like YYYY-MM-DD
-      if (parts[0].length === 4) {
-        return `${parts[2]}/${parts[1]}/${parts[0]}`; // Convert to DD/MM/YYYY
-      }
-      // If it's already DD-MM-YYYY or similar, just replace dashes with slashes
-      return `${parts[0]}/${parts[1]}/${parts[2]}`;
-    }
-  }
-
-  // Fallback for other formats (e.g., full ISO strings)
+  // Try parsing as a Date object first (handles ISO strings gracefully)
   try {
     const d = new Date(dateStr);
     if (!isNaN(d.getTime())) {
@@ -25,6 +12,17 @@ export const formatDate = (dateStr?: string) => {
     }
   } catch (e) {
     // ignore
+  }
+
+  // Fallback for manual date parsing
+  if (dateStr.includes('-')) {
+    const parts = dateStr.split('-');
+    if (parts.length === 3) {
+      if (parts[0].length === 4) {
+        return `${parts[2]}/${parts[1]}/${parts[0]}`;
+      }
+      return `${parts[0]}/${parts[1]}/${parts[2]}`;
+    }
   }
 
   return dateStr;

@@ -233,11 +233,11 @@ export default function MyProfileScreen() {
               onPress={() => profile && navigation.navigate('DashboardRoleSelection', { selectedRoles: userRoles })} 
             />
           )}
-          <MenuItem 
+          {/* <MenuItem 
             icon={<Key color={Colors.neutral[500]} size={24} />} 
             title="Change Password" 
             onPress={() => {}} 
-          />
+          /> */}
           <MenuItem 
             icon={<Shield color={Colors.neutral[500]} size={24} />} 
             title="Privacy Policy" 
