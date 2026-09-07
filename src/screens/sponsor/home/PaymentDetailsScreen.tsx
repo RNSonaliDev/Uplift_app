@@ -19,12 +19,14 @@ import { stripeApi } from '../../../api/stripe';
 export default function PaymentDetailsScreen() {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
+  console.log("@@ route.params =====", route.params)
   const amount = route.params?.amount || 0;
   const recipientType = route.params?.recipientType || 'none';
 
   const { initPaymentSheet, presentPaymentSheet } = useStripe();
   const [isReady, setIsReady] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [donationId, setDonationId] = useState<number | null>(null);
 
   useEffect(() => {
     initializePaymentSheet();
@@ -32,7 +34,19 @@ export default function PaymentDetailsScreen() {
 
   const initializePaymentSheet = async () => {
     try {
-      const clientSecret = await stripeApi.createPaymentIntent(amount);
+      const { donationsApi } = await import('../../../api/donations');
+      const res = await donationsApi.createDonation({
+        donation: {
+          amount,
+          recipient_type: recipientType,
+        }
+      });
+      if (res.donation?.id) {
+        setDonationId(res.donation.id);
+      } else if (res.id) {
+        setDonationId(res.id as number);
+      }
+      const clientSecret = res.client_secret;
       const { error } = await initPaymentSheet({
         merchantDisplayName: 'Uplift',
         paymentIntentClientSecret: clientSecret,
@@ -62,7 +76,7 @@ export default function PaymentDetailsScreen() {
       }
     } else {
       // Payment was successful!
-      navigation.navigate('ProcessingPayment', { amount, recipientType });
+      navigation.navigate('ProcessingPayment', { amount, recipientType, donationId });
     }
   };
 

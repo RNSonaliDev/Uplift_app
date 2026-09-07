@@ -43,9 +43,12 @@ export default function ContributionsListScreen() {
     }, [fetchContributions])
   );
 
-  const filteredContributions = contributions.filter(c => 
-    activeTab === 'All' || (c.status || 'Completed').toLowerCase() === activeTab.toLowerCase()
-  );
+  const filteredContributions = contributions.filter(c => {
+    if (activeTab === 'All') return true;
+    const status = (c.status || 'Completed').toLowerCase();
+    if (activeTab === 'Completed') return status === 'completed' || status === 'succeeded';
+    return status === activeTab.toLowerCase();
+  });
 
   return (
     <SafeAreaView style={styles.safeArea}>

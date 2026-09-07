@@ -14,17 +14,24 @@ interface ContributionCardProps {
 }
 
 export default function ContributionCard({ item, onPress, style }: ContributionCardProps) {
+  const normalizedStatus = (item.status || 'Completed').toLowerCase();
+  const isSuccess = normalizedStatus === 'completed' || normalizedStatus === 'succeeded';
+  const isPending = normalizedStatus === 'pending';
+
+  const statusBgColor = isSuccess ? '#E8F5E9' : isPending ? '#FFF8E1' : '#FFEBEE';
+  const statusTextColor = isSuccess ? (Colors.success || '#4CAF50') : isPending ? (Colors.warning || '#FFC107') : (Colors.error || '#F44336');
+
   return (
     <TouchableOpacity style={[styles.card, style]} onPress={onPress}>
       <View style={styles.iconContainer}>
         <Calendar color={Colors.primary[500]} size={24} />
         <View style={styles.statusBadgeIcon}>
-          {(item.status || 'Completed') === 'Completed' ? (
-            <CheckCircle2 color={Colors.success || '#4CAF50'} size={14} fill={Colors.neutral[0]} />
-          ) : (item.status || 'Completed') === 'Pending' ? (
-            <Clock color={Colors.warning || '#FFC107'} size={14} fill={Colors.neutral[0]} />
+          {isSuccess ? (
+            <CheckCircle2 color={statusTextColor} size={14} fill={Colors.neutral[0]} />
+          ) : isPending ? (
+            <Clock color={statusTextColor} size={14} fill={Colors.neutral[0]} />
           ) : (
-            <XCircle color={Colors.error || '#F44336'} size={14} fill={Colors.neutral[0]} />
+            <XCircle color={statusTextColor} size={14} fill={Colors.neutral[0]} />
           )}
         </View>
       </View>
@@ -42,17 +49,11 @@ export default function ContributionCard({ item, onPress, style }: ContributionC
         <AppText variant="h5" color={Colors.neutral[900]} style={{marginBottom: verticalScale(4)}}>
           ${item.amount}
         </AppText>
-        <View style={[styles.statusBadge, {
-          backgroundColor: (item.status || 'Completed').toLowerCase() === 'completed' ? '#E8F5E9' : 
-                           (item.status || 'Completed').toLowerCase() === 'pending' ? '#FFF8E1' : 
-                           '#FFEBEE'
-        }]}>
+        <View style={[styles.statusBadge, { backgroundColor: statusBgColor }]}>
           <AppText 
             variant="caption" 
             weight="semiBold"
-            color={(item.status || 'Completed').toLowerCase() === 'completed' ? (Colors.success || '#4CAF50') : 
-                   (item.status || 'Completed').toLowerCase() === 'pending' ? (Colors.warning || '#FFC107') : 
-                   (Colors.error || '#F44336')}
+            color={statusTextColor}
           >
             {(item.status || 'Completed').charAt(0).toUpperCase() + (item.status || 'Completed').slice(1).toLowerCase()}
           </AppText>

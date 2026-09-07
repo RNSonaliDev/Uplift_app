@@ -5,6 +5,7 @@ import {
   TouchableOpacity,
   SafeAreaView,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { Colors } from '../../../theme/colors';
@@ -17,32 +18,41 @@ export default function ProcessingPaymentScreen() {
   const route = useRoute<any>();
   const amount = route.params?.amount || 0;
   const recipientType = route.params?.recipientType || 'none';
+  const donationId = route.params?.donationId;
 
   useEffect(() => {
     const processPayment = async () => {
+      if (!donationId) {
+        // Fallback if donationId is missing
+        setTimeout(() => {
+          navigation.replace('PaymentSuccessful', { amount });
+        }, 1500);
+        return;
+      }
+
       try {
         const { donationsApi } = await import('../../../api/donations');
-        const res = await donationsApi.createDonation({
-          donation: {
-            amount,
-            recipient_type: recipientType,
-          }
-        });
+        const res = await donationsApi.confirmDonation(donationId);
         
-        // Add a small delay for better UX so the processing screen is visible
-        setTimeout(() => {
-          navigation.replace('PaymentSuccessful', { amount, donation: res });
-        }, 1500);
+        if (res.status === 'failed') {
+          setTimeout(() => {
+            Alert.alert("Payment Failed", "Your payment could not be processed. Please try again.");
+            navigation.goBack();
+          }, 1500);
+        } else {
+          setTimeout(() => {
+            navigation.replace('PaymentSuccessful', { amount, donation: res });
+          }, 1500);
+        }
       } catch (error) {
-        console.error('Failed to create donation', error);
-        // Fallback to success for demo purposes if API fails, or we could handle error
+        console.error('Failed to confirm donation', error);
         setTimeout(() => {
           navigation.replace('PaymentSuccessful', { amount });
         }, 1500);
       }
     };
     processPayment();
-  }, [navigation, amount, recipientType]);
+  }, [navigation, amount, recipientType, donationId]);
 
   return (
     <SafeAreaView style={styles.safeArea}>

@@ -36,6 +36,7 @@ export interface DashboardStats {
 export const donationsApi = {
   getDonations: () => api.get<Donation[]>('/donations'),
   getDonation: (id: string | number) => api.get<Donation>(`/donations/${id}`),
-  createDonation: (data: CreateDonationPayload) => api.post<Donation>('/donations', data),
+  createDonation: (data: CreateDonationPayload) => api.post<Donation & { client_secret?: string }>('/donations', data),
+  confirmDonation: (id: string | number) => api.post<Donation>(`/donations/${id}/confirm`),
   getDashboardStats: (role: string = 'sponsor') => api.get<DashboardStats>(`/dashboard/stats?role=${role}`),
 };

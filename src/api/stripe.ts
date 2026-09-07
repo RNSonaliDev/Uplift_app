@@ -1,4 +1,4 @@
-const STRIPE_SECRET_KEY = process.env.EXPO_PUBLIC_STRIPE_SECRET_KEY || 'your_secret_key_here';
+const STRIPE_SECRET_KEY = process.env.EXPO_PUBLIC_STRIPE_SECRET_KEY || '';
 
 export const stripeApi = {
   /**
