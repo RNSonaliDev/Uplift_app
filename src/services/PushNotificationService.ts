@@ -7,6 +7,7 @@ import {
 } from '@react-native-firebase/messaging';
 import notifee, { AndroidImportance } from '@notifee/react-native';
 import { Platform } from 'react-native';
+import { notificationsApi } from '../api/notifications';
 
 class PushNotificationService {
   async requestUserPermission() {
@@ -35,8 +36,17 @@ class PushNotificationService {
       const fcmToken = await getToken(msg);
       if (fcmToken) {
         console.log('Your Firebase Token is:', fcmToken);
-        // Here you would typically send this token to your backend
-        // e.g., backendApi.registerDeviceToken(fcmToken)
+        try {
+          await notificationsApi.registerDeviceToken({
+            device_token: {
+              token: fcmToken,
+              platform: Platform.OS === 'ios' ? 'ios' : 'android'
+            }
+          });
+          console.log('Successfully registered device token with backend');
+        } catch (apiError) {
+          console.log('Failed to register device token with backend, may not be logged in', apiError);
+        }
       } else {
         console.log('Failed to get FCM token');
       }

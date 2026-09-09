@@ -13,6 +13,7 @@ import {useNavigation, useFocusEffect} from '@react-navigation/native';
 import Svg, {Path, Circle} from 'react-native-svg';
 import {api, getFullImageUrl} from '../../../api/client';
 import {authApi, CategoryResponse, UserProfileResponse} from '../../../api/auth';
+import {notificationsApi, AppNotification} from '../../../api/notifications';
 import {AppText} from '../../../components/AppText';
 import {Colors} from '../../../theme/colors';
 import {Typography, FontFamily} from '../../../theme/typography';
@@ -42,6 +43,7 @@ export default function BeneficiaryDashboardScreen() {
   const [loading, setLoading] = useState(true);
   const [categories, setCategories] = useState<CategoryResponse[]>([]);
   const [profile, setProfile] = useState<UserProfileResponse | null>(null);
+  const [unreadNotifications, setUnreadNotifications] = useState(false);
 
   const getBadgeColors = (status: string) => {
     if (!status) return { bg: '#E0DEFF', text: '#6D5DF6' };
@@ -56,14 +58,21 @@ export default function BeneficiaryDashboardScreen() {
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
-      const [catData, profData, reqData] = await Promise.all([
+      const [catData, profData, reqData, notifData] = await Promise.all([
         authApi.getCategories(),
         authApi.getProfile(),
-        api.get<any[]>('/help_requests?scope=beneficiary')
+        api.get<any[]>('/help_requests?scope=beneficiary'),
+        notificationsApi.getNotifications().catch(() => [])
       ]);
       const beneficiaryCategories = catData.filter(c => c.category_type === 'beneficiary');
       setCategories(beneficiaryCategories);
       setProfile(profData);
+      
+      let notifs = [];
+      if (Array.isArray(notifData)) notifs = notifData;
+      else if (notifData && typeof notifData === 'object' && Array.isArray((notifData as any).notifications)) notifs = (notifData as any).notifications;
+      
+      setUnreadNotifications(notifs.some(n => !n.is_read));
       const active = reqData.find(r => r.status === 'pending' || r.status === 'accepted' || r.status === 'assigned');
       setUpcomingRequest(active || null);
     } catch (error) {
@@ -114,10 +123,10 @@ export default function BeneficiaryDashboardScreen() {
               >
                 <ArrowRightLeft color={Colors.neutral[0]} size={22} />
               </TouchableOpacity> */}
-              {/* <TouchableOpacity style={styles.notificationBtn}>
+              <TouchableOpacity style={styles.notificationBtn} onPress={() => navigation.navigate('Notifications')}>
                 <Bell color={Colors.neutral[0]} size={24} />
-                <View style={styles.notificationDot} />
-              </TouchableOpacity> */}
+                {unreadNotifications && <View style={styles.notificationDot} />}
+              </TouchableOpacity>
             </View>
           </View>
         </View>
@@ -186,7 +195,7 @@ export default function BeneficiaryDashboardScreen() {
                 onPress={() => navigation.navigate('RequestHelp')}
               >
                 <Plus color={Colors.neutral[0]} size={20} />
-                <Text style={styles.requestHelpText}>Create Request Help</Text>
+                <Text style={styles.requestHelpText}> Request Help</Text>
               </TouchableOpacity>
             </View>
           )}

@@ -21,6 +21,7 @@ import {
   MessageSquare,
   Map,
   Star,
+  ShieldAlert,
 } from 'lucide-react-native';
 
 export default function RequestDetailsScreen() {
@@ -84,6 +85,14 @@ export default function RequestDetailsScreen() {
             <MessageSquare color={Colors.primary[500]} size={20} />
             <Text style={styles.outlineBtnText}>Message Helper</Text>
           </TouchableOpacity>
+        </View>
+
+        {/* Security Note */}
+        <View style={styles.securityNote}>
+          <ShieldAlert color={Colors.warning} size={24} />
+          <Text style={styles.securityText}>
+            For your safety, never share personal information or belongings like your SSN or bank details with anyone.
+          </Text>
         </View>
 
         {/* Action Button */}
@@ -244,5 +253,20 @@ const styles = StyleSheet.create({
     ...Typography.buttonLarge,
     color: Colors.neutral[0],
     marginLeft: 8,
+  },
+  securityNote: {
+    flexDirection: 'row',
+    backgroundColor: Colors.warning + '1A', // 10% opacity
+    padding: 16,
+    borderRadius: 8,
+    alignItems: 'flex-start',
+    marginBottom: 24,
+  },
+  securityText: {
+    flex: 1,
+    marginLeft: 12,
+    lineHeight: 20,
+    ...Typography.caption,
+    color: Colors.neutral[600],
   },
 });

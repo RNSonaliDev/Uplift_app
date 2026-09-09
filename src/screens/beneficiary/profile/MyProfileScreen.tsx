@@ -41,6 +41,7 @@ import {
   Headphones,
   Star,
   Mail,
+  Trash2,
 } from 'lucide-react-native';
 
 export default function MyProfileScreen() {
@@ -128,6 +129,43 @@ export default function MyProfileScreen() {
         }
       },
     ]);
+  };
+
+  const handleDeleteAccount = async () => {
+    Alert.alert(
+      'Delete Account',
+      'Are you sure you want to delete your account? This action cannot be undone.',
+      [
+        {text: 'Cancel', style: 'cancel'},
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await authApi.deleteProfile();
+              Toast.show({
+                type: 'success',
+                text1: 'Account Deleted',
+                text2: 'Your account has been successfully deleted.',
+              });
+            } catch (error: any) {
+              console.log('Delete account failed', error);
+              Toast.show({
+                type: 'error',
+                text1: 'Error',
+                text2: error?.data?.errors?.[0] || error?.message || 'Failed to delete account',
+              });
+              return;
+            }
+            await AsyncStorage.removeItem('UPLIFT_AUTH_TOKEN');
+            navigation.reset({
+              index: 0,
+              routes: [{name: 'Welcome'}],
+            });
+          }
+        },
+      ]
+    );
   };
 
   const openTerms = () => {
@@ -248,20 +286,26 @@ export default function MyProfileScreen() {
             title="Terms of Service" 
             onPress={openTerms} 
           />
-          <MenuItem 
+          {/* <MenuItem 
             icon={<HelpCircle color={Colors.neutral[500]} size={24} />} 
             title="Help Center" 
             onPress={() => {}} 
-          />
+          /> */}
           <MenuItem 
             icon={<Headphones color={Colors.neutral[500]} size={24} />} 
             title="Contact Support" 
-            onPress={() => {}} 
+            onPress={() => navigation.navigate('ContactSupport')} 
           />
           <MenuItem 
             icon={<LogOut color={Colors.error} size={24} />} 
             title="Logout" 
             onPress={handleLogout} 
+            titleStyle={{color: Colors.error}}
+          />
+          <MenuItem 
+            icon={<Trash2 color={Colors.error} size={24} />} 
+            title="Delete Account" 
+            onPress={handleDeleteAccount} 
             noBorder
             titleStyle={{color: Colors.error}}
           />

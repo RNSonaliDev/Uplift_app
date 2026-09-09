@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { PanResponder } from 'react-native';
 import {
   View,
   Text,
@@ -12,7 +13,10 @@ import {
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ArrowLeft, Calendar as CalendarIcon, Clock, CheckSquare, Square } from 'lucide-react-native';
+import { ArrowLeft, Calendar as CalendarIcon, Clock, CheckSquare, Square, MapPin, Crosshair, Map as MapIcon, Minus, Plus, Navigation } from 'lucide-react-native';
+import MapView, { Marker, Circle as MapCircle } from 'react-native-maps';
+import { GooglePlacesAutocomplete, GooglePlacesAutocompleteRef } from 'react-native-google-places-autocomplete';
+import Geolocation from '@react-native-community/geolocation';
 import DatePicker from 'react-native-date-picker';
 
 import { Colors } from '../../../theme/colors';
@@ -51,6 +55,131 @@ export const RequestDetailsScreen = () => {
     return time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
   };
 
+  const [address, setAddress] = useState('');
+  const [addressError, setAddressError] = useState('');
+  const [radius, setRadius] = useState(10); // in km
+  const [trackWidth, setTrackWidth] = useState(0);
+  const radiusRef = useRef(radius);
+
+  useEffect(() => {
+    radiusRef.current = radius;
+  }, [radius]);
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: () => true,
+      onPanResponderGrant: (evt, gestureState) => {
+        if (trackWidth > 0) {
+          const tapX = evt.nativeEvent.locationX - 16; // account for paddingHorizontal
+          const percentage = Math.max(0, Math.min(1, tapX / trackWidth));
+          const newRadius = Math.round(1 + percentage * 24);
+          setRadius(newRadius);
+          radiusRef.current = newRadius;
+        }
+      },
+      onPanResponderMove: (evt, gestureState) => {
+        if (trackWidth > 0) {
+          const percentageChange = gestureState.dx / trackWidth;
+          const newRadius = Math.round(radiusRef.current + percentageChange * 24);
+          setRadius(Math.max(1, Math.min(25, newRadius)));
+        }
+      },
+    })
+  ).current;
+
+  const [volunteersNeeded, setVolunteersNeeded] = useState(1);
+  const [urgency, setUrgency] = useState<'Normal' | 'High' | 'Urgent'>('High');
+
+  const [latitude, setLatitude] = useState('');
+  const [longitude, setLongitude] = useState('');
+  const [region, setRegion] = useState({
+    latitude: 37.78825,
+    longitude: -122.4324,
+    latitudeDelta: 0.0922,
+    longitudeDelta: 0.0421,
+  });
+
+  const GOOGLE_MAPS_API_KEY = 'AIzaSyAd20tmxrXZ1VCyhZx4q9aK0ejZtQtE92s';
+  const googlePlacesRef = useRef<GooglePlacesAutocompleteRef>(null);
+
+  const handleCurrentLocation = () => {
+    Geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude: lat, longitude: lng } = position.coords;
+        setRegion({
+          ...region,
+          latitude: lat,
+          longitude: lng,
+        });
+        setLatitude(lat.toString());
+        setLongitude(lng.toString());
+        setAddress('Current Location');
+        googlePlacesRef.current?.setAddressText('Current Location');
+      },
+      (error) => console.log(error.message),
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
+    );
+  };
+
+  const handleMarkerDragEnd = async (e: any) => {
+    const { latitude: lat, longitude: lng } = e.nativeEvent.coordinate;
+    setRegion({
+      ...region,
+      latitude: lat,
+      longitude: lng,
+    });
+    setLatitude(lat.toString());
+    setLongitude(lng.toString());
+    try {
+      const response = await fetch(
+        `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${GOOGLE_MAPS_API_KEY}`
+      );
+      const data = await response.json();
+      if (data.results && data.results.length > 0) {
+        const fetchedAddress = data.results[0].formatted_address;
+        setAddress(fetchedAddress);
+        googlePlacesRef.current?.setAddressText(fetchedAddress);
+      }
+    } catch (error) {
+      console.error('Error fetching reverse geocoding:', error);
+    }
+  };
+
+  const getPlaceholders = () => {
+    const name = (categoryTitle || '').toLowerCase();
+    
+    if (name.includes('community')) {
+      return {
+        title: 'e.g. Weekly Food Drive',
+        desc: 'e.g. Help distribute food to local families in need at the community center',
+      };
+    }
+    if (name.includes('event')) {
+      return {
+        title: 'e.g. Annual Charity Run',
+        desc: 'e.g. Assist with registration and handing out water bottles to runners',
+      };
+    }
+    if (name.includes('volunteer')) {
+      return {
+        title: 'e.g. Mentorship Program',
+        desc: 'e.g. Spend an hour a week mentoring high school students',
+      };
+    }
+
+    return {
+      title: 'e.g. General Assistance',
+      desc: 'Describe your request...',
+    };
+  };
+
+  const placeholders = getPlaceholders();
+
+  const incrementVolunteers = () => setVolunteersNeeded(v => v + 1);
+  const decrementVolunteers = () => setVolunteersNeeded(v => Math.max(1, v - 1));
+
+  
   const handleContinue = () => {
     let hasError = false;
     const newErrors = { title: '', description: '', time: '' };
@@ -70,11 +199,21 @@ export const RequestDetailsScreen = () => {
       (helpType === 'single' && isMultipleDates && startDate.toDateString() === endDate.toDateString()) ||
       (helpType === 'multiple' && startDate.toDateString() === endDate.toDateString());
 
-    if (isSingleDate) {
-      if (startTime.getHours() === endTime.getHours() && startTime.getMinutes() === endTime.getMinutes()) {
-        newErrors.time = 'Start and End time must be different';
-        hasError = true;
-      }
+    const startMinutes = startTime.getHours() * 60 + startTime.getMinutes();
+    const endMinutes = endTime.getHours() * 60 + endTime.getMinutes();
+
+    if (startTime.getHours() < 8 || endTime.getHours() > 20 || (endTime.getHours() === 20 && endTime.getMinutes() > 0)) {
+      newErrors.time = 'Time must be between 8 AM and 8 PM';
+      hasError = true;
+    } else if (endMinutes - startMinutes <= 0) {
+      newErrors.time = 'End time must be after start time';
+      hasError = true;
+    } else if (endMinutes - startMinutes > 240) {
+      newErrors.time = 'Request cannot exceed 4 hours';
+      hasError = true;
+    }    if (!address.trim()) {
+      setAddressError('Please enter an address');
+      hasError = true;
     }
 
     if (hasError) {
@@ -82,7 +221,7 @@ export const RequestDetailsScreen = () => {
       return;
     }
 
-    navigation.navigate('LocationVolunteers', {
+    navigation.navigate('ReviewRequest', {
       categoryId,
       categoryTitle,
       title,
@@ -96,6 +235,12 @@ export const RequestDetailsScreen = () => {
       startTimeISO: startTime.toTimeString().substring(0, 5),
       endDateISO: endDate.toISOString().split('T')[0],
       endTimeISO: endTime.toTimeString().substring(0, 5),
+      address,
+      latitude,
+      longitude,
+      radius,
+      volunteersNeeded,
+      urgency,
     });
   };
 
@@ -139,7 +284,7 @@ export const RequestDetailsScreen = () => {
             <Text style={styles.label}>Request Title</Text>
             <TextInput
               style={[styles.input, errors.title ? styles.inputError : null]}
-              placeholder="e.g. Grocery Assistance"
+              placeholder={placeholders.title}
               placeholderTextColor={Colors.neutral[400]}
               value={title}
               onChangeText={(text) => {
@@ -156,7 +301,7 @@ export const RequestDetailsScreen = () => {
             <Text style={styles.label}>Description</Text>
             <TextInput
               style={[styles.input, styles.textArea, errors.description ? styles.inputError : null]}
-              placeholder="Describe your request..."
+              placeholder={placeholders.desc}
               placeholderTextColor={Colors.neutral[400]}
               multiline
               numberOfLines={4}
@@ -180,7 +325,7 @@ export const RequestDetailsScreen = () => {
 
           {/* Help Type */}
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Help Type</Text>
+            <Text style={styles.label}>Number of positions</Text>
             <View style={styles.radioGroup}>
               <TouchableOpacity
                 style={[
@@ -206,16 +351,41 @@ export const RequestDetailsScreen = () => {
             </View>
             <Text style={styles.helperText}>Do you need one or multiple volunteers?</Text>
           </View>
-
+       {/* Volunteers Needed */}
+        {helpType !== 'single' && (
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Number of Volunteers Needed</Text>
+            <View style={styles.counterContainer}>
+              <TouchableOpacity style={styles.counterButton} onPress={decrementVolunteers}>
+                <Minus color={Colors.neutral[900]} size={24} />
+              </TouchableOpacity>
+              <Text style={styles.counterValue}>{volunteersNeeded}</Text>
+              <TouchableOpacity style={styles.counterButton} onPress={incrementVolunteers}>
+                <Plus color={Colors.neutral[900]} size={24} />
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
           {/* Dates and Times */}
           {helpType === 'single' ? (
             <>
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Date</Text>
-                <TouchableOpacity style={styles.dateInput} onPress={() => setIsStartDatePickerOpen(true)}>
-                  <Text style={styles.dateText}>{formatDate(startDate)}</Text>
-                  <CalendarIcon color={Colors.neutral[500]} size={20} />
-                </TouchableOpacity>
+              <View style={styles.row}>
+                <View style={[styles.inputGroup, { flex: 1, marginRight: isMultipleDates ? 8 : 0 }]}>
+                  <Text style={styles.label}>{isMultipleDates ? 'Start Date' : 'Date'}</Text>
+                  <TouchableOpacity style={styles.dateInput} onPress={() => setIsStartDatePickerOpen(true)}>
+                    <Text style={styles.dateText}>{formatDate(startDate)}</Text>
+                    <CalendarIcon color={Colors.neutral[500]} size={20} />
+                  </TouchableOpacity>
+                </View>
+                {isMultipleDates && (
+                  <View style={[styles.inputGroup, { flex: 1, marginLeft: 8 }]}>
+                    <Text style={styles.label}>End Date</Text>
+                    <TouchableOpacity style={styles.dateInput} onPress={() => setIsEndDatePickerOpen(true)}>
+                      <Text style={styles.dateText}>{formatDate(endDate)}</Text>
+                      <CalendarIcon color={Colors.neutral[500]} size={20} />
+                    </TouchableOpacity>
+                  </View>
+                )}
               </View>
 
               <TouchableOpacity 
@@ -229,16 +399,6 @@ export const RequestDetailsScreen = () => {
                 )}
                 <Text style={styles.checkboxText}>Request for multiple dates</Text>
               </TouchableOpacity>
-
-              {isMultipleDates && (
-                <View style={styles.inputGroup}>
-                  <Text style={styles.label}>End Date</Text>
-                  <TouchableOpacity style={styles.dateInput} onPress={() => setIsEndDatePickerOpen(true)}>
-                    <Text style={styles.dateText}>{formatDate(endDate)}</Text>
-                    <CalendarIcon color={Colors.neutral[500]} size={20} />
-                  </TouchableOpacity>
-                </View>
-              )}
               <View style={styles.row}>
                 <View style={[styles.inputGroup, { flex: 1, marginRight: 8, marginBottom: errors.time ? 8 : 24 }]}>
                   <Text style={styles.label}>Start Time</Text>
@@ -295,7 +455,131 @@ export const RequestDetailsScreen = () => {
             </>
           )}
 
-        </ScrollView>
+        
+{/* Address */}
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>Address</Text>
+          <GooglePlacesAutocomplete
+            ref={googlePlacesRef}
+            placeholder="Enter address"
+            fetchDetails={true}
+            onPress={(data, details = null) => {
+              if (addressError) setAddressError('');
+              if (details) {
+                setAddress(data.description);
+                setLatitude(details.geometry.location.lat.toString());
+                setLongitude(details.geometry.location.lng.toString());
+                setRegion({
+                  ...region,
+                  latitude: details.geometry.location.lat,
+                  longitude: details.geometry.location.lng,
+                });
+              }
+            }}
+            query={{
+              key: GOOGLE_MAPS_API_KEY,
+              language: 'en',
+            }}
+            styles={{
+              container: { flex: 0 },
+              textInputContainer: {
+                backgroundColor: Colors.neutral[50],
+                borderRadius: 12,
+                borderWidth: 1,
+                borderColor: addressError ? Colors.error : Colors.neutral[200],
+                height: 52,
+                flexDirection: 'row',
+                alignItems: 'center',
+                paddingHorizontal: 12,
+              },
+              textInput: {
+                color: Colors.neutral[900],
+                fontSize: 16,
+                height: 50,
+                marginLeft: 8,
+                flex: 1,
+                backgroundColor: 'transparent',
+              },
+              listView: {
+                backgroundColor: Colors.neutral[0],
+                borderWidth: 1,
+                borderColor: Colors.neutral[200],
+                borderRadius: 8,
+                marginTop: 4,
+              },
+            }}
+            textInputProps={{
+              placeholderTextColor: Colors.neutral[400],
+              onChangeText: (text) => {
+                setAddress(text);
+                if (addressError) setAddressError('');
+              }
+            }}
+            renderLeftButton={() => (
+              <View style={{marginRight: 4}}>
+                <MapPin color={Colors.primary[500]} size={20} />
+              </View>
+            )}
+            renderRightButton={() => (
+              <TouchableOpacity style={{padding: 4}} onPress={handleCurrentLocation}>
+                <Navigation color={Colors.primary[500]} size={20} />
+              </TouchableOpacity>
+            )}
+          />
+          {!!addressError && <Text style={styles.errorText}>{addressError}</Text>}
+        </View>
+
+        {/* Map */}
+        {(latitude && longitude) ? (
+          <View style={styles.mapContainer}>
+            <MapView
+              style={{ flex: 1 }}
+              region={{
+                latitude: Number(latitude),
+                longitude: Number(longitude),
+                latitudeDelta: 0.05,
+                longitudeDelta: 0.05,
+              }}
+            >
+              <Marker 
+                draggable
+                coordinate={{ latitude: Number(latitude), longitude: Number(longitude) }} 
+                onDragEnd={handleMarkerDragEnd}
+              />
+              <MapCircle
+                center={{ latitude: Number(latitude), longitude: Number(longitude) }}
+                radius={radius * 1000} // converting km to meters
+                fillColor="rgba(91, 77, 255, 0.2)"
+                strokeColor="rgba(91, 77, 255, 0.5)"
+              />
+            </MapView>
+          </View>
+        ) : null}
+
+ 
+
+        {/* Urgency */}
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>Urgency</Text>
+          <View style={styles.urgencyGroup}>
+            {['Normal', 'High', 'Urgent'].map((level) => {
+              const isActive = urgency === level;
+              return (
+                <TouchableOpacity
+                  key={level}
+                  style={[styles.urgencyButton, isActive && styles.urgencyButtonActive]}
+                  onPress={() => setUrgency(level as any)}
+                >
+                  <Text style={[styles.urgencyText, isActive && styles.urgencyTextActive]}>
+                    {level}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </View>
+
+      </ScrollView>
       </KeyboardAvoidingView>
 
       <DatePicker
@@ -528,4 +812,141 @@ const styles = StyleSheet.create({
     ...Typography.buttonLarge,
     color: Colors.neutral[0],
   },
+
+  addressBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderWidth: 1,
+    borderColor: Colors.neutral[200],
+    borderRadius: 12,
+    paddingLeft: 16,
+    paddingRight: 8,
+    paddingVertical: 12,
+    backgroundColor: Colors.neutral[50],
+  },
+  addressText: {
+    flex: 1,
+    ...Typography.bodyMedium,
+    color: Colors.neutral[900],
+  },
+  iconButton: {
+    padding: 8,
+  },
+  mapContainer: {
+    height: 160,
+    borderRadius: 16,
+    overflow: 'hidden',
+    marginBottom: 24,
+    backgroundColor: '#E5E5CA', // Map-like background color
+  },
+  mapBackground: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    opacity: 0.8,
+  },
+  mapRadiusCircle: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: 'rgba(91, 77, 255, 0.2)', // Primary color with opacity
+    borderWidth: 1,
+    borderColor: 'rgba(91, 77, 255, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  mapPin: {
+    marginTop: -12,
+  },
+  radiusHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  radiusValue: {
+    ...Typography.labelMedium,
+    color: Colors.primary[600],
+  },
+  sliderContainer: {
+    paddingHorizontal: 8,
+  },
+  sliderTrack: {
+    height: 4,
+    backgroundColor: Colors.neutral[200],
+    borderRadius: 2,
+    position: 'relative',
+    marginBottom: 16,
+  },
+  sliderFill: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    backgroundColor: Colors.primary[600],
+    borderRadius: 2,
+  },
+  sliderThumb: {
+    position: 'absolute',
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: Colors.primary[600],
+    top: -8,
+    marginLeft: -10, // Center thumb
+    borderWidth: 2,
+    borderColor: Colors.neutral[0],
+  },
+  sliderLabels: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  sliderLabelText: {
+    ...Typography.caption,
+    color: Colors.neutral[500],
+  },
+  counterContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderWidth: 1,
+    borderColor: Colors.neutral[200],
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    backgroundColor: Colors.neutral[50],
+  },
+  counterButton: {
+    padding: 16,
+  },
+  counterValue: {
+    ...Typography.h4,
+    color: Colors.neutral[900],
+  },
+  urgencyGroup: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  urgencyButton: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    borderWidth: 1,
+    borderColor: Colors.neutral[200],
+    borderRadius: 12,
+    backgroundColor: Colors.neutral[50],
+  },
+  urgencyButtonActive: {
+    backgroundColor: Colors.primary[600],
+    borderColor: Colors.primary[600],
+  },
+  urgencyText: {
+    ...Typography.labelMedium,
+    color: Colors.neutral[700],
+  },
+  urgencyTextActive: {
+    color: Colors.neutral[0],
+  },
+
 });

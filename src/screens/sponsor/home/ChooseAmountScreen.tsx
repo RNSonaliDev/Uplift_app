@@ -21,7 +21,7 @@ export default function ChooseAmountScreen() {
   const navigation = useNavigation<any>();
   const [selectedAmount, setSelectedAmount] = useState<number | 'custom'>(100);
   const [customAmount, setCustomAmount] = useState<string>('');
-  const [recipientType, setRecipientType] = useState<string>('none');
+  const [recipientType, setRecipientType] = useState<string>('whoever');
 
   const handleContinue = () => {
     const finalAmount = selectedAmount === 'custom' ? parseFloat(customAmount) : selectedAmount;
@@ -59,9 +59,10 @@ export default function ChooseAmountScreen() {
         </AppText>
         <View style={styles.recipientGrid}>
           {[
-            { id: 'none', label: 'General Fund' },
-            { id: 'volunteer', label: 'Support Volunteers' },
-            { id: 'beneficiary', label: 'Direct to Beneficiaries' },
+            { id: 'volunteer', label: 'Reward the volunteers' },
+            { id: 'beneficiary', label: 'Support the beneficiaries' },
+            { id: 'split', label: 'Split equally' },
+            { id: 'whoever', label: 'Whoever needs it most' },
           ].map(type => {
             const isSelected = recipientType === type.id;
             return (
@@ -71,7 +72,7 @@ export default function ChooseAmountScreen() {
                 onPress={() => setRecipientType(type.id)}
               >
                 <AppText 
-                  variant="bodyMedium" 
+                  variant="bodySmall" 
                   color={isSelected ? Colors.neutral[0] : Colors.neutral[800]}
                   weight={isSelected ? 'semiBold' : 'regular'}
                 >
@@ -139,22 +140,6 @@ export default function ChooseAmountScreen() {
             />
           </View>
         </View>
-
-        {/* Thank You Card */}
-        <View style={styles.thankYouCard}>
-          <View style={styles.heartContainer}>
-            <Heart color={Colors.primary[500]} size={24} fill={Colors.primary[500]} />
-          </View>
-          <View style={{flex: 1}}>
-            <AppText variant="h5" color={Colors.neutral[900]} style={{marginBottom: 4}}>
-              Thank you!
-            </AppText>
-            <AppText variant="caption" color={Colors.neutral[600]}>
-              Your contribution helps us continue our mission and create change.
-            </AppText>
-          </View>
-        </View>
-
       </ScrollView>
 
       {/* Footer */}
@@ -232,7 +217,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.neutral[200],
     borderRadius: 12,
-    paddingVertical: verticalScale(16),
+    paddingVertical: verticalScale(12),
     paddingHorizontal: horizontalScale(16),
   },
   recipientBoxSelected: {

@@ -137,7 +137,7 @@ export const ReviewRequestScreen = () => {
           
           <SummaryItem 
             icon={Users} 
-            title="Help Type" 
+            title="Number of positions" 
             value={params.helpType === 'multiple' ? 'Multiple Volunteers' : 'Single Volunteer'} 
           />
           <View style={styles.divider} />

@@ -32,6 +32,10 @@ import {OrganizationTabNavigator} from './src/navigation/OrganizationTabNavigato
 import {SponsorTabNavigator} from './src/navigation/SponsorTabNavigator';
 import {DummyTabNavigator} from './src/navigation/DummyTabNavigator';
 import LegalContentScreen from './src/screens/beneficiary/profile/LegalContentScreen';
+import NotificationsScreen from './src/screens/NotificationsScreen';
+import ContactSupportScreen from './src/screens/beneficiary/profile/ContactSupportScreen';
+import ContactSupportDetailsScreen from './src/screens/beneficiary/profile/ContactSupportDetailsScreen';
+import CreateSupportRequestScreen from './src/screens/beneficiary/profile/CreateSupportRequestScreen';
 import { pushNotificationService } from './src/services/PushNotificationService';
 
 type RootStackParamList = {
@@ -54,6 +58,10 @@ type RootStackParamList = {
   OrganizationFlow: undefined;
   SponsorFlow: undefined;
   LegalContent: { type: 'terms' | 'privacy' };
+  Notifications: undefined;
+  ContactSupport: undefined;
+  ContactSupportDetails: { id: number };
+  CreateSupportRequest: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -173,6 +181,10 @@ function App() {
               <Stack.Screen name="OrganizationFlow" component={OrganizationTabNavigator} />
               <Stack.Screen name="SponsorFlow" component={SponsorTabNavigator} />
               <Stack.Screen name="LegalContent" component={LegalContentScreen} />
+              <Stack.Screen name="Notifications" component={NotificationsScreen} />
+              <Stack.Screen name="ContactSupport" component={ContactSupportScreen} />
+              <Stack.Screen name="ContactSupportDetails" component={ContactSupportDetailsScreen} />
+              <Stack.Screen name="CreateSupportRequest" component={CreateSupportRequestScreen} />
             </Stack.Navigator>
           </NavigationContainer>
         </StripeProvider>

@@ -207,7 +207,7 @@ export const SponsorSetupScreen: React.FC = () => {
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
-  const [anonymity, setAnonymity] = useState<'show' | 'hide'>('show');
+  const [anonymity, setAnonymity] = useState<'show' | 'hide'>('hide');
   
   const [errors, setErrors] = useState<{[key: string]: string}>({});
 
@@ -346,7 +346,7 @@ export const SponsorSetupScreen: React.FC = () => {
               center
               color={Colors.neutral[500]}
               style={styles.subtitle}>
-              let's setup Sponsor profile
+              Let’s create your Sponsor profile
             </AppText>
           </View>
 
@@ -421,13 +421,13 @@ export const SponsorSetupScreen: React.FC = () => {
 
             <View style={styles.radioGroup}>
               <RadioCard
-                title="Show my name"
-                description="Display my name on the platform"
+                title="Share my name"
+                description="Display my name to others"
                 isSelected={anonymity === 'show'}
                 onPress={() => setAnonymity('show')}
               />
               <RadioCard
-                title="Remain anonymous"
+                title="Stay anonymous"
                 description="Hide my name from others"
                 isSelected={anonymity === 'hide'}
                 onPress={() => setAnonymity('hide')}

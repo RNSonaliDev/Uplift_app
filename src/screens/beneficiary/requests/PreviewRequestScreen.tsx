@@ -113,7 +113,7 @@ export default function PreviewRequestScreen() {
         <View style={styles.card}>
           {renderInlineRow(
             <ClipboardList color={Colors.neutral[700]} size={20} />, 
-            'Help Type', 
+            'Number of positions', 
             categoryTitle || 'N/A'
           )}
           {renderInlineRow(

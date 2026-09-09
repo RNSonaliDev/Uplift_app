@@ -8,12 +8,13 @@ import {useNavigation, useRoute} from '@react-navigation/native';
 import {Colors} from '../../../theme/colors';
 import {AppText} from '../../../components/AppText';
 import {Button} from '../../../components/Button';
-import {Send} from 'lucide-react-native';
+import {Send, ShieldAlert} from 'lucide-react-native';
 import {
   horizontalScale,
   verticalScale,
   moderateScale,
 } from '../../../utils/responsive';
+import { BorderRadius } from '../../../theme';
 
 export default function RequestSubmittedScreen() {
   const navigation = useNavigation<any>();
@@ -53,6 +54,13 @@ export default function RequestSubmittedScreen() {
             </AppText>
             <AppText variant="bodyLarge" color={Colors.neutral[600]}>
               {referenceNumber ? `#${referenceNumber}` : '#REQ-2024-0522-001'}
+            </AppText>
+          </View>
+
+          <View style={styles.securityNote}>
+            <ShieldAlert color={Colors.warning} size={moderateScale(24)} />
+            <AppText variant="caption" color={Colors.neutral[600]} style={styles.securityText}>
+              For your safety, never share personal information or belongings like your SSN or bank details with anyone.
             </AppText>
           </View>
         </View>
@@ -98,41 +106,50 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   iconCircle: {
-    width: moderateScale(110),
-    height: moderateScale(110),
-    borderRadius: moderateScale(55),
+    width: moderateScale(96),
+    height: moderateScale(96),
+    borderRadius: moderateScale(48),
     backgroundColor: Colors.primary[50],
     alignItems: 'center',
     justifyContent: 'center',
   },
   dot: {
     position: 'absolute',
-    borderRadius: 10,
+    borderRadius: 50,
   },
   title: {
     marginBottom: verticalScale(16),
-    color: Colors.primary[900], // Dark Navy text
-    textAlign: 'center',
   },
   subtitle: {
     textAlign: 'center',
-    marginBottom: verticalScale(40),
-    lineHeight: 24,
-    paddingHorizontal: horizontalScale(16),
+    marginBottom: verticalScale(32),
   },
   card: {
-    width: '100%',
-    backgroundColor: Colors.neutral[0],
-    borderRadius: moderateScale(12),
-    borderWidth: 1,
-    borderColor: Colors.neutral[200],
-    padding: moderateScale(20),
+    backgroundColor: Colors.primary[50],
+    paddingVertical: verticalScale(16),
+    paddingHorizontal: horizontalScale(32),
+    borderRadius: BorderRadius.lg,
+    alignItems: 'center',
+    marginBottom: verticalScale(24),
   },
   cardLabel: {
-    marginBottom: verticalScale(8),
+    marginBottom: verticalScale(4),
+  },
+  securityNote: {
+    flexDirection: 'row',
+    backgroundColor: Colors.warning + '1A', // 10% opacity
+    padding: moderateScale(16),
+    borderRadius: BorderRadius.md,
+    alignItems: 'flex-start',
+    marginTop: verticalScale(8),
+  },
+  securityText: {
+    flex: 1,
+    marginLeft: horizontalScale(12),
+    lineHeight: moderateScale(20),
   },
   footer: {
-    padding: moderateScale(24),
-    paddingBottom: verticalScale(40),
+    paddingHorizontal: horizontalScale(24),
+    paddingBottom: verticalScale(24),
   },
 });

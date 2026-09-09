@@ -8,53 +8,96 @@ import {
   KeyboardAvoidingView,
   Platform,
   TextInput,
+  Modal,
 } from 'react-native';
+
+const RELATIONSHIP_OPTIONS = ['Parent', 'Spouse/Partner', 'Child', 'Sibling', 'Grandchild', 'Friend'];
 import { useNavigation } from '@react-navigation/native';
-import { ChevronLeft, Plus, Phone, Trash2, User } from 'lucide-react-native';
+import { ChevronLeft, Plus, Phone, Trash2, User, Pencil, X } from 'lucide-react-native';
 import { Colors } from '../../../theme/colors';
 import { AppText } from '../../../components/AppText';
 import { Button } from '../../../components/Button';
 import { Input } from '../../../components/Input';
 import { Spacing, BorderRadius } from '../../../theme/spacing';
-
-interface EmergencyContact {
-  id: string;
-  name: string;
-  relationship: string;
-  phone: string;
-}
+import { emergencyContactsApi, EmergencyContact } from '../../../api/emergencyContacts';
+import { useFocusEffect } from '@react-navigation/native';
+import Toast from 'react-native-toast-message';
 
 export default function EmergencyContactsScreen() {
   const navigation = useNavigation<any>();
   
-  // Mock data for initial state
-  const [contacts, setContacts] = useState<EmergencyContact[]>([
-    { id: '1', name: 'Jane Doe', relationship: 'Mother', phone: '+1234567890' },
-  ]);
+  const [contacts, setContacts] = useState<EmergencyContact[]>([]);
+  const [isRelationshipModalVisible, setIsRelationshipModalVisible] = useState(false);
+  const [loading, setLoading] = useState(false);
   
   const [isAdding, setIsAdding] = useState(false);
-  const [form, setForm] = useState({ name: '', relationship: '', phone: '' });
+  const [form, setForm] = useState({ name: '', relationship: '', phone: '', email: '' });
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editForm, setEditForm] = useState({ name: '', relationship: '', phone: '', email: '' });
 
-  const updateContact = (id: string, field: keyof EmergencyContact, value: string) => {
-    setContacts(contacts.map(c => c.id === id ? { ...c, [field]: value } : c));
+  const fetchContacts = React.useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await emergencyContactsApi.getContacts();
+      setContacts(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.log('Fetch contacts error', error);
+      Toast.show({ type: 'error', text1: 'Error', text2: 'Failed to load contacts' });
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchContacts();
+    }, [fetchContacts])
+  );
+
+  const handleSave = async () => {
+    if (!form.name || !form.phone || !form.relationship) {
+      Toast.show({ type: 'error', text1: 'Validation Error', text2: 'Please fill in required fields' });
+      return;
+    }
+
+    try {
+      await emergencyContactsApi.createContact({ emergency_contact: form });
+      Toast.show({ type: 'success', text1: 'Success', text2: 'Contact added successfully' });
+      setIsAdding(false);
+      setForm({ name: '', relationship: '', phone: '', email: '' });
+      fetchContacts();
+    } catch (error) {
+      console.log('Create contact error', error);
+      Toast.show({ type: 'error', text1: 'Error', text2: 'Failed to add contact' });
+    }
   };
 
-  const handleSave = () => {
-    if (!form.name || !form.phone || !form.relationship) return;
-
-    setContacts([...contacts, { id: Date.now().toString(), ...form }]);
-    
-    setIsAdding(false);
-    setForm({ name: '', relationship: '', phone: '' });
+  const handleUpdate = async (id: number) => {
+    try {
+      await emergencyContactsApi.updateContact(id, { emergency_contact: editForm });
+      Toast.show({ type: 'success', text1: 'Success', text2: 'Contact updated successfully' });
+      setEditingId(null);
+      fetchContacts();
+    } catch (error) {
+      console.log('Update contact error', error);
+      Toast.show({ type: 'error', text1: 'Error', text2: 'Failed to update contact' });
+    }
   };
 
-  const handleDelete = (id: string) => {
-    setContacts(contacts.filter(c => c.id !== id));
+  const handleDelete = async (id: number) => {
+    try {
+      await emergencyContactsApi.deleteContact(id);
+      Toast.show({ type: 'success', text1: 'Success', text2: 'Contact deleted successfully' });
+      fetchContacts();
+    } catch (error) {
+      console.log('Delete contact error', error);
+      Toast.show({ type: 'error', text1: 'Error', text2: 'Failed to delete contact' });
+    }
   };
 
   const handleCancel = () => {
     setIsAdding(false);
-    setForm({ name: '', relationship: '', phone: '' });
+    setForm({ name: '', relationship: '', phone: '', email: '' });
   };
 
   return (
@@ -63,8 +106,8 @@ export default function EmergencyContactsScreen() {
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
           <ChevronLeft color={Colors.neutral[900]} size={28} />
         </TouchableOpacity>
-        <AppText variant="h3" style={styles.headerTitle}>Emergency Contacts</AppText>
-        <View style={{ width: 28 }} />
+        <AppText variant="h5" style={styles.headerTitle}>Emergency Contacts</AppText>
+        <View style={{ width: 32 }} />
       </View>
 
       <KeyboardAvoidingView 
@@ -72,42 +115,88 @@ export default function EmergencyContactsScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-          {contacts.length === 0 && !isAdding ? (
-            <View style={styles.emptyState}>
-              <User color={Colors.neutral[400]} size={48} />
-              <AppText variant="bodyLarge" color={Colors.neutral[500]} center style={styles.emptyText}>
+          {contacts.length === 0 && !isAdding && !loading ? (
+            <View style={styles.emptyContainer}>
+              <User color={Colors.neutral[300]} size={48} />
+              <AppText variant="h6" style={styles.emptyTitle}>No contacts yet</AppText>
+              <AppText variant="bodyMedium" style={styles.emptyText} center>
                 You haven't added any emergency contacts yet.
               </AppText>
             </View>
           ) : (
-            contacts.map(contact => (
-              <View key={contact.id} style={styles.contactCard}>
-                <View style={styles.cardHeader}>
-                  <TouchableOpacity style={styles.iconBtn} onPress={() => handleDelete(contact.id)}>
-                    <Trash2 size={20} color={Colors.error[500]} />
-                  </TouchableOpacity>
+            contacts.map(contact => {
+              const isEditing = editingId === contact.id;
+              
+              return (
+                <View key={contact.id} style={styles.contactCard}>
+                  <View style={styles.cardHeader}>
+                    {isEditing ? (
+                      <TouchableOpacity style={[styles.actionIconBtn, { backgroundColor: Colors.neutral[100] }]} onPress={() => setEditingId(null)}>
+                        <X size={18} color={Colors.neutral[600]} />
+                      </TouchableOpacity>
+                    ) : (
+                      <TouchableOpacity style={[styles.actionIconBtn, { backgroundColor: Colors.primary[50] }]} onPress={() => {
+                        setEditingId(contact.id);
+                        setEditForm({ name: contact.name, relationship: contact.relationship, phone: contact.phone, email: contact.email || '' });
+                      }}>
+                        <Pencil size={18} color={Colors.primary[500]} />
+                      </TouchableOpacity>
+                    )}
+                    <TouchableOpacity style={[styles.actionIconBtn, { backgroundColor: Colors.error[50], marginLeft: 8 }]} onPress={() => handleDelete(contact.id)}>
+                      <Trash2 size={18} color={Colors.error[500]} />
+                    </TouchableOpacity>
+                  </View>
+                  <Input
+                    label="Full Name"
+                    placeholder="Enter contact's name"
+                    value={isEditing ? editForm.name : contact.name}
+                    onChangeText={(text) => isEditing && setEditForm({ ...editForm, name: text })}
+                    editable={isEditing}
+                  />
+                  {isEditing ? (
+                    <TouchableOpacity onPress={() => setIsRelationshipModalVisible(true)} activeOpacity={0.7}>
+                      <View pointerEvents="none">
+                        <Input
+                          label="Relationship"
+                          placeholder="Select Relationship"
+                          value={editForm.relationship}
+                          editable={false}
+                        />
+                      </View>
+                    </TouchableOpacity>
+                  ) : (
+                    <Input
+                      label="Relationship"
+                      value={contact.relationship}
+                      editable={false}
+                    />
+                  )}
+                  <Input
+                    label="Phone Number"
+                    placeholder="Enter phone number"
+                    keyboardType="phone-pad"
+                    value={isEditing ? editForm.phone : contact.phone}
+                    onChangeText={(text) => isEditing && setEditForm({ ...editForm, phone: text })}
+                    editable={isEditing}
+                  />
+                  <Input
+                    label="Email (Optional)"
+                    placeholder="Enter email address"
+                    keyboardType="email-address"
+                    value={isEditing ? editForm.email : (contact.email || '')}
+                    onChangeText={(text) => isEditing && setEditForm({ ...editForm, email: text })}
+                    editable={isEditing}
+                  />
+                  {isEditing && (
+                    <Button 
+                      title="Save Changes" 
+                      style={{ marginTop: Spacing.sm }} 
+                      onPress={() => handleUpdate(contact.id)} 
+                    />
+                  )}
                 </View>
-                <Input
-                  label="Full Name"
-                  placeholder="Enter contact's name"
-                  value={contact.name}
-                  onChangeText={(text) => updateContact(contact.id, 'name', text)}
-                />
-                <Input
-                  label="Relationship"
-                  placeholder="e.g. Mother, Sibling, Friend"
-                  value={contact.relationship}
-                  onChangeText={(text) => updateContact(contact.id, 'relationship', text)}
-                />
-                <Input
-                  label="Phone Number"
-                  placeholder="Enter phone number"
-                  keyboardType="phone-pad"
-                  value={contact.phone}
-                  onChangeText={(text) => updateContact(contact.id, 'phone', text)}
-                />
-              </View>
-            ))
+              );
+            })
           )}
 
           {isAdding && (
@@ -119,18 +208,29 @@ export default function EmergencyContactsScreen() {
                 value={form.name}
                 onChangeText={(text) => setForm({ ...form, name: text })}
               />
-              <Input
-                label="Relationship"
-                placeholder="e.g. Mother, Sibling, Friend"
-                value={form.relationship}
-                onChangeText={(text) => setForm({ ...form, relationship: text })}
-              />
+              <TouchableOpacity onPress={() => setIsRelationshipModalVisible(true)} activeOpacity={0.7}>
+                <View pointerEvents="none">
+                  <Input
+                    label="Relationship"
+                    placeholder="Select Relationship"
+                    value={form.relationship}
+                    editable={false}
+                  />
+                </View>
+              </TouchableOpacity>
               <Input
                 label="Phone Number"
                 placeholder="Enter phone number"
                 keyboardType="phone-pad"
                 value={form.phone}
                 onChangeText={(text) => setForm({ ...form, phone: text })}
+              />
+              <Input
+                label="Email (Optional)"
+                placeholder="Enter email address"
+                keyboardType="email-address"
+                value={form.email}
+                onChangeText={(text) => setForm({ ...form, email: text })}
               />
               
               <View style={styles.buttonRow}>
@@ -149,24 +249,81 @@ export default function EmergencyContactsScreen() {
             </View>
           )}
           
-          {!isAdding && (
-            <Button
-              title="Add Emergency Contact"
-              leftIcon={<Plus color={Colors.neutral[0]} size={20} />}
-              onPress={() => {
-                setForm({ name: '', relationship: '', phone: '' });
-                setIsAdding(true);
-              }}
-              style={styles.addBtn}
-            />
-          )}
+          {/* Replace Add Button with FAB below */}
         </ScrollView>
       </KeyboardAvoidingView>
+
+      {!isAdding && (
+        <TouchableOpacity 
+          style={styles.fab} 
+          onPress={() => {
+            setForm({ name: '', relationship: '', phone: '', email: '' });
+            setIsAdding(true);
+          }}
+          activeOpacity={0.8}
+        >
+          <Plus color={Colors.neutral[0]} size={24} />
+        </TouchableOpacity>
+      )}
+
+      <Modal visible={isRelationshipModalVisible} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <AppText variant="h5" style={{ color: Colors.neutral[900] }}>Select Relationship</AppText>
+              <TouchableOpacity onPress={() => setIsRelationshipModalVisible(false)} style={{ padding: 4 }}>
+                <X color={Colors.neutral[500]} size={24} />
+              </TouchableOpacity>
+            </View>
+            <ScrollView style={{ maxHeight: 300 }}>
+              {RELATIONSHIP_OPTIONS.map((option) => (
+                <TouchableOpacity
+                  key={option}
+                  style={styles.modalOption}
+                  onPress={() => {
+                    if (isAdding) {
+                      setForm({ ...form, relationship: option });
+                    } else if (editingId) {
+                      setEditForm({ ...editForm, relationship: option });
+                    }
+                    setIsRelationshipModalVisible(false);
+                  }}
+                >
+                  <AppText variant="bodyMedium" color={Colors.neutral[800]}>{option}</AppText>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    padding: Spacing.lg,
+  },
+  modalContent: {
+    backgroundColor: Colors.neutral[0],
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.lg,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: Spacing.md,
+  },
+  modalOption: {
+    paddingVertical: Spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.neutral[200],
+  },
   safeArea: {
     flex: 1,
     backgroundColor: Colors.neutral[0],
@@ -188,8 +345,7 @@ const styles = StyleSheet.create({
     marginLeft: -Spacing.xs,
   },
   headerTitle: {
-    flex: 1,
-    textAlign: 'center',
+    color: Colors.neutral[900],
   },
   container: {
     flex: 1,
@@ -208,23 +364,46 @@ const styles = StyleSheet.create({
   cardHeader: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
-    marginBottom: -Spacing.sm,
+    marginBottom: Spacing.xs,
     zIndex: 1,
   },
-  iconBtn: {
-    padding: Spacing.sm,
-  },
-  addBtn: {
-    marginTop: Spacing.md,
-  },
-  emptyState: {
-    alignItems: 'center',
+  actionIconBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     justifyContent: 'center',
-    paddingVertical: Spacing.xl * 2,
+    alignItems: 'center',
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingTop: 80,
+  },
+  emptyTitle: {
+    color: Colors.neutral[900],
+    marginTop: 16,
+    marginBottom: 8,
   },
   emptyText: {
-    marginTop: Spacing.md,
-    paddingHorizontal: Spacing.xl,
+    color: Colors.neutral[500],
+    paddingHorizontal: 40,
+  },
+  fab: {
+    position: 'absolute',
+    bottom: 24,
+    right: 24,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: Colors.primary[500],
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: Colors.neutral[900],
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 6,
   },
   inlineForm: {
     flex: 1,

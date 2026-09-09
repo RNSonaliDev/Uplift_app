@@ -8,7 +8,7 @@ export const formatDate = (dateStr?: string) => {
       const day = String(d.getDate()).padStart(2, '0');
       const month = String(d.getMonth() + 1).padStart(2, '0');
       const year = d.getFullYear();
-      return `${day}/${month}/${year}`;
+      return `${month}/${day}/${year}`;
     }
   } catch (e) {
     // ignore
@@ -19,9 +19,9 @@ export const formatDate = (dateStr?: string) => {
     const parts = dateStr.split('-');
     if (parts.length === 3) {
       if (parts[0].length === 4) {
-        return `${parts[2]}/${parts[1]}/${parts[0]}`;
+        return `${parts[1]}/${parts[2]}/${parts[0]}`;
       }
-      return `${parts[0]}/${parts[1]}/${parts[2]}`;
+      return `${parts[1]}/${parts[0]}/${parts[2]}`;
     }
   }
 

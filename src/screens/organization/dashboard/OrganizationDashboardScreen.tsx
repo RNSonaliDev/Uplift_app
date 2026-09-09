@@ -86,7 +86,7 @@ export const OrganizationDashboardScreen = () => {
           <Text style={styles.welcomeText}>Welcome back,</Text>
           <Text style={styles.nameText}>{profile?.active_profile?.organization_name || profile?.first_name || 'Organization'}</Text>
         </View>
-          <TouchableOpacity style={styles.iconButton}>
+          <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('Notifications')}>
             <View style={styles.notificationBadge} />
             <Bell color={Colors.neutral[900]} size={24} />
           </TouchableOpacity>
@@ -127,7 +127,7 @@ export const OrganizationDashboardScreen = () => {
           onPress={() => navigation.navigate('SelectCategory')}
         >
           <Plus color={Colors.neutral[0]} size={20} style={{ marginRight: 8 }} />
-          <Text style={styles.raiseRequestButtonText}>Raise a Request</Text>
+          <Text style={styles.raiseRequestButtonText}>Create an opportunity</Text>
         </TouchableOpacity>
 
         {/* My Requests Section */}

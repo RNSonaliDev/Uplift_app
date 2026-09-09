@@ -265,12 +265,24 @@ export const SelectRolesScreen: React.FC = () => {
   const [selectedRoles, setSelectedRoles] = useState<RoleType[]>([]);
   const [existingRoles, setExistingRoles] = useState<string[]>([]);
 
+  const [userAge, setUserAge] = useState<number | null>(null);
+
   useEffect(() => {
     const fetchProfile = async () => {
       try {
         const data = await authApi.getProfile();
         const combinedRoles = [...(data.roles || []), ...(data.pending_roles || [])];
         setExistingRoles(combinedRoles.map(r => r.toLowerCase()));
+
+        if (data.date_of_birth) {
+          const dob = new Date(data.date_of_birth);
+          let age = new Date().getFullYear() - dob.getFullYear();
+          const m = new Date().getMonth() - dob.getMonth();
+          if (m < 0 || (m === 0 && new Date().getDate() < dob.getDate())) {
+            age--;
+          }
+          setUserAge(age);
+        }
       } catch (error) {
         console.log('Could not fetch profile in SelectRolesScreen', error);
       }
@@ -323,14 +335,16 @@ export const SelectRolesScreen: React.FC = () => {
 
         {/* Roles Grid */}
         <View style={styles.rolesGrid}>
-          <RoleCard
-            type="beneficiary"
-            title="Beneficiary"
-            description="Request help with shopping and groceries."
-            isSelected={selectedRoles.includes('beneficiary')}
-            onToggle={() => toggleRole('beneficiary')}
-            isDisabled={existingRoles.includes('beneficiary')}
-          />
+          {(!userAge || userAge > 18) && (
+            <RoleCard
+              type="beneficiary"
+              title="Beneficiary"
+              description="Request help with shopping and groceries."
+              isSelected={selectedRoles.includes('beneficiary')}
+              onToggle={() => toggleRole('beneficiary')}
+              isDisabled={existingRoles.includes('beneficiary')}
+            />
+          )}
           <RoleCard
             type="volunteer"
             title="Volunteer"
@@ -339,22 +353,26 @@ export const SelectRolesScreen: React.FC = () => {
             onToggle={() => toggleRole('volunteer')}
             isDisabled={existingRoles.includes('volunteer')}
           />
-          <RoleCard
-            type="organization"
-            title="Organization"
-            description="Create internships and community events."
-            isSelected={selectedRoles.includes('organization')}
-            onToggle={() => toggleRole('organization')}
-            isDisabled={existingRoles.includes('organization')}
-          />
-          <RoleCard
-            type="sponsor"
-            title="Sponsor"
-            description="Fund community support and grocery assistance."
-            isSelected={selectedRoles.includes('sponsor')}
-            onToggle={() => toggleRole('sponsor')}
-            isDisabled={existingRoles.includes('sponsor')}
-          />
+          {(!userAge || userAge > 18) && (
+            <>
+              <RoleCard
+                type="organization"
+                title="Organization"
+                description="Create internships and community events."
+                isSelected={selectedRoles.includes('organization')}
+                onToggle={() => toggleRole('organization')}
+                isDisabled={existingRoles.includes('organization')}
+              />
+              <RoleCard
+                type="sponsor"
+                title="Sponsor"
+                description="Fund community support and grocery assistance."
+                isSelected={selectedRoles.includes('sponsor')}
+                onToggle={() => toggleRole('sponsor')}
+                isDisabled={existingRoles.includes('sponsor')}
+              />
+            </>
+          )}
         </View>
 
         {/* Info Banner */}

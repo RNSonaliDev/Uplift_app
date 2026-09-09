@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -8,7 +8,9 @@ import {
   SafeAreaView,
   Switch,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import Toast from 'react-native-toast-message';
+import { notificationsApi } from '../../../api/notifications';
 import { Colors } from '../../../theme/colors';
 import { Typography } from '../../../theme/typography';
 import { authApi } from '../../../api/auth';
@@ -35,6 +37,54 @@ export default function SettingsScreen() {
   const [emailEnabled, setEmailEnabled] = useState(true);
   const [smsEnabled, setSmsEnabled] = useState(false);
   const [darkModeEnabled, setDarkModeEnabled] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  const fetchSettings = useCallback(async () => {
+    try {
+      const data = await notificationsApi.getSettings();
+      setPushEnabled(data.push_notifications_enabled);
+      setEmailEnabled(data.email_notifications_enabled);
+      setSmsEnabled(data.sms_notifications_enabled);
+    } catch (e) {
+      console.log('Failed to fetch notification settings', e);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchSettings();
+    }, [fetchSettings])
+  );
+
+  const updateSetting = async (key: 'push' | 'email' | 'sms', value: boolean) => {
+    // Optimistic update
+    if (key === 'push') setPushEnabled(value);
+    if (key === 'email') setEmailEnabled(value);
+    if (key === 'sms') setSmsEnabled(value);
+
+    try {
+      await notificationsApi.updateSettings({
+        notification_settings: {
+          push_notifications_enabled: key === 'push' ? value : pushEnabled,
+          email_notifications_enabled: key === 'email' ? value : emailEnabled,
+          sms_notifications_enabled: key === 'sms' ? value : smsEnabled,
+        }
+      });
+    } catch (e: any) {
+      console.log('Failed to update notification settings', e);
+      // Revert optimistic update
+      if (key === 'push') setPushEnabled(!value);
+      if (key === 'email') setEmailEnabled(!value);
+      if (key === 'sms') setSmsEnabled(!value);
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: e?.message || 'Failed to update settings',
+      });
+    }
+  };
 
   const handleLogout = async () => {
     try {
@@ -68,19 +118,19 @@ export default function SettingsScreen() {
             icon={<Bell color={Colors.neutral[500]} size={20} />}
             title="Push Notifications"
             value={pushEnabled}
-            onValueChange={setPushEnabled}
+            onValueChange={(val: boolean) => updateSetting('push', val)}
           />
           <SettingToggle
             icon={<Mail color={Colors.neutral[500]} size={20} />}
             title="Email Notifications"
             value={emailEnabled}
-            onValueChange={setEmailEnabled}
+            onValueChange={(val: boolean) => updateSetting('email', val)}
           />
           <SettingToggle
             icon={<MessageSquare color={Colors.neutral[500]} size={20} />}
             title="SMS Notifications"
             value={smsEnabled}
-            onValueChange={setSmsEnabled}
+            onValueChange={(val: boolean) => updateSetting('sms', val)}
           />
           {/* <SettingToggle 
             icon={<Moon color={Colors.neutral[500]} size={20} />} 

@@ -69,7 +69,7 @@ export const Input: React.FC<InputProps> = ({
       {label && (
         <AppText
           variant="labelMedium"
-          color={error ? Colors.error : Colors.neutral[700]}
+          color={Colors.neutral[700]}
           style={styles.label}>
           {label}
         </AppText>

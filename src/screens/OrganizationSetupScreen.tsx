@@ -199,21 +199,18 @@ const PhonePrefixPrefix = () => (
 );
 
 const ORGANIZATION_TYPES = [
-  'school',
-  'company',
-  'volunteer_center',
-  'nonprofit',
-  'government',
-  'other',
+  'School/University',
+  'Local business',
+  'Community Center',
+  'Healthcare',
+  'Nonprofit organization',
+  'Church / Faith Organization',
+  'Public library',
+  'Senior living facility',
+  'Other',
 ];
 
-const formatType = (type: string) => {
-  if (!type) return '';
-  return type
-    .split('_')
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ');
-};
+const formatType = (type: string) => type || '';
 
 // ── Main Component ───────────────────────────────────────
 export const OrganizationSetupScreen: React.FC = () => {
@@ -436,7 +433,7 @@ export const OrganizationSetupScreen: React.FC = () => {
               center
               color={Colors.neutral[500]}
               style={styles.subtitle}>
-              let's setup Organization profile
+              Let’s setup your organization’s profile
             </AppText>
           </View>
 
@@ -674,7 +671,7 @@ export const OrganizationSetupScreen: React.FC = () => {
           onPress={() => setTypeModalVisible(false)}
         >
           <View style={styles.modalContent}>
-            <AppText variant="h3" style={styles.modalHeader}>
+            <AppText variant="h5" style={styles.modalHeader}>
               Select Organization Type
             </AppText>
             <FlatList

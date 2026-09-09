@@ -152,6 +152,52 @@ export default function CreateRequestScreen() {
     return category ? category.title : 'Select a Category';
   };
 
+  const getPlaceholders = (categoryId: string) => {
+    const name = getCategoryName(categoryId).toLowerCase();
+    
+    if (name.includes('airport')) {
+      return {
+        title: 'e.g. Help carry two suitcases and help with check-in',
+        desc: 'e.g. Meet at departure/arrival door for Delta Airlines',
+      };
+    }
+    if (name.includes('home improvement')) {
+      return {
+        title: 'e.g. Help carry mulch and garden tools',
+        desc: 'e.g. Help select and carry the plants, garden tools and mulch to the car',
+      };
+    }
+    if (name.includes('mall visit')) {
+      return {
+        title: 'e.g. Help with elevators and carrying bags',
+        desc: 'e.g. Take to 2-3 clothing shops and help carry bag to the parking lot',
+      };
+    }
+    if (name.includes('companionship')) {
+      return {
+        title: 'e.g. Meet for a walk, company over coffee or play board game at a library',
+        desc: 'e.g. Short walk followed by talking for some time',
+      };
+    }
+    if (name.includes('shopping')) {
+      return {
+        title: 'e.g. Buy furniture or electronics',
+        desc: 'e.g. Help explore options',
+      };
+    }
+    if (name.includes('errands')) {
+      return {
+        title: 'e.g. Help at post office, library, or store returns',
+        desc: 'e.g. Help return items at the post office',
+      };
+    }
+
+    return {
+      title: 'e.g. Grocery Pickup',
+      desc: 'e.g. Need groceries picked up',
+    };
+  };
+
   const handleChange = (key: string, value: string) => {
     setFormData(prev => ({...prev, [key]: value}));
     if (errors[key]) {
@@ -173,14 +219,31 @@ export default function CreateRequestScreen() {
     if (!formData.preferred_start_time) newErrors.preferred_start_time = 'Required';
     if (!formData.preferred_end_time) newErrors.preferred_end_time = 'Required';
     // if (!formData.hours_required) newErrors.hours_required = 'Required';
-    if (!formData.meeting_location) newErrors.meeting_location = 'Required';
+    if (!formData.meeting_location || formData.meeting_location === 'Current Location') newErrors.meeting_location = 'Please add a valid address';
     
     if (formData.preferred_start_time && formData.preferred_end_time) {
       const startMinutes = startTime.getHours() * 60 + startTime.getMinutes();
       const endMinutes = endTime.getHours() * 60 + endTime.getMinutes();
       
-      if (endMinutes - startMinutes < 60) {
-        newErrors.preferred_end_time = 'Must be at least 1 hour after start time';
+      const now = new Date();
+      if (
+        date.getFullYear() === now.getFullYear() && 
+        date.getMonth() === now.getMonth() && 
+        date.getDate() === now.getDate()
+      ) {
+         const currentMinutes = now.getHours() * 60 + now.getMinutes();
+         if (startMinutes < currentMinutes + 120) {
+            newErrors.preferred_start_time = 'Start time must be at least 2 hours from now';
+         }
+      }
+
+      if (startTime.getHours() < 8 || endTime.getHours() > 20 || (endTime.getHours() === 20 && endTime.getMinutes() > 0)) {
+        newErrors.preferred_start_time = 'Time must be between 8 AM and 8 PM';
+        newErrors.preferred_end_time = 'Time must be between 8 AM and 8 PM';
+      } else if (endMinutes - startMinutes <= 0) {
+        newErrors.preferred_end_time = 'End time must be after start time';
+      } else if (endMinutes - startMinutes > 240) {
+        newErrors.preferred_end_time = 'Request cannot exceed 4 hours';
       }
     }
     
@@ -233,16 +296,18 @@ export default function CreateRequestScreen() {
 
           <Input
             label={formData.category_id ? `Tell us what kind of ${getCategoryName(formData.category_id)} help you need` : "Tell us what kind of help you need"}
-            placeholder="e.g. Grocery Pickup"
+            placeholder={getPlaceholders(formData.category_id).title}
             value={formData.title}
             onChangeText={v => handleChange('title', v)}
-            maxLength={20}
+            maxLength={100}
+            multiline={true}
+            style={{ minHeight: 60, textAlignVertical: 'top' }}
             error={errors.title}
           />
 
           <Input
             label="Information for your volunteer."
-            placeholder="e.g. Need groceries picked up"
+            placeholder={getPlaceholders(formData.category_id).desc}
             value={formData.description}
             onChangeText={v => handleChange('description', v)}
             multiline
@@ -349,7 +414,7 @@ export default function CreateRequestScreen() {
               )}
             />
             {errors.meeting_location ? (
-              <AppText variant="bodySmall" color={Colors.error[500]} style={{marginTop: 4}}>
+              <AppText variant="bodySmall" color={Colors.error} style={{marginTop: 4}}>
                 {errors.meeting_location}
               </AppText>
             ) : null}

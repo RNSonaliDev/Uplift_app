@@ -30,13 +30,13 @@ export function OrganizationTabNavigator() {
         const hiddenRoutes = [
           'SelectCategory',
           'RequestDetails',
-          'LocationVolunteers',
           'AdditionalInfo',
           'ReviewRequest',
           'RequestCreated',
           'CreateJob',
           'JobPreview',
-          'JobDetails'
+          'JobDetails',
+          'EditProfile'
         ];
         const isHidden = hiddenRoutes.includes(routeName);
 

@@ -98,6 +98,7 @@ export interface UserProfileResponse {
   default_role: string | null;
   selected_roles: string[];
   roles: any[];
+  date_of_birth?: string;
   pending_roles: string[];
   profile_completed: boolean;
   basic_profile_complete: boolean;
@@ -159,5 +160,8 @@ export const authApi = {
   },
   verifyParentVerification: (payload: { parent_verification: { code: string } }) => {
     return api.post<VerifyOtpResponse>('/auth/parent_verification/verify', payload);
+  },
+  deleteProfile: () => {
+    return api.delete<{message: string}>('/profile');
   },
 };

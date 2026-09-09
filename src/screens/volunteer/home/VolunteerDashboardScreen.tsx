@@ -101,9 +101,9 @@ export default function VolunteerDashboardScreen() {
               </View>
             </View>
             
-            {/* <TouchableOpacity style={styles.bellIcon} onPress={() => {}}>
+            <TouchableOpacity style={styles.bellIcon} onPress={() => navigation.navigate('Notifications')}>
               <Bell color={Colors.neutral[0]} size={24} />
-            </TouchableOpacity> */}
+            </TouchableOpacity>
           </View>
         </View>
 

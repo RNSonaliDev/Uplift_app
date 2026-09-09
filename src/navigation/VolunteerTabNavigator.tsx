@@ -31,7 +31,7 @@ export function VolunteerTabNavigator() {
         const routeName = getFocusedRouteNameFromRoute(route) ?? '';
         const hiddenRoutes = [
           'RequestDetails', 'RequestAccepted', 'ParentTaskVerification', 'StartRequest', 
-          'CompleteRequest', 'RateExperience', 'VolunteerJobDetails'
+          'CompleteRequest', 'RateExperience', 'VolunteerJobDetails', 'EditProfile'
         ];
         const isHidden = hiddenRoutes.includes(routeName);
 

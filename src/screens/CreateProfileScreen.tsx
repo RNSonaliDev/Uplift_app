@@ -471,7 +471,7 @@ const is14To17 = age !== null && age >= 14 && age < 18 ;  // Info tooltip visibi
                   center
                   color={Colors.neutral[500]}
                   style={styles.subtitle}>
-                  Tell us a little about yourself. This helps us{'\n'}personalize your experience and keep you safe.
+                  Tell us a little about yourself. This helps us{'\n'}personalize your experience.
                 </AppText>
               </View>
 
@@ -591,9 +591,9 @@ const is14To17 = age !== null && age >= 14 && age < 18 ;  // Info tooltip visibi
                   <View pointerEvents="none">
                     <Input
                       label="Date of Birth"
-                      placeholder="DD/MM/YYYY"
+                      placeholder="MM/DD/YYYY"
                       leftIcon={<CalendarIcon size={moderateScale(22)} />}
-                      value={dob ? `${String(dob.getDate()).padStart(2, '0')}/${String(dob.getMonth() + 1).padStart(2, '0')}/${dob.getFullYear()}` : ''}
+                      value={dob ? `${String(dob.getMonth() + 1).padStart(2, '0')}/${String(dob.getDate()).padStart(2, '0')}/${dob.getFullYear()}` : ''}
                       editable={false}
                       error={errors.dob}
                     />
@@ -645,9 +645,20 @@ const is14To17 = age !== null && age >= 14 && age < 18 ;  // Info tooltip visibi
         open={isDatePickerOpen}
         date={dob || new Date(new Date().setFullYear(new Date().getFullYear() - 14))}
         mode="date"
-        maximumDate={new Date(new Date().setFullYear(new Date().getFullYear() - 14))}
+        maximumDate={new Date()}
         onConfirm={(date) => {
           setIsDatePickerOpen(false);
+          
+          const selectedAge = (new Date().getTime() - (date.getTime() - 24 * 60 * 60 * 1000)) / (1000 * 60 * 60 * 24 * 365.25);
+          if (selectedAge < 14) {
+            Toast.show({
+              type: 'error',
+              text1: 'Age Restriction',
+              text2: 'You are not allowed but hope to see you when you turn 14.',
+            });
+            return;
+          }
+
           setDob(date);
           if (errors.dob) setErrors({...errors, dob: ''});
         }}

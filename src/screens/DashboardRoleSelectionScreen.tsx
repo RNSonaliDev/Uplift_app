@@ -184,7 +184,7 @@ const DashboardCard: React.FC<DashboardCardProps> = ({ role, onPress, disabled }
       <View style={styles.cardHeader}>
         <View style={styles.iconContainer}>{getIcon()}</View>
       </View>
-      <AppText variant="h5" color={Colors.neutral[900]} style={styles.cardTitle}>
+      <AppText variant="h6" color={Colors.neutral[900]} style={styles.cardTitle}>
         {getTitle()} Dashboard
       </AppText>
       <AppText variant="caption" color={Colors.neutral[500]} style={styles.cardDescription}>

@@ -586,7 +586,7 @@ export const VolunteerSetupScreen: React.FC = () => {
 
             <View style={{marginBottom: Spacing.lg}}>
               <AppText variant="labelMedium" color={Colors.neutral[700]} style={{marginBottom: 8}}>
-                Home Address
+                 Address
               </AppText>
               <GooglePlacesAutocomplete
                 ref={googlePlacesRef}
@@ -695,8 +695,8 @@ export const VolunteerSetupScreen: React.FC = () => {
             </View>
 
             <Input
-              label="ZIP Code (Home Location)"
-              placeholder="Enter your home ZIP code"
+              label="ZIP Code"
+              placeholder="Enter your ZIP code"
               leftIcon={<LocationPinIcon />}
               value={zipCode}
               onChangeText={(text) => {
@@ -741,7 +741,7 @@ export const VolunteerSetupScreen: React.FC = () => {
             </View> */}
 
             <Input
-              label="Community Service Hours Goal per Week (Optional)"
+              label=" Volunteering hours goal per week (Optional)"
               placeholder="Enter number of hours (e.g., 2)"
               leftIcon={<ClockIcon />}
               rightIcon={<AppText variant="caption" color={Colors.neutral[500]}>hrs/week</AppText>}

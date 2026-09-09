@@ -192,7 +192,7 @@ export const SuccessScreen: React.FC = () => {
             center
             color={Colors.neutral[700]}
             style={styles.subtitle}>
-            Thank you for joining Uplift.{'\n'}Together, we can build{'\n'}stronger communities.
+            Together, we will build a stronger community.
           </AppText>
         </View>
 

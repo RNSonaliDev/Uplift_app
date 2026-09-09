@@ -20,7 +20,7 @@ export function SponsorTabNavigator() {
         const routeName = getFocusedRouteNameFromRoute(route) ?? (route.params as any)?.screen ?? '';
         const hiddenRoutes = [
           'ChooseAmount', 'PaymentDetails', 'ProcessingPayment', 'PaymentSuccessful',
-          'ContributionDetails'
+          'ContributionDetails', 'EditProfile'
         ];
         const isHidden = hiddenRoutes.includes(routeName);
 

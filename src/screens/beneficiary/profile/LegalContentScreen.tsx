@@ -6,7 +6,9 @@ import {
   TouchableOpacity,
   SafeAreaView,
   ActivityIndicator,
+  useWindowDimensions,
 } from 'react-native';
+import RenderHtml from 'react-native-render-html';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { ChevronLeft } from 'lucide-react-native';
 import { Colors } from '../../../theme/colors';
@@ -18,6 +20,7 @@ export default function LegalContentScreen() {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const { type } = route.params || { type: 'terms' };
+  const { width } = useWindowDimensions();
   
   const [content, setContent] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -33,7 +36,7 @@ export default function LegalContentScreen() {
         } else {
           res = await contentApi.getPrivacyPolicy();
         }
-        const cleanText = res.body ? res.body.replace(/<[^>]*>?/gm, '') : 'No content available.';
+        const cleanText = res.body ? res.body : '<p>No content available.</p>';
         setContent(cleanText);
       } catch (error) {
         setContent(`Failed to load ${title}. Please try again later.`);
@@ -59,9 +62,27 @@ export default function LegalContentScreen() {
         {isLoading ? (
           <ActivityIndicator size="large" color={Colors.primary[500]} style={{ marginTop: verticalScale(40) }} />
         ) : (
-          <AppText variant="bodyMedium" style={styles.textContent}>
-            {content}
-          </AppText>
+          <RenderHtml
+            contentWidth={width}
+            source={{ html: content || '<p>No content available.</p>' }}
+            tagsStyles={{
+              body: {
+                color: Colors.neutral[600],
+                lineHeight: 24,
+                fontSize: moderateScale(14),
+              },
+              p: {
+                marginVertical: verticalScale(8),
+              },
+              h1: { color: Colors.neutral[900] },
+              h2: { color: Colors.neutral[900] },
+              h3: { color: Colors.neutral[900] },
+              h4: { color: Colors.neutral[900] },
+              h5: { color: Colors.neutral[900] },
+              h6: { color: Colors.neutral[900] },
+              a: { color: Colors.primary[500] },
+            }}
+          />
         )}
       </ScrollView>
     </SafeAreaView>

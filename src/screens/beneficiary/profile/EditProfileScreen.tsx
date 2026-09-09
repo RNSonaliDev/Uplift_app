@@ -19,6 +19,7 @@ import {Input} from '../../../components/Input';
 import {Button} from '../../../components/Button';
 import {ChevronLeft, Calendar, MapPin, Clock, Info} from 'lucide-react-native';
 import {authApi} from '../../../api/auth';
+import Svg, { Circle } from 'react-native-svg';
 
 const CustomSlider = ({ value, onValueChange, min = 0, max = 100 }: { value: number, onValueChange: (val: number) => void, min?: number, max?: number }) => {
   const [width, setWidth] = useState(0);
@@ -71,6 +72,57 @@ const CustomSlider = ({ value, onValueChange, min = 0, max = 100 }: { value: num
   );
 };
 
+const RadioActiveIcon: React.FC<{size?: number; color?: string}> = ({
+  size = 24,
+  color = Colors.primary[600],
+}) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Circle cx="12" cy="12" r="10" stroke={color} strokeWidth="2" />
+    <Circle cx="12" cy="12" r="5" fill={color} />
+  </Svg>
+);
+
+const RadioInactiveIcon: React.FC<{size?: number; color?: string}> = ({
+  size = 24,
+  color = Colors.neutral[300],
+}) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Circle cx="12" cy="12" r="10" stroke={color} strokeWidth="2" />
+  </Svg>
+);
+
+const RadioCard = ({
+  title,
+  description,
+  isSelected,
+  onPress,
+}: {
+  title: string;
+  description: string;
+  isSelected: boolean;
+  onPress: () => void;
+}) => (
+  <TouchableOpacity
+    style={[styles.radioCard, isSelected && styles.radioCardSelected]}
+    onPress={onPress}
+    activeOpacity={0.7}>
+    <View style={styles.radioIconContainer}>
+      {isSelected ? <RadioActiveIcon /> : <RadioInactiveIcon />}
+    </View>
+    <View style={styles.radioTextContainer}>
+      <AppText
+        variant="labelMedium"
+        color={isSelected ? Colors.neutral[900] : Colors.neutral[800]}
+        weight="bold">
+        {title}
+      </AppText>
+      <AppText variant="caption" color={Colors.neutral[500]}>
+        {description}
+      </AppText>
+    </View>
+  </TouchableOpacity>
+);
+
 export default function EditProfileScreen() {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
@@ -94,7 +146,7 @@ export default function EditProfileScreen() {
     if (!dobStr) return '';
     const parts = dobStr.split('-');
     if (parts.length === 3) {
-      return `${parts[2].padStart(2, '0')}/${parts[1].padStart(2, '0')}/${parts[0]}`;
+      return `${parts[1].padStart(2, '0')}/${parts[2].padStart(2, '0')}/${parts[0]}`;
     }
     return dobStr;
   };
@@ -110,10 +162,19 @@ export default function EditProfileScreen() {
           last_name: data.last_name || '',
           phone: data.phone || '',
           email: data.email || '',
-          zip_code: roleProfile.zip_code || '',
+          zip_code: data.zip_code || roleProfile.zip_code || '',
           dob: data.date_of_birth || '',
           service_radius: roleProfile.service_radius ? String(roleProfile.service_radius) : '',
           hours_goal_per_week: roleProfile.hours_goal_per_week ? String(roleProfile.hours_goal_per_week) : '',
+          address: roleProfile.address || '',
+          anonymity: roleProfile.anonymity || 'hide',
+          organization_type: roleProfile.organization_type || '',
+          organization_name: roleProfile.organization_name || '',
+          contact_name: roleProfile.contact_name || '',
+          contact_email: roleProfile.contact_email || '',
+          contact_phone: roleProfile.contact_phone || '',
+          latitude: roleProfile.latitude ? String(roleProfile.latitude) : '',
+          longitude: roleProfile.longitude ? String(roleProfile.longitude) : '',
         });
       } catch (error) {
         console.error('Failed to fetch profile', error);
@@ -131,14 +192,20 @@ export default function EditProfileScreen() {
   const handleSave = async () => {
     try {
       setSaving(true);
+      const { latitude, longitude, ...restProfile } = formData;
+      const profilePayload: any = {
+        ...restProfile,
+        service_radius: Number(formData.service_radius) || 0,
+        hours_goal_per_week: Number(formData.hours_goal_per_week) || 0,
+      };
+      
+      if (latitude) profilePayload.latitude = Number(latitude);
+      if (longitude) profilePayload.longitude = Number(longitude);
+
       await authApi.updateProfile({
         role_profile: {
           role: currentRole,
-          profile: {
-            ...formData,
-            service_radius: Number(formData.service_radius) || 0,
-            hours_goal_per_week: Number(formData.hours_goal_per_week) || 0,
-          }
+          profile: profilePayload
         }
       });
       Toast.show({
@@ -218,14 +285,19 @@ export default function EditProfileScreen() {
           {currentRole === 'volunteer' && (
             <>
               <Input
-                label="ZIP Code (Home Location)"
+                label="ZIP Code"
                 value={formData.zip_code}
                 onChangeText={v => handleChange('zip_code', v)}
                 keyboardType="number-pad"
                 leftIcon={<MapPin color={Colors.neutral[400]} size={20} />}
               />
               <Input
-                label="Community Service Hours Goal per Week (Optional)"
+                label="Address"
+                value={formData.address}
+                onChangeText={v => handleChange('address', v)}
+              />
+              <Input
+                label=" Volunteering hours goal per week (Optional)"
                 value={formData.hours_goal_per_week}
                 onChangeText={v => handleChange('hours_goal_per_week', v)}
                 keyboardType="number-pad"
@@ -268,6 +340,63 @@ export default function EditProfileScreen() {
             </>
           )}
 
+          {currentRole === 'sponsor' && (
+            <>
+              <AppText variant="labelLarge" color={Colors.neutral[900]} weight="bold" style={{ marginTop: 16, marginBottom: 12 }}>Anonymity</AppText>
+              <View style={styles.radioGroup}>
+                <RadioCard
+                  title="Share my name"
+                  description="Display my name to others"
+                  isSelected={formData.anonymity === 'show'}
+                  onPress={() => handleChange('anonymity', 'show')}
+                />
+                <RadioCard
+                  title="Stay anonymous"
+                  description="Hide my name from others"
+                  isSelected={formData.anonymity === 'hide'}
+                  onPress={() => handleChange('anonymity', 'hide')}
+                />
+              </View>
+            </>
+          )}
+
+          {currentRole === 'organization' && (
+            <>
+              <Input
+                label="Organization Type"
+                value={formData.organization_type}
+                onChangeText={v => handleChange('organization_type', v)}
+              />
+              <Input
+                label="Organization Name"
+                value={formData.organization_name}
+                onChangeText={v => handleChange('organization_name', v)}
+              />
+              <Input
+                label="Address"
+                value={formData.address}
+                onChangeText={v => handleChange('address', v)}
+              />
+              <Input
+                label="Contact Name"
+                value={formData.contact_name}
+                onChangeText={v => handleChange('contact_name', v)}
+              />
+              <Input
+                label="Contact Email"
+                value={formData.contact_email}
+                onChangeText={v => handleChange('contact_email', v)}
+                keyboardType="email-address"
+              />
+              <Input
+                label="Contact Phone"
+                value={formData.contact_phone}
+                onChangeText={v => handleChange('contact_phone', v)}
+                keyboardType="phone-pad"
+              />
+            </>
+          )}
+
         </ScrollView>
       </KeyboardAvoidingView>
 
@@ -285,9 +414,20 @@ export default function EditProfileScreen() {
         open={isDatePickerOpen}
         date={date}
         mode="date"
-        maximumDate={new Date(new Date().setDate(new Date().getDate() - 1))}
+        maximumDate={new Date()}
         onConfirm={(selectedDate) => {
           setIsDatePickerOpen(false);
+
+          const selectedAge = (new Date().getTime() - (selectedDate.getTime() - 24 * 60 * 60 * 1000)) / (1000 * 60 * 60 * 24 * 365.25);
+          if (selectedAge < 14) {
+            Toast.show({
+              type: 'error',
+              text1: 'Age Restriction',
+              text2: 'You are not allowed but hope to see you when you turn 14.',
+            });
+            return;
+          }
+
           setDate(selectedDate);
           const day = String(selectedDate.getDate()).padStart(2, '0');
           const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
@@ -384,5 +524,29 @@ const styles = StyleSheet.create({
   sliderLimitsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+  },
+  radioGroup: {
+    gap: 12,
+  },
+  radioCard: {
+    flexDirection: 'row',
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: Colors.neutral[200],
+    backgroundColor: Colors.neutral[0],
+    marginBottom: 12,
+  },
+  radioCardSelected: {
+    borderColor: Colors.primary[500],
+    backgroundColor: Colors.primary[50],
+  },
+  radioIconContainer: {
+    marginRight: 16,
+    justifyContent: 'flex-start',
+    paddingTop: 2,
+  },
+  radioTextContainer: {
+    flex: 1,
   },
 });
