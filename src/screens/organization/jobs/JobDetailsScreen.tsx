@@ -8,12 +8,9 @@ import { Button } from '../../../components/Button';
 import { FileText, Link2, Briefcase, Tag, ChevronLeft } from 'lucide-react-native';
 import { api } from '../../../api/client';
 import Toast from 'react-native-toast-message';
+import { formatStatus, getStatusColors } from '../../../utils/statusUtils';
 
-const STATUS_COLORS: Record<string, { bg: string; text: string; border: string }> = {
-  published: { bg: '#F0FDF4', text: '#16A34A', border: '#BBF7D0' },
-  draft: { bg: Colors.primary[50], text: Colors.primary[600], border: Colors.primary[100] },
-  closed: { bg: '#FEF2F2', text: '#DC2626', border: '#FECACA' },
-};
+
 
 export const JobDetailsScreen = () => {
   const navigation = useNavigation<any>();
@@ -68,10 +65,8 @@ export const JobDetailsScreen = () => {
     }
   };
 
-  const getStatusStyle = (status: string) => STATUS_COLORS[status] || STATUS_COLORS.draft;
-
   if (!job) return null;
-  const statusStyle = getStatusStyle(job.status);
+  const statusStyle = getStatusColors(job.status);
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -104,8 +99,8 @@ export const JobDetailsScreen = () => {
               {job.title}
             </AppText>
           </View>
-          <View style={[styles.statusBadge, { backgroundColor: statusStyle.bg, borderColor: statusStyle.border, marginBottom: 0 }]}>
-            <AppText variant="labelSmall" color={statusStyle.text} style={{ textTransform: 'capitalize'}}>{job.status}</AppText>
+          <View style={[styles.statusBadge, { backgroundColor: statusStyle.bg, marginBottom: 0 }]}>
+            <AppText variant="labelSmall" color={statusStyle.text}>{formatStatus(job.status)}</AppText>
           </View>
         </View>
 

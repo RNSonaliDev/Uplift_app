@@ -11,10 +11,12 @@ import {
 import { useRoute, useNavigation, useFocusEffect } from '@react-navigation/native';
 import { Colors } from '../../../theme/colors';
 import { AppText } from '../../../components/AppText';
+import { formatDateTime } from '../../../utils/dateFormatter';
 import { horizontalScale, verticalScale, moderateScale } from '../../../utils/responsive';
 import { supportApi, SupportRequest } from '../../../api/support';
 import { getFullImageUrl } from '../../../api/client';
 import { ChevronLeft, Clock, MessageSquare } from 'lucide-react-native';
+import { formatStatus, getStatusColors } from '../../../utils/statusUtils';
 
 export default function ContactSupportDetailsScreen() {
   const route = useRoute<any>();
@@ -75,10 +77,8 @@ export default function ContactSupportDetailsScreen() {
     );
   }
 
-  const date = new Date(details.created_at).toLocaleString();
-  let statusColor = Colors.neutral[500];
-  if (details.status === 'open' || details.status === 'pending') statusColor = Colors.primary[500];
-  if (details.status === 'resolved' || details.status === 'closed') statusColor = Colors.success;
+  const date = formatDateTime(details.created_at);
+  const statusStyle = getStatusColors(details.status);
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -107,9 +107,9 @@ export default function ContactSupportDetailsScreen() {
           </View>
           
           <View style={styles.metaRow}>
-            <View style={[styles.statusBadge, { backgroundColor: statusColor + '20' }]}>
-              <AppText variant="caption" style={[styles.statusText, { color: statusColor }]}>
-                {details.status.toUpperCase()}
+            <View style={[styles.statusBadge, { backgroundColor: statusStyle.bg }]}>
+              <AppText variant="caption" style={[styles.statusText, { color: statusStyle.text }]}>
+                {formatStatus(details.status)}
               </AppText>
             </View>
             <View style={styles.dateRow}>
@@ -211,6 +211,7 @@ const styles = StyleSheet.create({
     marginBottom: verticalScale(20),
   },
   statusBadge: {
+    alignSelf: 'flex-start',
     paddingHorizontal: horizontalScale(12),
     paddingVertical: verticalScale(4),
     borderRadius: moderateScale(8),

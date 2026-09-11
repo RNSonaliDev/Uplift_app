@@ -129,7 +129,7 @@ export default function StartRequestScreen() {
         </AppText>
         
         <AppText variant="bodyLarge" color={Colors.neutral[600]} style={styles.subtitle} center>
-          Please enter the 6-digit start code provided by the beneficiary to begin this request.
+          Please enter the 6-digit start code provided by the {request.request_type === 'organization' ? 'organization' : 'beneficiary'} to begin this request.
         </AppText>
 
         <View style={styles.inputContainer}>

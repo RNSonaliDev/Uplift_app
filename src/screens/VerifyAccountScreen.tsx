@@ -24,6 +24,7 @@ import {Colors} from '../theme/colors';
 import {FontFamily, FontSize} from '../theme/typography';
 import {authApi} from '../api';
 import {persistAuthToken} from '../api/client';
+import {pushNotificationService} from '../services/PushNotificationService';
 import {Spacing, BorderRadius} from '../theme/spacing';
 import {
   wp,
@@ -438,6 +439,7 @@ export const VerifyAccountScreen: React.FC = () => {
         } else if (response.user?.registration_step === 'role_setup') {
           navigation.reset({ index: 0, routes: [{ name: 'SelectRoles' as any }] });
         } else if (response.user?.default_role) {
+            pushNotificationService.requestUserPermission();
             if (response.user.default_role === 'volunteer') {
               navigation.reset({ index: 0, routes: [{ name: 'VolunteerFlow' as any }] });
             } else if (response.user.default_role === 'sponsor') {

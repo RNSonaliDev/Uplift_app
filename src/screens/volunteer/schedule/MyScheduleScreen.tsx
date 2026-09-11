@@ -6,11 +6,13 @@ import {
   TouchableOpacity,
   SectionList,
   Image,
+  ScrollView,
 } from 'react-native';
 import {useNavigation, useFocusEffect} from '@react-navigation/native';
 import { ShoppingCart, Pill, Soup, Car, Users, MoreHorizontal, Clock, MapPin, FileText, Calendar} from 'lucide-react-native';
 import {AppText} from '../../../components/AppText';
 import {Colors} from '../../../theme/colors';
+import {FontFamily} from '../../../theme/typography';
 import {api, getFullImageUrl} from '../../../api/client';
 import {
   horizontalScale,
@@ -18,9 +20,10 @@ import {
   moderateScale,
 } from '../../../utils/responsive';
 import {formatDate, formatTime12Hour} from '../../../utils/dateFormatter';
+import {formatStatus, getStatusColors} from '../../../utils/statusUtils';
 import {CategoryIcon} from '../../../components/CategoryIcon';
 
-type Tab = 'Upcoming' | 'In Progress' | 'Completed';
+type Tab = 'Upcoming' | 'On the Way' | 'In Progress' | 'Completed' | 'Cancelled';
 
 export default function MyScheduleScreen() {
   const navigation = useNavigation<any>();
@@ -30,6 +33,7 @@ export default function MyScheduleScreen() {
 
   useFocusEffect(
     useCallback(() => {
+      setActiveTab('Upcoming');
       fetchSchedule();
     }, [])
   );
@@ -63,8 +67,14 @@ export default function MyScheduleScreen() {
       if (activeTab === 'Upcoming') {
         return req.status === 'accepted' || req.status === 'pending';
       }
+      if (activeTab === 'On the Way') {
+        return req.status === 'on_the_way';
+      }
       if (activeTab === 'In Progress') {
         return req.status === 'in_progress';
+      }
+      if (activeTab === 'Cancelled') {
+        return req.status === 'cancelled';
       }
       return req.status === 'completed';
     });
@@ -86,19 +96,6 @@ export default function MyScheduleScreen() {
     }));
   };
 
-  const formatStatus = (status: string) => {
-    if (!status) return 'New';
-    if (status.toLowerCase() === 'in_progress') return 'In Progress';
-    return status.charAt(0).toUpperCase() + status.slice(1).replace('_', ' ');
-  };
-
-  const getStatusColors = (status: string) => {
-    const s = status?.toLowerCase() || '';
-    if (s === 'in_progress') return { bg: Colors.primary[50], text: Colors.primary[700] };
-    if (s === 'completed') return { bg: Colors.secondary[50], text: Colors.secondary[700] };
-    // pending, accepted, new
-    return { bg: Colors.accent[50], text: Colors.accent[700] };
-  };
 
   const renderCard = ({item}: {item: any}) => {
     const displayStatus = formatStatus(item.status);
@@ -110,10 +107,14 @@ export default function MyScheduleScreen() {
         onPress={() => {
           if (activeTab === 'Upcoming') {
             navigation.navigate('RequestDetails', { request: item, forceAction: 'start' });
+          } else if (activeTab === 'On the Way') {
+            navigation.navigate('RequestDetails', { request: item, forceAction: 'start_with_otp' });
           } else if (activeTab === 'In Progress') {
             navigation.navigate('RequestDetails', { request: item, forceAction: 'complete' });
           } else if (activeTab === 'Completed') {
             navigation.navigate('RequestDetails', { request: item, forceAction: 'rate' });
+          } else if (activeTab === 'Cancelled') {
+            navigation.navigate('RequestDetails', { request: item, forceAction: 'none' });
           }
         }}
         activeOpacity={0.7}
@@ -134,6 +135,11 @@ export default function MyScheduleScreen() {
             <AppText variant="labelLarge" weight="semiBold" color={Colors.neutral[900]} style={{marginBottom: 4}}>
               {item.category?.title || 'Help Request'}
             </AppText>
+            {item.title ? (
+              <AppText variant="bodyMedium" color={Colors.neutral[800]} style={{marginBottom: 4, fontFamily: FontFamily.medium}}>
+                {item.title}
+              </AppText>
+            ) : null}
             <AppText variant="caption" color={Colors.neutral[600]} style={{marginBottom: 6}}>
               #{item.reference_number || item.id}
             </AppText>
@@ -181,46 +187,25 @@ export default function MyScheduleScreen() {
         <View style={styles.backButtonPlaceholder} />
       </View>
 
-      <View style={styles.segmentContainer}>
-        <TouchableOpacity
-          style={[styles.segmentButton, activeTab === 'Upcoming' && styles.segmentActive]}
-          onPress={() => setActiveTab('Upcoming')}
-          activeOpacity={0.8}
-        >
-          <AppText 
-            variant="bodyMedium" 
-            color={activeTab === 'Upcoming' ? Colors.neutral[0] : Colors.neutral[700]}
-            style={{fontWeight: activeTab === 'Upcoming' ? '400' : '400'}}
-          >
-            Upcoming
-          </AppText>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.segmentButton, activeTab === 'In Progress' && styles.segmentActive]}
-          onPress={() => setActiveTab('In Progress')}
-          activeOpacity={0.8}
-        >
-          <AppText 
-            variant="bodyMedium" 
-            color={activeTab === 'In Progress' ? Colors.neutral[0] : Colors.neutral[700]}
-            style={{fontWeight: activeTab === 'In Progress' ? '400' : '400'}}
-          >
-            In Progress
-          </AppText>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.segmentButton, activeTab === 'Completed' && styles.segmentActive]}
-          onPress={() => setActiveTab('Completed')}
-          activeOpacity={0.8}
-        >
-          <AppText 
-            variant="bodyMedium" 
-            color={activeTab === 'Completed' ? Colors.neutral[0] : Colors.neutral[700]}
-            style={{fontWeight: activeTab === 'Completed' ? '400' : '400'}}
-          >
-            Completed
-          </AppText>
-        </TouchableOpacity>
+      <View>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.segmentContainer}>
+          {['Upcoming', 'On the Way', 'In Progress', 'Completed', 'Cancelled'].map((tab) => (
+            <TouchableOpacity
+              key={tab}
+              style={[styles.segmentButton, activeTab === tab && styles.segmentActive]}
+              onPress={() => setActiveTab(tab as Tab)}
+              activeOpacity={0.8}
+            >
+              <AppText 
+                variant="bodyMedium" 
+                color={activeTab === tab ? Colors.neutral[0] : Colors.neutral[700]}
+                style={{fontWeight: '400'}}
+              >
+                {tab}
+              </AppText>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
       </View>
 
       <SectionList
@@ -275,9 +260,10 @@ const styles = StyleSheet.create({
     marginHorizontal: horizontalScale(24),
     marginBottom: verticalScale(24),
     marginTop: verticalScale(24),
+    gap: horizontalScale(8),
   },
   segmentButton: {
-    flex: 1,
+    paddingHorizontal: horizontalScale(16),
     paddingVertical: verticalScale(10),
     alignItems: 'center',
     borderRadius: 8,

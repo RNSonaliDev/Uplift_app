@@ -30,11 +30,16 @@ export const formatDate = (dateStr?: string) => {
 
 export const formatTime12Hour = (timeStr?: string) => {
   if (!timeStr) return '';
+  
+  if (timeStr.toLowerCase().includes('am') || timeStr.toLowerCase().includes('pm')) {
+    return timeStr;
+  }
+  
   // expected format "HH:mm" or "HH:mm:ss"
   const parts = timeStr.split(':');
   if (parts.length >= 2) {
     let hours = parseInt(parts[0], 10);
-    const minutes = parts[1];
+    const minutes = parts[1].slice(0, 2);
     if (isNaN(hours)) return timeStr;
     const ampm = hours >= 12 ? 'PM' : 'AM';
     hours = hours % 12;
@@ -43,4 +48,23 @@ export const formatTime12Hour = (timeStr?: string) => {
     return `${strHours}:${minutes} ${ampm}`;
   }
   return timeStr;
+};
+
+export const formatDateTime = (dateObj: string | Date | number) => {
+  if (!dateObj) return '';
+  try {
+    const d = new Date(dateObj);
+    if (isNaN(d.getTime())) return '';
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
+    let hours = d.getHours();
+    const minutes = String(d.getMinutes()).padStart(2, '0');
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12;
+    hours = hours ? hours : 12;
+    return `${month}/${day}/${year}, ${hours}:${minutes} ${ampm}`;
+  } catch (e) {
+    return '';
+  }
 };

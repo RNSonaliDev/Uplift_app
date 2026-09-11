@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import {useNavigation, useFocusEffect} from '@react-navigation/native';
 import {Colors} from '../../../theme/colors';
+import {FontFamily} from '../../../theme/typography';
 import {AppText} from '../../../components/AppText';
 import {formatDate, formatTime12Hour} from '../../../utils/dateFormatter';
 import {Button} from '../../../components/Button';
@@ -22,6 +23,7 @@ import {
   Heart,
   MessageSquare,
   User,
+  Building,
   ShoppingBag,
   MapPin,
   Clock,
@@ -130,96 +132,34 @@ export default function VolunteerDashboardScreen() {
           </View>
         </View>
 
-        {/* Available Requests Section */}
+        {/* Browse Support Section */}
         <View style={styles.sectionContainer}>
-          <View style={styles.sectionHeader}>
-            <AppText variant="h5">Available Requests</AppText>
-            <TouchableOpacity onPress={() => navigation.navigate('RequestsTab')}>
-              <AppText variant="bodyMedium" color={Colors.primary[500]}>View all</AppText>
+          <AppText variant="h5" style={{ marginBottom: 16 }}>Browse Support</AppText>
+          <View style={{ flexDirection: 'row', gap: 12 }}>
+            <TouchableOpacity 
+              style={[styles.supportCard, { backgroundColor: Colors.primary[50], borderColor: Colors.primary[200] }]}
+              onPress={() => navigation.navigate('RequestsTab', { screen: 'BrowseRequests', params: { activeTab: 'beneficiary', timestamp: Date.now() } })}
+              activeOpacity={0.7}
+            >
+              <View style={[styles.supportIconWrapper, { backgroundColor: Colors.primary[100] }]}>
+                <User color={Colors.primary[600]} size={24} />
+              </View>
+              <AppText variant="labelLarge" weight="semiBold" color={Colors.primary[700]} style={{ marginTop: 12 }}>Beneficiary</AppText>
+              <AppText variant="caption" color={Colors.primary[600]}>Support</AppText>
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              style={[styles.supportCard, { backgroundColor: Colors.secondary[50], borderColor: Colors.secondary[200] }]}
+              onPress={() => navigation.navigate('RequestsTab', { screen: 'BrowseRequests', params: { activeTab: 'organization', timestamp: Date.now() } })}
+              activeOpacity={0.7}
+            >
+              <View style={[styles.supportIconWrapper, { backgroundColor: Colors.secondary[100] }]}>
+                <Building color={Colors.secondary[600]} size={24} />
+              </View>
+              <AppText variant="labelLarge" weight="semiBold" color={Colors.secondary[700]} style={{ marginTop: 12 }}>Organization</AppText>
+              <AppText variant="caption" color={Colors.secondary[600]}>Support</AppText>
             </TouchableOpacity>
           </View>
-
-          {/* Request Cards */}
-          {loadingRequests ? (
-            <View style={[styles.requestCard, {alignItems: 'center', justifyContent: 'center', paddingVertical: 40}]}>
-              <AppText variant="bodyMedium" color={Colors.neutral[500]}>Loading requests...</AppText>
-            </View>
-          ) : requests.length > 0 ? (
-            requests.slice(0, 3).map((request, index) => {
-              const formatStatus = (status: string) => {
-                if (!status) return 'Pending';
-                if (status.toLowerCase() === 'in_progress') return 'In Progress';
-                return status.charAt(0).toUpperCase() + status.slice(1).replace('_', ' ');
-              };
-
-              const getStatusColors = (status: string) => {
-                const s = status?.toLowerCase() || '';
-                if (s === 'in_progress') return { bg: Colors.primary[50], text: Colors.primary[700] };
-                if (s === 'completed') return { bg: Colors.secondary[50], text: Colors.secondary[700] };
-                // pending, accepted, new
-                return { bg: Colors.accent[50], text: Colors.accent[700] };
-              };
-
-              const displayStatus = formatStatus(request.status);
-              const statusColors = getStatusColors(request.status);
-
-              return (
-              <TouchableOpacity 
-                key={request.id || index} 
-                style={styles.requestCard}
-                onPress={() => navigation.navigate('RequestsTab', { screen: 'RequestDetails', params: { request } })}
-                activeOpacity={0.7}
-              >
-                <View style={styles.requestHeader}>
-                  <View style={styles.requestIconContainer}>
-                    {request.category?.logo_url ? (
-                      <Image 
-                        source={{ uri: getFullImageUrl(request.category.logo_url) as string }}
-                        style={{ width: 24, height: 24 }}
-                        resizeMode="contain"
-                      />
-                    ) : (
-                      <CategoryIcon title={request.category?.title} color={Colors.primary[500]} size={20} />
-                    )}
-                  </View>
-                  <View style={styles.requestTitleInfo}>
-                    <AppText variant="labelLarge" weight="semiBold" color={Colors.neutral[900]} style={{marginBottom: 4}}>{request.category?.title || 'Help Request'}</AppText>
-                    <AppText variant="caption" color={Colors.neutral[600]} style={{marginBottom: 6}}>#{request.reference_number || request.id}</AppText>
-                  </View>
-                  <View style={[styles.statusBadge, { backgroundColor: Colors.accent[50] }]}>
-                    <AppText variant="labelMedium" color={Colors.accent[700]}>
-                      {request.service_radius_km != null ? `${parseFloat(request.service_radius_km)?.toFixed(1)} km` : displayStatus}
-                    </AppText>
-                  </View>
-                </View>
-                
-                <View style={styles.requestDetails}>
-                  <View style={styles.detailRow}>
-                    <Calendar color={Colors.neutral[500]} size={14} />
-                    <AppText variant="caption" color={Colors.neutral[600]} style={styles.detailText}>
-                      {formatDate(request.preferred_date)} • {(request.preferred_start_time || request.start_time) ? `${formatTime12Hour(request.preferred_start_time || request.start_time)}${(request.preferred_end_time || request.end_time) ? ` - ${formatTime12Hour(request.preferred_end_time || request.end_time)}` : ''}` : (request.preferred_time || (request.hours_required ? `${request.hours_required} hours` : 'Time TBD'))}
-                    </AppText>
-                  </View>
-                  <View style={styles.detailRow}>
-                    <MapPin color={Colors.neutral[500]} size={14} />
-                    <AppText variant="caption" color={Colors.neutral[600]} style={styles.detailText} numberOfLines={1}>
-                      {request.location?.address || request.meeting_location || 'Location TBD'}
-                    </AppText>
-                  </View>
-                </View>
-              </TouchableOpacity>
-            )})
-          ) : (
-            <View style={[styles.requestCard, {alignItems: 'center', justifyContent: 'center', paddingVertical: 40}]}>
-              <AppText variant="bodyMedium" color={Colors.neutral[500]}>No pending requests nearby.</AppText>
-            </View>
-          )}
-
-          <Button 
-            title="Browse Requests" 
-            onPress={() => navigation.navigate('RequestsTab')}
-            style={styles.browseBtn}
-          />
         </View>
 
         {/* Quick Actions */}
@@ -372,6 +312,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   statusBadge: {
+    alignSelf: 'flex-start',
     paddingHorizontal: horizontalScale(8),
     paddingVertical: verticalScale(4),
     borderRadius: 12,
@@ -413,5 +354,19 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 4,
     elevation: 2,
+  },
+  supportCard: {
+    flex: 1,
+    padding: 16,
+    borderRadius: 16,
+    borderWidth: 1,
+    alignItems: 'flex-start',
+  },
+  supportIconWrapper: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

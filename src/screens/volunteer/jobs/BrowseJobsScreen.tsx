@@ -206,7 +206,7 @@ export const BrowseJobsScreen = () => {
           <Search color={Colors.neutral[400]} size={20} />
           <TextInput
             style={styles.searchInput}
-            placeholder="Search jobs by title..."
+            placeholder=""
             placeholderTextColor={Colors.neutral[400]}
             value={searchQuery}
             onChangeText={setSearchQuery}
@@ -263,7 +263,7 @@ export const BrowseJobsScreen = () => {
 
       <ScrollView
         contentContainerStyle={styles.content}
-        refreshControl={<RefreshControl refreshing={loading} onRefresh={fetchJobs} />}
+        refreshControl={<RefreshControl refreshing={false} onRefresh={fetchJobs} />}
       >
         {jobs.length === 0 && !loading ? (
           <View style={styles.emptyState}>
@@ -349,7 +349,8 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     marginLeft: 8,
-    ...Typography.bodyMedium,
+    fontFamily: FontFamily.regular,
+    fontSize: 16,
     color: Colors.neutral[900],
     padding: 0,
   },

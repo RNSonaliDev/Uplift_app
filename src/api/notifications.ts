@@ -39,6 +39,10 @@ export const notificationsApi = {
     return api.post<{message: string}>('/device_tokens', payload);
   },
   
+  deleteDeviceToken: (userId: number) => {
+    return api.delete<{message: string}>(`/device_tokens/${userId}`);
+  },
+  
   getSettings: () => {
     return api.get<NotificationSettingsResponse>('/notification_settings');
   },

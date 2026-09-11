@@ -11,9 +11,10 @@ import {
 import {useNavigation, useFocusEffect} from '@react-navigation/native';
 import {api, getFullImageUrl} from '../../../api/client';
 import {Colors} from '../../../theme/colors';
-import {Typography} from '../../../theme/typography';
+import {Typography, FontFamily} from '../../../theme/typography';
 import {AppText} from '../../../components/AppText';
 import {formatDate, formatTime12Hour} from '../../../utils/dateFormatter';
+import {formatStatus, getStatusColors} from '../../../utils/statusUtils';
 import {CategoryIcon} from '../../../components/CategoryIcon';
 import {horizontalScale, verticalScale, moderateScale} from '../../../utils/responsive';
 import {
@@ -30,6 +31,7 @@ export const OrganizationRequestsScreen = () => {
 
   useFocusEffect(
     React.useCallback(() => {
+      setActiveTab('Active');
       fetchRequests();
     }, [])
   );
@@ -46,7 +48,7 @@ export const OrganizationRequestsScreen = () => {
     }
   };
 
-  const activeRequests = requests.filter(r => r.status === 'pending' || r.status === 'accepted' || r.status === 'assigned');
+  const activeRequests = requests.filter(r => r.status === 'pending' || r.status === 'accepted' || r.status === 'assigned' || r.status === 'on_the_way' || r.status === 'in_progress');
   const historyRequests = requests.filter(r => r.status === 'completed' || r.status === 'cancelled');
   const displayRequests = activeTab === 'Active' ? activeRequests : historyRequests;
 
@@ -96,11 +98,12 @@ export const OrganizationRequestsScreen = () => {
                   <CategoryIcon title={req.category?.title} color={Colors.primary[500]} size={24} />
                 )}
                 title={req.category?.title || 'Help Request'}
+                requestTitle={req.title}
                 referenceNumber={req.reference_number || req.id}
                 date={formatDate(req.preferred_date || req.preferred_start_date)}
                 time={req.preferred_start_time && req.preferred_end_time ? `${formatTime12Hour(req.preferred_start_time)} - ${formatTime12Hour(req.preferred_end_time)}` : ''}
                 location={req.location?.address || req.meeting_location}
-                status={req.status ? req.status.charAt(0).toUpperCase() + req.status.slice(1) : 'Pending'}
+                status={req.status}
                 onPress={() => {
                   navigation.navigate('HomeTab', { screen: 'OrgRequestDetails', params: { request: req } })
                 }}
@@ -125,17 +128,12 @@ export const OrganizationRequestsScreen = () => {
 }
 
 const RequestCard = ({
-  icon, title, referenceNumber, date, time, location, status, onPress
+  icon, title, requestTitle, referenceNumber, date, time, location, status, onPress
 }: {
-  icon: React.ReactNode, title: string, referenceNumber: string, date: string, time: string, location: string, status: string, onPress: () => void
+  icon: React.ReactNode, title: string, requestTitle?: string, referenceNumber: string, date: string, time: string, location: string, status: string, onPress: () => void
 }) => {
-  const getBadgeColors = () => {
-    const s = status.toLowerCase();
-    if (s === 'confirmed' || s === 'completed' || s === 'accepted') return { bg: '#DCFCE7', text: '#16A34A' }; // Green
-    if (s === 'pending') return { bg: '#FEF3C7', text: '#D97706' }; // Orange
-    return { bg: '#E0DEFF', text: '#6D5DF6' }; // Primary
-  };
-  const badge = getBadgeColors();
+  const badge = getStatusColors(status);
+  const displayStatus = formatStatus(status);
 
   return (
     <TouchableOpacity style={styles.card} onPress={onPress}>
@@ -143,12 +141,17 @@ const RequestCard = ({
         <View style={styles.iconContainer}>{icon}</View>
         <View style={styles.cardContent}>
           <Text style={styles.cardTitle}>{title}</Text>
+          {requestTitle ? (
+            <Text style={{ ...Typography.bodyMedium, color: Colors.neutral[800], marginBottom: 4, fontFamily: FontFamily.medium }}>
+              {requestTitle}
+            </Text>
+          ) : null}
           {referenceNumber ? (
             <Text style={[styles.infoText, { marginBottom: 6 }]}>#{referenceNumber}</Text>
           ) : null}
         </View>
         <View style={[styles.statusBadge, { backgroundColor: badge.bg, alignSelf: 'flex-start' }]}>
-          <Text style={[styles.statusBadgeText, { color: badge.text }]}>{status}</Text>
+          <Text style={[styles.statusBadgeText, { color: badge.text }]}>{displayStatus}</Text>
         </View>
       </View>
       
@@ -271,6 +274,7 @@ const styles = StyleSheet.create({
     marginHorizontal: horizontalScale(6),
   },
   statusBadge: {
+    alignSelf: 'flex-start',
     paddingHorizontal: horizontalScale(12),
     paddingVertical: verticalScale(4),
     borderRadius: moderateScale(12),

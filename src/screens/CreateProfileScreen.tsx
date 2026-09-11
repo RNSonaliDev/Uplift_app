@@ -648,18 +648,14 @@ const is14To17 = age !== null && age >= 14 && age < 18 ;  // Info tooltip visibi
         maximumDate={new Date()}
         onConfirm={(date) => {
           setIsDatePickerOpen(false);
+          setDob(date);
           
           const selectedAge = (new Date().getTime() - (date.getTime() - 24 * 60 * 60 * 1000)) / (1000 * 60 * 60 * 24 * 365.25);
           if (selectedAge < 14) {
-            Toast.show({
-              type: 'error',
-              text1: 'Age Restriction',
-              text2: 'You are not allowed but hope to see you when you turn 14.',
-            });
+            setErrors({...errors, dob: 'Age Restriction: You are not allowed but hope to see you when you turn 14.'});
             return;
           }
 
-          setDob(date);
           if (errors.dob) setErrors({...errors, dob: ''});
         }}
         onCancel={() => {

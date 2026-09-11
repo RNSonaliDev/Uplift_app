@@ -128,14 +128,36 @@ export const CreateJobScreen = () => {
         ) : (
           <>
             <TouchableOpacity 
-              style={[styles.dropdownInput, fieldErrors.category ? styles.inputError : null]} 
-              onPress={() => setCategoryModalVisible(true)}
+              style={[
+                styles.dropdownInput, 
+                fieldErrors.category ? styles.inputError : null,
+                categoryModalVisible ? { borderBottomLeftRadius: 0, borderBottomRightRadius: 0, marginBottom: 0 } : null
+              ]} 
+              onPress={() => setCategoryModalVisible(!categoryModalVisible)}
             >
               <Text style={[styles.dropdownText, !selectedCategoryId && { color: Colors.neutral[300] }]}>
                 {selectedCategoryId ? selectedCategory?.title : 'Select a Category'}
               </Text>
               <ChevronDown color={Colors.neutral[400]} size={20} />
             </TouchableOpacity>
+            {categoryModalVisible && (
+              <View style={styles.inlineDropdownContent}>
+                {categories.map(item => (
+                  <TouchableOpacity
+                    key={item.id.toString()}
+                    style={styles.modalOption}
+                    onPress={() => {
+                      handleCategorySelect(item.id);
+                      setCategoryModalVisible(false);
+                    }}
+                  >
+                    <Text style={[styles.modalOptionText, selectedCategoryId === item.id && { color: Colors.primary[600], fontFamily: FontFamily.semiBold }]}>
+                      {item.title}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
             {fieldErrors.category ? <Text style={styles.fieldErrorText}>{fieldErrors.category}</Text> : null}
           </>
         )}
@@ -145,14 +167,39 @@ export const CreateJobScreen = () => {
           <>
             <Text style={[styles.label, { marginTop: 16 }]}>Sub Category *</Text>
             <TouchableOpacity 
-              style={[styles.dropdownInput, fieldErrors.subCategory ? styles.inputError : null]} 
-              onPress={() => setSubCategoryModalVisible(true)}
+              style={[
+                styles.dropdownInput, 
+                fieldErrors.subCategory ? styles.inputError : null,
+                subCategoryModalVisible ? { borderBottomLeftRadius: 0, borderBottomRightRadius: 0, marginBottom: 0 } : null
+              ]} 
+              onPress={() => setSubCategoryModalVisible(!subCategoryModalVisible)}
             >
               <Text style={[styles.dropdownText, !selectedSubCategoryId && { color: Colors.neutral[300] }]}>
                 {selectedSubCategoryId ? selectedSubCategory?.title : 'Select a Sub Category'}
               </Text>
               <ChevronDown color={Colors.neutral[400]} size={20} />
             </TouchableOpacity>
+            {subCategoryModalVisible && (
+              <View style={styles.inlineDropdownContent}>
+                {selectedCategory.sub_categories.map((item: any) => (
+                  <TouchableOpacity
+                    key={item.id.toString()}
+                    style={styles.modalOption}
+                    onPress={() => {
+                      setSelectedSubCategoryId(item.id);
+                      setSubCategoryModalVisible(false);
+                      if (fieldErrors.subCategory) {
+                        setFieldErrors(prev => ({ ...prev, subCategory: '' }));
+                      }
+                    }}
+                  >
+                    <Text style={[styles.modalOptionText, selectedSubCategoryId === item.id && { color: Colors.primary[600], fontFamily: FontFamily.semiBold }]}>
+                      {item.title}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
             {fieldErrors.subCategory ? <Text style={styles.fieldErrorText}>{fieldErrors.subCategory}</Text> : null}
           </>
         )}
@@ -203,80 +250,6 @@ export const CreateJobScreen = () => {
         <Button title="Preview Job" onPress={handlePreview} loading={loading} />
       </View>
 
-      {/* Category Dropdown Modal */}
-      <Modal visible={categoryModalVisible} animationType="fade" transparent>
-        <TouchableWithoutFeedback onPress={() => setCategoryModalVisible(false)}>
-          <View style={styles.modalOverlay}>
-            <TouchableWithoutFeedback>
-              <View style={styles.modalContent}>
-                <View style={styles.modalHeader}>
-                  <Text style={styles.modalTitle}>Select Category</Text>
-                  <TouchableOpacity onPress={() => setCategoryModalVisible(false)} hitSlop={10}>
-                    <X color={Colors.neutral[600]} size={24} />
-                  </TouchableOpacity>
-                </View>
-                <FlatList
-                  data={categories}
-                  keyExtractor={item => item.id.toString()}
-                  renderItem={({ item }) => (
-                    <TouchableOpacity
-                      style={styles.modalOption}
-                      onPress={() => handleCategorySelect(item.id)}
-                    >
-                      <Text style={[styles.modalOptionText, selectedCategoryId === item.id && { color: Colors.primary[600], fontFamily: FontFamily.semiBold }]}>
-                        {item.title}
-                      </Text>
-                    </TouchableOpacity>
-                  )}
-                  style={{ maxHeight: 300 }}
-                />
-              </View>
-            </TouchableWithoutFeedback>
-          </View>
-        </TouchableWithoutFeedback>
-      </Modal>
-
-      {/* Sub Category Dropdown Modal */}
-      {selectedCategory && (
-        <Modal visible={subCategoryModalVisible} animationType="fade" transparent>
-          <TouchableWithoutFeedback onPress={() => setSubCategoryModalVisible(false)}>
-            <View style={styles.modalOverlay}>
-              <TouchableWithoutFeedback>
-                <View style={styles.modalContent}>
-                  <View style={styles.modalHeader}>
-                    <Text style={styles.modalTitle}>Select Sub Category</Text>
-                    <TouchableOpacity onPress={() => setSubCategoryModalVisible(false)} hitSlop={10}>
-                      <X color={Colors.neutral[600]} size={24} />
-                    </TouchableOpacity>
-                  </View>
-                  <FlatList
-                    data={selectedCategory.sub_categories}
-                    keyExtractor={(item: any) => item.id.toString()}
-                    renderItem={({ item }) => (
-                      <TouchableOpacity
-                        style={styles.modalOption}
-                        onPress={() => {
-                          setSelectedSubCategoryId(item.id);
-                          setSubCategoryModalVisible(false);
-                          if (fieldErrors.subCategory) {
-                            setFieldErrors(prev => ({ ...prev, subCategory: '' }));
-                          }
-                        }}
-                      >
-                        <Text style={[styles.modalOptionText, selectedSubCategoryId === item.id && { color: Colors.primary[600], fontFamily: FontFamily.semiBold }]}>
-                          {item.title}
-                        </Text>
-                      </TouchableOpacity>
-                    )}
-                    style={{ maxHeight: 300 }}
-                  />
-                </View>
-              </TouchableWithoutFeedback>
-            </View>
-          </TouchableWithoutFeedback>
-        </Modal>
-      )}
-
     </SafeAreaView>
   );
 };
@@ -315,28 +288,15 @@ const styles = StyleSheet.create({
     color: Colors.neutral[900],
   },
   footer: { padding: 16, backgroundColor: '#FFF', borderTopWidth: 1, borderTopColor: Colors.neutral[200] },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.4)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalContent: {
+  inlineDropdownContent: {
     backgroundColor: '#FFF',
-    width: '85%',
-    borderRadius: 16,
-    overflow: 'hidden',
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.neutral[100],
-  },
-  modalTitle: {
-    ...Typography.h6,
+    borderWidth: 1,
+    borderTopWidth: 0,
+    borderColor: Colors.neutral[200],
+    borderBottomLeftRadius: 8,
+    borderBottomRightRadius: 8,
+    marginBottom: 16,
+    maxHeight: 250,
   },
   modalOption: {
     paddingVertical: 16,

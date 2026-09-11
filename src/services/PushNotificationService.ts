@@ -8,6 +8,7 @@ import {
 import notifee, { AndroidImportance } from '@notifee/react-native';
 import { Platform } from 'react-native';
 import { notificationsApi } from '../api/notifications';
+import { authApi } from '../api/auth';
 
 class PushNotificationService {
   async requestUserPermission() {
@@ -56,6 +57,19 @@ class PushNotificationService {
       } else {
         console.error('Error getting FCM token:', error);
       }
+    }
+  }
+
+  async unregisterDeviceToken() {
+    try {
+      const profile = await authApi.getProfile();
+      if (profile && profile.id) {
+        console.log('Unregistering Firebase Token for user ID:', profile.id);
+        await notificationsApi.deleteDeviceToken(profile.id);
+        console.log('Successfully unregistered device token with backend');
+      }
+    } catch (e) {
+      console.log('Failed to unregister device token', e);
     }
   }
 

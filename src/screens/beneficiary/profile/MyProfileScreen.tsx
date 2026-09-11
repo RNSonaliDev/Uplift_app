@@ -16,6 +16,7 @@ import { launchImageLibrary } from 'react-native-image-picker';
 import Toast from 'react-native-toast-message';
 import {api, getFullImageUrl} from '../../../api/client';
 import {authApi, UserProfileResponse} from '../../../api/auth';
+import {pushNotificationService} from '../../../services/PushNotificationService';
 import {Colors} from '../../../theme/colors';
 import {Typography} from '../../../theme/typography';
 import {horizontalScale, verticalScale, moderateScale, hp} from '../../../utils/responsive';
@@ -116,6 +117,7 @@ export default function MyProfileScreen() {
         style: 'destructive', 
         onPress: async () => {
           try {
+            await pushNotificationService.unregisterDeviceToken();
             await authApi.logout();
           } catch (e) {
             console.log('Logout API failed', e);
@@ -142,6 +144,7 @@ export default function MyProfileScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
+              await pushNotificationService.unregisterDeviceToken();
               await authApi.deleteProfile();
               Toast.show({
                 type: 'success',
@@ -294,7 +297,7 @@ export default function MyProfileScreen() {
           <MenuItem 
             icon={<Headphones color={Colors.neutral[500]} size={24} />} 
             title="Contact Support" 
-            onPress={() => navigation.navigate('ContactSupport')} 
+            onPress={() => navigation.navigate('CreateSupportRequest')} 
           />
           <MenuItem 
             icon={<LogOut color={Colors.error} size={24} />} 

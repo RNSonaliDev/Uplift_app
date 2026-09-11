@@ -13,6 +13,7 @@ import { AppText } from '../../../components/AppText';
 import { horizontalScale, verticalScale, moderateScale } from '../../../utils/responsive';
 import { supportApi, SupportRequest } from '../../../api/support';
 import { ChevronLeft, MessageSquare, Clock, CheckCircle, Plus } from 'lucide-react-native';
+import { formatStatus, getStatusColors } from '../../../utils/statusUtils';
 
 export default function ContactSupportScreen() {
   const navigation = useNavigation<any>();
@@ -42,9 +43,7 @@ export default function ContactSupportScreen() {
   const renderHistoryItem = ({ item }: { item: SupportRequest }) => {
     const date = new Date(item.created_at).toLocaleDateString();
     
-    let statusColor = Colors.neutral[500];
-    if (item.status === 'open' || item.status === 'pending') statusColor = Colors.primary[500];
-    if (item.status === 'resolved' || item.status === 'closed') statusColor = Colors.success;
+    const statusStyle = getStatusColors(item.status);
 
     return (
       <View style={styles.historyCard}>
@@ -66,9 +65,9 @@ export default function ContactSupportScreen() {
               {item.subject}
             </AppText>
             <View style={styles.historyMeta}>
-              <View style={[styles.statusBadge, { backgroundColor: statusColor + '20' }]}>
-                <AppText variant="caption" style={[styles.statusText, { color: statusColor }]}>
-                  {item.status.toUpperCase()}
+              <View style={[styles.statusBadge, { backgroundColor: statusStyle.bg }]}>
+                <AppText variant="caption" style={[styles.statusText, { color: statusStyle.text }]}>
+                  {formatStatus(item.status)}
                 </AppText>
               </View>
               <View style={styles.dateRow}>
@@ -198,6 +197,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   statusBadge: {
+    alignSelf: 'flex-start',
     paddingHorizontal: horizontalScale(8),
     paddingVertical: verticalScale(2),
     borderRadius: moderateScale(8),

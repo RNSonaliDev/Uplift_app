@@ -25,7 +25,7 @@ import {Button} from '../../../components/Button';
 import DatePicker from 'react-native-date-picker';
 import {api, getFullImageUrl} from '../../../api/client';
 import {authApi, CategoryResponse} from '../../../api/auth';
-import {ChevronLeft, ShoppingCart, MapPin, Navigation} from 'lucide-react-native';
+import {ChevronLeft, ShoppingCart, MapPin, Navigation, X} from 'lucide-react-native';
 import {Spacing} from '../../../theme/spacing';
 import {horizontalScale, verticalScale, moderateScale} from '../../../utils/responsive';
 import MapView, { Marker, Circle } from 'react-native-maps';
@@ -72,6 +72,7 @@ export default function CreateRequestScreen() {
     latitudeDelta: 0.0922,
     longitudeDelta: 0.0421,
   });
+  const [isMapModalVisible, setIsMapModalVisible] = useState(false);
 
   const GOOGLE_MAPS_API_KEY = 'AIzaSyAd20tmxrXZ1VCyhZx4q9aK0ejZtQtE92s'; // TODO: Provide your Google Maps API Key here
 
@@ -129,6 +130,40 @@ export default function CreateRequestScreen() {
     const strHours = String(hours).padStart(2, '0');
     return `${strHours}:${minutes} ${ampm}`;
   };
+
+  const getMinTimeForPicker = (pickerDate: Date, selectedDate: Date) => {
+    const min = new Date(pickerDate);
+    min.setHours(8, 0, 0, 0);
+    
+    const now = new Date();
+    const isToday = 
+      selectedDate.getFullYear() === now.getFullYear() && 
+      selectedDate.getMonth() === now.getMonth() && 
+      selectedDate.getDate() === now.getDate();
+      
+    if (isToday) {
+      const minCurrentTime = new Date(pickerDate);
+      minCurrentTime.setHours(now.getHours() + 2, now.getMinutes(), 0, 0);
+      const max = new Date(pickerDate);
+      max.setHours(20, 0, 0, 0);
+      
+      if (minCurrentTime > max) return max;
+      if (minCurrentTime > min) return minCurrentTime;
+    }
+    return min;
+  };
+
+  const getMaxTimeForPicker = (pickerDate: Date) => {
+    const max = new Date(pickerDate);
+    max.setHours(20, 0, 0, 0);
+    return max;
+  };
+
+  React.useEffect(() => {
+    if (route.params?.category_id) {
+      setFormData(prev => ({ ...prev, category_id: route.params.category_id }));
+    }
+  }, [route.params?.category_id]);
 
   React.useEffect(() => {
     fetchCategories();
@@ -320,7 +355,7 @@ export default function CreateRequestScreen() {
             <View pointerEvents="none">
               <Input
                 label="Preferred Date"
-                placeholder="DD/MM/YYYY"
+                placeholder="MM/DD/YYYY"
                 value={formData.preferred_date}
                 editable={false}
                 error={errors.preferred_date}
@@ -420,29 +455,11 @@ export default function CreateRequestScreen() {
             ) : null}
 
             {(formData.latitude && formData.longitude) ? (
-              <View style={styles.mapContainer}>
-                <MapView
-                  style={styles.map}
-                  region={{
-                    latitude: Number(formData.latitude),
-                    longitude: Number(formData.longitude),
-                    latitudeDelta: 0.01,
-                    longitudeDelta: 0.01,
-                  }}
-                >
-                  <Marker 
-                    draggable
-                    coordinate={{ latitude: Number(formData.latitude), longitude: Number(formData.longitude) }} 
-                    onDragEnd={handleMarkerDragEnd}
-                  />
-                  <Circle
-                    center={{ latitude: Number(formData.latitude), longitude: Number(formData.longitude) }}
-                    radius={200}
-                    fillColor="rgba(79, 70, 229, 0.2)"
-                    strokeColor="rgba(79, 70, 229, 0.5)"
-                  />
-                </MapView>
-              </View>
+              <TouchableOpacity onPress={() => setIsMapModalVisible(true)} style={{ marginTop: Spacing.sm, marginBottom: Spacing.md, alignSelf: 'flex-end' }}>
+                <AppText variant="bodyMedium" color={Colors.primary[500]} style={{ textDecorationLine: 'underline' }}>
+                  Show on map
+                </AppText>
+              </TouchableOpacity>
             ) : null}
           </View>
 
@@ -467,7 +484,7 @@ export default function CreateRequestScreen() {
           const day = String(selectedDate.getDate()).padStart(2, '0');
           const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
           const year = selectedDate.getFullYear();
-          handleChange('preferred_date', `${day}/${month}/${year}`);
+          handleChange('preferred_date', `${month}/${day}/${year}`);
         }}
         onCancel={() => {
           setIsDatePickerOpen(false);
@@ -479,6 +496,8 @@ export default function CreateRequestScreen() {
         open={isStartTimePickerOpen}
         date={startTime}
         mode="time"
+        minimumDate={getMinTimeForPicker(startTime, date)}
+        maximumDate={getMaxTimeForPicker(startTime)}
         onConfirm={(selectedTime) => {
           setIsStartTimePickerOpen(false);
           setStartTime(selectedTime);
@@ -494,6 +513,8 @@ export default function CreateRequestScreen() {
         open={isEndTimePickerOpen}
         date={endTime}
         mode="time"
+        minimumDate={getMinTimeForPicker(endTime, date)}
+        maximumDate={getMaxTimeForPicker(endTime)}
         onConfirm={(selectedTime) => {
           setIsEndTimePickerOpen(false);
           setEndTime(selectedTime);
@@ -548,6 +569,41 @@ export default function CreateRequestScreen() {
                 )}
               />
             )}
+          </View>
+        </View>
+      </Modal>
+
+      <Modal visible={isMapModalVisible} transparent animationType="slide">
+        <View style={styles.mapModalContainer}>
+          <View style={styles.mapModalHeader}>
+            <AppText variant="h5" style={{ color: Colors.neutral[900] }}>Location on Map</AppText>
+            <TouchableOpacity onPress={() => setIsMapModalVisible(false)} style={{ padding: 4 }}>
+              <X color={Colors.neutral[500]} size={24} />
+            </TouchableOpacity>
+          </View>
+          <MapView
+            style={{ flex: 1 }}
+            region={{
+              latitude: Number(formData.latitude) || region.latitude,
+              longitude: Number(formData.longitude) || region.longitude,
+              latitudeDelta: 0.01,
+              longitudeDelta: 0.01,
+            }}
+          >
+            <Marker 
+              draggable
+              coordinate={{ latitude: Number(formData.latitude) || region.latitude, longitude: Number(formData.longitude) || region.longitude }} 
+              onDragEnd={handleMarkerDragEnd}
+            />
+            <Circle
+              center={{ latitude: Number(formData.latitude) || region.latitude, longitude: Number(formData.longitude) || region.longitude }}
+              radius={200}
+              fillColor="rgba(79, 70, 229, 0.2)"
+              strokeColor="rgba(79, 70, 229, 0.5)"
+            />
+          </MapView>
+          <View style={{ padding: Spacing.md, backgroundColor: Colors.neutral[0], paddingBottom: Math.max(Spacing.md, 24) }}>
+             <Button title="Done" onPress={() => setIsMapModalVisible(false)} fullWidth />
           </View>
         </View>
       </Modal>
@@ -695,5 +751,23 @@ const styles = StyleSheet.create({
   map: {
     width: '100%',
     height: '100%',
+  },
+  mapModalContainer: {
+    flex: 1,
+    backgroundColor: Colors.neutral[0],
+    marginTop: Platform.OS === 'ios' ? 50 : 0,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    overflow: 'hidden',
+    elevation: 5,
+  },
+  mapModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: Spacing.lg,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.neutral[200],
+    backgroundColor: Colors.neutral[0],
   },
 });

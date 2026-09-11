@@ -106,6 +106,9 @@ export default function CreateSupportRequestScreen() {
 
       <ScrollView style={styles.container} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <View style={styles.illustrationContainer}>
+            <AppText variant="labelLarge" color={Colors.error} style={{marginBottom: 16}} center>
+              For any emergency call 911
+            </AppText>
             <AppText variant="h5" style={styles.greetingTitle}>How can we help you?</AppText>
             <AppText variant="bodyMedium" style={styles.greetingText} center>
               Describe your issue below and our support team will get back to you as soon as possible.

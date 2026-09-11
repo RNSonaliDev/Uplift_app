@@ -15,6 +15,7 @@ import {useNavigation, useRoute, useFocusEffect} from '@react-navigation/native'
 import {api, getFullImageUrl} from '../../../api/client';
 import {Colors} from '../../../theme/colors';
 import {Typography} from '../../../theme/typography';
+import {AppText} from '../../../components/AppText';
 import {
   ChevronLeft,
   ShoppingCart,
@@ -28,8 +29,11 @@ import {
   Users,
   MoreHorizontal,
   Clock,
+  ShieldAlert,
+  User,
+  Phone,
 } from 'lucide-react-native';
-import {formatDate, formatTime12Hour} from '../../../utils/dateFormatter';
+import {formatDate, formatTime12Hour, formatDateTime} from '../../../utils/dateFormatter';
 
 export default function RequestTrackingScreen() {
   const navigation = useNavigation<any>();
@@ -155,6 +159,8 @@ export default function RequestTrackingScreen() {
             </View>
           </View>
 
+
+
           {requestDetail.status === 'cancelled' ? (
             <View style={[styles.timelineContainer, { paddingVertical: 24, paddingHorizontal: 16, backgroundColor: Colors.error + '10', borderRadius: 12, alignItems: 'center', marginTop: 16 }]}>
               <Text style={{ ...Typography.h5, color: Colors.error, marginBottom: 8 }}>Request Cancelled</Text>
@@ -167,16 +173,52 @@ export default function RequestTrackingScreen() {
               <TimelineItem 
                 status="completed" 
                 title="Request Submitted" 
-                time={new Date(requestDetail.created_at).toLocaleString()}
+                time={formatDateTime(requestDetail.created_at)}
               />
               <TimelineItem 
-                status={['accepted', 'assigned', 'in_progress', 'completed'].includes(requestDetail.status) ? 'completed' : 'pending'} 
+                status={['accepted', 'assigned', 'on_the_way', 'in_progress', 'completed'].includes(requestDetail.status) ? 'completed' : 'pending'} 
                 title="Request Accepted" 
-                description={requestDetail.volunteer ? `${requestDetail.volunteer.first_name} will help you.` : 'Waiting for a helper to accept.'}
+                description={requestDetail.volunteer ? undefined : 'Waiting for a volunteer to accept.'}
+              >
+                {requestDetail.volunteer && (
+                  <View style={{flexDirection: 'row', alignItems: 'center', marginTop: 12, padding: 12, backgroundColor: Colors.neutral[50], borderRadius: 12, borderWidth: 1, borderColor: Colors.neutral[100]}}>
+                    {requestDetail.volunteer.profile_image_url ? (
+                      <Image 
+                        source={{ uri: getFullImageUrl(requestDetail.volunteer.profile_image_url) as string }} 
+                        style={{width: 48, height: 48, borderRadius: 24, marginRight: 12}} 
+                      />
+                    ) : (
+                      <View style={{width: 48, height: 48, borderRadius: 24, marginRight: 12, backgroundColor: Colors.neutral[200], justifyContent: 'center', alignItems: 'center'}}>
+                        <User color={Colors.neutral[500]} size={24} />
+                      </View>
+                    )}
+                    <View style={{flex: 1}}>
+                      <Text style={{...Typography.labelMedium, color: Colors.neutral[900], marginBottom: 2}}>
+                        {requestDetail.volunteer.first_name} {requestDetail.volunteer.last_name || ''}
+                      </Text>
+                      {requestDetail.volunteer.phone_number ? (
+                        <View style={{flexDirection: 'row', alignItems: 'center'}}>
+                          <Phone color={Colors.neutral[500]} size={12} style={{marginRight: 4}} />
+                          <Text style={{...Typography.caption, color: Colors.neutral[600]}}>
+                            {requestDetail.volunteer.phone_number}
+                          </Text>
+                        </View>
+                      ) : (
+                        <Text style={{...Typography.caption, color: Colors.neutral[600]}}>
+                          will help you.
+                        </Text>
+                      )}
+                    </View>
+                  </View>
+                )}
+              </TimelineItem>
+              <TimelineItem 
+                status={['in_progress', 'completed'].includes(requestDetail.status) ? 'completed' : requestDetail.status === 'on_the_way' ? 'active' : 'pending'} 
+                title="On the Way" 
               />
               <TimelineItem 
                 status={['completed'].includes(requestDetail.status) ? 'completed' : requestDetail.status === 'in_progress' ? 'active' : 'pending'} 
-                title="In Progress / Arrived" 
+                title="Job started" 
               />
               <TimelineItem 
                 status={requestDetail.status === 'completed' ? 'completed' : 'pending'} 
@@ -188,6 +230,13 @@ export default function RequestTrackingScreen() {
           )}
 
           <View style={styles.bottomContainer}>
+            <View style={styles.safetyNoteContainer}>
+              <ShieldAlert color={Colors.warning} size={24} />
+              <AppText variant="caption" style={styles.safetyNoteText}>
+                For your safety, never share personal information or belongings like your SSN or bank details with anyone.
+              </AppText>
+            </View>
+
             {requestDetail.volunteer && requestDetail.status !== 'completed' && (
               <TouchableOpacity style={styles.outlineBtn}>
                 <Text style={styles.outlineBtnText}>Contact Helper</Text>
@@ -221,9 +270,9 @@ export default function RequestTrackingScreen() {
 }
 
 const TimelineItem = ({
-  status, title, time, description, isLast
+  status, title, time, description, isLast, children
 }: {
-  status: 'completed' | 'active' | 'pending', title: string, time?: string, description?: string, isLast?: boolean
+  status: 'completed' | 'active' | 'pending', title: string, time?: string, description?: string, isLast?: boolean, children?: React.ReactNode
 }) => {
   return (
     <View style={styles.timelineItem}>
@@ -249,7 +298,8 @@ const TimelineItem = ({
           status === 'pending' && {color: Colors.neutral[400]}
         ]}>{title}</Text>
         {time && <Text style={styles.timelineTime}>{time}</Text>}
-        {description && <Text style={styles.timelineDesc}>{description}</Text>}
+        {description ? <Text style={styles.timelineDesc}>{description}</Text> : null}
+        {children}
       </View>
     </View>
   );
@@ -408,5 +458,19 @@ const styles = StyleSheet.create({
   outlineBtnText: {
     ...Typography.buttonMedium,
     color: Colors.primary[500],
+  },
+  safetyNoteContainer: {
+    flexDirection: 'row',
+    backgroundColor: Colors.warning + '1A',
+    padding: 16,
+    borderRadius: 8,
+    marginBottom: 24,
+    alignItems: 'flex-start',
+  },
+  safetyNoteText: {
+    flex: 1,
+    marginLeft: 12,
+    lineHeight: 20,
+    color: Colors.neutral[600],
   },
 });

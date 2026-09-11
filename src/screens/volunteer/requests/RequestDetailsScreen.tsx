@@ -8,6 +8,11 @@ import {
   Image,
   Alert,
   TextInput,
+  Modal,
+  KeyboardAvoidingView,
+  Platform,
+  TouchableWithoutFeedback,
+  Keyboard,
 } from 'react-native';
 import Toast from 'react-native-toast-message';
 import {useNavigation, useRoute, useFocusEffect} from '@react-navigation/native';
@@ -25,6 +30,7 @@ import {
   MapPin,
   FileText,
   Star,
+  ShieldAlert,
 } from 'lucide-react-native';
 import {
   horizontalScale,
@@ -40,12 +46,14 @@ export default function RequestDetailsScreen() {
   const forceAction = route.params?.forceAction;
 
   const [isAccepting, setIsAccepting] = useState(false);
-  const [otp, setOtp] = useState('');
   const [isStarting, setIsStarting] = useState(false);
 
   const [requiresParentAccept, setRequiresParentAccept] = useState(false);
   const [isParentModalVisible, setIsParentModalVisible] = useState(false);
   const [parentEmail, setParentEmail] = useState('');
+
+  const [isOtpModalVisible, setIsOtpModalVisible] = useState(false);
+  const [otpCode, setOtpCode] = useState('');
 
   useFocusEffect(
     useCallback(() => {
@@ -80,6 +88,7 @@ export default function RequestDetailsScreen() {
 
   const showAcceptBtn = !forceAction && (!request.status || request.status.toLowerCase() === 'pending');
   const showStartBtn = forceAction === 'start' || request.status?.toLowerCase() === 'accepted';
+  const showStartWithOtpBtn = forceAction === 'start_with_otp' || request.status?.toLowerCase() === 'on_the_way';
   const showCompleteBtn = forceAction === 'complete' || request.status?.toLowerCase() === 'in_progress';
   const showRateBtn = forceAction === 'rate' || (request.status?.toLowerCase() === 'completed' && (!request.ratings || request.ratings.length === 0));
 
@@ -126,8 +135,31 @@ export default function RequestDetailsScreen() {
     }
   };
 
-  const handleStartRequest = async () => {
-    if (otp.length !== 6) {
+  const handleOnTheWay = async () => {
+    if (!request.id) return;
+
+    try {
+      setIsStarting(true);
+      await api.post(`/help_requests/${request.id}/on_the_way`);
+      Toast.show({
+        type: 'success',
+        text1: 'Success',
+        text2: 'Status updated to On the way!',
+        onHide: () => navigation.goBack()
+      });
+    } catch (error: any) {
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: error?.data?.errors?.[0] || error?.message || 'Failed to update status.'
+      });
+    } finally {
+      setIsStarting(false);
+    }
+  };
+
+  const handleStartWithOtp = async () => {
+    if (otpCode.length !== 6) {
       Toast.show({
         type: 'error',
         text1: 'Invalid Code',
@@ -136,15 +168,18 @@ export default function RequestDetailsScreen() {
       return;
     }
     if (!request.id) return;
-
+    
     try {
       setIsStarting(true);
-      await api.post(`/help_requests/${request.id}/start`, { start_code: otp });
+      await api.post(`/help_requests/${request.id}/start`, { start_code: otpCode });
       Toast.show({
         type: 'success',
         text1: 'Success',
         text2: 'Task started successfully!',
-        onHide: () => navigation.goBack()
+        onHide: () => {
+          setIsOtpModalVisible(false);
+          navigation.goBack();
+        }
       });
     } catch (error: any) {
       Toast.show({
@@ -186,7 +221,7 @@ export default function RequestDetailsScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
-              await api.post(`/help_requests/${request.id}/cancel`);
+              await api.post(`/help_requests/${request.id}/withdraw`);
               Toast.show({
                 type: 'success',
                 text1: 'Success',
@@ -212,7 +247,7 @@ export default function RequestDetailsScreen() {
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.iconButton}>
           <ChevronLeft color={Colors.neutral[900]} size={28} strokeWidth={2} />
         </TouchableOpacity>
-        {/* <AppText variant="h6" color={Colors.neutral[900]}>Request Details</AppText> */}
+        <AppText variant="h5" color={Colors.neutral[900]}>Request Details</AppText>
         <View style={{width: 40}} />
       </View>
 
@@ -220,29 +255,55 @@ export default function RequestDetailsScreen() {
         
 
         {/* Profile Section */}
-        <View style={styles.profileSection}>
-          <View style={styles.avatarContainer}>
-            {request.beneficiary?.profile_image_url ? (
-              <Image 
-                source={{uri: getFullImageUrl(request.beneficiary.profile_image_url) as string}} 
-                style={styles.avatar} 
-              />
-            ) : (
-              <View style={[styles.avatar, {justifyContent: 'center', alignItems: 'center'}]}>
-                <AppText variant="h6" color={Colors.neutral[600]}>
-                  {request.beneficiary?.first_name 
-                    ? `${request.beneficiary.first_name.charAt(0)}${request.beneficiary.last_name ? request.beneficiary.last_name.charAt(0) : ''}`.toUpperCase() 
-                    : ''}
-                </AppText>
-              </View>
-            )}
+        {request.request_type === 'organization' || request.organization ? (
+          <View style={styles.profileSection}>
+            <View style={styles.avatarContainer}>
+              {(request.organization?.profile_image_url || request.beneficiary?.profile_image_url) ? (
+                <Image 
+                  source={{uri: getFullImageUrl(request.organization?.profile_image_url || request.beneficiary?.profile_image_url) as string}} 
+                  style={styles.avatar} 
+                />
+              ) : (
+                <View style={[styles.avatar, {justifyContent: 'center', alignItems: 'center'}]}>
+                  <AppText variant="h6" color={Colors.neutral[600]}>
+                    {(request.organization?.organization_name || request.beneficiary?.organization_name)
+                      ? (request.organization?.organization_name || request.beneficiary?.organization_name).charAt(0).toUpperCase()
+                      : (request.organization?.first_name || request.beneficiary?.first_name ? (request.organization?.first_name || request.beneficiary?.first_name).charAt(0).toUpperCase() : 'O')}
+                  </AppText>
+                </View>
+              )}
+            </View>
+            <View style={styles.profileInfo}>
+              <AppText variant="labelLarge" color={Colors.neutral[900]} style={{marginBottom: 4}}>
+                {request.organization?.organization_name || request.beneficiary?.organization_name || (request.organization?.first_name ? `${request.organization.first_name} ${request.organization.last_name || ''}` : (request.beneficiary?.first_name ? `${request.beneficiary.first_name} ${request.beneficiary.last_name || ''}` : 'Organization'))}
+              </AppText>
+            </View>
           </View>
-          <View style={styles.profileInfo}>
-            <AppText variant="labelLarge" color={Colors.neutral[900]} style={{marginBottom: 4}}>
-              {request.beneficiary?.first_name ? `${request.beneficiary.first_name} ${request.beneficiary.last_name || ''}` : ''}
-            </AppText>
+        ) : (
+          <View style={styles.profileSection}>
+            <View style={styles.avatarContainer}>
+              {request.beneficiary?.profile_image_url ? (
+                <Image 
+                  source={{uri: getFullImageUrl(request.beneficiary.profile_image_url) as string}} 
+                  style={styles.avatar} 
+                />
+              ) : (
+                <View style={[styles.avatar, {justifyContent: 'center', alignItems: 'center'}]}>
+                  <AppText variant="h6" color={Colors.neutral[600]}>
+                    {request.beneficiary?.first_name 
+                      ? `${request.beneficiary.first_name.charAt(0)}${request.beneficiary.last_name ? request.beneficiary.last_name.charAt(0) : ''}`.toUpperCase() 
+                      : ''}
+                  </AppText>
+                </View>
+              )}
+            </View>
+            <View style={styles.profileInfo}>
+              <AppText variant="labelLarge" color={Colors.neutral[900]} style={{marginBottom: 4}}>
+                {request.beneficiary?.first_name ? `${request.beneficiary.first_name} ${request.beneficiary.last_name || ''}` : ''}
+              </AppText>
+            </View>
           </View>
-        </View>
+        )}
 
         <View style={styles.divider} />
 
@@ -348,6 +409,14 @@ export default function RequestDetailsScreen() {
             </View>
           ) : null}
         </View>
+
+        {/* Security Note */}
+        <View style={styles.securityNote}>
+          <ShieldAlert color={Colors.warning} size={24} />
+          <AppText variant="caption" style={styles.securityText}>
+            For your safety, never share personal information or belongings like your SSN or bank details with anyone.
+          </AppText>
+        </View>
       </ScrollView>
 
       {showAcceptBtn && (
@@ -363,25 +432,26 @@ export default function RequestDetailsScreen() {
 
       {showStartBtn && (
         <View style={styles.actionContainer}>
-          <View style={styles.otpCard}>
-            <AppText variant="bodyMedium" color={Colors.primary[800]} style={{marginBottom: 16, fontFamily: FontFamily.medium}} center>
-              Enter the 6-digit start code from the {request?.request_type === 'organization' ? 'organization' : 'beneficiary'}
-            </AppText>
-            <TextInput
-              style={[styles.otpInput, { backgroundColor: Colors.neutral[0], borderColor: Colors.primary[200], color: Colors.primary[900] }]}
-              value={otp}
-              onChangeText={(text) => setOtp(text.replace(/[^0-9]/g, '').slice(0, 6))}
-              keyboardType="number-pad"
-              placeholder="0 0 0 0 0 0"
-              placeholderTextColor={Colors.neutral[300]}
-              maxLength={6}
-            />
-          </View>
+          <Button 
+            title="On the way" 
+            onPress={handleOnTheWay} 
+            loading={isStarting}
+            style={styles.acceptBtn} 
+          />
+          <TouchableOpacity 
+            style={styles.cancelTextBtn} 
+            onPress={handleCancelRequest}
+          >
+            <AppText variant="buttonMedium" style={{ color: Colors.error }}>Cancel Request</AppText>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {showStartWithOtpBtn && (
+        <View style={styles.actionContainer}>
           <Button 
             title="Start Request" 
-            onPress={handleStartRequest} 
-            loading={isStarting}
-            disabled={otp.length !== 6 || isStarting}
+            onPress={() => setIsOtpModalVisible(true)} 
             style={styles.acceptBtn} 
           />
           <TouchableOpacity 
@@ -418,6 +488,45 @@ export default function RequestDetailsScreen() {
         onClose={() => setIsParentModalVisible(false)}
         onConfirm={handleConfirmAccept}
       />
+
+      <Modal
+        visible={isOtpModalVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setIsOtpModalVisible(false)}
+      >
+        <KeyboardAvoidingView 
+          style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' }}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        >
+          <TouchableWithoutFeedback onPress={() => setIsOtpModalVisible(false)}>
+            <View style={{ flex: 1 }} />
+          </TouchableWithoutFeedback>
+          <View style={{ backgroundColor: Colors.neutral[0], padding: 24, borderTopLeftRadius: 24, borderTopRightRadius: 24 }}>
+            <AppText variant="h5" color={Colors.neutral[900]} center style={{ marginBottom: 12 }}>Enter Start Code</AppText>
+            <AppText variant="bodyMedium" color={Colors.neutral[600]} center style={{ marginBottom: 24 }}>
+              Please enter the 6-digit start code provided by the {request.request_type === 'organization' ? 'organization' : 'beneficiary'} to begin this request.
+            </AppText>
+            <TextInput
+              style={styles.otpInput}
+              value={otpCode}
+              onChangeText={(text) => setOtpCode(text.replace(/[^0-9]/g, '').slice(0, 6))}
+              keyboardType="number-pad"
+              placeholder="000000"
+              placeholderTextColor={Colors.neutral[300]}
+              maxLength={6}
+            />
+            <Button 
+              title="Start Task" 
+              onPress={handleStartWithOtp}
+              loading={isStarting}
+              disabled={otpCode.length !== 6 || isStarting}
+              fullWidth 
+              style={{ marginTop: 24, marginBottom: Platform.OS === 'ios' ? 20 : 0 }}
+            />
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -531,5 +640,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 16,
     paddingVertical: 8,
+  },
+  securityNote: {
+    flexDirection: 'row',
+    backgroundColor: Colors.warning + '1A', // 10% opacity
+    padding: 16,
+    borderRadius: 8,
+    alignItems: 'flex-start',
+    marginBottom: 24,
+    marginTop: 16,
+  },
+  securityText: {
+    flex: 1,
+    marginLeft: 12,
+    lineHeight: 20,
+    color: Colors.neutral[600],
   },
 });

@@ -15,6 +15,7 @@ import { Colors } from '../../../theme/colors';
 import { Typography } from '../../../theme/typography';
 import { authApi } from '../../../api/auth';
 import { clearAuthToken } from '../../../api/client';
+import { pushNotificationService } from '../../../services/PushNotificationService';
 import {
   ChevronLeft,
   ChevronRight,
@@ -88,6 +89,7 @@ export default function SettingsScreen() {
 
   const handleLogout = async () => {
     try {
+      await pushNotificationService.unregisterDeviceToken();
       await authApi.logout();
     } catch (e) {
       console.log('Logout API failed, proceeding to clear token locally', e);

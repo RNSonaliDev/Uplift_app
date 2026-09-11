@@ -19,6 +19,7 @@ import {Colors} from '../../../theme/colors';
 import {Typography, FontFamily} from '../../../theme/typography';
 import {horizontalScale, verticalScale, moderateScale} from '../../../utils/responsive';
 import {formatDate, formatTime12Hour} from '../../../utils/dateFormatter';
+import {formatStatus, getStatusColors} from '../../../utils/statusUtils';
 import {CategoryIcon} from '../../../components/CategoryIcon';
 import {logo} from '../../../assets/images';
 import {
@@ -45,14 +46,6 @@ export default function BeneficiaryDashboardScreen() {
   const [profile, setProfile] = useState<UserProfileResponse | null>(null);
   const [unreadNotifications, setUnreadNotifications] = useState(false);
 
-  const getBadgeColors = (status: string) => {
-    if (!status) return { bg: '#E0DEFF', text: '#6D5DF6' };
-    const s = status.toLowerCase();
-    if (s === 'confirmed' || s === 'completed' || s === 'accepted') return { bg: '#DCFCE7', text: '#16A34A' };
-    if (s === 'pending') return { bg: '#FEF3C7', text: '#D97706' };
-    return { bg: '#E0DEFF', text: '#6D5DF6' };
-  };
-
   const [refreshing, setRefreshing] = useState(false);
 
   const fetchData = useCallback(async () => {
@@ -73,7 +66,7 @@ export default function BeneficiaryDashboardScreen() {
       else if (notifData && typeof notifData === 'object' && Array.isArray((notifData as any).notifications)) notifs = (notifData as any).notifications;
       
       setUnreadNotifications(notifs.some(n => !n.is_read));
-      const active = reqData.find(r => r.status === 'pending' || r.status === 'accepted' || r.status === 'assigned');
+      const active = reqData.find(r => r.status === 'pending' || r.status === 'accepted' || r.status === 'assigned' || r.status === 'on_the_way');
       setUpcomingRequest(active || null);
     } catch (error) {
       console.error('Failed to fetch data', error);
@@ -153,15 +146,20 @@ export default function BeneficiaryDashboardScreen() {
                   )}
                 </View>
                 <View style={styles.cardTitleContainer}>
-                  <Text style={[styles.cardTitle, { marginBottom: 4 }]}>{upcomingRequest.category?.title}</Text>
+                  <Text style={[styles.cardTitle, { marginBottom: 4 }]}>{upcomingRequest.category?.title || 'Help Request'}</Text>
+                  {upcomingRequest.title ? (
+                    <Text style={{ ...Typography.bodyMedium, color: Colors.neutral[800], marginBottom: 4, fontFamily: FontFamily.medium }}>
+                      {upcomingRequest.title}
+                    </Text>
+                  ) : null}
                   <Text style={{ ...Typography.caption, color: Colors.neutral[600], marginBottom: 6 }}>
                     #{upcomingRequest.reference_number || upcomingRequest.id}
                   </Text>
                 </View>
                 {upcomingRequest.status && (
-                  <View style={[styles.statusBadge, { backgroundColor: getBadgeColors(upcomingRequest.status).bg, alignSelf: 'flex-start' }]}>
-                    <Text style={[styles.statusBadgeText, { color: getBadgeColors(upcomingRequest.status).text }]}>
-                      {upcomingRequest.status.charAt(0).toUpperCase() + upcomingRequest.status.slice(1)}
+                  <View style={[styles.statusBadge, { backgroundColor: getStatusColors(upcomingRequest.status).bg, alignSelf: 'flex-start' }]}>
+                    <Text style={[styles.statusBadgeText, { color: getStatusColors(upcomingRequest.status).text }]}>
+                      {formatStatus(upcomingRequest.status)}
                     </Text>
                   </View>
                 )}
@@ -394,6 +392,7 @@ const styles = StyleSheet.create({
     marginLeft: horizontalScale(18),
   },
   statusBadge: {
+    alignSelf: 'flex-start',
     paddingHorizontal: horizontalScale(12),
     paddingVertical: verticalScale(4),
     borderRadius: moderateScale(12),

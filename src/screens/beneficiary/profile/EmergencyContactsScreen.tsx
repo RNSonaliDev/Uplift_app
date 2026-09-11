@@ -13,7 +13,7 @@ import {
 
 const RELATIONSHIP_OPTIONS = ['Parent', 'Spouse/Partner', 'Child', 'Sibling', 'Grandchild', 'Friend'];
 import { useNavigation } from '@react-navigation/native';
-import { ChevronLeft, Plus, Phone, Trash2, User, Pencil, X } from 'lucide-react-native';
+import { ChevronLeft, Plus, Phone, Trash2, User, Pencil, X, Info, ChevronDown, Check } from 'lucide-react-native';
 import { Colors } from '../../../theme/colors';
 import { AppText } from '../../../components/AppText';
 import { Button } from '../../../components/Button';
@@ -34,6 +34,9 @@ export default function EmergencyContactsScreen() {
   const [form, setForm] = useState({ name: '', relationship: '', phone: '', email: '' });
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editForm, setEditForm] = useState({ name: '', relationship: '', phone: '', email: '' });
+  
+  const [errors, setErrors] = useState<{name?: string, relationship?: string, phone?: string}>({});
+  const [editErrors, setEditErrors] = useState<{name?: string, relationship?: string, phone?: string}>({});
 
   const fetchContacts = React.useCallback(async () => {
     setLoading(true);
@@ -55,10 +58,16 @@ export default function EmergencyContactsScreen() {
   );
 
   const handleSave = async () => {
-    if (!form.name || !form.phone || !form.relationship) {
-      Toast.show({ type: 'error', text1: 'Validation Error', text2: 'Please fill in required fields' });
+    const newErrors: any = {};
+    if (!form.name) newErrors.name = 'Please enter a name';
+    if (!form.relationship) newErrors.relationship = 'Please select a relationship';
+    if (!form.phone) newErrors.phone = 'Please enter a phone number';
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
       return;
     }
+    setErrors({});
 
     try {
       await emergencyContactsApi.createContact({ emergency_contact: form });
@@ -73,6 +82,17 @@ export default function EmergencyContactsScreen() {
   };
 
   const handleUpdate = async (id: number) => {
+    const newErrors: any = {};
+    if (!editForm.name) newErrors.name = 'Please enter a name';
+    if (!editForm.relationship) newErrors.relationship = 'Please select a relationship';
+    if (!editForm.phone) newErrors.phone = 'Please enter a phone number';
+
+    if (Object.keys(newErrors).length > 0) {
+      setEditErrors(newErrors);
+      return;
+    }
+    setEditErrors({});
+
     try {
       await emergencyContactsApi.updateContact(id, { emergency_contact: editForm });
       Toast.show({ type: 'success', text1: 'Success', text2: 'Contact updated successfully' });
@@ -98,6 +118,7 @@ export default function EmergencyContactsScreen() {
   const handleCancel = () => {
     setIsAdding(false);
     setForm({ name: '', relationship: '', phone: '', email: '' });
+    setErrors({});
   };
 
   return (
@@ -107,7 +128,7 @@ export default function EmergencyContactsScreen() {
           <ChevronLeft color={Colors.neutral[900]} size={28} />
         </TouchableOpacity>
         <AppText variant="h5" style={styles.headerTitle}>Emergency Contacts</AppText>
-        <View style={{ width: 32 }} />
+        <View style={{ width: 36 }} />
       </View>
 
       <KeyboardAvoidingView 
@@ -131,13 +152,17 @@ export default function EmergencyContactsScreen() {
                 <View key={contact.id} style={styles.contactCard}>
                   <View style={styles.cardHeader}>
                     {isEditing ? (
-                      <TouchableOpacity style={[styles.actionIconBtn, { backgroundColor: Colors.neutral[100] }]} onPress={() => setEditingId(null)}>
+                      <TouchableOpacity style={[styles.actionIconBtn, { backgroundColor: Colors.neutral[100] }]} onPress={() => {
+                        setEditingId(null);
+                        setEditErrors({});
+                      }}>
                         <X size={18} color={Colors.neutral[600]} />
                       </TouchableOpacity>
                     ) : (
                       <TouchableOpacity style={[styles.actionIconBtn, { backgroundColor: Colors.primary[50] }]} onPress={() => {
                         setEditingId(contact.id);
                         setEditForm({ name: contact.name, relationship: contact.relationship, phone: contact.phone, email: contact.email || '' });
+                        setEditErrors({});
                       }}>
                         <Pencil size={18} color={Colors.primary[500]} />
                       </TouchableOpacity>
@@ -150,20 +175,58 @@ export default function EmergencyContactsScreen() {
                     label="Full Name"
                     placeholder="Enter contact's name"
                     value={isEditing ? editForm.name : contact.name}
-                    onChangeText={(text) => isEditing && setEditForm({ ...editForm, name: text })}
+                    onChangeText={(text) => {
+                      if (isEditing) {
+                        setEditForm({ ...editForm, name: text });
+                        setEditErrors({ ...editErrors, name: undefined });
+                      }
+                    }}
                     editable={isEditing}
+                    error={isEditing ? editErrors.name : undefined}
                   />
                   {isEditing ? (
-                    <TouchableOpacity onPress={() => setIsRelationshipModalVisible(true)} activeOpacity={0.7}>
-                      <View pointerEvents="none">
-                        <Input
-                          label="Relationship"
-                          placeholder="Select Relationship"
-                          value={editForm.relationship}
-                          editable={false}
-                        />
-                      </View>
-                    </TouchableOpacity>
+                    <View>
+                      <TouchableOpacity onPress={() => setIsRelationshipModalVisible(!isRelationshipModalVisible)} activeOpacity={0.7}>
+                        <View pointerEvents="none">
+                          <Input
+                            label="Relationship"
+                            placeholder="Select Relationship"
+                            value={editForm.relationship}
+                            editable={false}
+                            error={editErrors.relationship}
+                            rightIcon={<ChevronDown size={20} color={Colors.neutral[500]} />}
+                          />
+                        </View>
+                      </TouchableOpacity>
+                      {isRelationshipModalVisible && (
+                        <View style={styles.inlineDropdown}>
+                          {RELATIONSHIP_OPTIONS.map((option, index) => {
+                            const isSelected = editForm.relationship === option;
+                            const isLast = index === RELATIONSHIP_OPTIONS.length - 1;
+                            return (
+                              <TouchableOpacity
+                                key={option}
+                                style={[styles.dropdownItem, isLast && { borderBottomWidth: 0 }]}
+                                onPress={() => {
+                                  setEditForm({ ...editForm, relationship: option });
+                                  setEditErrors({ ...editErrors, relationship: undefined });
+                                  setIsRelationshipModalVisible(false);
+                                }}
+                              >
+                                <AppText
+                                  variant="bodyMedium"
+                                  color={isSelected ? Colors.primary[500] : Colors.neutral[800]}
+                                  weight={isSelected ? 'bold' : 'regular'}
+                                >
+                                  {option}
+                                </AppText>
+                                {isSelected && <Check color={Colors.primary[500]} size={18} />}
+                              </TouchableOpacity>
+                            );
+                          })}
+                        </View>
+                      )}
+                    </View>
                   ) : (
                     <Input
                       label="Relationship"
@@ -171,14 +234,34 @@ export default function EmergencyContactsScreen() {
                       editable={false}
                     />
                   )}
-                  <Input
-                    label="Phone Number"
-                    placeholder="Enter phone number"
-                    keyboardType="phone-pad"
-                    value={isEditing ? editForm.phone : contact.phone}
-                    onChangeText={(text) => isEditing && setEditForm({ ...editForm, phone: text })}
-                    editable={isEditing}
-                  />
+                  <View style={{ marginBottom: Spacing.lg }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: Spacing.xs }}>
+                      <AppText variant="labelMedium" color={Colors.neutral[700]}>Phone number</AppText>
+                      <Info size={16} color={Colors.primary[500]} style={{ marginLeft: Spacing.xs }} />
+                    </View>
+                    <Input
+                      containerStyle={{ marginBottom: 0 }}
+                      placeholder="(201) 555-0123"
+                      keyboardType="phone-pad"
+                      value={isEditing ? editForm.phone : contact.phone}
+                      onChangeText={(text) => {
+                        if (isEditing) {
+                          setEditForm({ ...editForm, phone: text });
+                          setEditErrors({ ...editErrors, phone: undefined });
+                        }
+                      }}
+                      editable={isEditing}
+                      error={isEditing ? editErrors.phone : undefined}
+                      leftIcon={
+                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                          <Phone size={18} color={Colors.primary[500]} />
+                          <AppText variant="bodyMedium" style={{ marginLeft: Spacing.xs, color: Colors.neutral[900] }}>+1</AppText>
+                          <ChevronDown size={16} color={Colors.neutral[500]} style={{ marginLeft: 2 }} />
+                          <View style={{ width: 1, height: 24, backgroundColor: Colors.neutral[200], marginLeft: Spacing.sm }} />
+                        </View>
+                      }
+                    />
+                  </View>
                   <Input
                     label="Email (Optional)"
                     placeholder="Enter email address"
@@ -206,25 +289,79 @@ export default function EmergencyContactsScreen() {
                 label="Full Name"
                 placeholder="Enter contact's name"
                 value={form.name}
-                onChangeText={(text) => setForm({ ...form, name: text })}
+                onChangeText={(text) => {
+                  setForm({ ...form, name: text });
+                  setErrors({ ...errors, name: undefined });
+                }}
+                error={errors.name}
               />
-              <TouchableOpacity onPress={() => setIsRelationshipModalVisible(true)} activeOpacity={0.7}>
-                <View pointerEvents="none">
-                  <Input
-                    label="Relationship"
-                    placeholder="Select Relationship"
-                    value={form.relationship}
-                    editable={false}
-                  />
+              <View>
+                <TouchableOpacity onPress={() => setIsRelationshipModalVisible(!isRelationshipModalVisible)} activeOpacity={0.7}>
+                  <View pointerEvents="none">
+                    <Input
+                      label="Relationship"
+                      placeholder="Select Relationship"
+                      value={form.relationship}
+                      editable={false}
+                      error={errors.relationship}
+                      rightIcon={<ChevronDown size={20} color={Colors.neutral[500]} />}
+                    />
+                  </View>
+                </TouchableOpacity>
+                {isRelationshipModalVisible && (
+                  <View style={styles.inlineDropdown}>
+                    {RELATIONSHIP_OPTIONS.map((option, index) => {
+                      const isSelected = form.relationship === option;
+                      const isLast = index === RELATIONSHIP_OPTIONS.length - 1;
+                      return (
+                        <TouchableOpacity
+                          key={option}
+                          style={[styles.dropdownItem, isLast && { borderBottomWidth: 0 }]}
+                          onPress={() => {
+                            setForm({ ...form, relationship: option });
+                            setErrors({ ...errors, relationship: undefined });
+                            setIsRelationshipModalVisible(false);
+                          }}
+                        >
+                          <AppText
+                            variant="bodyMedium"
+                            color={isSelected ? Colors.primary[500] : Colors.neutral[800]}
+                            weight={isSelected ? 'bold' : 'regular'}
+                          >
+                            {option}
+                          </AppText>
+                          {isSelected && <Check color={Colors.primary[500]} size={18} />}
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+                )}
+              </View>
+              <View style={{ marginBottom: Spacing.lg }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: Spacing.xs }}>
+                  <AppText variant="labelMedium" color={Colors.neutral[700]}>Phone number</AppText>
+                  {/* <Info size={16} color={Colors.primary[500]} style={{ marginLeft: Spacing.xs }} /> */}
                 </View>
-              </TouchableOpacity>
-              <Input
-                label="Phone Number"
-                placeholder="Enter phone number"
-                keyboardType="phone-pad"
-                value={form.phone}
-                onChangeText={(text) => setForm({ ...form, phone: text })}
-              />
+                <Input
+                  containerStyle={{ marginBottom: 0 }}
+                  placeholder="(201) 555-0123"
+                  keyboardType="phone-pad"
+                  value={form.phone}
+                  onChangeText={(text) => {
+                    setForm({ ...form, phone: text });
+                    setErrors({ ...errors, phone: undefined });
+                  }}
+                  error={errors.phone}
+                  leftIcon={
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                      <Phone size={18} color={Colors.primary[500]} />
+                      <AppText variant="bodyMedium" style={{ marginLeft: Spacing.xs, color: Colors.neutral[900] }}>+1</AppText>
+                      <ChevronDown size={16} color={Colors.neutral[500]} style={{ marginLeft: 2 }} />
+                      <View style={{ width: 1, height: 24, backgroundColor: Colors.neutral[200], marginLeft: Spacing.sm }} />
+                    </View>
+                  }
+                />
+              </View>
               <Input
                 label="Email (Optional)"
                 placeholder="Enter email address"
@@ -237,12 +374,12 @@ export default function EmergencyContactsScreen() {
                 <Button 
                   title="Cancel" 
                   variant="outline" 
-                  style={[styles.actionBtn, { marginRight: Spacing.sm }]} 
+                  style={[styles.actionBtn, { marginRight: Spacing.sm, borderRadius: BorderRadius.full }]} 
                   onPress={handleCancel} 
                 />
                 <Button 
                   title="Save" 
-                  style={styles.actionBtn} 
+                  style={[styles.actionBtn, { borderRadius: BorderRadius.full }]} 
                   onPress={handleSave} 
                 />
               </View>
@@ -258,6 +395,7 @@ export default function EmergencyContactsScreen() {
           style={styles.fab} 
           onPress={() => {
             setForm({ name: '', relationship: '', phone: '', email: '' });
+            setErrors({});
             setIsAdding(true);
           }}
           activeOpacity={0.8}
@@ -266,63 +404,34 @@ export default function EmergencyContactsScreen() {
         </TouchableOpacity>
       )}
 
-      <Modal visible={isRelationshipModalVisible} transparent animationType="fade">
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <AppText variant="h5" style={{ color: Colors.neutral[900] }}>Select Relationship</AppText>
-              <TouchableOpacity onPress={() => setIsRelationshipModalVisible(false)} style={{ padding: 4 }}>
-                <X color={Colors.neutral[500]} size={24} />
-              </TouchableOpacity>
-            </View>
-            <ScrollView style={{ maxHeight: 300 }}>
-              {RELATIONSHIP_OPTIONS.map((option) => (
-                <TouchableOpacity
-                  key={option}
-                  style={styles.modalOption}
-                  onPress={() => {
-                    if (isAdding) {
-                      setForm({ ...form, relationship: option });
-                    } else if (editingId) {
-                      setEditForm({ ...editForm, relationship: option });
-                    }
-                    setIsRelationshipModalVisible(false);
-                  }}
-                >
-                  <AppText variant="bodyMedium" color={Colors.neutral[800]}>{option}</AppText>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          </View>
-        </View>
-      </Modal>
 
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    padding: Spacing.lg,
-  },
-  modalContent: {
+  inlineDropdown: {
     backgroundColor: Colors.neutral[0],
     borderRadius: BorderRadius.lg,
-    padding: Spacing.lg,
+    borderWidth: 1,
+    borderColor: Colors.neutral[200],
+    marginTop: -Spacing.md,
+    marginBottom: Spacing.md,
+    overflow: 'hidden',
+    shadowColor: Colors.neutral[900],
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
   },
-  modalHeader: {
+  dropdownItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: Spacing.md,
-  },
-  modalOption: {
-    paddingVertical: Spacing.md,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.neutral[200],
+    borderBottomColor: Colors.neutral[100],
   },
   safeArea: {
     flex: 1,
@@ -354,9 +463,9 @@ const styles = StyleSheet.create({
     padding: Spacing.md,
   },
   contactCard: {
-    backgroundColor: Colors.neutral[50],
-    padding: Spacing.md,
-    borderRadius: BorderRadius.md,
+    backgroundColor: Colors.neutral[0],
+    padding: Spacing.lg,
+    borderRadius: BorderRadius.xl,
     marginBottom: Spacing.md,
     borderWidth: 1,
     borderColor: Colors.neutral[200],
@@ -410,7 +519,7 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   formTitle: {
-    marginBottom: Spacing.md,
+    marginBottom: Spacing.lg,
     textAlign: 'center',
   },
   buttonRow: {

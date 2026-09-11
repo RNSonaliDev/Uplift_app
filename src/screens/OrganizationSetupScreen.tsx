@@ -18,7 +18,7 @@ import Svg, {Path, Circle, Rect, Polyline} from 'react-native-svg';
 import MapView, { Marker } from 'react-native-maps';
 import { GooglePlacesAutocomplete, GooglePlacesAutocompleteRef } from 'react-native-google-places-autocomplete';
 import Geolocation from '@react-native-community/geolocation';
-import { Navigation } from 'lucide-react-native';
+import { Navigation, X, Check } from 'lucide-react-native';
 
 import {AppText} from '../components/AppText';
 import {Button} from '../components/Button';
@@ -198,23 +198,21 @@ const PhonePrefixPrefix = () => (
   </View>
 );
 
-const ORGANIZATION_TYPES = [
-  'School/University',
-  'Local business',
-  'Community Center',
-  'Healthcare',
-  'Nonprofit organization',
-  'Church / Faith Organization',
-  'Public library',
-  'Senior living facility',
-  'Other',
-];
-
-const formatType = (type: string) => type || '';
-
 // ── Main Component ───────────────────────────────────────
 export const OrganizationSetupScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProps>();
+
+  const [organizationTypes, setOrganizationTypes] = useState<string[]>([
+    'School/University',
+    'Local business',
+    'Community Center',
+    'Healthcare',
+    'Nonprofit organization',
+    'Church / Faith Organization',
+    'Public library',
+    'Senior living facility',
+    'Other',
+  ]);
 
   const [orgType, setOrgType] = useState('');
   const [orgName, setOrgName] = useState('');
@@ -229,6 +227,7 @@ export const OrganizationSetupScreen: React.FC = () => {
     latitudeDelta: 0.0922,
     longitudeDelta: 0.0421,
   });
+  const [isMapModalVisible, setIsMapModalVisible] = useState(false);
 
   const GOOGLE_MAPS_API_KEY = 'AIzaSyAd20tmxrXZ1VCyhZx4q9aK0ejZtQtE92s';
   const googlePlacesRef = useRef<GooglePlacesAutocompleteRef>(null);
@@ -301,6 +300,18 @@ export const OrganizationSetupScreen: React.FC = () => {
         }
       } catch (error) {
         // Handle error or ignore
+      }
+
+      try {
+        const categoriesData = await authApi.getOrganizationCategories();
+        if (categoriesData && Array.isArray(categoriesData)) {
+          const mappedTypes = categoriesData.map((c: any) => c.title || c.name || c.category_name || c);
+          if (mappedTypes.length > 0) {
+            setOrganizationTypes(mappedTypes);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch organization categories', error);
       }
     };
     fetchProfile();
@@ -447,18 +458,47 @@ export const OrganizationSetupScreen: React.FC = () => {
 
           {/* Organization Form Fields */}
           <View style={styles.formSection}>
-            <TouchableOpacity activeOpacity={0.8} onPress={() => setTypeModalVisible(true)}>
+            <TouchableOpacity activeOpacity={0.8} onPress={() => setTypeModalVisible(!isTypeModalVisible)}>
               <View pointerEvents="none">
                 <Input
                   label="Organization Type"
                   placeholder="Select organization type"
-                  value={formatType(orgType)}
+                  value={orgType || ''}
                   editable={false}
                   rightIcon={<ChevronDownIcon size={20} />}
                   error={errors.orgType}
                 />
               </View>
             </TouchableOpacity>
+
+            {isTypeModalVisible && (
+              <View style={styles.inlineDropdown}>
+                {organizationTypes.map((item, index) => {
+                  const isSelected = orgType === item;
+                  const isLast = index === organizationTypes.length - 1;
+                  return (
+                    <TouchableOpacity
+                      key={item + index}
+                      style={[styles.dropdownItem, isLast && { borderBottomWidth: 0 }]}
+                      onPress={() => {
+                        setOrgType(item);
+                        if (errors.orgType) setErrors({...errors, orgType: ''});
+                        setTypeModalVisible(false);
+                      }}
+                    >
+                      <AppText
+                        variant="bodyMedium"
+                        color={isSelected ? Colors.primary[500] : Colors.neutral[800]}
+                        weight={isSelected ? 'bold' : 'regular'}
+                      >
+                        {item || ''}
+                      </AppText>
+                      {isSelected && <Check color={Colors.primary[500]} size={18} />}
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            )}
 
             <Input
               label="Organization Name"
@@ -567,30 +607,11 @@ export const OrganizationSetupScreen: React.FC = () => {
               ) : null}
 
               {(latitude && longitude) ? (
-                <View style={{
-                  height: 200,
-                  marginTop: Spacing.md,
-                  borderRadius: 12,
-                  overflow: 'hidden',
-                  borderWidth: 1,
-                  borderColor: Colors.neutral[200],
-                }}>
-                  <MapView
-                    style={{ flex: 1 }}
-                    region={{
-                      latitude: Number(latitude),
-                      longitude: Number(longitude),
-                      latitudeDelta: 0.01,
-                      longitudeDelta: 0.01,
-                    }}
-                  >
-                    <Marker 
-                      draggable
-                      coordinate={{ latitude: Number(latitude), longitude: Number(longitude) }} 
-                      onDragEnd={handleMarkerDragEnd}
-                    />
-                  </MapView>
-                </View>
+                <TouchableOpacity onPress={() => setIsMapModalVisible(true)} style={{ marginTop: Spacing.sm, marginBottom: 16, alignSelf: 'flex-end' }}>
+                  <AppText variant="bodyMedium" color={Colors.primary[500]} style={{ textDecorationLine: 'underline' }}>
+                    Show on map
+                  </AppText>
+                </TouchableOpacity>
               ) : null}
             </View>
           </View>
@@ -658,46 +679,34 @@ export const OrganizationSetupScreen: React.FC = () => {
         </ScrollView>
       </KeyboardAvoidingView>
 
-      {/* Organization Type Picker Modal */}
-      <Modal
-        visible={isTypeModalVisible}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={() => setTypeModalVisible(false)}
-      >
-        <TouchableOpacity
-          style={styles.modalOverlay}
-          activeOpacity={1}
-          onPress={() => setTypeModalVisible(false)}
-        >
-          <View style={styles.modalContent}>
-            <AppText variant="h5" style={styles.modalHeader}>
-              Select Organization Type
-            </AppText>
-            <FlatList
-              data={ORGANIZATION_TYPES}
-              keyExtractor={(item) => item}
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  style={styles.modalItem}
-                  onPress={() => {
-                    setOrgType(item);
-                    if (errors.orgType) setErrors({...errors, orgType: ''});
-                    setTypeModalVisible(false);
-                  }}
-                >
-                  <AppText
-                    variant="bodyLarge"
-                    color={orgType === item ? Colors.primary[500] : Colors.neutral[800]}
-                    weight={orgType === item ? 'bold' : 'regular'}
-                  >
-                    {formatType(item)}
-                  </AppText>
-                </TouchableOpacity>
-              )}
-            />
+
+      <Modal visible={isMapModalVisible} transparent animationType="slide">
+        <View style={styles.mapModalContainer}>
+          <View style={styles.mapModalHeader}>
+            <AppText variant="h5" style={{ color: Colors.neutral[900] }}>Location on Map</AppText>
+            <TouchableOpacity onPress={() => setIsMapModalVisible(false)} style={{ padding: 4 }}>
+              <X color={Colors.neutral[500]} size={24} />
+            </TouchableOpacity>
           </View>
-        </TouchableOpacity>
+          <MapView
+            style={{ flex: 1 }}
+            region={{
+              latitude: Number(latitude) || region.latitude,
+              longitude: Number(longitude) || region.longitude,
+              latitudeDelta: 0.01,
+              longitudeDelta: 0.01,
+            }}
+          >
+            <Marker 
+              draggable
+              coordinate={{ latitude: Number(latitude) || region.latitude, longitude: Number(longitude) || region.longitude }} 
+              onDragEnd={handleMarkerDragEnd}
+            />
+          </MapView>
+          <View style={{ padding: Spacing.md, backgroundColor: Colors.neutral[0], paddingBottom: Math.max(Spacing.md, 24) }}>
+             <Button title="Done" onPress={() => setIsMapModalVisible(false)} fullWidth />
+          </View>
+        </View>
       </Modal>
     </SafeAreaView>
   );
@@ -776,28 +785,45 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.xl,
     height: verticalScale(52),
   },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    paddingHorizontal: horizontalScale(24),
-  },
-  modalContent: {
+  inlineDropdown: {
     backgroundColor: Colors.neutral[0],
-    borderRadius: BorderRadius.xl,
-    paddingVertical: verticalScale(16),
-    maxHeight: '80%',
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1,
+    borderColor: Colors.neutral[200],
+    marginTop: -Spacing.md, // slightly overlap with input spacing
+    marginBottom: Spacing.md,
+    overflow: 'hidden',
+    shadowColor: Colors.neutral[900],
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
   },
-  modalHeader: {
-    paddingHorizontal: horizontalScale(20),
-    paddingBottom: verticalScale(16),
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.neutral[200],
-  },
-  modalItem: {
-    paddingVertical: verticalScale(16),
-    paddingHorizontal: horizontalScale(20),
+  dropdownItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: verticalScale(14),
+    paddingHorizontal: horizontalScale(16),
     borderBottomWidth: 1,
     borderBottomColor: Colors.neutral[100],
+  },
+  mapModalContainer: {
+    flex: 1,
+    backgroundColor: Colors.neutral[0],
+    marginTop: isIOS ? 50 : 0,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    overflow: 'hidden',
+    elevation: 5,
+  },
+  mapModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: Spacing.lg,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.neutral[200],
+    backgroundColor: Colors.neutral[0],
   },
 });

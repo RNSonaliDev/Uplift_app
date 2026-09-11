@@ -4,6 +4,9 @@ import MyProfileScreen from '../screens/beneficiary/profile/MyProfileScreen';
 import SettingsScreen from '../screens/beneficiary/profile/SettingsScreen';
 import EditProfileScreen from '../screens/beneficiary/profile/EditProfileScreen';
 import LegalContentScreen from '../screens/beneficiary/profile/LegalContentScreen';
+import ContactSupportScreen from '../screens/beneficiary/profile/ContactSupportScreen';
+import ContactSupportDetailsScreen from '../screens/beneficiary/profile/ContactSupportDetailsScreen';
+import CreateSupportRequestScreen from '../screens/beneficiary/profile/CreateSupportRequestScreen';
 
 import EmergencyContactsScreen from '../screens/beneficiary/profile/EmergencyContactsScreen';
 
@@ -17,6 +20,9 @@ export default function BeneficiaryProfileStack() {
       <Stack.Screen name="Settings" component={SettingsScreen} />
       <Stack.Screen name="LegalContent" component={LegalContentScreen} />
       <Stack.Screen name="EmergencyContacts" component={EmergencyContactsScreen} />
+      <Stack.Screen name="ContactSupport" component={ContactSupportScreen} />
+      <Stack.Screen name="ContactSupportDetails" component={ContactSupportDetailsScreen} />
+      <Stack.Screen name="CreateSupportRequest" component={CreateSupportRequestScreen} />
     </Stack.Navigator>
   );
 }

@@ -4,6 +4,7 @@ import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { api, getFullImageUrl } from '../../../api/client';
 import { authApi, UserProfileResponse } from '../../../api/auth';
 import { formatDate } from '../../../utils/dateFormatter';
+import { formatStatus, getStatusColors } from '../../../utils/statusUtils';
 import { CategoryIcon } from '../../../components/CategoryIcon';
 import { Menu, Bell, Plus, Lock, Calendar, Pill, ChevronRight, MapPin } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -14,13 +15,7 @@ import { horizontalScale, verticalScale, moderateScale } from '../../../utils/re
 
 // Mock Data
 
-const getStatusColor = (status: string) => {
-  const s = status.toLowerCase();
-  if (s === 'confirmed' || s === 'completed' || s === 'accepted') return { text: '#16A34A', bg: '#DCFCE7' };
-  if (s === 'pending' || s === 'in progress') return { text: '#D97706', bg: '#FEF3C7' };
-  if (s === 'cancelled') return { text: Colors.error, bg: '#FEF2F2' };
-  return { text: Colors.primary[600], bg: Colors.primary[50] };
-};
+
 
 
 
@@ -144,8 +139,8 @@ export const OrganizationDashboardScreen = () => {
             <Text style={{ textAlign: 'center', marginTop: 20, color: Colors.neutral[500] }}>Loading...</Text>
           ) : requests.length > 0 ? (
             requests.map((request) => {
-              const statusDisplay = request.status ? request.status.charAt(0).toUpperCase() + request.status.slice(1) : 'Pending';
-              const statusStyle = getStatusColor(statusDisplay);
+              const statusDisplay = formatStatus(request.status);
+              const statusStyle = getStatusColors(request.status);
               const vCount = request.volunteers_needed || 1;
               return (
                 <TouchableOpacity 
@@ -167,6 +162,11 @@ export const OrganizationDashboardScreen = () => {
                     </View>
                     <View style={styles.cardTitleContainer}>
                       <Text style={[styles.cardTitle, { marginBottom: 4 }]}>{request.category?.title || 'Help Request'}</Text>
+                      {request.title ? (
+                        <Text style={{ ...Typography.bodyMedium, color: Colors.neutral[800], marginBottom: 4, fontFamily: FontFamily.medium }}>
+                          {request.title}
+                        </Text>
+                      ) : null}
                       <Text style={{ ...Typography.caption, color: Colors.neutral[600], marginBottom: 6 }}>
                         #{request.reference_number || request.id}
                       </Text>
@@ -378,6 +378,7 @@ const styles = StyleSheet.create({
     marginLeft: horizontalScale(4) || 4,
   },
   statusBadge: {
+    alignSelf: 'flex-start',
     paddingHorizontal: horizontalScale(10) || 12,
     paddingVertical: verticalScale(4) || 4,
     borderRadius: moderateScale(12) || 12,

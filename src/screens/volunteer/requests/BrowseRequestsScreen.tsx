@@ -1,4 +1,4 @@
-import React, {useState, useCallback} from 'react';
+import React, {useState, useCallback, useEffect} from 'react';
 import {
   View,
   StyleSheet,
@@ -8,11 +8,15 @@ import {
   ScrollView,
   FlatList,
   Image,
+  Modal,
+  TouchableWithoutFeedback,
 } from 'react-native';
-import {useNavigation, useFocusEffect} from '@react-navigation/native';
+import {useNavigation, useFocusEffect, useRoute} from '@react-navigation/native';
 import {Colors} from '../../../theme/colors';
+import {FontFamily} from '../../../theme/typography';
 import {AppText} from '../../../components/AppText';
 import {formatDate, formatTime12Hour} from '../../../utils/dateFormatter';
+import {formatStatus, getStatusColors} from '../../../utils/statusUtils';
 import {CategoryIcon} from '../../../components/CategoryIcon';
 import {
   Search,
@@ -23,6 +27,7 @@ import {
   Calendar,
   MapPin,
   FileText,
+  X,
 } from 'lucide-react-native';
 import {authApi, CategoryResponse} from '../../../api/auth';
 import {api, getFullImageUrl} from '../../../api/client';
@@ -39,9 +44,21 @@ export default function BrowseRequestsScreen() {
   const [requests, setRequests] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState<number | null>(null);
+  const [filterModalVisible, setFilterModalVisible] = useState(false);
+  const route = useRoute<any>();
+  const [activeTab, setActiveTab] = useState<'beneficiary' | 'organization'>(route.params?.activeTab || 'beneficiary');
+
+  useEffect(() => {
+    if (route.params?.activeTab) {
+      setActiveTab(route.params.activeTab);
+    }
+  }, [route.params?.activeTab]);
 
   useFocusEffect(
     useCallback(() => {
+      setActiveTab(route.params?.activeTab || 'beneficiary');
+      setSearchQuery('');
+      setActiveCategory(null);
       const fetchData = async () => {
         try {
           setLoading(true);
@@ -58,7 +75,7 @@ export default function BrowseRequestsScreen() {
         }
       };
       fetchData();
-    }, [])
+    }, [route.params?.activeTab])
   );
 
   const filteredRequests = requests.filter(req => {
@@ -70,7 +87,10 @@ export default function BrowseRequestsScreen() {
     // Category filter
     const matchesCategory = activeCategory ? req.category_id === activeCategory : true;
 
-    return matchesSearch && matchesCategory;
+    // Tab filter
+    const matchesTab = req.request_type === activeTab;
+
+    return matchesSearch && matchesCategory && matchesTab;
   });
 
   const getCategoryIcon = (title: string) => {
@@ -80,19 +100,6 @@ export default function BrowseRequestsScreen() {
     return <FileText color={Colors.primary[500]} size={20} />;
   };
 
-  const formatStatus = (status: string) => {
-    if (!status) return 'New';
-    if (status.toLowerCase() === 'in_progress') return 'In Progress';
-    return status.charAt(0).toUpperCase() + status.slice(1).replace('_', ' ');
-  };
-
-  const getStatusColors = (status: string) => {
-    const s = status?.toLowerCase() || '';
-    if (s === 'in_progress') return { bg: Colors.primary[50], text: Colors.primary[700] };
-    if (s === 'completed') return { bg: Colors.secondary[50], text: Colors.secondary[700] };
-    // pending, accepted, new
-    return { bg: Colors.accent[50], text: Colors.accent[700] };
-  };
 
   const renderRequestCard = ({item}: {item: any}) => {
     const displayStatus = formatStatus(item.status);
@@ -101,7 +108,13 @@ export default function BrowseRequestsScreen() {
     return (
       <TouchableOpacity 
         style={styles.card}
-        onPress={() => navigation.navigate('RequestDetails', { request: item })}
+        onPress={() => {
+          if (item.request_type === 'organization') {
+            navigation.navigate('JobsTab', { screen: 'VolunteerJobDetails', params: { job: item } });
+          } else {
+            navigation.navigate('RequestDetails', { request: item });
+          }
+        }}
         activeOpacity={0.7}
       >
         <View style={styles.cardHeader}>
@@ -120,6 +133,11 @@ export default function BrowseRequestsScreen() {
             <AppText variant="labelLarge" weight="semiBold" color={Colors.neutral[900]} style={{marginBottom: 4}}>
               {item.category?.title || 'Help Request'}
             </AppText>
+            {item.title ? (
+              <AppText variant="bodyMedium" color={Colors.neutral[800]} style={{marginBottom: 4, fontFamily: FontFamily.medium}}>
+                {item.title}
+              </AppText>
+            ) : null}
             <AppText variant="caption" color={Colors.neutral[600]} style={{marginBottom: 6}}>
               #{item.reference_number || item.id}
             </AppText>
@@ -152,7 +170,39 @@ export default function BrowseRequestsScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.header}>
-        {/* <View style={styles.searchRow}>
+        <View style={styles.tabContainer}>
+          <TouchableOpacity 
+            style={[styles.tab, activeTab === 'beneficiary' && styles.activeTab]}
+            onPress={() => setActiveTab('beneficiary')}
+          >
+            <AppText 
+              variant="labelMedium" 
+              color={activeTab === 'beneficiary' ? Colors.primary[600] : Colors.neutral[500]}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+            >
+              Beneficiary Support
+            </AppText>
+            {activeTab === 'beneficiary' && <View style={styles.activeTabIndicator} />}
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={[styles.tab, activeTab === 'organization' && styles.activeTab]}
+            onPress={() => setActiveTab('organization')}
+          >
+            <AppText 
+              variant="labelMedium" 
+              color={activeTab === 'organization' ? Colors.primary[600] : Colors.neutral[500]}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+            >
+              Organization Support
+            </AppText>
+            {activeTab === 'organization' && <View style={styles.activeTabIndicator} />}
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.searchRow}>
           <View style={styles.searchContainer}>
             <Search color={Colors.neutral[400]} size={20} />
             <TextInput
@@ -163,32 +213,13 @@ export default function BrowseRequestsScreen() {
               onChangeText={setSearchQuery}
             />
           </View>
-          <TouchableOpacity style={styles.filterBtn}>
-            <Filter color={Colors.neutral[700]} size={20} />
+          <TouchableOpacity 
+            style={styles.filterBtn}
+            onPress={() => setFilterModalVisible(true)}
+          >
+            <Filter color={activeCategory !== null ? Colors.primary[600] : Colors.neutral[700]} size={20} />
+            {activeCategory !== null && <View style={styles.filterDot} />}
           </TouchableOpacity>
-        </View> */}
-
-        <View style={styles.categoriesWrapper}>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoriesContainer}>
-            <TouchableOpacity 
-              style={[styles.categoryChip, activeCategory === null && styles.categoryChipActive]}
-              onPress={() => setActiveCategory(null)}
-            >
-              <AppText variant="bodyMedium" color={activeCategory === null ? Colors.neutral[0] : Colors.neutral[700]}>All</AppText>
-            </TouchableOpacity>
-            
-            {categories.map(cat => (
-              <TouchableOpacity 
-                key={cat.id} 
-                style={[styles.categoryChip, activeCategory === cat.id && styles.categoryChipActive]}
-                onPress={() => setActiveCategory(cat.id)}
-              >
-                <AppText variant="bodyMedium" color={activeCategory === cat.id ? Colors.neutral[0] : Colors.neutral[700]}>
-                  {cat.title}
-                </AppText>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
         </View>
       </View>
 
@@ -206,6 +237,45 @@ export default function BrowseRequestsScreen() {
           </View>
         }
       />
+
+      <Modal visible={filterModalVisible} animationType="fade" transparent>
+        <TouchableWithoutFeedback onPress={() => setFilterModalVisible(false)}>
+          <View style={styles.modalOverlay}>
+            <TouchableWithoutFeedback>
+              <View style={styles.modalContent}>
+                <View style={styles.modalHeader}>
+                  <AppText variant="h6" color={Colors.neutral[900]}>Select Category</AppText>
+                  <TouchableOpacity onPress={() => setFilterModalVisible(false)} hitSlop={{top:10,bottom:10,left:10,right:10}}>
+                    <X color={Colors.neutral[600]} size={24} />
+                  </TouchableOpacity>
+                </View>
+                <FlatList
+                  data={[{ id: null as number | null, title: 'All Categories' }, ...categories]}
+                  keyExtractor={(item, index) => item.id?.toString() || `all-${index}`}
+                  renderItem={({ item }) => (
+                    <TouchableOpacity
+                      style={styles.modalOption}
+                      onPress={() => {
+                        setActiveCategory(item.id);
+                        setFilterModalVisible(false);
+                      }}
+                    >
+                      <AppText
+                        variant="bodyMedium"
+                        color={activeCategory === item.id ? Colors.primary[600] : Colors.neutral[700]}
+                        style={activeCategory === item.id ? { fontFamily: FontFamily.semiBold } : undefined}
+                      >
+                        {item.title}
+                      </AppText>
+                    </TouchableOpacity>
+                  )}
+                  style={{ maxHeight: 300 }}
+                />
+              </View>
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -218,6 +288,30 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: Colors.neutral[50],
     paddingTop: verticalScale(16),
+  },
+  tabContainer: {
+    flexDirection: 'row',
+    paddingHorizontal: horizontalScale(24),
+    marginBottom: verticalScale(16),
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.neutral[200],
+  },
+  tab: {
+    flex: 1,
+    paddingVertical: verticalScale(12),
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  activeTab: {
+  },
+  activeTabIndicator: {
+    position: 'absolute',
+    bottom: -1, // Overlap the borderBottom
+    left: 0,
+    right: 0,
+    height: 2,
+    backgroundColor: Colors.primary[600],
   },
   searchRow: {
     flexDirection: 'row',
@@ -330,5 +424,40 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: verticalScale(40),
+  },
+  filterDot: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: Colors.primary[600],
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: Colors.neutral[0],
+    width: '85%',
+    borderRadius: 16,
+    overflow: 'hidden',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: moderateScale(16),
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.neutral[100],
+  },
+  modalOption: {
+    paddingVertical: moderateScale(16),
+    paddingHorizontal: horizontalScale(16),
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.neutral[100],
   },
 });

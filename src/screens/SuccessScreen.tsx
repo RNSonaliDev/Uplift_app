@@ -11,6 +11,7 @@ import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import Svg, {Path, Circle, Rect} from 'react-native-svg';
 
 import {authApi} from '../api';
+import {pushNotificationService} from '../services/PushNotificationService';
 import {AppText} from '../components/AppText';
 import {Button} from '../components/Button';
 import {Colors} from '../theme/colors';
@@ -145,6 +146,7 @@ export const SuccessScreen: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleContinue = async () => {
+    pushNotificationService.requestUserPermission();
     if (selectedRoles.length > 1) {
       navigation.reset({
         index: 0,

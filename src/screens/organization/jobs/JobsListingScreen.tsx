@@ -6,17 +6,15 @@ import { Colors } from '../../../theme/colors';
 import { Typography, FontFamily } from '../../../theme/typography';
 import { AppText } from '../../../components/AppText';
 import { api } from '../../../api/client';
+import { formatStatus, getStatusColors } from '../../../utils/statusUtils';
 
-const STATUS_COLORS: Record<string, { bg: string; text: string; border: string }> = {
-  published: { bg: '#F0FDF4', text: '#16A34A', border: '#BBF7D0' },
-  draft: { bg: Colors.primary[50], text: Colors.primary[600], border: Colors.primary[100] },
-  closed: { bg: '#FEF2F2', text: '#DC2626', border: '#FECACA' },
-};
+
 
 export const JobsListingScreen = () => {
   const navigation = useNavigation<any>();
   const [jobs, setJobs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<'active' | 'closed'>('active');
 
   const fetchJobs = useCallback(async () => {
     try {
@@ -32,14 +30,15 @@ export const JobsListingScreen = () => {
 
   useFocusEffect(
     useCallback(() => {
+      setActiveTab('active');
       fetchJobs();
     }, [fetchJobs])
   );
 
-  const getStatusStyle = (status: string) => STATUS_COLORS[status] || STATUS_COLORS.draft;
+
 
   const renderJobCard = (job: any) => {
-    const statusStyle = getStatusStyle(job.status);
+    const statusStyle = getStatusColors(job.status);
     return (
       <TouchableOpacity
         key={job.id}
@@ -56,9 +55,9 @@ export const JobsListingScreen = () => {
               <AppText variant="labelLarge" color={Colors.neutral[900]} numberOfLines={1} style={{flex: 1}}>
                 {job.title}
               </AppText>
-              <View style={[styles.statusBadge, { backgroundColor: statusStyle.bg, borderColor: statusStyle.border }]}>
-                <AppText variant="labelSmall" color={statusStyle.text} style={{textTransform: 'capitalize'}}>
-                  {job.status}
+              <View style={[styles.statusBadge, { backgroundColor: statusStyle.bg }]}>
+                <AppText variant="labelSmall" color={statusStyle.text}>
+                  {formatStatus(job.status)}
                 </AppText>
               </View>
             </View>
@@ -107,11 +106,32 @@ export const JobsListingScreen = () => {
       <View style={styles.header}>
         <AppText variant="h5" color={Colors.neutral[900]} style={{textAlign: 'center'}}>Jobs</AppText>
       </View>
+      <View style={styles.tabContainer}>
+        <TouchableOpacity 
+          style={[styles.tab, activeTab === 'active' && styles.activeTab]}
+          onPress={() => setActiveTab('active')}
+        >
+          <AppText variant="labelMedium" color={activeTab === 'active' ? Colors.primary[600] : Colors.neutral[500]}>
+            Active
+          </AppText>
+          {activeTab === 'active' && <View style={styles.activeTabIndicator} />}
+        </TouchableOpacity>
+        
+        <TouchableOpacity 
+          style={[styles.tab, activeTab === 'closed' && styles.activeTab]}
+          onPress={() => setActiveTab('closed')}
+        >
+          <AppText variant="labelMedium" color={activeTab === 'closed' ? Colors.primary[600] : Colors.neutral[500]}>
+            Closed
+          </AppText>
+          {activeTab === 'closed' && <View style={styles.activeTabIndicator} />}
+        </TouchableOpacity>
+      </View>
       <ScrollView 
         contentContainerStyle={styles.content}
         refreshControl={<RefreshControl refreshing={loading} onRefresh={fetchJobs} />}
       >
-        {jobs.length === 0 && !loading ? (
+        {jobs.filter(job => activeTab === 'active' ? job.status !== 'closed' : job.status === 'closed').length === 0 && !loading ? (
           <View style={styles.emptyState}>
             <Briefcase color={Colors.neutral[300]} size={48} />
             <AppText variant="bodyMedium" color={Colors.neutral[500]} style={{marginTop: 16}}>
@@ -122,7 +142,7 @@ export const JobsListingScreen = () => {
             </AppText>
           </View>
         ) : (
-          jobs.map(job => renderJobCard(job))
+          jobs.filter(job => activeTab === 'active' ? job.status !== 'closed' : job.status === 'closed').map(job => renderJobCard(job))
         )}
       </ScrollView>
       <TouchableOpacity 
@@ -139,6 +159,29 @@ export const JobsListingScreen = () => {
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: Colors.neutral[50] },
   header: { padding: 16, borderBottomWidth: 1, borderBottomColor: Colors.neutral[200], backgroundColor: '#FFF' },
+  tabContainer: {
+    flexDirection: 'row',
+    backgroundColor: '#FFF',
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.neutral[200],
+  },
+  tab: {
+    flex: 1,
+    paddingVertical: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  activeTab: {
+  },
+  activeTabIndicator: {
+    position: 'absolute',
+    bottom: -1,
+    left: 0,
+    right: 0,
+    height: 2,
+    backgroundColor: Colors.primary[600],
+  },
   content: { padding: 16 },
   emptyState: { alignItems: 'center', marginTop: 60 },
   card: {

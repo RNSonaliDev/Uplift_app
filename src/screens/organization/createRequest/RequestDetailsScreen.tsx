@@ -10,10 +10,11 @@ import {
   ScrollView,
   Platform,
   KeyboardAvoidingView,
+  Modal,
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ArrowLeft, Calendar as CalendarIcon, Clock, CheckSquare, Square, MapPin, Crosshair, Map as MapIcon, Minus, Plus, Navigation } from 'lucide-react-native';
+import { ArrowLeft, Calendar as CalendarIcon, Clock, CheckSquare, Square, MapPin, Crosshair, Map as MapIcon, Minus, Plus, Navigation, X } from 'lucide-react-native';
 import MapView, { Marker, Circle as MapCircle } from 'react-native-maps';
 import { GooglePlacesAutocomplete, GooglePlacesAutocompleteRef } from 'react-native-google-places-autocomplete';
 import Geolocation from '@react-native-community/geolocation';
@@ -21,6 +22,8 @@ import DatePicker from 'react-native-date-picker';
 
 import { Colors } from '../../../theme/colors';
 import { Typography, FontFamily } from '../../../theme/typography';
+import { AppText } from '../../../components/AppText';
+import { Button } from '../../../components/Button';
 
 export const RequestDetailsScreen = () => {
   const navigation = useNavigation<any>();
@@ -48,11 +51,42 @@ export const RequestDetailsScreen = () => {
   const [isEndTimePickerOpen, setIsEndTimePickerOpen] = useState(false);
 
   const formatDate = (date: Date) => {
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${month}/${day}/${year}`;
   };
 
   const formatTime = (time: Date) => {
     return time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+  };
+
+  const getMinTimeForPicker = (pickerDate: Date, selectedDate: Date) => {
+    const min = new Date(pickerDate);
+    min.setHours(8, 0, 0, 0);
+    
+    const now = new Date();
+    const isToday = 
+      selectedDate.getFullYear() === now.getFullYear() && 
+      selectedDate.getMonth() === now.getMonth() && 
+      selectedDate.getDate() === now.getDate();
+      
+    if (isToday) {
+      const minCurrentTime = new Date(pickerDate);
+      minCurrentTime.setHours(now.getHours() + 2, now.getMinutes(), 0, 0);
+      const max = new Date(pickerDate);
+      max.setHours(20, 0, 0, 0);
+      
+      if (minCurrentTime > max) return max;
+      if (minCurrentTime > min) return minCurrentTime;
+    }
+    return min;
+  };
+
+  const getMaxTimeForPicker = (pickerDate: Date) => {
+    const max = new Date(pickerDate);
+    max.setHours(20, 0, 0, 0);
+    return max;
   };
 
   const [address, setAddress] = useState('');
@@ -99,6 +133,7 @@ export const RequestDetailsScreen = () => {
     latitudeDelta: 0.0922,
     longitudeDelta: 0.0421,
   });
+  const [isMapModalVisible, setIsMapModalVisible] = useState(false);
 
   const GOOGLE_MAPS_API_KEY = 'AIzaSyAd20tmxrXZ1VCyhZx4q9aK0ejZtQtE92s';
   const googlePlacesRef = useRef<GooglePlacesAutocompleteRef>(null);
@@ -208,10 +243,13 @@ export const RequestDetailsScreen = () => {
     } else if (endMinutes - startMinutes <= 0) {
       newErrors.time = 'End time must be after start time';
       hasError = true;
-    } else if (endMinutes - startMinutes > 240) {
-      newErrors.time = 'Request cannot exceed 4 hours';
-      hasError = true;
-    }    if (!address.trim()) {
+    } 
+    // else 
+    //   if (endMinutes - startMinutes > 240) {
+    //   newErrors.time = 'Request cannot exceed 4 hours';
+    //   hasError = true;
+    // }  
+      if (!address.trim()) {
       setAddressError('Please enter an address');
       hasError = true;
     }
@@ -531,29 +569,11 @@ export const RequestDetailsScreen = () => {
 
         {/* Map */}
         {(latitude && longitude) ? (
-          <View style={styles.mapContainer}>
-            <MapView
-              style={{ flex: 1 }}
-              region={{
-                latitude: Number(latitude),
-                longitude: Number(longitude),
-                latitudeDelta: 0.05,
-                longitudeDelta: 0.05,
-              }}
-            >
-              <Marker 
-                draggable
-                coordinate={{ latitude: Number(latitude), longitude: Number(longitude) }} 
-                onDragEnd={handleMarkerDragEnd}
-              />
-              <MapCircle
-                center={{ latitude: Number(latitude), longitude: Number(longitude) }}
-                radius={radius * 1000} // converting km to meters
-                fillColor="rgba(91, 77, 255, 0.2)"
-                strokeColor="rgba(91, 77, 255, 0.5)"
-              />
-            </MapView>
-          </View>
+          <TouchableOpacity onPress={() => setIsMapModalVisible(true)} style={{ marginTop: 8, marginBottom: 16, alignSelf: 'flex-end' }}>
+            <AppText variant="bodyMedium" color={Colors.primary[500]} style={{ textDecorationLine: 'underline' }}>
+              Show on map
+            </AppText>
+          </TouchableOpacity>
         ) : null}
 
  
@@ -601,6 +621,8 @@ export const RequestDetailsScreen = () => {
         open={isStartTimePickerOpen}
         date={startTime}
         mode="time"
+        minimumDate={getMinTimeForPicker(startTime, startDate)}
+        maximumDate={getMaxTimeForPicker(startTime)}
         onConfirm={(time) => {
           setIsStartTimePickerOpen(false);
           setStartTime(time);
@@ -629,6 +651,8 @@ export const RequestDetailsScreen = () => {
         open={isEndTimePickerOpen}
         date={endTime}
         mode="time"
+        minimumDate={getMinTimeForPicker(endTime, endDate)}
+        maximumDate={getMaxTimeForPicker(endTime)}
         onConfirm={(time) => {
           setIsEndTimePickerOpen(false);
           setEndTime(time);
@@ -648,6 +672,42 @@ export const RequestDetailsScreen = () => {
           <Text style={styles.primaryButtonText}>Continue</Text>
         </TouchableOpacity>
       </View>
+
+      {/* Map Modal */}
+      <Modal visible={isMapModalVisible} transparent animationType="slide">
+        <View style={styles.mapModalContainer}>
+          <View style={styles.mapModalHeader}>
+            <AppText variant="h5" style={{ color: Colors.neutral[900] }}>Location on Map</AppText>
+            <TouchableOpacity onPress={() => setIsMapModalVisible(false)} style={{ padding: 4 }}>
+              <X color={Colors.neutral[500]} size={24} />
+            </TouchableOpacity>
+          </View>
+          <MapView
+            style={{ flex: 1 }}
+            region={{
+              latitude: Number(latitude) || region.latitude,
+              longitude: Number(longitude) || region.longitude,
+              latitudeDelta: 0.05,
+              longitudeDelta: 0.05,
+            }}
+          >
+            <Marker 
+              draggable
+              coordinate={{ latitude: Number(latitude) || region.latitude, longitude: Number(longitude) || region.longitude }} 
+              onDragEnd={handleMarkerDragEnd}
+            />
+            <MapCircle
+              center={{ latitude: Number(latitude) || region.latitude, longitude: Number(longitude) || region.longitude }}
+              radius={radius * 1000} // converting km to meters
+              fillColor="rgba(91, 77, 255, 0.2)"
+              strokeColor="rgba(91, 77, 255, 0.5)"
+            />
+          </MapView>
+          <View style={{ padding: 16, backgroundColor: Colors.neutral[0], paddingBottom: Math.max(16, 24) }}>
+             <Button title="Done" onPress={() => setIsMapModalVisible(false)} fullWidth />
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -800,7 +860,25 @@ const styles = StyleSheet.create({
     paddingTop: 16,
     backgroundColor: Colors.neutral[0],
     borderTopWidth: 1,
-    borderTopColor: Colors.neutral[100],
+    borderTopColor: Colors.neutral[200],
+  },
+  mapModalContainer: {
+    flex: 1,
+    backgroundColor: Colors.neutral[0],
+    marginTop: Platform.OS === 'ios' ? 50 : 0,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    overflow: 'hidden',
+    elevation: 5,
+  },
+  mapModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.neutral[200],
+    backgroundColor: Colors.neutral[0],
   },
   primaryButton: {
     backgroundColor: Colors.primary[600],

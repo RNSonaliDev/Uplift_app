@@ -22,8 +22,10 @@ import {
   Car,
   Calendar,
   MapPin,
+  User,
+  Phone,
 } from 'lucide-react-native';
-import { formatDate, formatTime12Hour } from '../../../utils/dateFormatter';
+import { formatDate, formatTime12Hour, formatDateTime } from '../../../utils/dateFormatter';
 
 export const OrgRequestDetailsScreen = () => {
   const navigation = useNavigation<any>();
@@ -140,64 +142,7 @@ export const OrgRequestDetailsScreen = () => {
             </View>
           </View>
 
-          {/* Volunteer(s) Section */}
-          {requestDetail.volunteers && requestDetail.volunteers.length > 0 ? (
-            requestDetail.volunteers.map((vol: any, idx: number) => (
-              <View key={idx} style={styles.profileSection}>
-                <View style={styles.avatarContainer}>
-                  {vol?.profile_image_url ? (
-                    <Image 
-                      source={{uri: getFullImageUrl(vol.profile_image_url) as string}} 
-                      style={styles.avatar} 
-                    />
-                  ) : (
-                    <View style={[styles.avatar, {justifyContent: 'center', alignItems: 'center'}]}>
-                      <Text style={{ ...Typography.h6, color: Colors.neutral[600] }}>
-                        {vol?.first_name 
-                          ? `${vol.first_name.charAt(0)}${vol.last_name ? vol.last_name.charAt(0) : ''}`.toUpperCase() 
-                          : 'V'}
-                      </Text>
-                    </View>
-                  )}
-                </View>
-                <View style={styles.profileInfo}>
-                  <Text style={{ ...Typography.labelLarge, color: Colors.neutral[900], marginBottom: 4 }}>
-                    {vol?.first_name ? `${vol.first_name} ${vol.last_name || ''}` : 'Volunteer'}
-                  </Text>
-                  <Text style={{ ...Typography.bodySmall, color: Colors.neutral[500] }}>
-                    Volunteer
-                  </Text>
-                </View>
-              </View>
-            ))
-          ) : requestDetail.volunteer ? (
-            <View style={styles.profileSection}>
-              <View style={styles.avatarContainer}>
-                {requestDetail.volunteer?.profile_image_url ? (
-                  <Image 
-                    source={{uri: getFullImageUrl(requestDetail.volunteer.profile_image_url) as string}} 
-                    style={styles.avatar} 
-                  />
-                ) : (
-                  <View style={[styles.avatar, {justifyContent: 'center', alignItems: 'center'}]}>
-                    <Text style={{ ...Typography.h6, color: Colors.neutral[600] }}>
-                      {requestDetail.volunteer?.first_name 
-                        ? `${requestDetail.volunteer.first_name.charAt(0)}${requestDetail.volunteer.last_name ? requestDetail.volunteer.last_name.charAt(0) : ''}`.toUpperCase() 
-                        : 'V'}
-                    </Text>
-                  </View>
-                )}
-              </View>
-              <View style={styles.profileInfo}>
-                <Text style={{ ...Typography.labelLarge, color: Colors.neutral[900], marginBottom: 4 }}>
-                  {requestDetail.volunteer?.first_name ? `${requestDetail.volunteer.first_name} ${requestDetail.volunteer.last_name || ''}` : 'Volunteer'}
-                </Text>
-                <Text style={{ ...Typography.bodySmall, color: Colors.neutral[500] }}>
-                  Volunteer
-                </Text>
-              </View>
-            </View>
-          ) : null}
+
 
           {requestDetail.status === 'cancelled' ? (
             <View style={[styles.timelineContainer, { paddingVertical: 24, paddingHorizontal: 16, backgroundColor: Colors.error + '10', borderRadius: 12, alignItems: 'center', marginTop: 16 }]}>
@@ -211,12 +156,51 @@ export const OrgRequestDetailsScreen = () => {
               <TimelineItem 
                 status="completed" 
                 title="Request Submitted" 
-                time={new Date(requestDetail.created_at || Date.now()).toLocaleString()}
+                time={formatDateTime(requestDetail.created_at || Date.now())}
               />
               <TimelineItem 
-                status={['accepted', 'assigned', 'in_progress', 'completed'].includes(requestDetail.status) ? 'completed' : 'pending'} 
+                status={['accepted', 'assigned', 'on_the_way', 'in_progress', 'completed'].includes(requestDetail.status) ? 'completed' : 'pending'} 
                 title="Request Accepted" 
-                description="Waiting for a helper to accept."
+                description={(requestDetail.volunteers && requestDetail.volunteers.length > 0) || requestDetail.volunteer ? undefined : "Waiting for a volunteer to accept."}
+              >
+                {(() => {
+                  const vols = requestDetail.volunteers?.length > 0 ? requestDetail.volunteers : (requestDetail.volunteer ? [requestDetail.volunteer] : []);
+                  return vols.map((vol: any, idx: number) => (
+                    <View key={idx} style={{flexDirection: 'row', alignItems: 'center', marginTop: 12, padding: 12, backgroundColor: Colors.neutral[50], borderRadius: 12, borderWidth: 1, borderColor: Colors.neutral[100]}}>
+                      {vol.profile_image_url ? (
+                        <Image 
+                          source={{ uri: getFullImageUrl(vol.profile_image_url) as string }} 
+                          style={{width: 48, height: 48, borderRadius: 24, marginRight: 12}} 
+                        />
+                      ) : (
+                        <View style={{width: 48, height: 48, borderRadius: 24, marginRight: 12, backgroundColor: Colors.neutral[200], justifyContent: 'center', alignItems: 'center'}}>
+                          <User color={Colors.neutral[500]} size={24} />
+                        </View>
+                      )}
+                      <View style={{flex: 1}}>
+                        <Text style={{...Typography.labelMedium, color: Colors.neutral[900], marginBottom: 2}}>
+                          {vol.first_name} {vol.last_name || ''}
+                        </Text>
+                        {vol.phone_number ? (
+                          <View style={{flexDirection: 'row', alignItems: 'center'}}>
+                            <Phone color={Colors.neutral[500]} size={12} style={{marginRight: 4}} />
+                            <Text style={{...Typography.caption, color: Colors.neutral[600]}}>
+                              {vol.phone_number}
+                            </Text>
+                          </View>
+                        ) : (
+                          <Text style={{...Typography.caption, color: Colors.neutral[600]}}>
+                            Volunteer
+                          </Text>
+                        )}
+                      </View>
+                    </View>
+                  ));
+                })()}
+              </TimelineItem>
+              <TimelineItem 
+                status={['in_progress', 'completed'].includes(requestDetail.status) ? 'completed' : requestDetail.status === 'on_the_way' ? 'active' : 'pending'} 
+                title="On the Way" 
               />
               <TimelineItem 
                 status={['completed'].includes(requestDetail.status) ? 'completed' : requestDetail.status === 'in_progress' ? 'active' : 'pending'} 
@@ -252,9 +236,9 @@ export const OrgRequestDetailsScreen = () => {
 };
 
 const TimelineItem = ({
-  status, title, time, description, isLast
+  status, title, time, description, isLast, children
 }: {
-  status: 'completed' | 'active' | 'pending', title: string, time?: string, description?: string, isLast?: boolean
+  status: 'completed' | 'active' | 'pending', title: string, time?: string, description?: string, isLast?: boolean, children?: React.ReactNode
 }) => {
   return (
     <View style={styles.timelineItem}>
@@ -280,7 +264,8 @@ const TimelineItem = ({
           status === 'pending' && { color: Colors.neutral[400] }
         ]}>{title}</Text>
         {time && <Text style={styles.timelineTime}>{time}</Text>}
-        {description && <Text style={styles.timelineDesc}>{description}</Text>}
+        {description ? <Text style={styles.timelineDesc}>{description}</Text> : null}
+        {children}
       </View>
     </View>
   );

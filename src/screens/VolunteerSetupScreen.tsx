@@ -20,7 +20,7 @@ import { launchImageLibrary } from 'react-native-image-picker';
 import MapView, { Marker, Circle as MapCircle } from 'react-native-maps';
 import { GooglePlacesAutocomplete, GooglePlacesAutocompleteRef } from 'react-native-google-places-autocomplete';
 import Geolocation from '@react-native-community/geolocation';
-import { Navigation, MapPin } from 'lucide-react-native';
+import { Navigation, MapPin, X } from 'lucide-react-native';
 import {AppText} from '../components/AppText';
 import {Button} from '../components/Button';
 import {Input} from '../components/Input';
@@ -266,6 +266,7 @@ export const VolunteerSetupScreen: React.FC = () => {
     latitudeDelta: 0.0922,
     longitudeDelta: 0.0421,
   });
+  const [isMapModalVisible, setIsMapModalVisible] = useState(false);
 
   const GOOGLE_MAPS_API_KEY = 'AIzaSyAd20tmxrXZ1VCyhZx4q9aK0ejZtQtE92s';
   const googlePlacesRef = useRef<GooglePlacesAutocompleteRef>(null);
@@ -661,36 +662,11 @@ export const VolunteerSetupScreen: React.FC = () => {
               />
 
               {(latitude && longitude) ? (
-                <View style={{
-                  height: 200,
-                  marginTop: Spacing.md,
-                  borderRadius: 12,
-                  overflow: 'hidden',
-                  borderWidth: 1,
-                  borderColor: Colors.neutral[200],
-                }}>
-                  <MapView
-                    style={{ flex: 1 }}
-                    region={{
-                      latitude: Number(latitude),
-                      longitude: Number(longitude),
-                      latitudeDelta: 0.01,
-                      longitudeDelta: 0.01,
-                    }}
-                  >
-                    <Marker 
-                      draggable
-                      coordinate={{ latitude: Number(latitude), longitude: Number(longitude) }} 
-                      onDragEnd={handleMarkerDragEnd}
-                    />
-                    <MapCircle
-                      center={{ latitude: Number(latitude), longitude: Number(longitude) }}
-                      radius={radiusWithin * 1609.34}
-                      fillColor="rgba(79, 70, 229, 0.2)"
-                      strokeColor="rgba(79, 70, 229, 0.5)"
-                    />
-                  </MapView>
-                </View>
+                <TouchableOpacity onPress={() => setIsMapModalVisible(true)} style={{ marginTop: Spacing.sm, marginBottom: 16, alignSelf: 'flex-end' }}>
+                  <AppText variant="bodyMedium" color={Colors.primary[500]} style={{ textDecorationLine: 'underline' }}>
+                    Show on map
+                  </AppText>
+                </TouchableOpacity>
               ) : null}
             </View>
 
@@ -897,6 +873,40 @@ export const VolunteerSetupScreen: React.FC = () => {
         </TouchableOpacity>
       </Modal>
 
+      <Modal visible={isMapModalVisible} transparent animationType="slide">
+        <View style={styles.mapModalContainer}>
+          <View style={styles.mapModalHeader}>
+            <AppText variant="h5" style={{ color: Colors.neutral[900] }}>Location on Map</AppText>
+            <TouchableOpacity onPress={() => setIsMapModalVisible(false)} style={{ padding: 4 }}>
+              <X color={Colors.neutral[500]} size={24} />
+            </TouchableOpacity>
+          </View>
+          <MapView
+            style={{ flex: 1 }}
+            region={{
+              latitude: Number(latitude) || region.latitude,
+              longitude: Number(longitude) || region.longitude,
+              latitudeDelta: 0.01,
+              longitudeDelta: 0.01,
+            }}
+          >
+            <Marker 
+              draggable
+              coordinate={{ latitude: Number(latitude) || region.latitude, longitude: Number(longitude) || region.longitude }} 
+              onDragEnd={handleMarkerDragEnd}
+            />
+            <MapCircle
+              center={{ latitude: Number(latitude) || region.latitude, longitude: Number(longitude) || region.longitude }}
+              radius={radiusWithin * 1609.34}
+              fillColor="rgba(79, 70, 229, 0.2)"
+              strokeColor="rgba(79, 70, 229, 0.5)"
+            />
+          </MapView>
+          <View style={{ padding: Spacing.md, backgroundColor: Colors.neutral[0], paddingBottom: Math.max(Spacing.md, 24) }}>
+             <Button title="Done" onPress={() => setIsMapModalVisible(false)} fullWidth />
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -1098,6 +1108,29 @@ const styles = StyleSheet.create({
     paddingVertical: verticalScale(20),
     borderBottomWidth: 1,
     borderBottomColor: Colors.neutral[100],
+  },
+  modalOption: {
+    paddingVertical: verticalScale(16),
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.neutral[200],
+  },
+  mapModalContainer: {
+    flex: 1,
+    backgroundColor: Colors.neutral[0],
+    marginTop: isIOS ? 50 : 0,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    overflow: 'hidden',
+    elevation: 5,
+  },
+  mapModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: Spacing.lg,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.neutral[200],
+    backgroundColor: Colors.neutral[0],
   },
   modalItem: {
     paddingVertical: verticalScale(16),

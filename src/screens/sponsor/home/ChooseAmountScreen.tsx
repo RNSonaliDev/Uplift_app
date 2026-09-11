@@ -6,22 +6,31 @@ import {
   SafeAreaView,
   TextInput,
   ScrollView,
+  Modal,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Colors } from '../../../theme/colors';
 import { AppText } from '../../../components/AppText';
 import { Button } from '../../../components/Button';
-import { ChevronLeft, Heart } from 'lucide-react-native';
+import { ChevronLeft, Heart, ChevronDown, X } from 'lucide-react-native';
 import { horizontalScale, verticalScale, moderateScale, fontScale } from '../../../utils/responsive';
 import { FontFamily } from '../../../theme/typography';
 
 const predefinedAmounts = [25, 50, 100, 250];
+
+const RECIPIENT_OPTIONS = [
+  { id: 'volunteer', label: 'Reward the volunteers' },
+  { id: 'beneficiary', label: 'Support the beneficiaries' },
+  { id: 'split', label: 'Split equally' },
+  { id: 'whoever', label: 'Whoever needs it most' },
+];
 
 export default function ChooseAmountScreen() {
   const navigation = useNavigation<any>();
   const [selectedAmount, setSelectedAmount] = useState<number | 'custom'>(100);
   const [customAmount, setCustomAmount] = useState<string>('');
   const [recipientType, setRecipientType] = useState<string>('whoever');
+  const [isRecipientModalVisible, setIsRecipientModalVisible] = useState(false);
 
   const handleContinue = () => {
     const finalAmount = selectedAmount === 'custom' ? parseFloat(customAmount) : selectedAmount;
@@ -57,31 +66,15 @@ export default function ChooseAmountScreen() {
         <AppText variant="labelLarge" color={Colors.neutral[700]} style={{marginBottom: 8}}>
           Where should this go?
         </AppText>
-        <View style={styles.recipientGrid}>
-          {[
-            { id: 'volunteer', label: 'Reward the volunteers' },
-            { id: 'beneficiary', label: 'Support the beneficiaries' },
-            { id: 'split', label: 'Split equally' },
-            { id: 'whoever', label: 'Whoever needs it most' },
-          ].map(type => {
-            const isSelected = recipientType === type.id;
-            return (
-              <TouchableOpacity
-                key={type.id}
-                style={[styles.recipientBox, isSelected && styles.recipientBoxSelected]}
-                onPress={() => setRecipientType(type.id)}
-              >
-                <AppText 
-                  variant="bodySmall" 
-                  color={isSelected ? Colors.neutral[0] : Colors.neutral[800]}
-                  weight={isSelected ? 'semiBold' : 'regular'}
-                >
-                  {type.label}
-                </AppText>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
+        <TouchableOpacity 
+          style={styles.dropdownTrigger}
+          onPress={() => setIsRecipientModalVisible(true)}
+        >
+          <AppText variant="bodyMedium" color={Colors.neutral[900]}>
+            {RECIPIENT_OPTIONS.find(o => o.id === recipientType)?.label}
+          </AppText>
+          <ChevronDown color={Colors.neutral[500]} size={20} />
+        </TouchableOpacity>
 
         <AppText variant="labelLarge" color={Colors.neutral[700]} style={{marginTop: verticalScale(8), marginBottom: verticalScale(4)}}>
           Choose Amount
@@ -150,6 +143,39 @@ export default function ChooseAmountScreen() {
           disabled={selectedAmount === 'custom' && (!customAmount || isNaN(parseFloat(customAmount)) || parseFloat(customAmount) <= 0)}
         />
       </View>
+
+      <Modal visible={isRecipientModalVisible} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <AppText variant="h5" style={{ color: Colors.neutral[900] }}>Where should this go?</AppText>
+              <TouchableOpacity onPress={() => setIsRecipientModalVisible(false)} style={{ padding: 4 }}>
+                <X color={Colors.neutral[500]} size={24} />
+              </TouchableOpacity>
+            </View>
+            <ScrollView style={{ maxHeight: 300 }}>
+              {RECIPIENT_OPTIONS.map((option) => (
+                <TouchableOpacity
+                  key={option.id}
+                  style={styles.modalOption}
+                  onPress={() => {
+                    setRecipientType(option.id);
+                    setIsRecipientModalVisible(false);
+                  }}
+                >
+                  <AppText 
+                    variant="bodyMedium" 
+                    color={recipientType === option.id ? Colors.primary[500] : Colors.neutral[800]}
+                    weight={recipientType === option.id ? 'semiBold' : 'regular'}
+                  >
+                    {option.label}
+                  </AppText>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -208,21 +234,42 @@ const styles = StyleSheet.create({
   customInputContainer: {
     marginBottom: verticalScale(16),
   },
-  recipientGrid: {
-    gap: verticalScale(12),
-    marginBottom: verticalScale(15),
-  },
-  recipientBox: {
+  dropdownTrigger: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     backgroundColor: Colors.neutral[0],
     borderWidth: 1,
     borderColor: Colors.neutral[200],
     borderRadius: 12,
-    paddingVertical: verticalScale(12),
+    paddingVertical: verticalScale(14),
     paddingHorizontal: horizontalScale(16),
+    marginBottom: verticalScale(15),
   },
-  recipientBoxSelected: {
-    backgroundColor: Colors.primary[500],
-    borderColor: Colors.primary[500],
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+    padding: horizontalScale(0),
+  },
+  modalContent: {
+    backgroundColor: Colors.neutral[0],
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: horizontalScale(24),
+    paddingVertical: verticalScale(24),
+    paddingBottom: verticalScale(40),
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: verticalScale(16),
+  },
+  modalOption: {
+    paddingVertical: verticalScale(16),
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.neutral[200],
   },
   inputWrapper: {
     flexDirection: 'row',

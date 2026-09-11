@@ -101,7 +101,7 @@ export default function NotificationsScreen() {
   };
 
   const renderItem = ({ item }: { item: AppNotification }) => {
-    const isUnread = !item.is_read;
+    const isUnread = !item.read;
     const date = new Date(item.created_at);
     
     // Very simple relative time formatting

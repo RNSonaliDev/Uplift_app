@@ -77,7 +77,7 @@ export function VolunteerTabNavigator() {
         listeners={({navigation}) => ({
           tabPress: (e) => {
             e.preventDefault();
-            navigation.navigate('RequestsTab', { screen: 'BrowseRequests' });
+            navigation.navigate('RequestsTab', { screen: 'BrowseRequests', params: { activeTab: 'beneficiary', timestamp: Date.now() } });
           },
         })}
       />
