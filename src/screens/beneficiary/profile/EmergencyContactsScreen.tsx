@@ -23,6 +23,22 @@ import { emergencyContactsApi, EmergencyContact } from '../../../api/emergencyCo
 import { useFocusEffect } from '@react-navigation/native';
 import Toast from 'react-native-toast-message';
 
+const getErrorMessage = (error: any, defaultMsg: string) => {
+  console.log("@@@@ errorerrorerror===", error)
+  if (error?.data) {
+    const data = error.data.errors;
+    if (Array.isArray(data)) return data.join(', ');
+    if (data.errors) {
+      if (Array.isArray(data.errors)) return data.errors.join(', ');
+      if (typeof data.errors === 'object') return Object.values(data.errors).flat().join(', ');
+      return String(data.errors);
+    }
+    if (data.error) return String(data.error);
+    if (data.message) return String(data.message);
+  }
+  return error?.message || defaultMsg;
+};
+
 export default function EmergencyContactsScreen() {
   const navigation = useNavigation<any>();
   
@@ -45,7 +61,7 @@ export default function EmergencyContactsScreen() {
       setContacts(Array.isArray(data) ? data : []);
     } catch (error) {
       console.log('Fetch contacts error', error);
-      Toast.show({ type: 'error', text1: 'Error', text2: 'Failed to load contacts' });
+      Toast.show({ type: 'error', text1: 'Error', text2: getErrorMessage(error, 'Failed to load contacts') });
     } finally {
       setLoading(false);
     }
@@ -75,9 +91,9 @@ export default function EmergencyContactsScreen() {
       setIsAdding(false);
       setForm({ name: '', relationship: '', phone: '', email: '' });
       fetchContacts();
-    } catch (error) {
-      console.log('Create contact error', error);
-      Toast.show({ type: 'error', text1: 'Error', text2: 'Failed to add contact' });
+    } catch (error: any) {
+      console.log('Create contact error', error?.response?.data || error);
+      Toast.show({ type: 'error', text1: 'Error', text2: getErrorMessage(error, 'Failed to add contact') });
     }
   };
 
@@ -98,9 +114,9 @@ export default function EmergencyContactsScreen() {
       Toast.show({ type: 'success', text1: 'Success', text2: 'Contact updated successfully' });
       setEditingId(null);
       fetchContacts();
-    } catch (error) {
-      console.log('Update contact error', error);
-      Toast.show({ type: 'error', text1: 'Error', text2: 'Failed to update contact' });
+    } catch (error: any) {
+      console.log('Update contact error', error?.response?.data || error);
+      Toast.show({ type: 'error', text1: 'Error', text2: getErrorMessage(error, 'Failed to update contact') });
     }
   };
 
@@ -111,7 +127,7 @@ export default function EmergencyContactsScreen() {
       fetchContacts();
     } catch (error) {
       console.log('Delete contact error', error);
-      Toast.show({ type: 'error', text1: 'Error', text2: 'Failed to delete contact' });
+      Toast.show({ type: 'error', text1: 'Error', text2: getErrorMessage(error, 'Failed to delete contact') });
     }
   };
 
@@ -167,8 +183,8 @@ export default function EmergencyContactsScreen() {
                         <Pencil size={18} color={Colors.primary[500]} />
                       </TouchableOpacity>
                     )}
-                    <TouchableOpacity style={[styles.actionIconBtn, { backgroundColor: Colors.error[50], marginLeft: 8 }]} onPress={() => handleDelete(contact.id)}>
-                      <Trash2 size={18} color={Colors.error[500]} />
+                    <TouchableOpacity style={[styles.actionIconBtn, { backgroundColor: '#FEF2F2', marginLeft: 8 }]} onPress={() => handleDelete(contact.id)}>
+                      <Trash2 size={18} color={Colors.error} />
                     </TouchableOpacity>
                   </View>
                   <Input
@@ -390,7 +406,7 @@ export default function EmergencyContactsScreen() {
         </ScrollView>
       </KeyboardAvoidingView>
 
-      {!isAdding && (
+      {!isAdding && contacts.length < 2 && (
         <TouchableOpacity 
           style={styles.fab} 
           onPress={() => {

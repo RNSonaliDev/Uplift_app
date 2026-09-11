@@ -7,8 +7,10 @@ import {
   TextInput,
   ScrollView,
   Modal,
+  Alert,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { useStripe } from '@stripe/stripe-react-native';
 import { Colors } from '../../../theme/colors';
 import { AppText } from '../../../components/AppText';
 import { Button } from '../../../components/Button';
@@ -28,17 +30,67 @@ const RECIPIENT_OPTIONS = [
 export default function ChooseAmountScreen() {
   const navigation = useNavigation<any>();
   const [selectedAmount, setSelectedAmount] = useState<number | 'custom'>(100);
-  const [customAmount, setCustomAmount] = useState<string>('');
-  const [recipientType, setRecipientType] = useState<string>('whoever');
+  const [customAmount, setCustomAmount] = useState<string>('100');
+  const [recipientType, setRecipientType] = useState<string>('');
   const [isRecipientModalVisible, setIsRecipientModalVisible] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const { initPaymentSheet, presentPaymentSheet } = useStripe();
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     const finalAmount = selectedAmount === 'custom' ? parseFloat(customAmount) : selectedAmount;
     if (!finalAmount || isNaN(finalAmount) || finalAmount <= 0) {
-      // Could show a toast here
       return;
     }
-    navigation.navigate('PaymentDetails', { amount: finalAmount, recipientType });
+    if (!recipientType) {
+      return;
+    }
+    
+    setLoading(true);
+    try {
+      const { donationsApi } = await import('../../../api/donations');
+      const res = await donationsApi.createDonation({
+        donation: {
+          amount: finalAmount,
+          recipient_type: recipientType,
+        }
+      });
+      
+      let newDonationId = null;
+      if (res.donation?.id) {
+        newDonationId = res.donation.id;
+      } else if (res.id) {
+        newDonationId = res.id as number;
+      }
+      
+      const clientSecret = res.client_secret;
+      const { error: initError } = await initPaymentSheet({
+        merchantDisplayName: 'Uplift',
+        paymentIntentClientSecret: clientSecret,
+        allowsDelayedPaymentMethods: true,
+      });
+      
+      if (initError) {
+        Alert.alert(`Error code: ${initError.code}`, initError.message);
+        setLoading(false);
+        return;
+      }
+      
+      const { error: presentError } = await presentPaymentSheet();
+      
+      if (presentError) {
+        if (presentError.code !== 'Canceled') {
+          Alert.alert(`Error`, presentError.message);
+        }
+      } else {
+        // Payment was successful!
+        navigation.navigate('ProcessingPayment', { amount: finalAmount, recipientType, donationId: newDonationId });
+      }
+    } catch (e) {
+      console.error(e);
+      Alert.alert('Error', 'Could not process payment.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -63,20 +115,20 @@ export default function ChooseAmountScreen() {
         </AppText>
 
         {/* Recipient Type Selection */}
-        <AppText variant="labelLarge" color={Colors.neutral[700]} style={{marginBottom: 8}}>
+        <AppText variant="h5" color={Colors.neutral[900]} style={{marginBottom: 8}}>
           Where should this go?
         </AppText>
         <TouchableOpacity 
           style={styles.dropdownTrigger}
           onPress={() => setIsRecipientModalVisible(true)}
         >
-          <AppText variant="bodyMedium" color={Colors.neutral[900]}>
-            {RECIPIENT_OPTIONS.find(o => o.id === recipientType)?.label}
+          <AppText variant="bodyMedium" color={recipientType ? Colors.neutral[900] : Colors.neutral[400]}>
+            {recipientType ? RECIPIENT_OPTIONS.find(o => o.id === recipientType)?.label : 'Select recipient'}
           </AppText>
           <ChevronDown color={Colors.neutral[500]} size={20} />
         </TouchableOpacity>
 
-        <AppText variant="labelLarge" color={Colors.neutral[700]} style={{marginTop: verticalScale(8), marginBottom: verticalScale(4)}}>
+        <AppText variant="h5" color={Colors.neutral[900]} style={{marginTop: verticalScale(8), marginBottom: verticalScale(4)}}>
           Choose Amount
         </AppText>
         {/* Amount Grid */}
@@ -93,7 +145,7 @@ export default function ChooseAmountScreen() {
                     setCustomAmount('');
                   } else {
                     setSelectedAmount(amount);
-                    setCustomAmount('');
+                    setCustomAmount(amount.toString());
                   }
                 }}
               >
@@ -110,7 +162,7 @@ export default function ChooseAmountScreen() {
 
         {/* Custom Amount Input */}
         <View style={styles.customInputContainer}>
-          <AppText variant="labelLarge" color={Colors.neutral[700]} style={{marginBottom: 8}}>
+          <AppText variant="h5" color={Colors.neutral[900]} style={{marginBottom: 8}}>
             Or Enter Custom Amount
           </AppText>
           <View style={[styles.inputWrapper, selectedAmount === 'custom' && { borderColor: Colors.primary[500], borderWidth: 2 }]}>
@@ -120,11 +172,7 @@ export default function ChooseAmountScreen() {
               value={customAmount}
               onChangeText={(text) => {
                 setCustomAmount(text);
-                if (text.length > 0) {
-                  setSelectedAmount('custom');
-                } else {
-                  setSelectedAmount(100); // Default fallback when empty
-                }
+                setSelectedAmount('custom');
               }}
               keyboardType="decimal-pad"
               placeholder="Enter amount"
@@ -138,9 +186,9 @@ export default function ChooseAmountScreen() {
       {/* Footer */}
       <View style={styles.footer}>
         <Button 
-          title="Continue" 
+          title={loading ? 'Loading...' : 'Continue'} 
           onPress={handleContinue}
-          disabled={selectedAmount === 'custom' && (!customAmount || isNaN(parseFloat(customAmount)) || parseFloat(customAmount) <= 0)}
+          disabled={(selectedAmount === 'custom' && (!customAmount || isNaN(parseFloat(customAmount)) || parseFloat(customAmount) <= 0)) || !recipientType || loading}
         />
       </View>
 

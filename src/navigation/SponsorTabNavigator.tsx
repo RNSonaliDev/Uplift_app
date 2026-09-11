@@ -49,7 +49,7 @@ export function SponsorTabNavigator() {
         listeners={({navigation}) => ({
           tabPress: (e) => {
             e.preventDefault();
-            navigation.navigate('DashboardTab', { screen: 'SponsorDashboard' });
+            navigation.navigate('DashboardTab', { screen: 'SponsorDashboard', params: { timestamp: Date.now() } });
           },
         })}
       />
@@ -63,7 +63,7 @@ export function SponsorTabNavigator() {
         listeners={({navigation}) => ({
           tabPress: (e) => {
             e.preventDefault();
-            navigation.navigate('ContributionsTab', { screen: 'ContributionsList' });
+            navigation.navigate('ContributionsTab', { screen: 'ContributionsList', params: { activeTab: 'Success', timestamp: Date.now() } });
           },
         })}
       />
@@ -77,7 +77,7 @@ export function SponsorTabNavigator() {
         listeners={({navigation}) => ({
           tabPress: (e) => {
             e.preventDefault();
-            navigation.navigate('ProfileTab', { screen: 'MyProfile' });
+            navigation.navigate('ProfileTab', { screen: 'MyProfile', params: { timestamp: Date.now() } });
           },
         })}
       />

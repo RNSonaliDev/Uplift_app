@@ -12,15 +12,11 @@ import {Colors} from '../../../theme/colors';
 import {AppText} from '../../../components/AppText';
 import {Button} from '../../../components/Button';
 import {
-  Heart,
-  Calendar,
-  DollarSign,
-  TrendingUp,
-  ChevronRight,
   Bell
 } from 'lucide-react-native';
 import {authApi, UserProfileResponse} from '../../../api/auth';
 import {donationsApi, Donation, DashboardStats} from '../../../api/donations';
+import {notificationsApi} from '../../../api/notifications';
 import {formatDate, formatTime12Hour} from '../../../utils/dateFormatter';
 import {
   horizontalScale,
@@ -35,6 +31,7 @@ export default function SponsorDashboardScreen() {
   const [contributions, setContributions] = useState<Donation[]>([]);
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [totalContributed, setTotalContributed] = useState(0);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   const fetchData = useCallback(async () => {
     try {
@@ -58,6 +55,21 @@ export default function SponsorDashboardScreen() {
       setStats(statsData);
     } catch (error) {
       console.error('Failed to fetch stats', error);
+    }
+    
+    try {
+      const data = await notificationsApi.getNotifications();
+      let unread = 0;
+      if (!Array.isArray(data) && typeof data === 'object' && 'unread_count' in data) {
+        unread = (data as any).unread_count;
+      } else if (Array.isArray(data)) {
+        unread = data.filter((n: any) => !n.is_read).length;
+      } else if (data && typeof data === 'object' && Array.isArray((data as any).notifications)) {
+        unread = (data as any).notifications.filter((n: any) => !n.is_read).length;
+      }
+      setUnreadCount(unread);
+    } catch (error) {
+      console.log('Failed to fetch notifications count', error);
     }
   }, []);
 
@@ -102,6 +114,9 @@ export default function SponsorDashboardScreen() {
             </View>
             <TouchableOpacity style={styles.bellIcon} onPress={() => navigation.navigate('Notifications')}>
               <Bell color={Colors.neutral[0]} size={24} />
+              {unreadCount > 0 && (
+                <View style={styles.unreadBadge} />
+              )}
             </TouchableOpacity>
           </View>
         </View>
@@ -109,45 +124,20 @@ export default function SponsorDashboardScreen() {
         {/* Floating Impact Card */}
         <View style={styles.impactCardWrapper}>
           <View style={styles.impactCard}>
-            <View>
-              <AppText variant="caption" style={styles.totalLabel}>Total Contributed</AppText>
-              <AppText variant="h1" style={styles.totalAmount}>${stats ? stats.amount_donated : totalContributed}</AppText>
-              <AppText variant="caption" style={styles.totalLabelBottom}>All time</AppText>
-            </View>
-            <View style={styles.iconContainer}>
-              <Heart color={Colors.primary[300]} size={48} strokeWidth={1.5} />
-            </View>
-          </View>
-          
-          <View style={styles.statsGrid}>
-            <View style={styles.statCard}>
-              <View style={styles.statIconCircle}>
-                <TrendingUp color={Colors.primary[500]} size={20} />
+            <View style={styles.statsRow}>
+              <View style={styles.statItem}>
+                <AppText variant="h3" style={styles.statNumber} numberOfLines={1} adjustsFontSizeToFit>
+                  {stats ? (stats.donations_total + stats.donations_pending) : contributions.length}
+                </AppText>
+                <AppText variant="caption" style={styles.statLabel} center>Total contribution</AppText>
               </View>
-              <AppText variant="h5" style={styles.statNumber} numberOfLines={1} adjustsFontSizeToFit>
-                {stats ? (stats.donations_total + stats.donations_pending) : contributions.length}
-              </AppText>
-              <AppText variant="caption" style={styles.statLabel} center>Contributions</AppText>
-            </View>
-            <View style={styles.statCard}>
-              <View style={styles.statIconCircle}>
-                <DollarSign color={Colors.primary[500]} size={20} />
+              <View style={styles.statDivider} />
+              <View style={styles.statItem}>
+                <AppText variant="h3" style={styles.statNumber} numberOfLines={1} adjustsFontSizeToFit>
+                  ${stats?.amount_donated || 0}
+                </AppText>
+                <AppText variant="caption" style={styles.statLabel} center>Total Contribution amount </AppText>
               </View>
-              <AppText variant="h5" style={styles.statNumber} numberOfLines={1} adjustsFontSizeToFit>
-                ${contributions[0]?.amount || 0}
-              </AppText>
-              <AppText variant="caption" style={styles.statLabel} center>Last Contribution</AppText>
-            </View>
-            <View style={styles.statCard}>
-              <View style={styles.statIconCircle}>
-                <Calendar color={Colors.primary[500]} size={20} />
-              </View>
-              <AppText variant="h5" style={styles.statNumber} numberOfLines={1} adjustsFontSizeToFit>
-                {stats?.last_donation_at 
-                  ? formatContributionDate(stats.last_donation_at) 
-                  : (contributions[0]?.created_at ? formatContributionDate(contributions[0].created_at) : 'N/A')}
-              </AppText>
-              <AppText variant="caption" style={styles.statLabel} center>Last Contribution Date</AppText>
             </View>
           </View>
         </View>
@@ -164,7 +154,7 @@ export default function SponsorDashboardScreen() {
         <View style={styles.sectionContainer}>
           <View style={styles.sectionHeader}>
             <AppText variant="h5">Recent Contributions</AppText>
-            <TouchableOpacity onPress={() => navigation.navigate('ContributionsTab', { screen: 'ContributionsList' })}>
+            <TouchableOpacity onPress={() => navigation.navigate('ContributionsTab')}>
               <AppText variant="bodyMedium" color={Colors.primary[500]}>View All</AppText>
             </TouchableOpacity>
           </View>
@@ -180,7 +170,8 @@ export default function SponsorDashboardScreen() {
                 <ContributionCard
                   key={contribution.id}
                   item={contribution}
-                  onPress={() => navigation.navigate('ContributionsTab', { screen: 'ContributionDetails', params: { contribution } })}
+                  onPress={() => {}}
+                  // onPress={() => navigation.navigate('ContributionsTab', { screen: 'ContributionDetails', params: { contribution } })}
                 />
               ))
             )}
@@ -224,74 +215,53 @@ const styles = StyleSheet.create({
   },
   bellIcon: {
     padding: 8,
+    position: 'relative',
+  },
+  unreadBadge: {
+    position: 'absolute',
+    top: 6,
+    right: 8,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: Colors.error as any,
+    borderWidth: 2,
+    borderColor: Colors.primary[500],
   },
   impactCardWrapper: {
     paddingHorizontal: horizontalScale(24),
     marginTop: -verticalScale(60), 
   },
   impactCard: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: Colors.primary[600],
-    borderRadius: 16,
-    padding: moderateScale(24),
-    shadowColor: Colors.neutral[900],
-    shadowOffset: {width: 0, height: 4},
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 4,
-    marginBottom: verticalScale(16),
-  },
-  totalLabel: {
-    color: Colors.neutral[100],
-    marginBottom: 8,
-  },
-  totalAmount: {
-    color: Colors.neutral[0],
-    marginBottom: 4,
-  },
-  totalLabelBottom: {
-    color: Colors.neutral[200],
-  },
-  iconContainer: {
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  statsGrid: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: horizontalScale(8),
-  },
-  statCard: {
-    flex: 1,
     backgroundColor: Colors.neutral[0],
     borderRadius: 16,
-    padding: moderateScale(12),
-    alignItems: 'center',
+    padding: moderateScale(20),
     shadowColor: Colors.neutral[900],
-    shadowOffset: {width: 0, height: 2},
+    shadowOffset: {width: 0, height: 4},
     shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
+    shadowRadius: 12,
+    elevation: 4,
   },
-  statIconCircle: {
-    width: moderateScale(40),
-    height: moderateScale(40),
-    borderRadius: moderateScale(20),
-    backgroundColor: Colors.primary[50],
-    justifyContent: 'center',
+  statsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: verticalScale(12),
+  },
+  statItem: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  statDivider: {
+    width: 1,
+    height: 40,
+    backgroundColor: Colors.neutral[200],
   },
   statNumber: {
-    color: Colors.neutral[900],
+    color: Colors.primary[500],
     marginBottom: 4,
   },
   statLabel: {
     color: Colors.neutral[500],
-    fontSize: 10,
-    textAlign: 'center',
   },
   sectionContainer: {
     marginTop: verticalScale(24),

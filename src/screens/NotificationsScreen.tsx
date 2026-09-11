@@ -123,16 +123,16 @@ export default function NotificationsScreen() {
         onPress={() => isUnread && handleMarkAsRead(item.id)}
         disabled={!isUnread}
       >
-        <View style={styles.iconContainer}>
+        {/* <View style={styles.iconContainer}>
           <Bell color={isUnread ? Colors.primary[500] : Colors.neutral[400]} size={24} />
           {isUnread && <View style={styles.unreadDotBadge} />}
-        </View>
+        </View> */}
         <View style={styles.contentContainer}>
-          <AppText variant="labelLarge" style={[styles.title, !isUnread && styles.readText]}>
+          <AppText variant="labelLarge" style={styles.title}>
             {item.title}
           </AppText>
-          <AppText variant="bodyMedium" style={[styles.message, !isUnread && styles.readText]}>
-            {item.message}
+          <AppText variant="bodyMedium" style={styles.message}>
+            {item.message || (item as any).body || (item as any).content}
           </AppText>
           <View style={styles.footerRow}>
             <Clock color={Colors.neutral[400]} size={14} />
@@ -258,7 +258,7 @@ const styles = StyleSheet.create({
     marginBottom: verticalScale(4),
   },
   message: {
-    color: Colors.neutral[700],
+    color: Colors.neutral[500],
     marginBottom: verticalScale(8),
     lineHeight: 20,
   },

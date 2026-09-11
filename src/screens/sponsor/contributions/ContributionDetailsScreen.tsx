@@ -18,6 +18,13 @@ export default function ContributionDetailsScreen() {
   const route = useRoute<any>();
   const contribution = route.params?.contribution || {};
 
+  const normalizedStatus = (contribution.status || 'Completed').toLowerCase();
+  const isSuccess = normalizedStatus === 'completed' || normalizedStatus === 'succeeded';
+  const isPending = normalizedStatus === 'pending';
+
+  const statusBgColor = isSuccess ? '#E8F5E9' : isPending ? '#FFF8E1' : '#FFEBEE';
+  const statusTextColor = isSuccess ? (Colors.success || '#4CAF50') : isPending ? (Colors.warning || '#FFC107') : (Colors.error || '#F44336');
+
   return (
     <SafeAreaView style={styles.safeArea}>
       {/* Header */}
@@ -45,17 +52,11 @@ export default function ContributionDetailsScreen() {
           <AppText variant="h1" color={Colors.neutral[900]}>
             ${contribution.amount || '0'}
           </AppText>
-          <View style={[styles.statusBadge, {
-            backgroundColor: (contribution.status || 'Completed').toLowerCase() === 'completed' ? '#E8F5E9' : 
-                             (contribution.status || 'Completed').toLowerCase() === 'pending' ? '#FFF8E1' : 
-                             '#FFEBEE'
-          }]}>
+          <View style={[styles.statusBadge, { backgroundColor: statusBgColor }]}>
             <AppText 
               variant="caption" 
               weight="semiBold"
-              color={(contribution.status || 'Completed').toLowerCase() === 'completed' ? (Colors.success || '#4CAF50') : 
-                     (contribution.status || 'Completed').toLowerCase() === 'pending' ? (Colors.warning || '#FFC107') : 
-                     (Colors.error || '#F44336')}
+              color={statusTextColor}
             >
               {(contribution.status || 'Completed').charAt(0).toUpperCase() + (contribution.status || 'Completed').slice(1).toLowerCase()}
             </AppText>
@@ -91,9 +92,7 @@ export default function ContributionDetailsScreen() {
             <AppText 
               variant="bodyMedium" 
               weight="semiBold" 
-              color={(contribution.status || 'Completed').toLowerCase() === 'completed' ? (Colors.success || '#4CAF50') : 
-                     (contribution.status || 'Completed').toLowerCase() === 'pending' ? (Colors.warning || '#FFC107') : 
-                     (Colors.error || '#F44336')}
+              color={statusTextColor}
             >
               {(contribution.status || 'Completed').charAt(0).toUpperCase() + (contribution.status || 'Completed').slice(1).toLowerCase()}
             </AppText>

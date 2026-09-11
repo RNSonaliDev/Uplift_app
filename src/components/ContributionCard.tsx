@@ -22,8 +22,8 @@ export default function ContributionCard({ item, onPress, style }: ContributionC
   const statusTextColor = isSuccess ? (Colors.success || '#4CAF50') : isPending ? (Colors.warning || '#FFC107') : (Colors.error || '#F44336');
 
   return (
-    <TouchableOpacity style={[styles.card, style]} onPress={onPress}>
-      <View style={styles.iconContainer}>
+    <TouchableOpacity style={[styles.card, style]} activeOpacity={1}>
+      {/* <View style={styles.iconContainer}>
         <Calendar color={Colors.primary[500]} size={24} />
         <View style={styles.statusBadgeIcon}>
           {isSuccess ? (
@@ -34,7 +34,7 @@ export default function ContributionCard({ item, onPress, style }: ContributionC
             <XCircle color={statusTextColor} size={14} fill={Colors.neutral[0]} />
           )}
         </View>
-      </View>
+      </View> */}
       
       <View style={styles.cardInfo}>
         <AppText variant="bodyLarge" weight="semiBold" color={Colors.neutral[900]} numberOfLines={1}>
@@ -42,6 +42,9 @@ export default function ContributionCard({ item, onPress, style }: ContributionC
         </AppText>
         <AppText variant="caption" color={Colors.neutral[500]}>
           {item.created_at ? formatDate(item.created_at) : 'N/A'}
+        </AppText>
+        <AppText variant="caption" weight="semiBold" color={Colors.primary[500]} style={{marginTop: verticalScale(2)}}>
+          {item.recipient_type ? item.recipient_type.charAt(0).toUpperCase() + item.recipient_type.slice(1).replace('_', ' ') : 'General'}
         </AppText>
       </View>
       
@@ -59,8 +62,8 @@ export default function ContributionCard({ item, onPress, style }: ContributionC
           </AppText>
         </View>
       </View>
-      
-      <ChevronRight color={Colors.neutral[400]} size={20} />
+    
+      {/* <ChevronRight color={Colors.neutral[400]} size={20} /> */}
     </TouchableOpacity>
   );
 };
@@ -71,7 +74,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: Colors.neutral[0],
     borderRadius: 16,
-    padding: moderateScale(16),
+    padding: moderateScale(14),
     marginBottom: verticalScale(12),
     borderWidth: 1,
     borderColor: Colors.neutral[200],

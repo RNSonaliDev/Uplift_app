@@ -6,7 +6,7 @@ import {
   SafeAreaView,
   ScrollView,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { Colors } from '../../../theme/colors';
 import { AppText } from '../../../components/AppText';
 import { ChevronLeft } from 'lucide-react-native';
@@ -17,11 +17,22 @@ import ContributionCard from '../../../components/ContributionCard';
 import { useFocusEffect } from '@react-navigation/native';
 import { donationsApi, Donation } from '../../../api/donations';
 
-const TABS = ['All', 'Completed', 'Pending', 'Failed'];
+const TABS = ['Success', 'Failed'];
 
 export default function ContributionsListScreen() {
   const navigation = useNavigation<any>();
-  const [activeTab, setActiveTab] = useState('All');
+  const route = useRoute<any>();
+  const [activeTab, setActiveTab] = useState('Success');
+
+  React.useEffect(() => {
+    if (route.params?.timestamp) {
+      if (route.params.activeTab) {
+        setActiveTab(route.params.activeTab);
+      } else {
+        setActiveTab('Success');
+      }
+    }
+  }, [route.params?.timestamp]);
   const [contributions, setContributions] = useState<Donation[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -44,9 +55,8 @@ export default function ContributionsListScreen() {
   );
 
   const filteredContributions = contributions.filter(c => {
-    if (activeTab === 'All') return true;
     const status = (c.status || 'Completed').toLowerCase();
-    if (activeTab === 'Completed') return status === 'completed' || status === 'succeeded';
+    if (activeTab === 'Success') return status === 'completed' || status === 'succeeded';
     return status === activeTab.toLowerCase();
   });
 
@@ -66,23 +76,22 @@ export default function ContributionsListScreen() {
       <View style={styles.container}>
         
         {/* Tabs */}
-        <View style={styles.tabsContainer}>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabsScroll}>
-            {TABS.map((tab) => (
-              <TouchableOpacity
-                key={tab}
-                style={[styles.tabItem, activeTab === tab && styles.tabItemSelected]}
-                onPress={() => setActiveTab(tab)}
+        <View style={styles.tabContainer}>
+          {TABS.map((tab) => (
+            <TouchableOpacity
+              key={tab}
+              style={[styles.tab, activeTab === tab && styles.activeTab]}
+              onPress={() => setActiveTab(tab)}
+            >
+              <AppText 
+                variant="labelMedium" 
+                color={activeTab === tab ? Colors.primary[600] : Colors.neutral[500]}
               >
-                <AppText 
-                  variant="bodyMedium" 
-                  color={activeTab === tab ? Colors.neutral[0] : Colors.neutral[600]}
-                >
-                  {tab}
-                </AppText>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
+                {tab}
+              </AppText>
+              {activeTab === tab && <View style={styles.activeTabIndicator} />}
+            </TouchableOpacity>
+          ))}
         </View>
 
         {/* List */}
@@ -91,7 +100,8 @@ export default function ContributionsListScreen() {
             <ContributionCard 
               key={item.id} 
               item={item} 
-              onPress={() => navigation.navigate('ContributionDetails', { contribution: item })} 
+              onPress={() => {}}
+              // onPress={() => navigation.navigate('ContributionDetails', { contribution: item })} 
             />
           ))}
           {filteredContributions.length === 0 && (
@@ -128,24 +138,28 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 24,
     paddingTop: verticalScale(24),
   },
-  tabsContainer: {
+  tabContainer: {
+    flexDirection: 'row',
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.neutral[200],
     marginBottom: verticalScale(16),
   },
-  tabsScroll: {
-    paddingHorizontal: horizontalScale(24),
-    gap: horizontalScale(8),
+  tab: {
+    flex: 1,
+    paddingVertical: verticalScale(12),
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
   },
-  tabItem: {
-    paddingHorizontal: horizontalScale(16),
-    paddingVertical: verticalScale(8),
-    borderRadius: moderateScale(20),
-    backgroundColor: Colors.neutral[0],
-    borderWidth: 1,
-    borderColor: Colors.neutral[200],
+  activeTab: {
   },
-  tabItemSelected: {
-    backgroundColor: Colors.primary[500],
-    borderColor: Colors.primary[500],
+  activeTabIndicator: {
+    position: 'absolute',
+    bottom: -1,
+    left: 0,
+    right: 0,
+    height: 2,
+    backgroundColor: Colors.primary[600],
   },
   listContainer: {
     flex: 1,

@@ -20,13 +20,12 @@ export default function PaymentSuccessfulScreen() {
   const donation = route.params?.donation || null;
 
   const handleViewContributions = () => {
-    // Navigate to the Contributions tab
-    navigation.navigate('ContributionsTab');
+    navigation.popToTop();
+    navigation.navigate('ContributionsTab', { screen: 'ContributionsList', params: { activeTab: 'Success', timestamp: Date.now() } });
   };
 
   const handleBackToDashboard = () => {
-    // Navigate back to the home dashboard
-    navigation.navigate('SponsorDashboard');
+    navigation.popToTop();
   };
 
   return (
