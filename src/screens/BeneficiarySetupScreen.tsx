@@ -416,6 +416,7 @@ export const BeneficiarySetupScreen: React.FC = () => {
                 if (errors.zipCode) setErrors({...errors, zipCode: ''});
               }}
               keyboardType="number-pad"
+              maxLength={6}
               error={errors.zipCode}
             />
 

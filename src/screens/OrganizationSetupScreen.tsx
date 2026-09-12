@@ -9,6 +9,7 @@ import {
   Alert,
   Modal,
   FlatList,
+  TouchableWithoutFeedback,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
@@ -426,6 +427,8 @@ export const OrganizationSetupScreen: React.FC = () => {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled">
           
+          <TouchableWithoutFeedback onPress={() => setTypeModalVisible(false)} accessible={false}>
+            <View style={{ flex: 1 }}>
           {/* Header with Back Button */}
           <TouchableOpacity
             style={styles.backButton}
@@ -676,6 +679,8 @@ export const OrganizationSetupScreen: React.FC = () => {
             onPress={handleContinue}
             style={styles.continueButton}
           />
+          </View>
+        </TouchableWithoutFeedback>
         </ScrollView>
       </KeyboardAvoidingView>
 

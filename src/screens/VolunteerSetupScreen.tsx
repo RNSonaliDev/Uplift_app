@@ -681,7 +681,7 @@ export const VolunteerSetupScreen: React.FC = () => {
                 if (errors.zipCode) setErrors({...errors, zipCode: ''});
               }}
               keyboardType="number-pad"
-              maxLength={5}
+              maxLength={6}
               error={errors.zipCode}
             />
 

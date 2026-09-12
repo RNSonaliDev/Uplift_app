@@ -61,9 +61,17 @@ export default function CreateRequestScreen() {
   const [date, setDate] = useState(new Date());
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
 
-  const [startTime, setStartTime] = useState(new Date());
+  const [startTime, setStartTime] = useState(() => {
+    const d = new Date();
+    d.setHours(8, 0, 0, 0);
+    return d;
+  });
   const [isStartTimePickerOpen, setIsStartTimePickerOpen] = useState(false);
-  const [endTime, setEndTime] = useState(new Date());
+  const [endTime, setEndTime] = useState(() => {
+    const d = new Date();
+    d.setHours(8, 0, 0, 0);
+    return d;
+  });
   const [isEndTimePickerOpen, setIsEndTimePickerOpen] = useState(false);
 
   const [region, setRegion] = useState({
@@ -331,10 +339,11 @@ export default function CreateRequestScreen() {
 
           <Input
             label={formData.category_id ? `Tell us what kind of ${getCategoryName(formData.category_id)} help you need` : "Tell us what kind of help you need"}
+            bottomRight={<AppText variant="caption" color={Colors.neutral[500]}>{formData.title.length}/20</AppText>}
             placeholder={getPlaceholders(formData.category_id).title}
             value={formData.title}
             onChangeText={v => handleChange('title', v)}
-            maxLength={100}
+            maxLength={20}
             multiline={true}
             style={{ minHeight: 60, textAlignVertical: 'top' }}
             error={errors.title}
@@ -342,6 +351,7 @@ export default function CreateRequestScreen() {
 
           <Input
             label="Information for your volunteer."
+            bottomRight={<AppText variant="caption" color={Colors.neutral[500]}>{formData.description.length}/200</AppText>}
             placeholder={getPlaceholders(formData.category_id).desc}
             value={formData.description}
             onChangeText={v => handleChange('description', v)}
@@ -496,6 +506,7 @@ export default function CreateRequestScreen() {
         open={isStartTimePickerOpen}
         date={startTime}
         mode="time"
+        minuteInterval={30}
         minimumDate={getMinTimeForPicker(startTime, date)}
         maximumDate={getMaxTimeForPicker(startTime)}
         onConfirm={(selectedTime) => {
@@ -513,6 +524,7 @@ export default function CreateRequestScreen() {
         open={isEndTimePickerOpen}
         date={endTime}
         mode="time"
+        minuteInterval={30}
         minimumDate={getMinTimeForPicker(endTime, date)}
         maximumDate={getMaxTimeForPicker(endTime)}
         onConfirm={(selectedTime) => {
@@ -534,8 +546,9 @@ export default function CreateRequestScreen() {
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <AppText variant="labelLarge">Select Category</AppText>
-              <TouchableOpacity onPress={() => setIsCategoryModalVisible(false)}>
-                <AppText color={Colors.primary[500]}>Close</AppText>
+              <TouchableOpacity onPress={() => setIsCategoryModalVisible(false)} style={{flexDirection: 'row', alignItems: 'center'}}>
+                {/* <AppText color={Colors.primary[500]} style={{marginRight: 4}}>Close</AppText> */}
+                <X color={Colors.neutral[950]} size={30} />
               </TouchableOpacity>
             </View>
             {loadingCategories ? (

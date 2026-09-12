@@ -63,20 +63,22 @@ export default function PaymentSuccessfulScreen() {
           <View style={styles.receiptRow}>
             <AppText variant="bodyMedium" color={Colors.neutral[600]}>Payment Date</AppText>
             <AppText variant="bodyMedium" weight="semiBold" color={Colors.neutral[900]}>
-              {donation?.created_at ? `${formatDate(donation.created_at)} • ${formatTime12Hour(donation.created_at)}` : 'N/A'}
+              {donation?.created_at ? formatDate(donation.created_at) : 'N/A'}
             </AppText>
           </View>
           <View style={styles.divider} />
           <View style={styles.receiptRow}>
-            <AppText variant="bodyMedium" color={Colors.neutral[600]}>Transaction ID</AppText>
+            <AppText variant="bodyMedium" color={Colors.neutral[600]}>Payment Time</AppText>
             <AppText variant="bodyMedium" weight="semiBold" color={Colors.neutral[900]}>
-              {donation?.transaction_id || `TXN_${donation?.id || '8F7J2K9L4M3N'}`}
+              {donation?.created_at ? formatTime12Hour(donation.created_at) : 'N/A'}
             </AppText>
           </View>
           <View style={styles.divider} />
           <View style={styles.receiptRow}>
-            <AppText variant="bodyMedium" color={Colors.neutral[600]}>Payment Method</AppText>
-            <AppText variant="bodyMedium" weight="semiBold" color={Colors.neutral[900]}>Visa ending in 4242</AppText>
+            <AppText variant="bodyMedium" color={Colors.neutral[600]}>Reference</AppText>
+            <AppText variant="bodyMedium" weight="semiBold" color={Colors.neutral[900]}>
+              {donation?.reference_number || 'UPLIFT-2026-0912-4534'}
+            </AppText>
           </View>
         </View>
 
@@ -153,7 +155,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.neutral[200],
     borderRadius: 16,
-    padding: moderateScale(20),
+    padding: moderateScale(10),
   },
   receiptRow: {
     flexDirection: 'row',

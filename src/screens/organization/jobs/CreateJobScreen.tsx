@@ -119,7 +119,15 @@ export const CreateJobScreen = () => {
         </TouchableOpacity>
         <View style={{width: 40}} />
       </View>
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+        <TouchableWithoutFeedback 
+          onPress={() => {
+            setCategoryModalVisible(false);
+            setSubCategoryModalVisible(false);
+          }}
+          accessible={false}
+        >
+          <View style={{ flex: 1 }}>
         
         {/* Categories Section */}
         <Text style={[styles.label, { marginTop: 8 }]}>Category *</Text>
@@ -245,6 +253,9 @@ export const CreateJobScreen = () => {
 
 
 
+
+          </View>
+        </TouchableWithoutFeedback>
       </ScrollView>
       <View style={styles.footer}>
         <Button title="Preview Job" onPress={handlePreview} loading={loading} />

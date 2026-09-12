@@ -15,7 +15,7 @@ interface ContributionCardProps {
 
 export default function ContributionCard({ item, onPress, style }: ContributionCardProps) {
   const normalizedStatus = (item.status || 'Completed').toLowerCase();
-  const isSuccess = normalizedStatus === 'completed' || normalizedStatus === 'succeeded';
+  const isSuccess = normalizedStatus === 'completed' || normalizedStatus === 'success';
   const isPending = normalizedStatus === 'pending';
 
   const statusBgColor = isSuccess ? '#E8F5E9' : isPending ? '#FFF8E1' : '#FFEBEE';

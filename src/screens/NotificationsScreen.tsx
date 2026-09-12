@@ -69,6 +69,7 @@ export default function NotificationsScreen() {
     );
     try {
       await notificationsApi.markAsRead(id);
+      await fetchNotifications();
     } catch (error) {
       console.log('Failed to mark as read', error);
       // Revert if error
@@ -153,13 +154,14 @@ export default function NotificationsScreen() {
         </TouchableOpacity>
         <AppText variant="h5" style={styles.headerTitle}>Notifications</AppText>
         
-        {notifications.some(n => !n.is_read) ? (
+        {/* {notifications.some(n => !n.is_read) ? (
           <TouchableOpacity onPress={handleMarkAllAsRead} style={styles.markAllBtn}>
             <CheckCircle color={Colors.primary[500]} size={22} />
           </TouchableOpacity>
         ) : (
           <View style={{ width: 32 }} />
-        )}
+        )} */}
+        <View style={{ width: 32 }} />
       </View>
 
       {loading ? (

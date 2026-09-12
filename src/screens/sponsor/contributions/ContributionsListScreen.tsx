@@ -56,7 +56,7 @@ export default function ContributionsListScreen() {
 
   const filteredContributions = contributions.filter(c => {
     const status = (c.status || 'Completed').toLowerCase();
-    if (activeTab === 'Success') return status === 'completed' || status === 'succeeded';
+    if (activeTab === 'Success') return status === 'completed' || status === 'success';
     return status === activeTab.toLowerCase();
   });
 
@@ -64,13 +64,13 @@ export default function ContributionsListScreen() {
     <SafeAreaView style={styles.safeArea}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+        {/* <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
           <ChevronLeft color={Colors.neutral[0]} size={28} />
-        </TouchableOpacity>
+        </TouchableOpacity> */}
         <AppText variant="h4" color={Colors.neutral[0]}>
           My Contributions
         </AppText>
-        <View style={{ width: 28 }} />
+        {/* <View style={{ width: 28 }} /> */}
       </View>
 
       <View style={styles.container}>
@@ -84,7 +84,7 @@ export default function ContributionsListScreen() {
               onPress={() => setActiveTab(tab)}
             >
               <AppText 
-                variant="labelMedium" 
+                variant="labelLarge" 
                 color={activeTab === tab ? Colors.primary[600] : Colors.neutral[500]}
               >
                 {tab}
@@ -124,7 +124,7 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: "center",
     paddingHorizontal: horizontalScale(16),
     paddingVertical: verticalScale(16),
   },

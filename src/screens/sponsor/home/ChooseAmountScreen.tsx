@@ -107,12 +107,9 @@ export default function ChooseAmountScreen() {
       </View>
 
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-        <AppText variant="h3" color={Colors.neutral[900]} style={styles.title}>
-          Choose Amount
-        </AppText>
-        <AppText variant="bodyMedium" color={Colors.neutral[600]} style={styles.subtitle}>
+        {/* <AppText variant="bodyMedium" color={Colors.neutral[600]} style={styles.subtitle}>
           Your support helps us make a real difference.
-        </AppText>
+        </AppText> */}
 
         {/* Recipient Type Selection */}
         <AppText variant="h5" color={Colors.neutral[900]} style={{marginBottom: 8}}>
@@ -151,7 +148,7 @@ export default function ChooseAmountScreen() {
               >
                 <AppText 
                   variant="h5" 
-                  color={isSelected ? Colors.neutral[0] : Colors.neutral[800]}
+                  color={isSelected ? Colors.neutral[0] : Colors.neutral[600]}
                 >
                   ${amount}
                 </AppText>
@@ -166,7 +163,7 @@ export default function ChooseAmountScreen() {
             Or Enter Custom Amount
           </AppText>
           <View style={[styles.inputWrapper, selectedAmount === 'custom' && { borderColor: Colors.primary[500], borderWidth: 2 }]}>
-            <AppText variant="h4" color={Colors.neutral[900]} style={styles.currencySymbol}>$</AppText>
+            <AppText variant="h5" color={Colors.neutral[600]} style={styles.currencySymbol}>$</AppText>
             <TextInput
               style={styles.input}
               value={customAmount}
@@ -336,7 +333,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontFamily: FontFamily.medium,
     fontSize: fontScale(18),
-    color: Colors.neutral[900],
+    color: Colors.neutral[600]
   },
   thankYouCard: {
     flexDirection: 'row',

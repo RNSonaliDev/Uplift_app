@@ -2,7 +2,6 @@ import React, {useState, useCallback, useEffect} from 'react';
 import {
   View,
   StyleSheet,
-  SafeAreaView,
   TouchableOpacity,
   TextInput,
   ScrollView,
@@ -11,6 +10,7 @@ import {
   Modal,
   TouchableWithoutFeedback,
 } from 'react-native';
+import {SafeAreaView} from 'react-native-safe-area-context';
 import {useNavigation, useFocusEffect, useRoute} from '@react-navigation/native';
 import {Colors} from '../../../theme/colors';
 import {FontFamily} from '../../../theme/typography';
@@ -109,11 +109,7 @@ export default function BrowseRequestsScreen() {
       <TouchableOpacity 
         style={styles.card}
         onPress={() => {
-          if (item.request_type === 'organization') {
-            navigation.navigate('JobsTab', { screen: 'VolunteerJobDetails', params: { job: item } });
-          } else {
-            navigation.navigate('RequestDetails', { request: item });
-          }
+          navigation.navigate('RequestDetails', { request: item });
         }}
         activeOpacity={0.7}
       >
@@ -133,14 +129,6 @@ export default function BrowseRequestsScreen() {
             <AppText variant="labelLarge" weight="semiBold" color={Colors.neutral[900]} style={{marginBottom: 4}}>
               {item.category?.title || 'Help Request'}
             </AppText>
-            {item.title ? (
-              <AppText variant="bodyMedium" color={Colors.neutral[800]} style={{marginBottom: 4, fontFamily: FontFamily.medium}}>
-                {item.title}
-              </AppText>
-            ) : null}
-            <AppText variant="caption" color={Colors.neutral[600]} style={{marginBottom: 6}}>
-              #{item.reference_number || item.id}
-            </AppText>
           </View>
           <View style={[styles.newBadge, { backgroundColor: Colors.accent[50] }]}>
             <AppText variant="labelMedium" color={Colors.accent[700]}>
@@ -150,6 +138,14 @@ export default function BrowseRequestsScreen() {
         </View>
         
         <View style={styles.cardDetails}>
+          {item.title ? (
+            <AppText variant="bodyMedium" color={Colors.neutral[800]} style={{marginBottom: 4, fontFamily: FontFamily.medium}}>
+              {item.title}
+            </AppText>
+          ) : null}
+          <AppText variant="caption" color={Colors.neutral[600]} style={{marginBottom: 12}}>
+            #{item.reference_number || item.id}
+          </AppText>
           <View style={styles.detailRow}>
             <Calendar color={Colors.neutral[500]} size={14} />
             <AppText variant="caption" color={Colors.neutral[600]} style={styles.detailText}>
@@ -176,12 +172,11 @@ export default function BrowseRequestsScreen() {
             onPress={() => setActiveTab('beneficiary')}
           >
             <AppText 
-              variant="labelMedium" 
+              variant="labelLarge" 
               color={activeTab === 'beneficiary' ? Colors.primary[600] : Colors.neutral[500]}
               numberOfLines={1}
-              adjustsFontSizeToFit
             >
-              Beneficiary Support
+              Beneficiary 
             </AppText>
             {activeTab === 'beneficiary' && <View style={styles.activeTabIndicator} />}
           </TouchableOpacity>
@@ -191,12 +186,11 @@ export default function BrowseRequestsScreen() {
             onPress={() => setActiveTab('organization')}
           >
             <AppText 
-              variant="labelMedium" 
+              variant="labelLarge" 
               color={activeTab === 'organization' ? Colors.primary[600] : Colors.neutral[500]}
               numberOfLines={1}
-              adjustsFontSizeToFit
             >
-              Organization Support
+              Organization 
             </AppText>
             {activeTab === 'organization' && <View style={styles.activeTabIndicator} />}
           </TouchableOpacity>

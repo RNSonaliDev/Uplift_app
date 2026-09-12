@@ -6,6 +6,7 @@ import CreateRequestScreen from '../screens/beneficiary/requests/CreateRequestSc
 import PreviewRequestScreen from '../screens/beneficiary/requests/PreviewRequestScreen';
 import RequestSubmittedScreen from '../screens/beneficiary/requests/RequestSubmittedScreen';
 import RateHelperScreen from '../screens/beneficiary/requests/RateHelperScreen';
+import BeneficiaryRequestDetailsScreen from '../screens/beneficiary/requests/BeneficiaryRequestDetailsScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -13,6 +14,7 @@ export default function BeneficiaryRequestsStack() {
   return (
     <Stack.Navigator screenOptions={{headerShown: false}}>
       <Stack.Screen name="MyRequests" component={MyRequestsScreen} />
+      <Stack.Screen name="BeneficiaryRequestDetails" component={BeneficiaryRequestDetailsScreen} />
       <Stack.Screen name="RequestTracking" component={RequestTrackingScreen} />
       <Stack.Screen name="CreateRequest" component={CreateRequestScreen} />
       <Stack.Screen name="PreviewRequest" component={PreviewRequestScreen} />

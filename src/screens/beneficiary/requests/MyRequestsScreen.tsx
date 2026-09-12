@@ -57,11 +57,11 @@ export default function MyRequestsScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+        {/* <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
           <ChevronLeft color={Colors.neutral[900]} size={28} />
-        </TouchableOpacity>
+        </TouchableOpacity> */}
         <Text style={styles.headerTitle}>My Requests</Text>
-        <View style={{width: 28}} />
+        {/* <View style={{width: 28}} /> */}
       </View>
 
       <View style={styles.container}>
@@ -112,7 +112,7 @@ export default function MyRequestsScreen() {
                 status={req.status}
                 statusColor={req.status === 'pending' ? Colors.warning : Colors.info}
                 helperImage={getFullImageUrl(req.volunteer?.profile_image_url) || undefined}
-                onPress={() => navigation.navigate('RequestTracking', { requestId: req.id })}
+                onPress={() => navigation.navigate('BeneficiaryRequestDetails', { requestId: req.id })}
               />
             ))
           ) : (
@@ -146,14 +146,6 @@ const RequestCard = ({
         <View style={styles.iconContainer}>{icon}</View>
         <View style={styles.cardContent}>
           <Text style={styles.cardTitle}>{title}</Text>
-          {requestTitle ? (
-            <Text style={{ ...Typography.bodyMedium, color: Colors.neutral[800], marginBottom: 4, fontFamily: FontFamily.medium }}>
-              {requestTitle}
-            </Text>
-          ) : null}
-          {referenceNumber ? (
-            <Text style={[styles.infoText, { marginBottom: 6 }]}>#{referenceNumber}</Text>
-          ) : null}
         </View>
         <View style={[styles.statusBadge, { backgroundColor: badge.bg }]}>
           <Text style={[styles.statusBadgeText, { color: badge.text }]}>{displayStatus}</Text>
@@ -161,6 +153,14 @@ const RequestCard = ({
       </View>
       
       <View style={{ marginTop: 8 }}>
+        {requestTitle ? (
+          <Text style={{ ...Typography.bodyMedium, color: Colors.neutral[800], marginBottom: 4, fontFamily: FontFamily.medium }}>
+            {requestTitle}
+          </Text>
+        ) : null}
+        {referenceNumber ? (
+          <Text style={[styles.infoText, { marginBottom: 12 }]}>#{referenceNumber}</Text>
+        ) : null}
         <View style={[styles.infoRow, { alignItems: 'flex-start' }]}>
           <Calendar color={Colors.neutral[400]} size={14} style={[styles.infoIcon, { marginTop: 2 }]} />
           <Text style={[styles.infoText, { flex: 1, lineHeight: 18 }]}>
@@ -186,7 +186,7 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: "center",
     paddingHorizontal: horizontalScale(16),
     paddingVertical: verticalScale(16),
     borderBottomWidth: 1,

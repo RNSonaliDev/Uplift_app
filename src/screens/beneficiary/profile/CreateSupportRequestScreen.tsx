@@ -100,7 +100,7 @@ export default function CreateSupportRequestScreen() {
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
           <ChevronLeft color={Colors.neutral[900]} size={28} />
         </TouchableOpacity>
-        <AppText variant="h5" style={styles.headerTitle}>New Request</AppText>
+        <AppText variant="h5" style={styles.headerTitle}>Contact Support</AppText>
         <View style={{ width: 32 }} />
       </View>
 
@@ -118,17 +118,21 @@ export default function CreateSupportRequestScreen() {
           <View style={styles.formContainer}>
             <Input
               label="Subject"
+              bottomRight={<AppText variant="caption" color={Colors.neutral[500]}>{subject.length}/50</AppText>}
               placeholder="E.g. Unable to complete payment"
               value={subject}
               onChangeText={setSubject}
+              maxLength={50}
               containerStyle={styles.inputSpacing}
             />
             
             <Input
               label="Message"
+              bottomRight={<AppText variant="caption" color={Colors.neutral[500]}>{message.length}/500</AppText>}
               placeholder="Describe your issue in detail..."
               value={message}
               onChangeText={setMessage}
+              maxLength={500}
               multiline
               numberOfLines={6}
               textAlignVertical="top"

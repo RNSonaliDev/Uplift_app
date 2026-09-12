@@ -9,6 +9,7 @@ import {
   Platform,
   TextInput,
   Modal,
+  Alert,
 } from 'react-native';
 
 const RELATIONSHIP_OPTIONS = ['Parent', 'Spouse/Partner', 'Child', 'Sibling', 'Grandchild', 'Friend'];
@@ -120,15 +121,28 @@ export default function EmergencyContactsScreen() {
     }
   };
 
-  const handleDelete = async (id: number) => {
-    try {
-      await emergencyContactsApi.deleteContact(id);
-      Toast.show({ type: 'success', text1: 'Success', text2: 'Contact deleted successfully' });
-      fetchContacts();
-    } catch (error) {
-      console.log('Delete contact error', error);
-      Toast.show({ type: 'error', text1: 'Error', text2: getErrorMessage(error, 'Failed to delete contact') });
-    }
+  const handleDelete = (id: number) => {
+    Alert.alert(
+      'Delete Contact',
+      'Are you sure you want to delete this emergency contact?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await emergencyContactsApi.deleteContact(id);
+              Toast.show({ type: 'success', text1: 'Success', text2: 'Contact deleted successfully' });
+              fetchContacts();
+            } catch (error) {
+              console.log('Delete contact error', error);
+              Toast.show({ type: 'error', text1: 'Error', text2: getErrorMessage(error, 'Failed to delete contact') });
+            }
+          }
+        }
+      ]
+    );
   };
 
   const handleCancel = () => {
@@ -252,7 +266,7 @@ export default function EmergencyContactsScreen() {
                   )}
                   <View style={{ marginBottom: Spacing.lg }}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: Spacing.xs }}>
-                      <AppText variant="labelMedium" color={Colors.neutral[700]}>Phone number</AppText>
+                      <AppText variant="labelMedium" color={Colors.neutral[700]}>Phone Number</AppText>
                       <Info size={16} color={Colors.primary[500]} style={{ marginLeft: Spacing.xs }} />
                     </View>
                     <Input
@@ -355,7 +369,7 @@ export default function EmergencyContactsScreen() {
               </View>
               <View style={{ marginBottom: Spacing.lg }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: Spacing.xs }}>
-                  <AppText variant="labelMedium" color={Colors.neutral[700]}>Phone number</AppText>
+                  <AppText variant="labelMedium" color={Colors.neutral[700]}>Phone Number</AppText>
                   {/* <Info size={16} color={Colors.primary[500]} style={{ marginLeft: Spacing.xs }} /> */}
                 </View>
                 <Input

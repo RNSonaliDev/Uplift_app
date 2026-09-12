@@ -7,6 +7,7 @@ import {AdditionalInfoScreen} from '../screens/organization/createRequest/Additi
 import {ReviewRequestScreen} from '../screens/organization/createRequest/ReviewRequestScreen';
 import {RequestCreatedScreen} from '../screens/organization/createRequest/RequestCreatedScreen';
 import {OrgRequestDetailsScreen} from '../screens/organization/dashboard/OrgRequestDetailsScreen';
+import {OrgRequestTrackingScreen} from '../screens/organization/dashboard/OrgRequestTrackingScreen';
 
 type OrganizationHomeStackParamList = {
   OrganizationDashboard: undefined;
@@ -16,6 +17,7 @@ type OrganizationHomeStackParamList = {
   ReviewRequest: undefined;
   RequestCreated: undefined;
   OrgRequestDetails: { request: any };
+  OrgRequestTracking: { request: any };
 };
 
 const Stack = createNativeStackNavigator<OrganizationHomeStackParamList>();
@@ -33,6 +35,7 @@ export default function OrganizationHomeStack() {
       <Stack.Screen name="ReviewRequest" component={ReviewRequestScreen} />
       <Stack.Screen name="RequestCreated" component={RequestCreatedScreen} />
       <Stack.Screen name="OrgRequestDetails" component={OrgRequestDetailsScreen} />
+      <Stack.Screen name="OrgRequestTracking" component={OrgRequestTrackingScreen} />
     </Stack.Navigator>
   );
 }

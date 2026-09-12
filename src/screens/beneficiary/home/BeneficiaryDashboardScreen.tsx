@@ -48,24 +48,25 @@ export default function BeneficiaryDashboardScreen() {
 
   const [refreshing, setRefreshing] = useState(false);
 
+  const [stats, setStats] = useState<any>(null);
+
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
-      const [catData, profData, reqData, notifData] = await Promise.all([
+      const [catData, profData, reqData, notifData, statsData] = await Promise.all([
         authApi.getCategories(),
         authApi.getProfile(),
         api.get<any[]>('/help_requests?scope=beneficiary'),
-        notificationsApi.getNotifications().catch(() => [])
+        api.get<any>('/notifications').catch(() => null),
+        api.get<any>('/dashboard/stats?role=beneficiary').catch(() => null)
       ]);
       const beneficiaryCategories = catData.filter(c => c.category_type === 'beneficiary');
       setCategories(beneficiaryCategories);
       setProfile(profData);
+      setStats(statsData);
       
-      let notifs = [];
-      if (Array.isArray(notifData)) notifs = notifData;
-      else if (notifData && typeof notifData === 'object' && Array.isArray((notifData as any).notifications)) notifs = (notifData as any).notifications;
       
-      setUnreadNotifications(notifs.some(n => !n.is_read));
+      setUnreadNotifications(notifData?.unread_count > 0);
       const active = reqData.find(r => r.status === 'pending' || r.status === 'accepted' || r.status === 'assigned' || r.status === 'on_the_way');
       setUpcomingRequest(active || null);
     } catch (error) {
@@ -97,7 +98,7 @@ export default function BeneficiaryDashboardScreen() {
         }
       >
         {/* Header Section */}
-        <View style={styles.header}>
+        <View style={[styles.header, { paddingBottom: verticalScale(60), borderBottomLeftRadius: 24, borderBottomRightRadius: 24 }]}>
           <View style={styles.headerTopRow}>
             <View style={{flexDirection: 'row', alignItems: 'center', flex: 1}}>
               <View style={{marginLeft: 16, justifyContent: 'center'}}>
@@ -105,17 +106,11 @@ export default function BeneficiaryDashboardScreen() {
                   Welcome back,
                 </AppText>
                 <AppText variant="bodyLarge" style={[styles.nameText, {fontWeight: "400"}]}>
-                  {profile ? `${profile.first_name}` : 'User'}
+                  {profile?.profiles?.beneficiary?.first_name || profile?.first_name || 'User'}
                 </AppText>
               </View>
             </View>
             <View style={{flexDirection: 'row', alignItems: 'center'}}>
-              {/* <TouchableOpacity 
-                style={styles.notificationBtn}
-                onPress={() => profile && navigation.navigate('DashboardRoleSelection', { selectedRoles: profile.selected_roles || [] })}
-              >
-                <ArrowRightLeft color={Colors.neutral[0]} size={22} />
-              </TouchableOpacity> */}
               <TouchableOpacity style={styles.notificationBtn} onPress={() => navigation.navigate('Notifications')}>
                 <Bell color={Colors.neutral[0]} size={24} />
                 {unreadNotifications && <View style={styles.notificationDot} />}
@@ -124,9 +119,31 @@ export default function BeneficiaryDashboardScreen() {
           </View>
         </View>
 
-        <View style={styles.mainContent}>
+        {/* Floating Impact Card */}
+        <View style={styles.impactCardWrapper}>
+          <View style={styles.impactCard}>
+            <View style={styles.statsRow}>
+              <View style={styles.statItem}>
+                <AppText variant="h3" style={styles.statNumber}>{stats?.hours_given || 0}</AppText>
+                <AppText variant="caption" style={styles.statLabel} center>Hours{'\n'}Given</AppText>
+              </View>
+              <View style={styles.statDivider} />
+              <View style={styles.statItem}>
+                <AppText variant="h3" style={styles.statNumber}>{stats?.requests_given || 0}</AppText>
+                <AppText variant="caption" style={styles.statLabel} center>Requests{'\n'}Given</AppText>
+              </View>
+            </View>
+          </View>
+        </View>
+
+        <View style={[styles.mainContent, { borderTopLeftRadius: 0, borderTopRightRadius: 0, paddingTop: verticalScale(32) }]}>
           {/* Upcoming Request */}
-          <Text style={styles.sectionTitle}>Upcoming Request</Text>
+          <View style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 8, marginBottom: 16}}>
+            <Text style={[styles.sectionTitle, {marginTop: 0, marginBottom: 0}]}>Upcoming Request</Text>
+            <TouchableOpacity onPress={() => navigation.navigate('RequestsTab')}>
+              <Text style={{color: Colors.primary[500], fontFamily: FontFamily.medium}}>View All</Text>
+            </TouchableOpacity>
+          </View>
           {loading ? (
             <View style={[styles.card, {alignItems: 'center', justifyContent: 'center', paddingVertical: 40}]}>
               <Text style={{color: Colors.neutral[500]}}>Loading...</Text>
@@ -147,14 +164,6 @@ export default function BeneficiaryDashboardScreen() {
                 </View>
                 <View style={styles.cardTitleContainer}>
                   <Text style={[styles.cardTitle, { marginBottom: 4 }]}>{upcomingRequest.category?.title || 'Help Request'}</Text>
-                  {upcomingRequest.title ? (
-                    <Text style={{ ...Typography.bodyMedium, color: Colors.neutral[800], marginBottom: 4, fontFamily: FontFamily.medium }}>
-                      {upcomingRequest.title}
-                    </Text>
-                  ) : null}
-                  <Text style={{ ...Typography.caption, color: Colors.neutral[600], marginBottom: 6 }}>
-                    #{upcomingRequest.reference_number || upcomingRequest.id}
-                  </Text>
                 </View>
                 {upcomingRequest.status && (
                   <View style={[styles.statusBadge, { backgroundColor: getStatusColors(upcomingRequest.status).bg, alignSelf: 'flex-start' }]}>
@@ -166,6 +175,14 @@ export default function BeneficiaryDashboardScreen() {
               </View>
 
               <View style={{ marginBottom: 16 }}>
+                {upcomingRequest.title ? (
+                  <Text style={{ ...Typography.bodyMedium, color: Colors.neutral[800], marginBottom: 4, fontFamily: FontFamily.medium }}>
+                    {upcomingRequest.title}
+                  </Text>
+                ) : null}
+                <Text style={{ ...Typography.caption, color: Colors.neutral[600], marginBottom: 12 }}>
+                  #{upcomingRequest.reference_number || upcomingRequest.id}
+                </Text>
                 <View style={styles.row}>
                   <Calendar color={Colors.neutral[500]} size={14} />
                   <Text style={styles.cardSubtitle}> {formatDate(upcomingRequest.preferred_date)}{upcomingRequest.preferred_start_time ? ` • ${formatTime12Hour(upcomingRequest.preferred_start_time)}${upcomingRequest.preferred_end_time ? ` - ${formatTime12Hour(upcomingRequest.preferred_end_time)}` : ''}` : ''}</Text>
@@ -180,7 +197,7 @@ export default function BeneficiaryDashboardScreen() {
               
               <TouchableOpacity 
                 style={styles.requestHelpBtn}
-                onPress={() => navigation.navigate('RequestsTab', { screen: 'RequestTracking', params: { requestId: upcomingRequest.id } })}
+                onPress={() => navigation.navigate('RequestsTab', { screen: 'BeneficiaryRequestDetails', params: { requestId: upcomingRequest.id } })}
               >
                 <Text style={styles.requestHelpText}>View Details</Text>
               </TouchableOpacity>
@@ -282,11 +299,13 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
+    backgroundColor: Colors.neutral[50],
   },
   content: {
     flexGrow: 1,
   },
   header: {
+    backgroundColor: Colors.primary[500],
     paddingHorizontal: horizontalScale(24),
     paddingTop: verticalScale(16),
     // paddingBottom: verticalScale(40),
@@ -365,6 +384,43 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: horizontalScale(16),
+  },
+  impactCardWrapper: {
+    paddingHorizontal: horizontalScale(24),
+    marginTop: -verticalScale(40), // Pulls the card up over the header
+  },
+  impactCard: {
+    backgroundColor: Colors.neutral[0],
+    borderRadius: 16,
+    padding: moderateScale(20),
+    shadowColor: Colors.neutral[900],
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.05,
+    shadowRadius: 12,
+    elevation: 4,
+  },
+  statsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  statItem: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  statDivider: {
+    width: 1,
+    height: 40,
+    backgroundColor: Colors.neutral[200],
+  },
+  statNumber: {
+    ...Typography.h3,
+    color: Colors.primary[500],
+    marginBottom: 4,
+  },
+  statLabel: {
+    ...Typography.caption,
+    color: Colors.neutral[500],
   },
   cardTitleContainer: {
     flex: 1,

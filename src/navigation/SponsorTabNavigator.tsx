@@ -20,7 +20,7 @@ export function SponsorTabNavigator() {
         const routeName = getFocusedRouteNameFromRoute(route) ?? (route.params as any)?.screen ?? '';
         const hiddenRoutes = [
           'ChooseAmount', 'PaymentDetails', 'ProcessingPayment', 'PaymentSuccessful',
-          'ContributionDetails', 'EditProfile'
+          'ContributionDetails', 'EditProfile', 'Settings', 'LegalContent', 'EmergencyContacts', 'ContactSupport', 'ContactSupportDetails', 'CreateSupportRequest'
         ];
         const isHidden = hiddenRoutes.includes(routeName);
 
@@ -28,7 +28,7 @@ export function SponsorTabNavigator() {
           unmountOnBlur: true,
           headerShown: false,
           tabBarActiveTintColor: Colors.primary[500],
-          tabBarInactiveTintColor: Colors.neutral[400],
+          tabBarInactiveTintColor: Colors.neutral[900],
           tabBarStyle: isHidden ? { display: 'none' } : {
             borderTopWidth: 1,
             borderTopColor: Colors.neutral[200],

@@ -20,14 +20,14 @@ export function BeneficiaryTabNavigator() {
     <Tab.Navigator
       screenOptions={({ route }) => {
         const routeName = getFocusedRouteNameFromRoute(route) ?? '';
-        const hiddenRoutes = ['RequestHelp', 'RequestTracking', 'RequestSubmitted', 'PreviewRequest', 'CreateRequest', 'RateHelper', 'EditProfile'];
+        const hiddenRoutes = ['BeneficiaryRequestDetails', 'RequestHelp', 'RequestTracking', 'RequestSubmitted', 'PreviewRequest', 'CreateRequest', 'RateHelper', 'EditProfile', 'Settings', 'LegalContent', 'EmergencyContacts', 'ContactSupport', 'ContactSupportDetails', 'CreateSupportRequest'];
         const isHidden = hiddenRoutes.includes(routeName);
 
         return {
           unmountOnBlur: true,
           headerShown: false,
           tabBarActiveTintColor: Colors.primary[500],
-          tabBarInactiveTintColor: Colors.neutral[400],
+          tabBarInactiveTintColor: Colors.neutral[900],
           tabBarStyle: isHidden ? { display: 'none' } : {
             borderTopWidth: 1,
             borderTopColor: Colors.neutral[200],

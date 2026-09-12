@@ -36,7 +36,15 @@ export function OrganizationTabNavigator() {
           'CreateJob',
           'JobPreview',
           'JobDetails',
-          'EditProfile'
+          'EditProfile',
+          'OrgRequestDetails',
+          'OrgRequestTracking',
+          'Settings',
+          'LegalContent',
+          'EmergencyContacts',
+          'ContactSupport',
+          'ContactSupportDetails',
+          'CreateSupportRequest'
         ];
         const isHidden = hiddenRoutes.includes(routeName);
 
@@ -44,7 +52,7 @@ export function OrganizationTabNavigator() {
           headerShown: false,
           unmountOnBlur: true,
           tabBarActiveTintColor: Colors.primary[500],
-          tabBarInactiveTintColor: Colors.neutral[400],
+          tabBarInactiveTintColor: Colors.neutral[900],
           tabBarStyle: isHidden ? { display: 'none' } : {
             borderTopWidth: 1,
             borderTopColor: Colors.neutral[200],
@@ -77,14 +85,14 @@ export function OrganizationTabNavigator() {
           tabBarIcon: ({color}) => <List color={color} size={24} />,
         }}
       />
-      <Tab.Screen
+      {/* <Tab.Screen
         name="VolunteersTab"
         component={ComingSoonScreen}
         options={{
           tabBarLabel: 'Volunteers',
           tabBarIcon: ({color}) => <Users color={color} size={24} />,
         }}
-      />
+      /> */}
       <Tab.Screen
         name="JobsTab"
         component={OrganizationJobsStack}

@@ -19,6 +19,8 @@ interface InputProps extends TextInputProps {
   error?: string;
   /** Helper text below input */
   helperText?: string;
+  /** Right aligned content below input */
+  bottomRight?: React.ReactNode;
   /** Left icon */
   leftIcon?: React.ReactNode;
   /** Right icon */
@@ -31,6 +33,7 @@ interface InputProps extends TextInputProps {
 
 export const Input: React.FC<InputProps> = ({
   label,
+  bottomRight,
   error,
   helperText,
   leftIcon,
@@ -105,14 +108,22 @@ export const Input: React.FC<InputProps> = ({
         {rightIcon && <View style={styles.rightIcon}>{rightIcon}</View>}
       </View>
 
-      {(error || helperText) && (
-        <AppText
-          variant="bodySmall"
-          color={error ? Colors.error : Colors.neutral[500]}
-          style={styles.helperText}>
-          {error || helperText}
-        </AppText>
-      )}
+      <View style={styles.footerRow}>
+        <View style={styles.footerLeft}>
+          {(error || helperText) && (
+            <AppText
+              variant="bodySmall"
+              color={error ? Colors.error : Colors.neutral[500]}>
+              {error || helperText}
+            </AppText>
+          )}
+        </View>
+        {bottomRight && (
+          <View style={styles.footerRight}>
+            {bottomRight}
+          </View>
+        )}
+      </View>
     </View>
   );
 };
@@ -147,7 +158,16 @@ const styles = StyleSheet.create({
   rightIcon: {
     marginLeft: Spacing.sm,
   },
-  helperText: {
+  footerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
     marginTop: Spacing.xs,
+  },
+  footerLeft: {
+    flex: 1,
+  },
+  footerRight: {
+    marginLeft: Spacing.sm,
   },
 });

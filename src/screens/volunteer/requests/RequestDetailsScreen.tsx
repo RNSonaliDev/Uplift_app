@@ -31,6 +31,7 @@ import {
   FileText,
   Star,
   ShieldAlert,
+  MessageCircle,
 } from 'lucide-react-native';
 import {
   horizontalScale,
@@ -86,10 +87,12 @@ export default function RequestDetailsScreen() {
     }, [request.id])
   );
 
+  const isOrgRequest = request.request_type === 'organization';
+
   const showAcceptBtn = !forceAction && (!request.status || request.status.toLowerCase() === 'pending');
   const showStartBtn = forceAction === 'start' || request.status?.toLowerCase() === 'accepted';
   const showStartWithOtpBtn = forceAction === 'start_with_otp' || request.status?.toLowerCase() === 'on_the_way';
-  const showCompleteBtn = forceAction === 'complete' || request.status?.toLowerCase() === 'in_progress';
+  const showCompleteBtn = !isOrgRequest && (forceAction === 'complete' || request.status?.toLowerCase() === 'in_progress');
   const showRateBtn = forceAction === 'rate' || (request.status?.toLowerCase() === 'completed' && (!request.ratings || request.ratings.length === 0));
 
   const handleAcceptClick = async () => {
@@ -192,6 +195,7 @@ export default function RequestDetailsScreen() {
     }
   };
 
+
     const handleComplete = async () => {
       if (!request.id) return;
       try {
@@ -255,7 +259,8 @@ export default function RequestDetailsScreen() {
         
 
         {/* Profile Section */}
-        {request.request_type === 'organization' || request.organization ? (
+        {/* Profile Section */}
+        {(request.status && request.status.toLowerCase() !== 'pending') && (
           <View style={styles.profileSection}>
             <View style={styles.avatarContainer}>
               {(request.organization?.profile_image_url || request.beneficiary?.profile_image_url) ? (
@@ -266,42 +271,34 @@ export default function RequestDetailsScreen() {
               ) : (
                 <View style={[styles.avatar, {justifyContent: 'center', alignItems: 'center'}]}>
                   <AppText variant="h6" color={Colors.neutral[600]}>
-                    {(request.organization?.organization_name || request.beneficiary?.organization_name)
-                      ? (request.organization?.organization_name || request.beneficiary?.organization_name).charAt(0).toUpperCase()
-                      : (request.organization?.first_name || request.beneficiary?.first_name ? (request.organization?.first_name || request.beneficiary?.first_name).charAt(0).toUpperCase() : 'O')}
+                    {(request.organization?.organization_name || request.beneficiary?.first_name || 'O').charAt(0).toUpperCase()}
                   </AppText>
                 </View>
               )}
             </View>
             <View style={styles.profileInfo}>
               <AppText variant="labelLarge" color={Colors.neutral[900]} style={{marginBottom: 4}}>
-                {request.organization?.organization_name || request.beneficiary?.organization_name || (request.organization?.first_name ? `${request.organization.first_name} ${request.organization.last_name || ''}` : (request.beneficiary?.first_name ? `${request.beneficiary.first_name} ${request.beneficiary.last_name || ''}` : 'Organization'))}
+                {request.organization?.organization_name || (request.beneficiary?.first_name ? `${request.beneficiary?.first_name || ''} ${request.beneficiary?.last_name || ''}`.trim() : 'Organization')}
+              </AppText>
+              <AppText variant="caption" color={Colors.neutral[500]}>
+                {request.request_type === 'organization' ? 'Organization' : 'Beneficiary'}
               </AppText>
             </View>
-          </View>
-        ) : (
-          <View style={styles.profileSection}>
-            <View style={styles.avatarContainer}>
-              {request.beneficiary?.profile_image_url ? (
-                <Image 
-                  source={{uri: getFullImageUrl(request.beneficiary.profile_image_url) as string}} 
-                  style={styles.avatar} 
-                />
-              ) : (
-                <View style={[styles.avatar, {justifyContent: 'center', alignItems: 'center'}]}>
-                  <AppText variant="h6" color={Colors.neutral[600]}>
-                    {request.beneficiary?.first_name 
-                      ? `${request.beneficiary.first_name.charAt(0)}${request.beneficiary.last_name ? request.beneficiary.last_name.charAt(0) : ''}`.toUpperCase() 
-                      : ''}
-                  </AppText>
-                </View>
-              )}
-            </View>
-            <View style={styles.profileInfo}>
-              <AppText variant="labelLarge" color={Colors.neutral[900]} style={{marginBottom: 4}}>
-                {request.beneficiary?.first_name ? `${request.beneficiary.first_name} ${request.beneficiary.last_name || ''}` : ''}
-              </AppText>
-            </View>
+
+            {request.status?.toLowerCase() !== 'in_progress' && request.status?.toLowerCase() !== 'completed' && (
+              <TouchableOpacity 
+                style={styles.messageIconContainer}
+                onPress={() => {
+                  Toast.show({
+                    type: 'info',
+                    text1: 'Coming Soon',
+                    text2: 'Messaging feature will be available soon.',
+                  });
+                }}
+              >
+                <MessageCircle color={Colors.primary[500]} size={24} />
+              </TouchableOpacity>
+            )}
           </View>
         )}
 
@@ -309,20 +306,28 @@ export default function RequestDetailsScreen() {
 
         {/* Request Details Section */}
         <View style={styles.detailsSection}>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: verticalScale(16)}}>
-            <View>
-              <AppText variant="labelLarge" color={Colors.neutral[900]}>
-                Request Details
-              </AppText>
-              <AppText variant="bodySmall" color={Colors.neutral[500]} style={{ marginTop: 2 }}>
-                #{request.reference_number || request.id}
-              </AppText>
+          <View style={styles.detailRowItem}>
+            <View style={styles.detailLabelRow}>
+              <FileText color={Colors.neutral[600]} size={20} />
+              <AppText variant="bodyMedium" color={Colors.neutral[900]} style={{marginLeft: 8, fontFamily: FontFamily.medium}}>Category</AppText>
             </View>
-            <View style={[styles.categoryBadge, { paddingHorizontal: horizontalScale(16), paddingVertical: verticalScale(6) }]}>
-              <AppText variant="labelMedium" color={Colors.primary[600]}>
-                {request.category?.title || 'Shopping'}
-              </AppText>
+            <View style={{ flex: 1, alignItems: 'flex-end', paddingLeft: 16 }}>
+              <View style={[styles.categoryBadge, { paddingHorizontal: horizontalScale(12), paddingVertical: verticalScale(6), borderRadius: 16 }]}>
+                <AppText variant="labelMedium" color={Colors.primary[600]} style={{ textAlign: 'center' }}>
+                  {request.category?.title || 'Shopping'}
+                </AppText>
+              </View>
             </View>
+          </View>
+
+          <View style={styles.detailRowItem}>
+            <View style={styles.detailLabelRow}>
+              <FileText color={Colors.neutral[600]} size={20} />
+              <AppText variant="bodyMedium" color={Colors.neutral[900]} style={{marginLeft: 8, fontFamily: FontFamily.medium}}>Reference</AppText>
+            </View>
+            <AppText variant="bodyMedium" color={Colors.neutral[600]} style={{flex: 1, textAlign: 'right', marginLeft: 16}}>
+              #{request.reference_number || request.id}
+            </AppText>
           </View>
 
           {request.title ? (
@@ -359,6 +364,19 @@ export default function RequestDetailsScreen() {
             </AppText>
           </View>
 
+          {/* Distance */}
+          {request.service_radius_km != null ? (
+            <View style={styles.detailRowItem}>
+              <View style={styles.detailLabelRow}>
+                <MapPin color={Colors.neutral[600]} size={20} />
+                <AppText variant="bodyMedium" color={Colors.neutral[900]} style={{marginLeft: 8, fontFamily: FontFamily.medium}}>Distance</AppText>
+              </View>
+              <AppText variant="bodyMedium" color={Colors.neutral[600]} style={{flex: 1, textAlign: 'right', marginLeft: 16}}>
+                {parseFloat(request.service_radius_km).toFixed(1)} km
+              </AppText>
+            </View>
+          ) : null}
+
           {/* Description */}
           {request.description ? (
             <View style={styles.detailColumnItem}>
@@ -383,18 +401,6 @@ export default function RequestDetailsScreen() {
             </AppText>
           </View>
 
-          {/* Distance */}
-          {request.service_radius_km != null ? (
-            <View style={styles.detailRowItem}>
-              <View style={styles.detailLabelRow}>
-                <MapPin color={Colors.neutral[600]} size={20} />
-                <AppText variant="bodyMedium" color={Colors.neutral[900]} style={{marginLeft: 8, fontFamily: FontFamily.medium}}>Distance</AppText>
-              </View>
-              <AppText variant="bodyMedium" color={Colors.neutral[600]} style={{flex: 1, textAlign: 'right', marginLeft: 16}}>
-                {parseFloat(request.service_radius_km).toFixed(1)} km
-              </AppText>
-            </View>
-          ) : null}
 
           {/* Notes */}
           {request.notes ? (
@@ -431,37 +437,51 @@ export default function RequestDetailsScreen() {
       )}
 
       {showStartBtn && (
-        <View style={styles.actionContainer}>
-          <Button 
-            title="On the way" 
-            onPress={handleOnTheWay} 
-            loading={isStarting}
-            style={styles.acceptBtn} 
-          />
+        <View style={[styles.actionContainer, { flexDirection: 'row', alignItems: 'center' }]}>
           <TouchableOpacity 
-            style={styles.cancelTextBtn} 
+            style={[styles.cancelTextBtn, { marginTop: 0, marginRight: 16 }]} 
             onPress={handleCancelRequest}
           >
             <AppText variant="buttonMedium" style={{ color: Colors.error }}>Cancel Request</AppText>
           </TouchableOpacity>
+          <View style={{ flex: 1 }}>
+            <Button 
+              title="On the way" 
+              onPress={handleOnTheWay} 
+              loading={isStarting}
+              style={styles.acceptBtn} 
+              fullWidth
+            />
+          </View>
         </View>
       )}
 
       {showStartWithOtpBtn && (
-        <View style={styles.actionContainer}>
-          <Button 
-            title="Start Request" 
-            onPress={() => setIsOtpModalVisible(true)} 
-            style={styles.acceptBtn} 
-          />
+        <View style={[styles.actionContainer, { flexDirection: 'row', alignItems: 'center' }]}>
           <TouchableOpacity 
-            style={styles.cancelTextBtn} 
+            style={[
+              styles.cancelTextBtn, 
+              { marginTop: 0, marginRight: !isOrgRequest ? 16 : 0 },
+              isOrgRequest && { flex: 1 }
+            ]} 
             onPress={handleCancelRequest}
           >
             <AppText variant="buttonMedium" style={{ color: Colors.error }}>Cancel Request</AppText>
           </TouchableOpacity>
+          {!isOrgRequest && (
+            <View style={{ flex: 1 }}>
+              <Button 
+                title="Start Request" 
+                onPress={() => setIsOtpModalVisible(true)} 
+                style={styles.acceptBtn} 
+                fullWidth
+              />
+            </View>
+          )}
         </View>
       )}
+
+
 
       {showCompleteBtn && (
         <View style={styles.actionContainer}>
@@ -472,6 +492,8 @@ export default function RequestDetailsScreen() {
           />
         </View>
       )}
+
+
 
       {showRateBtn && (
         <View style={styles.actionContainer}>
@@ -561,6 +583,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: verticalScale(20),
     marginTop: verticalScale(8),
+    padding: moderateScale(16),
+    backgroundColor: Colors.neutral[0],
+    borderWidth: 1,
+    borderColor: Colors.neutral[200],
+    borderRadius: moderateScale(16),
+  },
+  messageIconContainer: {
+    padding: moderateScale(8),
+    backgroundColor: Colors.primary[50],
+    borderRadius: moderateScale(20),
+    marginLeft: horizontalScale(12),
   },
   avatarContainer: {
     width: moderateScale(56),
@@ -639,7 +672,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: 16,
-    paddingVertical: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    backgroundColor: Colors.error + '1A',
+    borderRadius: 12,
   },
   securityNote: {
     flexDirection: 'row',

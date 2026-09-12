@@ -180,7 +180,22 @@ export default function MyProfileScreen() {
   };
 
   const userRoles = profile?.roles?.map((r: any) => r) || [];
-  console.log("@@@ userRolesuserRoles===", userRoles)
+  
+  // Get active role specific details
+  const activeRole = profile?.default_role || 'beneficiary';
+  const roleProfile = profile?.profiles?.[activeRole] || profile?.active_profile;
+  
+  const displayName = activeRole === 'organization' 
+    ? (roleProfile?.organization_name || profile?.first_name || 'Organization')
+    : (roleProfile?.first_name || profile?.first_name || 'User');
+    
+  const displayEmail = activeRole === 'organization'
+    ? (roleProfile?.contact_email || roleProfile?.email || profile?.email)
+    : (roleProfile?.email || profile?.email);
+    
+  const displayPhone = activeRole === 'organization'
+    ? (roleProfile?.contact_phone || roleProfile?.phone || profile?.phone)
+    : (roleProfile?.phone || profile?.phone);
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -207,9 +222,7 @@ export default function MyProfileScreen() {
                   ) : (
                     <View style={[styles.avatar, {justifyContent: 'center', alignItems: 'center', backgroundColor: Colors.neutral[0]}]}>
                       <AppText variant="h2" color={Colors.primary[500]}>
-                        {profile.first_name 
-                          ? `${profile.first_name.charAt(0)}${profile.last_name ? profile.last_name.charAt(0) : ''}`.toUpperCase() 
-                          : 'U'}
+                        {displayName ? displayName.charAt(0).toUpperCase() : 'U'}
                       </AppText>
                     </View>
                   )}
@@ -220,15 +233,15 @@ export default function MyProfileScreen() {
               </View>
               
               <View style={styles.profileInfo}>
-                <AppText variant="h4" style={styles.name} numberOfLines={1}>{profile.first_name}</AppText>
+                <AppText variant="h4" style={styles.name} numberOfLines={1}>{displayName}</AppText>
                 <View style={styles.contactRow}>
                   <Mail color={Colors.neutral[0]} size={16} />
-                  <AppText variant="bodyMedium" style={[styles.contactInfo, {marginLeft: 8}]} numberOfLines={1}>{profile.email}</AppText>
+                  <AppText variant="bodyMedium" style={[styles.contactInfo, {marginLeft: 8}]} numberOfLines={1}>{displayEmail}</AppText>
                 </View>
                 <View style={styles.contactRow}>
                   <Phone color={Colors.neutral[0]} size={16} />
                   <AppText variant="bodyMedium" style={[styles.contactInfo, {marginLeft: 8}]} numberOfLines={1}>
-                    {profile.country_code ? `${profile.phone}` : profile.phone}
+                    {displayPhone}
                   </AppText>
                 </View>
               </View>

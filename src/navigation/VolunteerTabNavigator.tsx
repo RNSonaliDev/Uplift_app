@@ -31,7 +31,8 @@ export function VolunteerTabNavigator() {
         const routeName = getFocusedRouteNameFromRoute(route) ?? '';
         const hiddenRoutes = [
           'RequestDetails', 'RequestAccepted', 'ParentTaskVerification', 'StartRequest', 
-          'CompleteRequest', 'RateExperience', 'VolunteerJobDetails', 'EditProfile'
+          'CompleteRequest', 'RateExperience', 'VolunteerJobDetails', 'EditProfile',
+          'Settings', 'LegalContent', 'EmergencyContacts', 'ContactSupport', 'ContactSupportDetails', 'CreateSupportRequest'
         ];
         const isHidden = hiddenRoutes.includes(routeName);
 
@@ -39,7 +40,7 @@ export function VolunteerTabNavigator() {
           unmountOnBlur: true,
           headerShown: false,
           tabBarActiveTintColor: Colors.primary[500],
-          tabBarInactiveTintColor: Colors.neutral[400],
+          tabBarInactiveTintColor: Colors.neutral[900],
           tabBarStyle: isHidden ? { display: 'none' } : {
             borderTopWidth: 1,
             borderTopColor: Colors.neutral[200],

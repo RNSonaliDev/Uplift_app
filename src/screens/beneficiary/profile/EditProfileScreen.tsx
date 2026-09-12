@@ -132,6 +132,8 @@ export default function EditProfileScreen() {
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const [date, setDate] = useState(new Date(2000, 0, 1));
   const [formData, setFormData] = useState({
+    base_first_name: '',
+    base_last_name: '',
     first_name: '',
     last_name: '',
     phone: '',
@@ -158,8 +160,10 @@ export default function EditProfileScreen() {
         const roleProfile = data.roles?.find((r: any) => r.role === currentRole)?.profile || data.active_profile || {};
         
         setFormData({
-          first_name: data.first_name || '',
-          last_name: data.last_name || '',
+          base_first_name: data.first_name || '',
+          base_last_name: data.last_name || '',
+          first_name: roleProfile.first_name || data.first_name || '',
+          last_name: roleProfile.last_name || data.last_name || '',
           phone: data.phone || '',
           email: data.email || '',
           zip_code: data.zip_code || roleProfile.zip_code || '',
@@ -192,7 +196,7 @@ export default function EditProfileScreen() {
   const handleSave = async () => {
     try {
       setSaving(true);
-      const { latitude, longitude, ...restProfile } = formData;
+      const { latitude, longitude, base_first_name, base_last_name, ...restProfile } = formData;
       const profilePayload: any = {
         ...restProfile,
         service_radius: Number(formData.service_radius) || 0,
@@ -239,17 +243,16 @@ export default function EditProfileScreen() {
         style={{flex: 1}}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView contentContainerStyle={styles.content}>
+          <AppText variant="labelLarge" color={Colors.neutral[900]} weight="bold" style={{ marginBottom: 12 }}>Basic Details</AppText>
           <Input
             label="First Name"
-            value={formData.first_name}
-            onChangeText={v => handleChange('first_name', v)}
-            disabled={false}
+            value={formData.base_first_name}
+            disabled={true}
           />
           <Input
             label="Last Name"
-            value={formData.last_name}
-            onChangeText={v => handleChange('last_name', v)}
-            disabled={false}
+            value={formData.base_last_name}
+            disabled={true}
           />
           <Input
             label="Email Address"
@@ -269,6 +272,27 @@ export default function EditProfileScreen() {
             leftIcon={<Calendar color={Colors.neutral[400]} size={20} />}
             disabled={true}
           />
+
+          <AppText variant="labelLarge" color={Colors.neutral[900]} weight="bold" style={{ marginTop: 12, marginBottom: 12 }}>
+            {currentRole.charAt(0).toUpperCase() + currentRole.slice(1)} Details
+          </AppText>
+
+          {currentRole !== 'organization' && (
+            <>
+              <Input
+                label="First Name"
+                value={formData.first_name}
+                onChangeText={v => handleChange('first_name', v)}
+                disabled={false}
+              />
+              <Input
+                label="Last Name"
+                value={formData.last_name}
+                onChangeText={v => handleChange('last_name', v)}
+                disabled={false}
+              />
+            </>
+          )}
 
           {currentRole === 'beneficiary' && (
             <>
@@ -342,7 +366,7 @@ export default function EditProfileScreen() {
 
           {currentRole === 'sponsor' && (
             <>
-              <AppText variant="labelLarge" color={Colors.neutral[900]} weight="bold" style={{ marginTop: 16, marginBottom: 12 }}>Anonymity</AppText>
+              <AppText variant="labelLarge" color={Colors.neutral[900]} weight="bold" style={{ marginTop: 4, marginBottom: 12 }}>Anonymity</AppText>
               <View style={styles.radioGroup}>
                 <RadioCard
                   title="Share my name"

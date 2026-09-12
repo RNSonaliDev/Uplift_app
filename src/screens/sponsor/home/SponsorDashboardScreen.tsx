@@ -16,7 +16,7 @@ import {
 } from 'lucide-react-native';
 import {authApi, UserProfileResponse} from '../../../api/auth';
 import {donationsApi, Donation, DashboardStats} from '../../../api/donations';
-import {notificationsApi} from '../../../api/notifications';
+import {api} from '../../../api/client';
 import {formatDate, formatTime12Hour} from '../../../utils/dateFormatter';
 import {
   horizontalScale,
@@ -58,16 +58,8 @@ export default function SponsorDashboardScreen() {
     }
     
     try {
-      const data = await notificationsApi.getNotifications();
-      let unread = 0;
-      if (!Array.isArray(data) && typeof data === 'object' && 'unread_count' in data) {
-        unread = (data as any).unread_count;
-      } else if (Array.isArray(data)) {
-        unread = data.filter((n: any) => !n.is_read).length;
-      } else if (data && typeof data === 'object' && Array.isArray((data as any).notifications)) {
-        unread = (data as any).notifications.filter((n: any) => !n.is_read).length;
-      }
-      setUnreadCount(unread);
+      const data = await api.get<any>('/notifications');
+      setUnreadCount(data?.unread_count || 0);
     } catch (error) {
       console.log('Failed to fetch notifications count', error);
     }
@@ -79,7 +71,7 @@ export default function SponsorDashboardScreen() {
     }, [fetchData])
   );
 
-  const name = profile?.first_name || 'Sponsor';
+  const name = profile?.profiles?.sponsor?.first_name || profile?.first_name || 'Sponsor';
   
   // Format the date or use a fallback
   const formatContributionDate = (dateStr: string) => {
@@ -108,7 +100,7 @@ export default function SponsorDashboardScreen() {
                   Welcome back,
                 </AppText>
                 <AppText variant="h3" style={styles.nameText}>
-                  {profile ? `${profile.first_name}` : `Compassion ${name}`} 
+                  {name}
                 </AppText>
               </View>
             </View>
@@ -129,14 +121,14 @@ export default function SponsorDashboardScreen() {
                 <AppText variant="h3" style={styles.statNumber} numberOfLines={1} adjustsFontSizeToFit>
                   {stats ? (stats.donations_total + stats.donations_pending) : contributions.length}
                 </AppText>
-                <AppText variant="caption" style={styles.statLabel} center>Total contribution</AppText>
+                <AppText variant="caption" style={styles.statLabel} center>Contribution {"\n"}Count</AppText>
               </View>
               <View style={styles.statDivider} />
               <View style={styles.statItem}>
                 <AppText variant="h3" style={styles.statNumber} numberOfLines={1} adjustsFontSizeToFit>
                   ${stats?.amount_donated || 0}
                 </AppText>
-                <AppText variant="caption" style={styles.statLabel} center>Total Contribution amount </AppText>
+                <AppText variant="caption" style={styles.statLabel} center>Contribution Amount</AppText>
               </View>
             </View>
           </View>

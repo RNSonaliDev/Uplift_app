@@ -63,7 +63,7 @@ export const RequestDetailsScreen = () => {
 
   const getMinTimeForPicker = (pickerDate: Date, selectedDate: Date) => {
     const min = new Date(pickerDate);
-    min.setHours(8, 0, 0, 0);
+    min.setHours(0, 0, 0, 0);
     
     const now = new Date();
     const isToday = 
@@ -74,18 +74,14 @@ export const RequestDetailsScreen = () => {
     if (isToday) {
       const minCurrentTime = new Date(pickerDate);
       minCurrentTime.setHours(now.getHours() + 2, now.getMinutes(), 0, 0);
-      const max = new Date(pickerDate);
-      max.setHours(20, 0, 0, 0);
-      
-      if (minCurrentTime > max) return max;
-      if (minCurrentTime > min) return minCurrentTime;
+      return minCurrentTime;
     }
     return min;
   };
 
   const getMaxTimeForPicker = (pickerDate: Date) => {
     const max = new Date(pickerDate);
-    max.setHours(20, 0, 0, 0);
+    max.setHours(23, 59, 59, 999);
     return max;
   };
 
@@ -237,10 +233,7 @@ export const RequestDetailsScreen = () => {
     const startMinutes = startTime.getHours() * 60 + startTime.getMinutes();
     const endMinutes = endTime.getHours() * 60 + endTime.getMinutes();
 
-    if (startTime.getHours() < 8 || endTime.getHours() > 20 || (endTime.getHours() === 20 && endTime.getMinutes() > 0)) {
-      newErrors.time = 'Time must be between 8 AM and 8 PM';
-      hasError = true;
-    } else if (endMinutes - startMinutes <= 0) {
+    if (endMinutes - startMinutes <= 0) {
       newErrors.time = 'End time must be after start time';
       hasError = true;
     } 
@@ -319,7 +312,7 @@ export const RequestDetailsScreen = () => {
 
           {/* Request Title */}
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Request Title</Text>
+            <Text style={styles.label}>Title</Text>
             <TextInput
               style={[styles.input, errors.title ? styles.inputError : null]}
               placeholder={placeholders.title}
@@ -331,7 +324,14 @@ export const RequestDetailsScreen = () => {
               }}
               maxLength={20}
             />
-            {!!errors.title && <Text style={styles.errorText}>{errors.title}</Text>}
+            <View style={styles.descriptionFooter}>
+              {!!errors.title ? (
+                <Text style={[styles.errorText, { marginTop: 0 }]}>{errors.title}</Text>
+              ) : (
+                <View />
+              )}
+              <Text style={[styles.charCount, { marginTop: 0 }]}>{title.length}/20</Text>
+            </View>
           </View>
 
           {/* Description */}

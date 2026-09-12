@@ -45,17 +45,20 @@ export default function VolunteerDashboardScreen() {
   const [stats, setStats] = useState<any>(null);
   const [loadingRequests, setLoadingRequests] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [unreadNotificationsCount, setUnreadNotificationsCount] = useState(0);
 
   const fetchData = useCallback(async () => {
     try {
-      const [profData, reqData, statsData] = await Promise.all([
+      const [profData, reqData, statsData, notifData] = await Promise.all([
         authApi.getProfile(),
         api.get<any[]>('/help_requests/browse'),
-        api.get<any>('/dashboard/stats?role=volunteer')
+        api.get<any>('/dashboard/stats?role=volunteer'),
+        api.get<any>('/notifications')
       ]);
       setProfile(profData);
       setRequests(reqData || []);
       setStats(statsData);
+      setUnreadNotificationsCount(notifData?.unread_count || 0);
     } catch (error) {
       console.error('Failed to fetch data', error);
     } finally {
@@ -75,7 +78,7 @@ export default function VolunteerDashboardScreen() {
     setRefreshing(false);
   }, [fetchData]);
 
-  const name = profile?.first_name || 'Volunteer';
+  const name = profile?.profiles?.volunteer?.first_name || profile?.first_name || 'Volunteer';
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -98,12 +101,13 @@ export default function VolunteerDashboardScreen() {
                   Welcome back,
                 </AppText>
                 <AppText variant="h3" style={styles.nameText}>
-                  {profile ? `${profile.first_name}` : name}
+                  {name}
                 </AppText>
               </View>
             </View>
             
             <TouchableOpacity style={styles.bellIcon} onPress={() => navigation.navigate('Notifications')}>
+              {unreadNotificationsCount > 0 && <View style={styles.notificationBadge} />}
               <Bell color={Colors.neutral[0]} size={24} />
             </TouchableOpacity>
           </View>
@@ -145,7 +149,7 @@ export default function VolunteerDashboardScreen() {
                 <User color={Colors.primary[600]} size={24} />
               </View>
               <AppText variant="labelLarge" weight="semiBold" color={Colors.primary[700]} style={{ marginTop: 12 }}>Beneficiary</AppText>
-              <AppText variant="caption" color={Colors.primary[600]}>Support</AppText>
+              {/* <AppText variant="caption" color={Colors.primary[600]}>Support</AppText> */}
             </TouchableOpacity>
 
             <TouchableOpacity 
@@ -157,7 +161,7 @@ export default function VolunteerDashboardScreen() {
                 <Building color={Colors.secondary[600]} size={24} />
               </View>
               <AppText variant="labelLarge" weight="semiBold" color={Colors.secondary[700]} style={{ marginTop: 12 }}>Organization</AppText>
-              <AppText variant="caption" color={Colors.secondary[600]}>Support</AppText>
+              {/* <AppText variant="caption" color={Colors.secondary[600]}>Support</AppText> */}
             </TouchableOpacity>
           </View>
         </View>
@@ -236,6 +240,17 @@ const styles = StyleSheet.create({
   },
   bellIcon: {
     padding: 8,
+    position: 'relative',
+  },
+  notificationBadge: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: Colors.error,
+    zIndex: 1,
   },
   impactCardWrapper: {
     paddingHorizontal: horizontalScale(24),

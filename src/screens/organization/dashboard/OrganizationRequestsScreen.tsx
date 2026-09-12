@@ -141,14 +141,6 @@ const RequestCard = ({
         <View style={styles.iconContainer}>{icon}</View>
         <View style={styles.cardContent}>
           <Text style={styles.cardTitle}>{title}</Text>
-          {requestTitle ? (
-            <Text style={{ ...Typography.bodyMedium, color: Colors.neutral[800], marginBottom: 4, fontFamily: FontFamily.medium }}>
-              {requestTitle}
-            </Text>
-          ) : null}
-          {referenceNumber ? (
-            <Text style={[styles.infoText, { marginBottom: 6 }]}>#{referenceNumber}</Text>
-          ) : null}
         </View>
         <View style={[styles.statusBadge, { backgroundColor: badge.bg, alignSelf: 'flex-start' }]}>
           <Text style={[styles.statusBadgeText, { color: badge.text }]}>{displayStatus}</Text>
@@ -156,6 +148,14 @@ const RequestCard = ({
       </View>
       
       <View style={{ marginTop: 8 }}>
+        {requestTitle ? (
+          <Text style={{ ...Typography.bodyMedium, color: Colors.neutral[800], marginBottom: 4, fontFamily: FontFamily.medium }}>
+            {requestTitle}
+          </Text>
+        ) : null}
+        {referenceNumber ? (
+          <Text style={[styles.infoText, { marginBottom: 12 }]}>#{referenceNumber}</Text>
+        ) : null}
         <View style={[styles.infoRow, { alignItems: 'flex-start' }]}>
           <Calendar color={Colors.neutral[400]} size={14} style={[styles.infoIcon, { marginTop: 2 }]} />
           <Text style={[styles.infoText, { flex: 1, lineHeight: 18 }]}>

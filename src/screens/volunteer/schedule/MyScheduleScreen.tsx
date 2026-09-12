@@ -135,14 +135,6 @@ export default function MyScheduleScreen() {
             <AppText variant="labelLarge" weight="semiBold" color={Colors.neutral[900]} style={{marginBottom: 4}}>
               {item.category?.title || 'Help Request'}
             </AppText>
-            {item.title ? (
-              <AppText variant="bodyMedium" color={Colors.neutral[800]} style={{marginBottom: 4, fontFamily: FontFamily.medium}}>
-                {item.title}
-              </AppText>
-            ) : null}
-            <AppText variant="caption" color={Colors.neutral[600]} style={{marginBottom: 6}}>
-              #{item.reference_number || item.id}
-            </AppText>
           </View>
           <View style={[styles.newBadge, { backgroundColor: statusColors.bg }]}>
             <AppText variant="labelMedium" color={statusColors.text}>
@@ -152,6 +144,14 @@ export default function MyScheduleScreen() {
         </View>
         
         <View style={styles.cardDetails}>
+          {item.title ? (
+            <AppText variant="bodyMedium" color={Colors.neutral[800]} style={{marginBottom: 4, fontFamily: FontFamily.medium}}>
+              {item.title}
+            </AppText>
+          ) : null}
+          <AppText variant="caption" color={Colors.neutral[600]} style={{marginBottom: 12}}>
+            #{item.reference_number || item.id}
+          </AppText>
           <View style={styles.detailRow}>
             <Calendar color={Colors.neutral[500]} size={14} />
             <AppText variant="caption" color={Colors.neutral[600]} style={styles.detailText}>

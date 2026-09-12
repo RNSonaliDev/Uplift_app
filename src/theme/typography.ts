@@ -136,7 +136,7 @@ export const Typography: Record<string, TextStyle> = {
   // Caption
   caption: {
     fontFamily: FontFamily.regular,
-    fontSize: FontSize.xs,
+    fontSize: FontSize.sm,
     lineHeight: LineHeight.xs,
   },
 
