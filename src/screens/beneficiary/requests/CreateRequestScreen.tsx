@@ -31,6 +31,7 @@ import {horizontalScale, verticalScale, moderateScale} from '../../../utils/resp
 import MapView, { Marker, Circle } from 'react-native-maps';
 import { GooglePlacesAutocomplete, GooglePlacesAutocompleteRef } from 'react-native-google-places-autocomplete';
 import Geolocation from '@react-native-community/geolocation';
+import { validateAddressType, ValidationResult } from '../../../utils/addressValidation';
 
 LogBox.ignoreLogs(['VirtualizedLists should never be nested']);
 
@@ -57,6 +58,7 @@ export default function CreateRequestScreen() {
   const [categories, setCategories] = useState<CategoryResponse[]>([]);
   const [isCategoryModalVisible, setIsCategoryModalVisible] = useState(false);
   const [loadingCategories, setLoadingCategories] = useState(false);
+  const [addressValidation, setAddressValidation] = useState<ValidationResult | null>(null);
 
   const [date, setDate] = useState(new Date());
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
@@ -121,6 +123,8 @@ export default function CreateRequestScreen() {
       if (data.results && data.results.length > 0) {
         console.log("Address", data.results[0]);
         const address = data.results[0].formatted_address;
+        const types = data.results[0].types || [];
+        setAddressValidation(validateAddressType(types));
         handleChange('meeting_location', address);
         googlePlacesRef.current?.setAddressText(address);
       }
@@ -262,7 +266,9 @@ export default function CreateRequestScreen() {
     if (!formData.preferred_start_time) newErrors.preferred_start_time = 'Required';
     if (!formData.preferred_end_time) newErrors.preferred_end_time = 'Required';
     // if (!formData.hours_required) newErrors.hours_required = 'Required';
-    if (!formData.meeting_location || formData.meeting_location === 'Current Location') newErrors.meeting_location = 'Please add a valid address';
+    if (!formData.meeting_location || formData.meeting_location === 'Current Location') {
+      newErrors.meeting_location = 'Please add a valid address';
+    }
     
     if (formData.preferred_start_time && formData.preferred_end_time) {
       const startMinutes = startTime.getHours() * 60 + startTime.getMinutes();
@@ -421,6 +427,8 @@ export default function CreateRequestScreen() {
               fetchDetails={true}
               onPress={(data, details = null) => {
                 if (details) {
+                  console.log("Selected Address Details: ", details);
+                  setAddressValidation(validateAddressType(details.types));
                   handleChange('meeting_location', data.description);
                   handleChange('latitude', details.geometry.location.lat.toString());
                   handleChange('longitude', details.geometry.location.lng.toString());
@@ -461,6 +469,14 @@ export default function CreateRequestScreen() {
             {errors.meeting_location ? (
               <AppText variant="bodySmall" color={Colors.error} style={{marginTop: 4}}>
                 {errors.meeting_location}
+              </AppText>
+            ) : addressValidation?.message ? (
+              <AppText 
+                variant="bodySmall" 
+                color={addressValidation.addressType === 'business' ? Colors.success : Colors.warning} 
+                style={{marginTop: 4}}
+              >
+                {addressValidation.message}
               </AppText>
             ) : null}
 

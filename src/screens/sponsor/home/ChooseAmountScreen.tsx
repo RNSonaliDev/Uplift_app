@@ -24,7 +24,7 @@ const RECIPIENT_OPTIONS = [
   { id: 'volunteer', label: 'Reward the volunteers' },
   { id: 'beneficiary', label: 'Support the beneficiaries' },
   { id: 'split', label: 'Split equally' },
-  { id: 'whoever', label: 'Whoever needs it most' },
+  { id: 'none', label: 'Whoever needs it most' },
 ];
 
 export default function ChooseAmountScreen() {

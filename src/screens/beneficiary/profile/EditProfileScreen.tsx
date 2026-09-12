@@ -13,11 +13,12 @@ import {
 import Toast from 'react-native-toast-message';
 import {useNavigation, useRoute} from '@react-navigation/native';
 import DatePicker from 'react-native-date-picker';
+import { GooglePlacesAutocomplete } from 'react-native-google-places-autocomplete';
 import {Colors} from '../../../theme/colors';
 import {AppText} from '../../../components/AppText';
 import {Input} from '../../../components/Input';
 import {Button} from '../../../components/Button';
-import {ChevronLeft, Calendar, MapPin, Clock, Info} from 'lucide-react-native';
+import {ChevronLeft, Calendar, MapPin, Clock, Info, Navigation} from 'lucide-react-native';
 import {authApi} from '../../../api/auth';
 import Svg, { Circle } from 'react-native-svg';
 
@@ -127,6 +128,7 @@ export default function EditProfileScreen() {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const currentRole = route.params?.role || 'beneficiary';
+  const GOOGLE_MAPS_API_KEY = 'AIzaSyAd20tmxrXZ1VCyhZx4q9aK0ejZtQtE92s';
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
@@ -396,11 +398,75 @@ export default function EditProfileScreen() {
                 value={formData.organization_name}
                 onChangeText={v => handleChange('organization_name', v)}
               />
-              <Input
-                label="Address"
-                value={formData.address}
-                onChangeText={v => handleChange('address', v)}
-              />
+              <View style={{marginBottom: 16}}>
+                <AppText variant="labelMedium" color={Colors.neutral[700]} style={{marginBottom: 8}}>
+                  Address
+                </AppText>
+                <GooglePlacesAutocomplete
+                  placeholder="Enter address"
+                  fetchDetails={true}
+                  onPress={(data, details = null) => {
+                    if (details) {
+                      console.log("Selected Address Details: ", details);
+                      handleChange('address', data.description);
+                    }
+                  }}
+                  query={{
+                    key: GOOGLE_MAPS_API_KEY,
+                    language: 'en',
+                  }}
+                  styles={{
+                    container: { flex: 0 },
+                    textInputContainer: {
+                      backgroundColor: Colors.neutral[0],
+                      borderRadius: 12,
+                      borderWidth: 1,
+                      borderColor: Colors.neutral[300],
+                      height: 52,
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      paddingHorizontal: 12,
+                    },
+                    textInput: {
+                      color: Colors.neutral[900],
+                      fontSize: 16,
+                      height: 50,
+                      flex: 1,
+                      backgroundColor: 'transparent',
+                    },
+                    listView: {
+                      backgroundColor: Colors.neutral[0],
+                      borderWidth: 1,
+                      borderColor: Colors.neutral[200],
+                      borderRadius: 8,
+                      marginTop: 4,
+                    },
+                  }}
+                  textInputProps={{
+                    placeholderTextColor: Colors.neutral[400],
+                    value: formData.address || '',
+                    onChangeText: (text) => {
+                      handleChange('address', text);
+                    }
+                  }}
+                  renderLeftButton={() => (
+                    <View style={{ marginRight: 8 }}>
+                      <MapPin color={Colors.primary[500]} size={20} />
+                    </View>
+                  )}
+                  renderRightButton={() => (
+                    <TouchableOpacity style={{ padding: 4 }} onPress={() => {
+                      Toast.show({
+                        type: 'info',
+                        text1: 'Coming Soon',
+                        text2: 'Location feature will be available soon.',
+                      });
+                    }}>
+                      <Navigation color={Colors.primary[500]} size={20} />
+                    </TouchableOpacity>
+                  )}
+                />
+              </View>
               <Input
                 label="Contact Name"
                 value={formData.contact_name}

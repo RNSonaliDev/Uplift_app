@@ -267,7 +267,7 @@ export default function EmergencyContactsScreen() {
                   <View style={{ marginBottom: Spacing.lg }}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: Spacing.xs }}>
                       <AppText variant="labelMedium" color={Colors.neutral[700]}>Phone Number</AppText>
-                      <Info size={16} color={Colors.primary[500]} style={{ marginLeft: Spacing.xs }} />
+                      {/* <Info size={16} color={Colors.primary[500]} style={{ marginLeft: Spacing.xs }} /> */}
                     </View>
                     <Input
                       containerStyle={{ marginBottom: 0 }}

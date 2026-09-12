@@ -19,6 +19,7 @@ import MapView, { Marker, Circle as MapCircle } from 'react-native-maps';
 import { GooglePlacesAutocomplete, GooglePlacesAutocompleteRef } from 'react-native-google-places-autocomplete';
 import Geolocation from '@react-native-community/geolocation';
 import DatePicker from 'react-native-date-picker';
+import { validateAddressType, ValidationResult } from '../../../utils/addressValidation';
 
 import { Colors } from '../../../theme/colors';
 import { Typography, FontFamily } from '../../../theme/typography';
@@ -35,6 +36,7 @@ export const RequestDetailsScreen = () => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [errors, setErrors] = useState({ title: '', description: '', time: '' });
+  const [addressValidation, setAddressValidation] = useState<ValidationResult | null>(null);
   const [helpType, setHelpType] = useState<'single' | 'multiple'>('single');
   const [isMultipleDates, setIsMultipleDates] = useState(false);
   
@@ -169,6 +171,8 @@ export const RequestDetailsScreen = () => {
       const data = await response.json();
       if (data.results && data.results.length > 0) {
         const fetchedAddress = data.results[0].formatted_address;
+        const types = data.results[0].types || [];
+        setAddressValidation(validateAddressType(types));
         setAddress(fetchedAddress);
         googlePlacesRef.current?.setAddressText(fetchedAddress);
       }
@@ -504,6 +508,8 @@ export const RequestDetailsScreen = () => {
             onPress={(data, details = null) => {
               if (addressError) setAddressError('');
               if (details) {
+                console.log("Selected Address Details: ", details);
+                setAddressValidation(validateAddressType(details.types));
                 setAddress(data.description);
                 setLatitude(details.geometry.location.lat.toString());
                 setLongitude(details.geometry.location.lng.toString());
@@ -564,7 +570,17 @@ export const RequestDetailsScreen = () => {
               </TouchableOpacity>
             )}
           />
-          {!!addressError && <Text style={styles.errorText}>{addressError}</Text>}
+          {!!addressError ? (
+            <Text style={styles.errorText}>{addressError}</Text>
+          ) : addressValidation?.message ? (
+            <AppText 
+              variant="bodySmall" 
+              color={addressValidation.addressType === 'business' ? Colors.success : Colors.warning} 
+              style={{marginTop: 4}}
+            >
+              {addressValidation.message}
+            </AppText>
+          ) : null}
         </View>
 
         {/* Map */}

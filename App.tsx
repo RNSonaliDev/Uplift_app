@@ -159,7 +159,7 @@ function App() {
   return (
     <SafeAreaProvider>
       <View style={{flex: 1, backgroundColor: Colors.neutral[0]}}>
-        <StripeProvider publishableKey="">
+        <StripeProvider publishableKey="pk_test_51TArmwDqBT5NMvcN8g78pZk3cgvMVs9arm6jF2IdyorlTQYhV3Ra1SL6JPBHDOauwjuEKeELgd5LPPBC39g8xbLi00bjFn0OV8">
           <NavigationContainer>
             <Stack.Navigator screenOptions={{headerShown: false}}>
               <Stack.Screen name="Splash" component={SplashScreen} />
