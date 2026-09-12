@@ -15,6 +15,8 @@ import {Spacing, BorderRadius} from '../theme/spacing';
 interface InputProps extends TextInputProps {
   /** Input label */
   label?: string;
+  /** Is input required? Adds red asterisk. Defaults to true unless label contains "Optional" */
+  required?: boolean;
   /** Error message */
   error?: string;
   /** Helper text below input */
@@ -38,6 +40,7 @@ export const Input: React.FC<InputProps> = ({
   helperText,
   leftIcon,
   rightIcon,
+  required,
   disabled = false,
   containerStyle,
   style,
@@ -70,12 +73,18 @@ export const Input: React.FC<InputProps> = ({
   return (
     <View style={[styles.container, containerStyle]}>
       {label && (
-        <AppText
-          variant="labelMedium"
-          color={Colors.neutral[700]}
-          style={styles.label}>
-          {label}
-        </AppText>
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: Spacing.xs }}>
+          <AppText
+            variant="labelMedium"
+            color={Colors.neutral[700]}>
+            {label}
+          </AppText>
+          {(required || (required === undefined && !label.toLowerCase().includes('optional'))) && (
+            <AppText variant="labelMedium" color={Colors.error} style={{ marginLeft: 4 }}>
+              *
+            </AppText>
+          )}
+        </View>
       )}
 
       <View

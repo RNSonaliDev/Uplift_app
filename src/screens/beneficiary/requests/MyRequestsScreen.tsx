@@ -53,12 +53,13 @@ export default function MyRequestsScreen() {
   const activeRequests = requests.filter(r => r.status === 'pending' || r.status === 'accepted' || r.status === 'assigned' || r.status === 'on_the_way' || r.status === 'in_progress');
   const historyRequests = requests.filter(r => r.status === 'completed' || r.status === 'cancelled');
   const displayRequests = activeTab === 'Active' ? activeRequests : historyRequests;
-
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <>
+      <SafeAreaView style={{ flex: 0, backgroundColor: Colors.primary[500] }} />
+      <SafeAreaView style={styles.safeArea}>
       <View style={styles.header}>
         {/* <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <ChevronLeft color={Colors.neutral[900]} size={28} />
+          <ChevronLeft color={Colors.neutral[0]} size={28} />
         </TouchableOpacity> */}
         <Text style={styles.headerTitle}>My Requests</Text>
         {/* <View style={{width: 28}} /> */}
@@ -128,7 +129,8 @@ export default function MyRequestsScreen() {
           <Plus color={Colors.neutral[0]} size={24} />
         </TouchableOpacity>
       </View>
-    </SafeAreaView>
+      </SafeAreaView>
+    </>
   );
 }
 
@@ -184,20 +186,21 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.neutral[0],
   },
   header: {
+    backgroundColor: Colors.primary[500],
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: "center",
     paddingHorizontal: horizontalScale(16),
     paddingVertical: verticalScale(16),
     borderBottomWidth: 1,
-    borderBottomColor: Colors.neutral[200],
+    borderBottomColor: Colors.primary[500],
   },
   backBtn: {
     padding: moderateScale(4),
   },
   headerTitle: {
     ...Typography.h5,
-    color: Colors.neutral[900],
+    color: Colors.neutral[0],
   },
   container: {
     flex: 1,

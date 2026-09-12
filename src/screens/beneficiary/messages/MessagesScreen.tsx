@@ -24,18 +24,20 @@ export default function MessagesScreen() {
   const [searchQuery, setSearchQuery] = useState('');
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <>
+      <SafeAreaView style={{ flex: 0, backgroundColor: Colors.primary[500] }} />
+      <SafeAreaView style={styles.safeArea}>
       <View style={styles.header}>
         <TouchableOpacity 
           onPress={() => navigation.canGoBack() && navigation.goBack()} 
           style={[styles.iconBtn, !navigation.canGoBack() && {opacity: 0}]}
           disabled={!navigation.canGoBack()}
         >
-          <ChevronLeft color={Colors.neutral[900]} size={28} />
+          <ChevronLeft color={Colors.neutral[0]} size={28} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Messages</Text>
         <TouchableOpacity style={styles.iconBtn}>
-          <Edit color={Colors.neutral[900]} size={24} />
+          <Edit color={Colors.neutral[0]} size={24} />
         </TouchableOpacity>
       </View>
 
@@ -92,7 +94,8 @@ export default function MessagesScreen() {
           />
         </ScrollView>
       </View>
-    </SafeAreaView>
+      </SafeAreaView>
+    </>
   );
 }
 
@@ -141,20 +144,21 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.neutral[0],
   },
   header: {
+    backgroundColor: Colors.primary[500],
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.neutral[200],
+    borderBottomColor: Colors.primary[500],
   },
   iconBtn: {
     padding: 4,
   },
   headerTitle: {
     ...Typography.h5,
-    color: Colors.neutral[900],
+    color: Colors.neutral[0],
   },
   container: {
     flex: 1,

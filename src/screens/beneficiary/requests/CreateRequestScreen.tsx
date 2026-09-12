@@ -314,12 +314,14 @@ export default function CreateRequestScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <>
+      <SafeAreaView style={{ flex: 0, backgroundColor: Colors.primary[500] }} />
+      <SafeAreaView style={styles.safeArea}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <ChevronLeft color={Colors.neutral[900]} size={28} />
+          <ChevronLeft color={Colors.neutral[0]} size={28} />
         </TouchableOpacity>
-        <AppText variant="h5" style={styles.headerTitle}>Create Help Request</AppText>
+        <AppText variant="h5" color={Colors.neutral[0]} style={styles.headerTitle}>Create Help Request</AppText>
         <View style={{width: 28}} />
       </View>
 
@@ -419,7 +421,7 @@ export default function CreateRequestScreen() {
 
           <View style={styles.addressSection}>
             <AppText variant="labelLarge" color={Colors.neutral[700]} style={{marginBottom: 8}}>
-              Meeting Location
+              Meeting Location <AppText color={Colors.error}>*</AppText>
             </AppText>
             <GooglePlacesAutocomplete
               ref={googlePlacesRef}
@@ -445,7 +447,10 @@ export default function CreateRequestScreen() {
               }}
               styles={{
                 container: { flex: 0 },
-                textInputContainer: styles.placesInputContainer,
+                textInputContainer: {
+                  ...styles.placesInputContainer,
+                  borderColor: errors.meeting_location ? Colors.error : Colors.neutral[200],
+                },
                 textInput: styles.placesInput,
                 listView: styles.placesListView,
               }}
@@ -636,7 +641,8 @@ export default function CreateRequestScreen() {
           </View>
         </View>
       </Modal>
-    </SafeAreaView>
+      </SafeAreaView>
+    </>
   );
 }
 
@@ -646,20 +652,20 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.neutral[0],
   },
   header: {
+    backgroundColor: Colors.primary[500],
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: horizontalScale(16),
     paddingVertical: verticalScale(16),
-    backgroundColor: Colors.neutral[0],
     borderBottomWidth: 1,
-    borderBottomColor: Colors.neutral[200],
+    borderBottomColor: Colors.primary[500],
   },
   backBtn: {
     padding: moderateScale(4),
   },
   headerTitle: {
-    color: Colors.neutral[900],
+    color: Colors.neutral[0],
   },
   content: {
     padding: horizontalScale(24),

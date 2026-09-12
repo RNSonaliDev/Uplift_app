@@ -26,6 +26,7 @@ export default function CreateSupportRequestScreen() {
   const [message, setMessage] = useState('');
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [errors, setErrors] = useState<{subject?: string, message?: string}>({});
 
   const pickImage = async () => {
     try {
@@ -42,12 +43,12 @@ export default function CreateSupportRequestScreen() {
   };
 
   const handleSubmit = async () => {
-    if (!subject.trim() || !message.trim()) {
-      Toast.show({
-        type: 'error',
-        text1: 'Validation Error',
-        text2: 'Please fill in both subject and message.',
-      });
+    const newErrors: {subject?: string, message?: string} = {};
+    if (!subject.trim()) newErrors.subject = 'Please enter a subject';
+    if (!message.trim()) newErrors.message = 'Please enter a message';
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
       return;
     }
 
@@ -95,10 +96,12 @@ export default function CreateSupportRequestScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <>
+      <SafeAreaView style={{ flex: 0, backgroundColor: Colors.primary[500] }} />
+      <SafeAreaView style={styles.safeArea}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <ChevronLeft color={Colors.neutral[900]} size={28} />
+          <ChevronLeft color={Colors.neutral[0]} size={28} />
         </TouchableOpacity>
         <AppText variant="h5" style={styles.headerTitle}>Contact Support</AppText>
         <View style={{ width: 32 }} />
@@ -121,8 +124,12 @@ export default function CreateSupportRequestScreen() {
               bottomRight={<AppText variant="caption" color={Colors.neutral[500]}>{subject.length}/50</AppText>}
               placeholder="E.g. Unable to complete payment"
               value={subject}
-              onChangeText={setSubject}
+              onChangeText={(text) => {
+                setSubject(text);
+                if (errors.subject) setErrors({...errors, subject: undefined});
+              }}
               maxLength={50}
+              error={errors.subject}
               containerStyle={styles.inputSpacing}
             />
             
@@ -131,11 +138,15 @@ export default function CreateSupportRequestScreen() {
               bottomRight={<AppText variant="caption" color={Colors.neutral[500]}>{message.length}/500</AppText>}
               placeholder="Describe your issue in detail..."
               value={message}
-              onChangeText={setMessage}
+              onChangeText={(text) => {
+                setMessage(text);
+                if (errors.message) setErrors({...errors, message: undefined});
+              }}
               maxLength={500}
               multiline
               numberOfLines={6}
               textAlignVertical="top"
+              error={errors.message}
               containerStyle={styles.inputSpacing}
             />
 
@@ -163,8 +174,9 @@ export default function CreateSupportRequestScreen() {
               style={styles.submitBtn}
             />
           </View>
-        </ScrollView>
+      </ScrollView>
       </SafeAreaView>
+    </>
   );
 }
 
@@ -174,20 +186,20 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.neutral[50],
   },
   header: {
+    backgroundColor: Colors.primary[500],
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: horizontalScale(16),
     paddingVertical: verticalScale(16),
-    backgroundColor: Colors.neutral[0],
     borderBottomWidth: 1,
-    borderBottomColor: Colors.neutral[200],
+    borderBottomColor: Colors.primary[500],
   },
   backBtn: {
     padding: moderateScale(4),
   },
   headerTitle: {
-    color: Colors.neutral[900],
+    color: Colors.neutral[0],
   },
   container: {
     flex: 1,

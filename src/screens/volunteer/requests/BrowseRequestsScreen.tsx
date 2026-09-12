@@ -9,8 +9,8 @@ import {
   Image,
   Modal,
   TouchableWithoutFeedback,
+  SafeAreaView,
 } from 'react-native';
-import {SafeAreaView} from 'react-native-safe-area-context';
 import {useNavigation, useFocusEffect, useRoute} from '@react-navigation/native';
 import {Colors} from '../../../theme/colors';
 import {FontFamily} from '../../../theme/typography';
@@ -164,7 +164,12 @@ export default function BrowseRequestsScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <>
+      <SafeAreaView style={{ flex: 0, backgroundColor: Colors.primary[500] }} />
+      <SafeAreaView style={styles.safeArea}>
+      <View style={styles.headerTitleContainer}>
+        <AppText variant="h5" color={Colors.neutral[0]} style={{textAlign: 'center'}}>Requests</AppText>
+      </View>
       <View style={styles.header}>
         <View style={styles.tabContainer}>
           <TouchableOpacity 
@@ -270,7 +275,8 @@ export default function BrowseRequestsScreen() {
           </View>
         </TouchableWithoutFeedback>
       </Modal>
-    </SafeAreaView>
+      </SafeAreaView>
+    </>
   );
 }
 
@@ -278,6 +284,12 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: Colors.neutral[50],
+  },
+  headerTitleContainer: {
+    backgroundColor: Colors.primary[500],
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.primary[500],
   },
   header: {
     backgroundColor: Colors.neutral[50],

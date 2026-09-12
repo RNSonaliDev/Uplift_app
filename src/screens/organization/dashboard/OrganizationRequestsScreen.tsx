@@ -53,9 +53,11 @@ export const OrganizationRequestsScreen = () => {
   const displayRequests = activeTab === 'Active' ? activeRequests : historyRequests;
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <>
+      <SafeAreaView style={{ flex: 0, backgroundColor: Colors.primary[500] }} />
+      <SafeAreaView style={styles.safeArea}>
       <View style={styles.header}>
-        <AppText variant="bodyLarge" color={Colors.neutral[900]}>Browse Requests</AppText>
+        <AppText variant="bodyLarge" color={Colors.neutral[0]}>Browse Requests</AppText>
       </View>
 
       <View style={styles.container}>
@@ -123,7 +125,8 @@ export const OrganizationRequestsScreen = () => {
           <Plus color="#FFF" size={24} />
         </TouchableOpacity>
       </View>
-    </SafeAreaView>
+      </SafeAreaView>
+    </>
   );
 }
 
@@ -179,13 +182,14 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.neutral[0],
   },
   header: {
+    backgroundColor: Colors.primary[500],
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: horizontalScale(16),
     paddingVertical: verticalScale(16),
     borderBottomWidth: 1,
-    borderBottomColor: Colors.neutral[200],
+    borderBottomColor: Colors.primary[500],
   },
   headerTitle: {
     ...Typography.h5,

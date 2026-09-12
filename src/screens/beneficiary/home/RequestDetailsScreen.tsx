@@ -28,11 +28,13 @@ export default function RequestDetailsScreen() {
   const navigation = useNavigation<any>();
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <>
+      <SafeAreaView style={{ flex: 0, backgroundColor: Colors.primary[500] }} />
+      <SafeAreaView style={styles.safeArea}>
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <ChevronLeft color={Colors.neutral[900]} size={28} />
+          <ChevronLeft color={Colors.neutral[0]} size={28} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Request Details</Text>
         <View style={{width: 28}} />
@@ -102,6 +104,7 @@ export default function RequestDetailsScreen() {
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
+    </>
   );
 }
 
@@ -118,6 +121,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.neutral[0],
   },
   header: {
+    backgroundColor: Colors.primary[500],
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -131,7 +135,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     ...Typography.h5,
-    color: Colors.neutral[900],
+    color: Colors.neutral[0],
   },
   container: {
     flex: 1,

@@ -89,10 +89,12 @@ export const OrgRequestTrackingScreen = () => {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <>
+      <SafeAreaView style={{ flex: 0, backgroundColor: Colors.primary[500] }} />
+      <SafeAreaView style={styles.safeArea}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <ChevronLeft color={Colors.neutral[900]} size={28} />
+          <ChevronLeft color={Colors.neutral[0]} size={28} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Request Tracking</Text>
         <View style={{ width: 28 }} />
@@ -244,7 +246,8 @@ export const OrgRequestTrackingScreen = () => {
           <Text style={{ color: Colors.neutral[500] }}>Request details not found.</Text>
         </View>
       )}
-    </SafeAreaView>
+      </SafeAreaView>
+    </>
   );
 };
 
@@ -290,20 +293,21 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.neutral[0],
   },
   header: {
+    backgroundColor: Colors.primary[500],
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.neutral[200],
+    borderBottomColor: Colors.primary[500],
   },
   backBtn: {
     padding: 4,
   },
   headerTitle: {
     ...Typography.h5,
-    color: Colors.neutral[900],
+    color: Colors.neutral[0],
   },
   container: {
     flex: 1,

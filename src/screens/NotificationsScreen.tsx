@@ -147,10 +147,12 @@ export default function NotificationsScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <>
+      <SafeAreaView style={{ flex: 0, backgroundColor: Colors.primary[500] }} />
+      <SafeAreaView style={styles.safeArea}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <ChevronLeft color={Colors.neutral[900]} size={28} />
+          <ChevronLeft color={Colors.neutral[0]} size={28} />
         </TouchableOpacity>
         <AppText variant="h5" style={styles.headerTitle}>Notifications</AppText>
         
@@ -191,6 +193,7 @@ export default function NotificationsScreen() {
         />
       )}
     </SafeAreaView>
+    </>
   );
 }
 
@@ -205,7 +208,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: horizontalScale(16),
     paddingVertical: verticalScale(16),
-    backgroundColor: Colors.neutral[0],
+    backgroundColor: Colors.primary[500],
     borderBottomWidth: 1,
     borderBottomColor: Colors.neutral[200],
   },
@@ -213,7 +216,7 @@ const styles = StyleSheet.create({
     padding: moderateScale(4),
   },
   headerTitle: {
-    color: Colors.neutral[900],
+    color: Colors.neutral[0],
   },
   markAllBtn: {
     padding: moderateScale(4),

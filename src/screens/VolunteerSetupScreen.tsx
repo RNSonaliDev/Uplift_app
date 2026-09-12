@@ -372,6 +372,10 @@ export const VolunteerSetupScreen: React.FC = () => {
       newErrors.zipCode = 'ZIP code must be 5 digits';
     }
 
+    if (!address || !address.trim() || address === 'Current Location') {
+      newErrors.address = 'Address is required';
+    }
+
     // if (selectedCategories.length === 0) {
     //   newErrors.category = 'Please select at least one category';
     // }
@@ -550,7 +554,7 @@ export const VolunteerSetupScreen: React.FC = () => {
             <View style={styles.phoneInputWrapper}>
               <View style={styles.labelRow}>
                 <AppText variant="labelMedium" color={Colors.neutral[700]} style={{marginBottom: Spacing.xs}}>
-                  Phone number
+                  Phone number <AppText color={Colors.error}>*</AppText>
                 </AppText>
                 <TouchableOpacity 
                   style={{marginLeft: 6, marginBottom: Spacing.xs}}
@@ -587,7 +591,7 @@ export const VolunteerSetupScreen: React.FC = () => {
 
             <View style={{marginBottom: Spacing.lg}}>
               <AppText variant="labelMedium" color={Colors.neutral[700]} style={{marginBottom: 8}}>
-                 Address
+                 Address <AppText color={Colors.error}>*</AppText>
               </AppText>
               <GooglePlacesAutocomplete
                 ref={googlePlacesRef}
@@ -621,7 +625,7 @@ export const VolunteerSetupScreen: React.FC = () => {
                     backgroundColor: Colors.neutral[0],
                     borderRadius: 12,
                     borderWidth: 1,
-                    borderColor: Colors.neutral[300],
+                    borderColor: errors.address ? Colors.error : Colors.neutral[300],
                     height: 52,
                     flexDirection: 'row',
                     alignItems: 'center',
@@ -645,6 +649,10 @@ export const VolunteerSetupScreen: React.FC = () => {
                 }}
                 textInputProps={{
                   placeholderTextColor: Colors.neutral[400],
+                  onChangeText: (text) => {
+                    setAddress(text);
+                    if (errors.address) setErrors({...errors, address: ''});
+                  }
                 }}
                 listViewProps={{
                   nestedScrollEnabled: true,
@@ -660,6 +668,12 @@ export const VolunteerSetupScreen: React.FC = () => {
                   </TouchableOpacity>
                 )}
               />
+
+              {!!errors.address && (
+                <AppText variant="bodySmall" color={Colors.error} style={{marginTop: 4}}>
+                  {errors.address}
+                </AppText>
+              )}
 
               {(latitude && longitude) ? (
                 <TouchableOpacity onPress={() => setIsMapModalVisible(true)} style={{ marginTop: Spacing.sm, marginBottom: 16, alignSelf: 'flex-end' }}>

@@ -232,10 +232,12 @@ export default function EditProfileScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <>
+      <SafeAreaView style={{ flex: 0, backgroundColor: Colors.primary[500] }} />
+      <SafeAreaView style={styles.safeArea}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <ChevronLeft color={Colors.neutral[900]} size={28} />
+          <ChevronLeft color={Colors.neutral[0]} size={28} />
         </TouchableOpacity>
         <AppText variant="h5" style={styles.headerTitle}>Edit Profile</AppText>
         <View style={{width: 28}} />
@@ -528,7 +530,8 @@ export default function EditProfileScreen() {
           setIsDatePickerOpen(false);
         }}
       />
-    </SafeAreaView>
+      </SafeAreaView>
+    </>
   );
 }
 
@@ -538,19 +541,20 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.neutral[0],
   },
   header: {
+    backgroundColor: Colors.primary[500],
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.neutral[200],
+    borderBottomColor: Colors.primary[500],
   },
   backBtn: {
     padding: 4,
   },
   headerTitle: {
-    color: Colors.neutral[900],
+    color: Colors.neutral[0],
   },
   content: {
     padding: 24,

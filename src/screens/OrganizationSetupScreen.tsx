@@ -534,7 +534,7 @@ export const OrganizationSetupScreen: React.FC = () => {
 
             <View style={{marginBottom: Spacing.lg}}>
               <AppText variant="labelMedium" color={Colors.neutral[700]} style={{marginBottom: 8}}>
-                Organization Address
+                Organization Address <AppText color={Colors.error}>*</AppText>
               </AppText>
               <GooglePlacesAutocomplete
                 ref={googlePlacesRef}

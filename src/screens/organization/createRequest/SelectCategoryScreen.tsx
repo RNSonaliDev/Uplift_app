@@ -60,8 +60,9 @@ export const SelectCategoryScreen = () => {
   };
 
   return (
-    <View style={[styles.container, { paddingTop: Platform.OS === 'android' ? insets.top : 0 }]}>
-      {Platform.OS === 'ios' && <SafeAreaView />}
+    <>
+      <SafeAreaView style={{ flex: 0, backgroundColor: Colors.primary[500] }} />
+      <SafeAreaView style={styles.container}>
 
       {/* Header */}
       <View style={styles.header}>
@@ -72,7 +73,7 @@ export const SelectCategoryScreen = () => {
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          <ArrowLeft color={Colors.neutral[900]} size={24} />
+          <ArrowLeft color={Colors.neutral[0]} size={24} />
         </TouchableOpacity>
         <View style={{ width: 40 }} />
       </View>
@@ -131,7 +132,8 @@ export const SelectCategoryScreen = () => {
           </View>
         )}
       </ScrollView>
-    </View>
+      </SafeAreaView>
+    </>
   );
 };
 
@@ -141,13 +143,14 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.neutral[0],
   },
   header: {
+    backgroundColor: Colors.primary[500],
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.neutral[100],
+    borderBottomColor: Colors.primary[500],
     position: 'relative',
   },
   headerAbsoluteCenter: {
@@ -166,7 +169,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     ...Typography.h5,
-    color: Colors.neutral[900],
+    color: Colors.neutral[0],
   },
   scrollContent: {
     padding: 20,

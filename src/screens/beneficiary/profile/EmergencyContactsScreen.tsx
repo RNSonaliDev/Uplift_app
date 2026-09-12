@@ -152,10 +152,12 @@ export default function EmergencyContactsScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <>
+      <SafeAreaView style={{ flex: 0, backgroundColor: Colors.primary[500] }} />
+      <SafeAreaView style={styles.safeArea}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <ChevronLeft color={Colors.neutral[900]} size={28} />
+          <ChevronLeft color={Colors.neutral[0]} size={28} />
         </TouchableOpacity>
         <AppText variant="h5" style={styles.headerTitle}>Emergency Contacts</AppText>
         <View style={{ width: 36 }} />
@@ -266,7 +268,7 @@ export default function EmergencyContactsScreen() {
                   )}
                   <View style={{ marginBottom: Spacing.lg }}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: Spacing.xs }}>
-                      <AppText variant="labelMedium" color={Colors.neutral[700]}>Phone Number</AppText>
+                      <AppText variant="labelMedium" color={Colors.neutral[700]}>Phone Number <AppText color={Colors.error}>*</AppText></AppText>
                       {/* <Info size={16} color={Colors.primary[500]} style={{ marginLeft: Spacing.xs }} /> */}
                     </View>
                     <Input
@@ -369,7 +371,7 @@ export default function EmergencyContactsScreen() {
               </View>
               <View style={{ marginBottom: Spacing.lg }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: Spacing.xs }}>
-                  <AppText variant="labelMedium" color={Colors.neutral[700]}>Phone Number</AppText>
+                  <AppText variant="labelMedium" color={Colors.neutral[700]}>Phone Number <AppText color={Colors.error}>*</AppText></AppText>
                   {/* <Info size={16} color={Colors.primary[500]} style={{ marginLeft: Spacing.xs }} /> */}
                 </View>
                 <Input
@@ -432,10 +434,9 @@ export default function EmergencyContactsScreen() {
         >
           <Plus color={Colors.neutral[0]} size={24} />
         </TouchableOpacity>
-      )}
-
-
-    </SafeAreaView>
+        )}
+      </SafeAreaView>
+    </>
   );
 }
 
@@ -471,20 +472,21 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
+    backgroundColor: Colors.primary[500],
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.neutral[200],
+    borderBottomColor: Colors.primary[500],
   },
   backBtn: {
     padding: Spacing.xs,
     marginLeft: -Spacing.xs,
   },
   headerTitle: {
-    color: Colors.neutral[900],
+    color: Colors.neutral[0],
   },
   container: {
     flex: 1,

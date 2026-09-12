@@ -35,13 +35,15 @@ export const VolunteerJobDetailsScreen = () => {
   if (!job) return null;
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <>
+      <SafeAreaView style={{ flex: 0, backgroundColor: Colors.primary[500] }} />
+      <SafeAreaView style={styles.safeArea}>
       <View style={styles.header}>
         <View style={styles.headerAbsoluteCenter}>
-          <AppText variant="h5" color={Colors.neutral[900]}>Job Details</AppText>
+          <AppText variant="h5" color={Colors.neutral[0]}>Job Details</AppText>
         </View>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.iconButton}>
-          <ChevronLeft color={Colors.neutral[900]} size={28} strokeWidth={2} />
+          <ChevronLeft color={Colors.neutral[0]} size={28} strokeWidth={2} />
         </TouchableOpacity>
         <View style={{width: 40}} />
       </View>
@@ -114,13 +116,14 @@ export const VolunteerJobDetailsScreen = () => {
         ) : null}
 
       </ScrollView>
-    </SafeAreaView>
+      </SafeAreaView>
+    </>
   );
 };
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: Colors.neutral[50] },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, backgroundColor: '#FFF', borderBottomWidth: 1, borderBottomColor: Colors.neutral[200], position: 'relative' },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, backgroundColor: Colors.primary[500], borderBottomWidth: 1, borderBottomColor: Colors.primary[500], position: 'relative' },
   headerAbsoluteCenter: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, justifyContent: 'center', alignItems: 'center', pointerEvents: 'none' },
   iconButton: { padding: 4 },
   content: { padding: 16 },

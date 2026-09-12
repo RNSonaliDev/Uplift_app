@@ -280,8 +280,9 @@ export const RequestDetailsScreen = () => {
   };
 
   return (
-    <View style={[styles.container, { paddingTop: Platform.OS === 'android' ? insets.top : 0 }]}>
-      {Platform.OS === 'ios' && <SafeAreaView />}
+    <>
+      <SafeAreaView style={{ flex: 0, backgroundColor: Colors.primary[500] }} />
+      <SafeAreaView style={styles.container}>
 
       {/* Header */}
       <View style={styles.header}>
@@ -289,7 +290,7 @@ export const RequestDetailsScreen = () => {
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          <ArrowLeft color={Colors.neutral[900]} size={24} />
+          <ArrowLeft color={Colors.neutral[0]} size={24} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Request Details</Text>
         <View style={{ width: 40 }} />
@@ -303,7 +304,7 @@ export const RequestDetailsScreen = () => {
           
           {/* Category */}
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Category</Text>
+            <Text style={styles.label}>Category <Text style={{color: Colors.error}}>*</Text></Text>
             <TextInput
               style={[
                 styles.input, 
@@ -316,7 +317,7 @@ export const RequestDetailsScreen = () => {
 
           {/* Request Title */}
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Title</Text>
+            <Text style={styles.label}>Title <Text style={{color: Colors.error}}>*</Text></Text>
             <TextInput
               style={[styles.input, errors.title ? styles.inputError : null]}
               placeholder={placeholders.title}
@@ -340,7 +341,7 @@ export const RequestDetailsScreen = () => {
 
           {/* Description */}
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Description</Text>
+            <Text style={styles.label}>Description <Text style={{color: Colors.error}}>*</Text></Text>
             <TextInput
               style={[styles.input, styles.textArea, errors.description ? styles.inputError : null]}
               placeholder={placeholders.desc}
@@ -367,7 +368,7 @@ export const RequestDetailsScreen = () => {
 
           {/* Help Type */}
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Number of positions</Text>
+            <Text style={styles.label}>Number of positions <Text style={{color: Colors.error}}>*</Text></Text>
             <View style={styles.radioGroup}>
               <TouchableOpacity
                 style={[
@@ -396,7 +397,7 @@ export const RequestDetailsScreen = () => {
        {/* Volunteers Needed */}
         {helpType !== 'single' && (
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Number of Volunteers Needed</Text>
+            <Text style={styles.label}>Number of Volunteers Needed <Text style={{color: Colors.error}}>*</Text></Text>
             <View style={styles.counterContainer}>
               <TouchableOpacity style={styles.counterButton} onPress={decrementVolunteers}>
                 <Minus color={Colors.neutral[900]} size={24} />
@@ -412,16 +413,16 @@ export const RequestDetailsScreen = () => {
           {helpType === 'single' ? (
             <>
               <View style={styles.row}>
-                <View style={[styles.inputGroup, { flex: 1, marginRight: isMultipleDates ? 8 : 0 }]}>
-                  <Text style={styles.label}>{isMultipleDates ? 'Start Date' : 'Date'}</Text>
+                <View style={[styles.inputGroup, { flex: 1, marginRight: 8, marginBottom: 0 }]}>
+                  <Text style={styles.label}>{isMultipleDates ? 'Start Date' : 'Date'} <Text style={{color: Colors.error}}>*</Text></Text>
                   <TouchableOpacity style={styles.dateInput} onPress={() => setIsStartDatePickerOpen(true)}>
                     <Text style={styles.dateText}>{formatDate(startDate)}</Text>
                     <CalendarIcon color={Colors.neutral[500]} size={20} />
                   </TouchableOpacity>
                 </View>
                 {isMultipleDates && (
-                  <View style={[styles.inputGroup, { flex: 1, marginLeft: 8 }]}>
-                    <Text style={styles.label}>End Date</Text>
+                  <View style={[styles.inputGroup, { flex: 1, marginLeft: 8, marginBottom: 0 }]}>
+                    <Text style={styles.label}>End Date <Text style={{color: Colors.error}}>*</Text></Text>
                     <TouchableOpacity style={styles.dateInput} onPress={() => setIsEndDatePickerOpen(true)}>
                       <Text style={styles.dateText}>{formatDate(endDate)}</Text>
                       <CalendarIcon color={Colors.neutral[500]} size={20} />
@@ -443,14 +444,14 @@ export const RequestDetailsScreen = () => {
               </TouchableOpacity>
               <View style={styles.row}>
                 <View style={[styles.inputGroup, { flex: 1, marginRight: 8, marginBottom: errors.time ? 8 : 24 }]}>
-                  <Text style={styles.label}>Start Time</Text>
+                  <Text style={styles.label}>Start Time <Text style={{color: Colors.error}}>*</Text></Text>
                   <TouchableOpacity style={[styles.dateInput, errors.time ? styles.inputError : null]} onPress={() => setIsStartTimePickerOpen(true)}>
                     <Text style={styles.dateText}>{formatTime(startTime)}</Text>
                     <Clock color={Colors.neutral[500]} size={20} />
                   </TouchableOpacity>
                 </View>
                 <View style={[styles.inputGroup, { flex: 1, marginLeft: 8, marginBottom: errors.time ? 8 : 24 }]}>
-                  <Text style={styles.label}>End Time</Text>
+                  <Text style={styles.label}>End Time <Text style={{color: Colors.error}}>*</Text></Text>
                   <TouchableOpacity style={[styles.dateInput, errors.time ? styles.inputError : null]} onPress={() => setIsEndTimePickerOpen(true)}>
                     <Text style={styles.dateText}>{formatTime(endTime)}</Text>
                     <Clock color={Colors.neutral[500]} size={20} />
@@ -462,15 +463,15 @@ export const RequestDetailsScreen = () => {
           ) : (
             <>
               <View style={styles.row}>
-                <View style={[styles.inputGroup, { flex: 1, marginRight: 8 }]}>
-                  <Text style={styles.label}>Start Date</Text>
+                <View style={[styles.inputGroup, { flex: 1, marginRight: 8, marginBottom: 24 }]}>
+                  <Text style={styles.label}>Start Date <Text style={{color: Colors.error}}>*</Text></Text>
                   <TouchableOpacity style={styles.dateInput} onPress={() => setIsStartDatePickerOpen(true)}>
                     <Text style={styles.dateText}>{formatDate(startDate)}</Text>
                     <CalendarIcon color={Colors.neutral[500]} size={20} />
                   </TouchableOpacity>
                 </View>
-                <View style={[styles.inputGroup, { flex: 1, marginLeft: 8 }]}>
-                  <Text style={styles.label}>End Date</Text>
+                <View style={[styles.inputGroup, { flex: 1, marginLeft: 8, marginBottom: 24 }]}>
+                  <Text style={styles.label}>End Date <Text style={{color: Colors.error}}>*</Text></Text>
                   <TouchableOpacity style={styles.dateInput} onPress={() => setIsEndDatePickerOpen(true)}>
                     <Text style={styles.dateText}>{formatDate(endDate)}</Text>
                     <CalendarIcon color={Colors.neutral[500]} size={20} />
@@ -479,14 +480,14 @@ export const RequestDetailsScreen = () => {
               </View>
               <View style={styles.row}>
                 <View style={[styles.inputGroup, { flex: 1, marginRight: 8, marginBottom: errors.time ? 8 : 24 }]}>
-                  <Text style={styles.label}>Start Time</Text>
+                  <Text style={styles.label}>Start Time <Text style={{color: Colors.error}}>*</Text></Text>
                   <TouchableOpacity style={[styles.dateInput, errors.time ? styles.inputError : null]} onPress={() => setIsStartTimePickerOpen(true)}>
                     <Text style={styles.dateText}>{formatTime(startTime)}</Text>
                     <Clock color={Colors.neutral[500]} size={20} />
                   </TouchableOpacity>
                 </View>
                 <View style={[styles.inputGroup, { flex: 1, marginLeft: 8, marginBottom: errors.time ? 8 : 24 }]}>
-                  <Text style={styles.label}>End Time</Text>
+                  <Text style={styles.label}>End Time <Text style={{color: Colors.error}}>*</Text></Text>
                   <TouchableOpacity style={[styles.dateInput, errors.time ? styles.inputError : null]} onPress={() => setIsEndTimePickerOpen(true)}>
                     <Text style={styles.dateText}>{formatTime(endTime)}</Text>
                     <Clock color={Colors.neutral[500]} size={20} />
@@ -500,7 +501,7 @@ export const RequestDetailsScreen = () => {
         
 {/* Address */}
         <View style={styles.inputGroup}>
-          <Text style={styles.label}>Address</Text>
+          <Text style={styles.label}>Address <Text style={{color: Colors.error}}>*</Text></Text>
           <GooglePlacesAutocomplete
             ref={googlePlacesRef}
             placeholder="Enter address"
@@ -596,7 +597,7 @@ export const RequestDetailsScreen = () => {
 
         {/* Urgency */}
         <View style={styles.inputGroup}>
-          <Text style={styles.label}>Urgency</Text>
+          <Text style={styles.label}>Urgency <Text style={{color: Colors.error}}>*</Text></Text>
           <View style={styles.urgencyGroup}>
             {['Normal', 'High', 'Urgent'].map((level) => {
               const isActive = urgency === level;
@@ -724,7 +725,8 @@ export const RequestDetailsScreen = () => {
           </View>
         </View>
       </Modal>
-    </View>
+    </SafeAreaView>
+    </>
   );
 };
 
@@ -737,13 +739,14 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
+    backgroundColor: Colors.primary[500],
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.neutral[100],
+    borderBottomColor: Colors.primary[500],
   },
   backButton: {
     padding: 8,
@@ -751,7 +754,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     ...Typography.h5,
-    color: Colors.neutral[900],
+    color: Colors.neutral[0],
   },
   scrollContent: {
     padding: 20,
@@ -864,7 +867,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 24,
-    marginTop: -8,
+    marginTop: 8,
   },
   checkboxText: {
     ...Typography.bodyMedium,

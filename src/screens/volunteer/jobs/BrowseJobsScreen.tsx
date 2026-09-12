@@ -195,9 +195,11 @@ export const BrowseJobsScreen = () => {
   );
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <>
+      <SafeAreaView style={{ flex: 0, backgroundColor: Colors.primary[500] }} />
+      <SafeAreaView style={styles.safeArea}>
       <View style={styles.header}>
-        <AppText variant="h5" color={Colors.neutral[900]} style={{textAlign: 'center'}}>Browse Jobs</AppText>
+        <AppText variant="h5" color={Colors.neutral[0]} style={{textAlign: 'center'}}>Browse Jobs</AppText>
       </View>
 
       {/* Search Bar */}
@@ -319,17 +321,18 @@ export const BrowseJobsScreen = () => {
           setOrderModalVisible(false);
         }
       )}
-    </SafeAreaView>
+      </SafeAreaView>
+    </>
   );
 };
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: Colors.neutral[50] },
   header: {
+    backgroundColor: Colors.primary[500],
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.neutral[200],
-    backgroundColor: '#FFF',
+    borderBottomColor: Colors.primary[500],
   },
   searchContainer: {
     paddingHorizontal: 16,

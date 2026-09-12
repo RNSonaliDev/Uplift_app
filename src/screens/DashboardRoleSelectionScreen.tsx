@@ -313,6 +313,7 @@ const styles = StyleSheet.create({
     marginBottom: verticalScale(16),
   },
   header: {
+    // backgroundColor: Colors.primary[500],
     marginBottom: verticalScale(32),
   },
   title: {

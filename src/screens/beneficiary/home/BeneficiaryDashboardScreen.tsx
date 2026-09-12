@@ -89,7 +89,9 @@ export default function BeneficiaryDashboardScreen() {
   }, [fetchData]);
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <>
+      <SafeAreaView style={{ flex: 0, backgroundColor: Colors.primary[500] }} />
+      <SafeAreaView style={styles.safeArea}>
       <ScrollView 
         style={styles.container} 
         contentContainerStyle={styles.content}
@@ -217,28 +219,7 @@ export default function BeneficiaryDashboardScreen() {
 
           {/* Quick Actions */}
           {/* <Text style={styles.sectionTitle}>Quick Actions</Text> */}
-          <View style={styles.quickActionsContainer}>
-            {/* <QuickActionItem 
-              icon={<FileText color={Colors.neutral[700]} size={24} strokeWidth={1.5} />} 
-              label="My Requests" 
-              onPress={() => navigation.navigate('RequestsTab' as never)}
-            /> */}
-            {/* <QuickActionItem 
-              icon={<MessageSquare color={Colors.neutral[700]} size={24} strokeWidth={1.5} />} 
-              label="Message" 
-              onPress={() => navigation.navigate('MessagesTab' as never)}
-            /> */}
-            {/* <QuickActionItem 
-              icon={<User color={Colors.neutral[700]} size={24} strokeWidth={1.5} />} 
-              label="My Profile" 
-              onPress={() => navigation.navigate('ProfileTab' as never)}
-            /> */}
-            {/* <QuickActionItem 
-              icon={<Heart color={Colors.neutral[700]} size={24} strokeWidth={1.5} />} 
-              label="Donate" 
-              onPress={() => {}}
-            /> */}
-          </View>
+       
 
           {/* Need Help with? */}
           <Text style={styles.sectionTitle}>Need Help with?</Text>
@@ -272,6 +253,7 @@ export default function BeneficiaryDashboardScreen() {
         </View>
       </ScrollView>
     </SafeAreaView>
+    </>
   );
 }
 

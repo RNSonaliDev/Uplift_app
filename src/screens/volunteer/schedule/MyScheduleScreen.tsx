@@ -178,10 +178,12 @@ export default function MyScheduleScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <>
+      <SafeAreaView style={{ flex: 0, backgroundColor: Colors.primary[500] }} />
+      <SafeAreaView style={styles.safeArea}>
       <View style={styles.header}>
         <View style={styles.backButtonPlaceholder} />
-        <AppText variant="h4" color={Colors.neutral[900]} style={styles.headerTitle}>
+        <AppText variant="h5" color={Colors.neutral[0]} style={styles.headerTitle}>
           My Schedule
         </AppText>
         <View style={styles.backButtonPlaceholder} />
@@ -224,7 +226,8 @@ export default function MyScheduleScreen() {
         showsVerticalScrollIndicator={false}
         stickySectionHeadersEnabled={false}
       />
-    </SafeAreaView>
+      </SafeAreaView>
+    </>
   );
 }
 
@@ -234,13 +237,14 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.neutral[0],
   },
   header: {
+    backgroundColor: Colors.primary[500],
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: horizontalScale(16),
     paddingVertical: verticalScale(16),
     borderBottomWidth: 1,
-    borderBottomColor: Colors.neutral[200],
+    borderBottomColor: Colors.primary[500],
   },
   backButton: {
     padding: moderateScale(8),

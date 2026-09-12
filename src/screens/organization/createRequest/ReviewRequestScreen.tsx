@@ -92,8 +92,9 @@ export const ReviewRequestScreen = () => {
   );
 
   return (
-    <View style={[styles.container, { paddingTop: Platform.OS === 'android' ? insets.top : 0 }]}>
-      {Platform.OS === 'ios' && <SafeAreaView />}
+    <>
+      <SafeAreaView style={{ flex: 0, backgroundColor: Colors.primary[500] }} />
+      <SafeAreaView style={styles.container}>
 
       {/* Header */}
       <View style={styles.header}>
@@ -101,7 +102,7 @@ export const ReviewRequestScreen = () => {
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          <ArrowLeft color={Colors.neutral[900]} size={24} />
+          <ArrowLeft color={Colors.neutral[0]} size={24} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Review Request</Text>
         <View style={{ width: 40 }} />
@@ -191,7 +192,8 @@ export const ReviewRequestScreen = () => {
           )}
         </TouchableOpacity>
       </View>
-    </View>
+      </SafeAreaView>
+    </>
   );
 };
 
@@ -201,14 +203,14 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.neutral[50], // Slightly off-white for the review screen bg
   },
   header: {
+    backgroundColor: Colors.primary[500],
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingVertical: 16,
-    backgroundColor: Colors.neutral[0],
     borderBottomWidth: 1,
-    borderBottomColor: Colors.neutral[100],
+    borderBottomColor: Colors.primary[500],
   },
   backButton: {
     padding: 8,
@@ -216,7 +218,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     ...Typography.h5,
-    color: Colors.neutral[900],
+    color: Colors.neutral[0],
   },
   scrollContent: {
     padding: 20,

@@ -111,13 +111,15 @@ export const OrgRequestDetailsScreen = () => {
   );
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <>
+      <SafeAreaView style={{ flex: 0, backgroundColor: Colors.primary[500] }} />
+      <SafeAreaView style={styles.safeArea}>
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.iconButton}>
-          <ChevronLeft color={Colors.neutral[900]} size={28} strokeWidth={2} />
+          <ChevronLeft color={Colors.neutral[0]} size={28} strokeWidth={2} />
         </TouchableOpacity>
-        <AppText variant="h5" color={Colors.neutral[900]}>Request Details</AppText>
+        <AppText variant="bodyLarge" color={Colors.neutral[0]}>Request Details</AppText>
         <View style={{width: 40}} />
       </View>
 
@@ -335,7 +337,8 @@ export const OrgRequestDetailsScreen = () => {
           style={styles.acceptBtn} 
         />
       </View>
-    </SafeAreaView>
+      </SafeAreaView>
+    </>
   );
 };
 
@@ -345,6 +348,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.neutral[0],
   },
   header: {
+    backgroundColor: Colors.primary[500],
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
