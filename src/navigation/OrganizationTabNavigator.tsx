@@ -44,7 +44,8 @@ export function OrganizationTabNavigator() {
           'EmergencyContacts',
           'ContactSupport',
           'ContactSupportDetails',
-          'CreateSupportRequest'
+          'CreateSupportRequest',
+          'ChatScreen'
         ];
         const isHidden = hiddenRoutes.includes(routeName);
 

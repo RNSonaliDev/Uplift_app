@@ -425,7 +425,8 @@ export const OrganizationSetupScreen: React.FC = () => {
         <ScrollView
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled">
+          keyboardShouldPersistTaps="handled"
+          onScrollBeginDrag={() => setTypeModalVisible(false)}>
           
           <TouchableWithoutFeedback onPress={() => setTypeModalVisible(false)} accessible={false}>
             <View style={{ flex: 1 }}>
@@ -512,6 +513,7 @@ export const OrganizationSetupScreen: React.FC = () => {
                 setOrgName(text);
                 if (errors.orgName) setErrors({...errors, orgName: ''});
               }}
+              onFocus={() => setTypeModalVisible(false)}
               error={errors.orgName}
             />
 
@@ -526,6 +528,7 @@ export const OrganizationSetupScreen: React.FC = () => {
               }}
               keyboardType="email-address"
               autoCapitalize="none"
+              onFocus={() => setTypeModalVisible(false)}
               error={errors.orgEmail}
             />
 
@@ -584,6 +587,7 @@ export const OrganizationSetupScreen: React.FC = () => {
                 }}
                 textInputProps={{
                   placeholderTextColor: Colors.neutral[400],
+                  onFocus: () => setTypeModalVisible(false),
                   onChangeText: (text) => {
                     setOrgAddress(text);
                     if (errors.orgAddress) setErrors({...errors, orgAddress: ''});
@@ -634,6 +638,7 @@ export const OrganizationSetupScreen: React.FC = () => {
                 setContactName(text);
                 if (errors.contactName) setErrors({...errors, contactName: ''});
               }}
+              onFocus={() => setTypeModalVisible(false)}
               error={errors.contactName}
             />
 
@@ -648,6 +653,7 @@ export const OrganizationSetupScreen: React.FC = () => {
               }}
               keyboardType="email-address"
               autoCapitalize="none"
+              onFocus={() => setTypeModalVisible(false)}
               error={errors.contactEmail}
             />
 
@@ -662,6 +668,7 @@ export const OrganizationSetupScreen: React.FC = () => {
               }}
               keyboardType="phone-pad"
               maxLength={10}
+              onFocus={() => setTypeModalVisible(false)}
               error={errors.contactPhone}
             />
           </View>

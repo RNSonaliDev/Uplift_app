@@ -32,7 +32,8 @@ export function VolunteerTabNavigator() {
         const hiddenRoutes = [
           'RequestDetails', 'RequestAccepted', 'ParentTaskVerification', 'StartRequest', 
           'CompleteRequest', 'RateExperience', 'VolunteerJobDetails', 'EditProfile',
-          'Settings', 'LegalContent', 'EmergencyContacts', 'ContactSupport', 'ContactSupportDetails', 'CreateSupportRequest'
+          'Settings', 'LegalContent', 'EmergencyContacts', 'ContactSupport', 'ContactSupportDetails', 'CreateSupportRequest',
+          'ChatScreen'
         ];
         const isHidden = hiddenRoutes.includes(routeName);
 

@@ -20,7 +20,7 @@ export function BeneficiaryTabNavigator() {
     <Tab.Navigator
       screenOptions={({ route }) => {
         const routeName = getFocusedRouteNameFromRoute(route) ?? '';
-        const hiddenRoutes = ['BeneficiaryRequestDetails', 'RequestHelp', 'RequestTracking', 'RequestSubmitted', 'PreviewRequest', 'CreateRequest', 'RateHelper', 'EditProfile', 'Settings', 'LegalContent', 'EmergencyContacts', 'ContactSupport', 'ContactSupportDetails', 'CreateSupportRequest'];
+        const hiddenRoutes = ['BeneficiaryRequestDetails', 'RequestHelp', 'RequestTracking', 'RequestSubmitted', 'PreviewRequest', 'CreateRequest', 'RateHelper', 'EditProfile', 'Settings', 'LegalContent', 'EmergencyContacts', 'ContactSupport', 'ContactSupportDetails', 'CreateSupportRequest', 'ChatScreen'];
         const isHidden = hiddenRoutes.includes(routeName);
 
         return {

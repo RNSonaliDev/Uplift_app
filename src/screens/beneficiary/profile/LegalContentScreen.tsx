@@ -63,25 +63,120 @@ export default function LegalContentScreen() {
           <ActivityIndicator size="large" color={Colors.primary[500]} style={{ marginTop: verticalScale(40) }} />
         ) : (
           <RenderHtml
-            contentWidth={width}
+            contentWidth={width - horizontalScale(48)}
             source={{ html: content || '<p>No content available.</p>' }}
             tagsStyles={{
               body: {
                 color: Colors.neutral[600],
-                lineHeight: 24,
+                lineHeight: 26,
                 fontSize: moderateScale(14),
+                fontFamily: 'Poppins-Regular',
               },
               p: {
-                marginVertical: verticalScale(8),
+                marginTop: verticalScale(6),
+                marginBottom: verticalScale(10),
+                lineHeight: 24,
+                fontSize: moderateScale(14),
+                color: Colors.neutral[600],
+                fontFamily: 'Poppins-Regular',
               },
-              h1: { color: Colors.neutral[900] },
-              h2: { color: Colors.neutral[900] },
-              h3: { color: Colors.neutral[900] },
-              h4: { color: Colors.neutral[900] },
-              h5: { color: Colors.neutral[900] },
-              h6: { color: Colors.neutral[900] },
-              a: { color: Colors.primary[500] },
+              h1: {
+                color: Colors.neutral[800],
+                fontSize: moderateScale(22),
+                fontFamily: 'Poppins-Bold',
+                marginTop: verticalScale(24),
+                marginBottom: verticalScale(12),
+                lineHeight: 32,
+              },
+              h2: {
+                color: Colors.neutral[800],
+                fontSize: moderateScale(20),
+                fontFamily: 'Poppins-SemiBold',
+                marginTop: verticalScale(24),
+                marginBottom: verticalScale(10),
+                lineHeight: 30,
+              },
+              h3: {
+                color: Colors.neutral[800],
+                fontSize: moderateScale(18),
+                fontFamily: 'Poppins-SemiBold',
+                marginTop: verticalScale(20),
+                marginBottom: verticalScale(8),
+                lineHeight: 28,
+              },
+              h4: {
+                color: Colors.neutral[800],
+                fontSize: moderateScale(16),
+                fontFamily: 'Poppins-Medium',
+                marginTop: verticalScale(16),
+                marginBottom: verticalScale(6),
+                lineHeight: 26,
+              },
+              h5: {
+                color: Colors.neutral[800],
+                fontSize: moderateScale(15),
+                fontFamily: 'Poppins-Medium',
+                marginTop: verticalScale(14),
+                marginBottom: verticalScale(6),
+                lineHeight: 24,
+              },
+              h6: {
+                color: Colors.neutral[700],
+                fontSize: moderateScale(14),
+                fontFamily: 'Poppins-Medium',
+                marginTop: verticalScale(12),
+                marginBottom: verticalScale(4),
+              },
+              a: {
+                color: Colors.primary[500],
+                textDecorationLine: 'none',
+              },
+              li: {
+                color: Colors.neutral[600],
+                fontSize: moderateScale(14),
+                fontFamily: 'Poppins-Regular',
+                lineHeight: 24,
+                marginBottom: verticalScale(4),
+              },
+              ul: {
+                marginTop: verticalScale(4),
+                marginBottom: verticalScale(12),
+                paddingLeft: horizontalScale(8),
+              },
+              ol: {
+                marginTop: verticalScale(4),
+                marginBottom: verticalScale(12),
+                paddingLeft: horizontalScale(8),
+              },
+              strong: {
+                fontFamily: 'Poppins-SemiBold',
+                color: Colors.neutral[800],
+              },
+              em: {
+                fontFamily: 'Poppins-Italic',
+              },
+              table: {
+                borderWidth: 1,
+                borderColor: Colors.neutral[200],
+                marginVertical: verticalScale(12),
+              },
+              th: {
+                backgroundColor: Colors.neutral[100],
+                padding: moderateScale(8),
+                fontFamily: 'Poppins-SemiBold',
+                color: Colors.neutral[800],
+                fontSize: moderateScale(13),
+              },
+              td: {
+                padding: moderateScale(8),
+                borderWidth: 0.5,
+                borderColor: Colors.neutral[200],
+                fontSize: moderateScale(13),
+                fontFamily: 'Poppins-Regular',
+                color: Colors.neutral[600],
+              },
             }}
+            systemFonts={['Poppins-Regular', 'Poppins-Medium', 'Poppins-SemiBold', 'Poppins-Bold', 'Poppins-Italic']}
           />
         )}
       </ScrollView>

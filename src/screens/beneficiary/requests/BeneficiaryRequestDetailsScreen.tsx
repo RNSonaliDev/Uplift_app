@@ -99,10 +99,17 @@ export default function BeneficiaryRequestDetailsScreen() {
             <TouchableOpacity 
               style={styles.messageIconContainer}
               onPress={() => {
-                Toast.show({
-                  type: 'info',
-                  text1: 'Coming Soon',
-                  text2: 'Messaging feature will be available soon.',
+                const assignId = request.assignments?.[0]?.id || 0;
+                const recipientName = request.volunteer?.first_name 
+                  ? `${request.volunteer.first_name} ${request.volunteer.last_name || ''}`.trim() 
+                  : 'Volunteer';
+                const recipientAvatar = request.volunteer?.profile_image_url;
+                navigation.navigate('ChatScreen', {
+                  helpRequestId: request.id,
+                  assignmentId: assignId,
+                  recipientName,
+                  recipientAvatar,
+                  requestStatus: request.status,
                 });
               }}
             >

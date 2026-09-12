@@ -8,6 +8,7 @@ import {ReviewRequestScreen} from '../screens/organization/createRequest/ReviewR
 import {RequestCreatedScreen} from '../screens/organization/createRequest/RequestCreatedScreen';
 import {OrgRequestDetailsScreen} from '../screens/organization/dashboard/OrgRequestDetailsScreen';
 import {OrgRequestTrackingScreen} from '../screens/organization/dashboard/OrgRequestTrackingScreen';
+import ChatScreen from '../screens/chat/ChatScreen';
 
 type OrganizationHomeStackParamList = {
   OrganizationDashboard: undefined;
@@ -36,6 +37,7 @@ export default function OrganizationHomeStack() {
       <Stack.Screen name="RequestCreated" component={RequestCreatedScreen} />
       <Stack.Screen name="OrgRequestDetails" component={OrgRequestDetailsScreen} />
       <Stack.Screen name="OrgRequestTracking" component={OrgRequestTrackingScreen} />
+      <Stack.Screen name="ChatScreen" component={ChatScreen} />
     </Stack.Navigator>
   );
 }

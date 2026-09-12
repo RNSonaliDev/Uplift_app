@@ -7,6 +7,7 @@ import PreviewRequestScreen from '../screens/beneficiary/requests/PreviewRequest
 import RequestSubmittedScreen from '../screens/beneficiary/requests/RequestSubmittedScreen';
 import RateHelperScreen from '../screens/beneficiary/requests/RateHelperScreen';
 import BeneficiaryRequestDetailsScreen from '../screens/beneficiary/requests/BeneficiaryRequestDetailsScreen';
+import ChatScreen from '../screens/chat/ChatScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -20,6 +21,7 @@ export default function BeneficiaryRequestsStack() {
       <Stack.Screen name="PreviewRequest" component={PreviewRequestScreen} />
       <Stack.Screen name="RequestSubmitted" component={RequestSubmittedScreen} />
       <Stack.Screen name="RateHelper" component={RateHelperScreen} />
+      <Stack.Screen name="ChatScreen" component={ChatScreen} />
     </Stack.Navigator>
   );
 }

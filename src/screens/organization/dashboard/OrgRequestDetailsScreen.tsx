@@ -164,10 +164,17 @@ export const OrgRequestDetailsScreen = () => {
                         <TouchableOpacity 
                           style={styles.msgBtn}
                           onPress={() => {
-                            Toast.show({
-                              type: 'info',
-                              text1: 'Coming Soon',
-                              text2: 'Messaging feature will be available soon.',
+                            const assignId = vol.pivot?.id || vol.assignment?.id || request.assignments?.[0]?.id || 0;
+                            const recipientName = vol.first_name 
+                              ? `${vol.first_name} ${vol.last_name || ''}`.trim() 
+                              : 'Volunteer';
+                            const recipientAvatar = vol.profile_image_url;
+                            navigation.navigate('ChatScreen', {
+                              helpRequestId: request.id,
+                              assignmentId: assignId,
+                              recipientName,
+                              recipientAvatar,
+                              requestStatus: request.status,
                             });
                           }}
                         >
@@ -177,7 +184,7 @@ export const OrgRequestDetailsScreen = () => {
                     </View>
 
                     {/* Action Buttons */}
-                    {request.status?.toLowerCase() !== 'completed' && (
+                    {['on_the_way', 'in_progress'].includes(request.status?.toLowerCase()) && (
                       <View style={{ flexDirection: 'row', marginTop: 16, gap: 12 }}>
                         <Button 
                           title="Check In"

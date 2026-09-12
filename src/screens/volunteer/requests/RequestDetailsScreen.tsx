@@ -289,10 +289,16 @@ export default function RequestDetailsScreen() {
               <TouchableOpacity 
                 style={styles.messageIconContainer}
                 onPress={() => {
-                  Toast.show({
-                    type: 'info',
-                    text1: 'Coming Soon',
-                    text2: 'Messaging feature will be available soon.',
+                  const assignId = request.assignments?.[0]?.id || 0;
+                  const recipientName = request.organization?.organization_name || 
+                    (request.beneficiary?.first_name ? `${request.beneficiary?.first_name || ''} ${request.beneficiary?.last_name || ''}`.trim() : 'User');
+                  const recipientAvatar = request.organization?.profile_image_url || request.beneficiary?.profile_image_url;
+                  navigation.navigate('ChatScreen', {
+                    helpRequestId: request.id,
+                    assignmentId: assignId,
+                    recipientName,
+                    recipientAvatar,
+                    requestStatus: request.status,
                   });
                 }}
               >

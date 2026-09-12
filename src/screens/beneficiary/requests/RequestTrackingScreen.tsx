@@ -221,10 +221,17 @@ export default function RequestTrackingScreen() {
                         marginLeft: 12,
                       }}
                       onPress={() => {
-                        Toast.show({
-                          type: 'info',
-                          text1: 'Coming Soon',
-                          text2: 'Messaging feature will be available soon.',
+                        const assignId = requestDetail.assignments?.[0]?.id || 0;
+                        const recipientName = requestDetail.volunteer?.first_name 
+                          ? `${requestDetail.volunteer.first_name} ${requestDetail.volunteer.last_name || ''}`.trim() 
+                          : 'Volunteer';
+                        const recipientAvatar = requestDetail.volunteer?.profile_image_url;
+                        navigation.navigate('ChatScreen', {
+                          helpRequestId: requestDetail.id,
+                          assignmentId: assignId,
+                          recipientName,
+                          recipientAvatar,
+                          requestStatus: requestDetail.status,
                         });
                       }}
                     >
@@ -259,7 +266,23 @@ export default function RequestTrackingScreen() {
             </View>
 
             {requestDetail.volunteer && requestDetail.status !== 'completed' && (
-              <TouchableOpacity style={styles.outlineBtn}>
+              <TouchableOpacity 
+                style={styles.outlineBtn}
+                onPress={() => {
+                  const assignId = requestDetail.assignments?.[0]?.id || 0;
+                  const recipientName = requestDetail.volunteer?.first_name 
+                    ? `${requestDetail.volunteer.first_name} ${requestDetail.volunteer.last_name || ''}`.trim() 
+                    : 'Volunteer';
+                  const recipientAvatar = requestDetail.volunteer?.profile_image_url;
+                  navigation.navigate('ChatScreen', {
+                    helpRequestId: requestDetail.id,
+                    assignmentId: assignId,
+                    recipientName,
+                    recipientAvatar,
+                    requestStatus: requestDetail.status,
+                  });
+                }}
+              >
                 <Text style={styles.outlineBtnText}>Contact Helper</Text>
               </TouchableOpacity>
             )}

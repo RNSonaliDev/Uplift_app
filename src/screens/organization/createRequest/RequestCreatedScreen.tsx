@@ -7,7 +7,7 @@ import {
   SafeAreaView,
   Platform,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, CommonActions } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Check } from 'lucide-react-native';
 
@@ -19,13 +19,25 @@ export const RequestCreatedScreen = () => {
   const insets = useSafeAreaInsets();
 
   const handleViewRequests = () => {
+    // Reset current stack to Dashboard so user can't go back to success screen
+    navigation.dispatch(
+      CommonActions.reset({
+        index: 0,
+        routes: [{ name: 'OrganizationDashboard' }],
+      })
+    );
     // Navigate to Requests Tab
     navigation.navigate('RequestsTab');
   };
 
   const handleGoToDashboard = () => {
-    // Reset to Dashboard
-    navigation.navigate('HomeTab', { screen: 'OrganizationDashboard' });
+    // Reset current stack to Dashboard
+    navigation.dispatch(
+      CommonActions.reset({
+        index: 0,
+        routes: [{ name: 'OrganizationDashboard' }],
+      })
+    );
   };
 
   return (

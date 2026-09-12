@@ -4,6 +4,7 @@ import BrowseRequestsScreen from '../screens/volunteer/requests/BrowseRequestsSc
 import RequestDetailsScreen from '../screens/volunteer/requests/RequestDetailsScreen';
 import RequestAcceptedScreen from '../screens/volunteer/requests/RequestAcceptedScreen';
 import { ParentTaskVerificationScreen } from '../screens/volunteer/requests/ParentTaskVerificationScreen';
+import ChatScreen from '../screens/chat/ChatScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -14,6 +15,7 @@ export default function VolunteerRequestsStack() {
       <Stack.Screen name="RequestDetails" component={RequestDetailsScreen} />
       <Stack.Screen name="RequestAccepted" component={RequestAcceptedScreen} />
       <Stack.Screen name="ParentTaskVerification" component={ParentTaskVerificationScreen} />
+      <Stack.Screen name="ChatScreen" component={ChatScreen} />
     </Stack.Navigator>
   );
 }
