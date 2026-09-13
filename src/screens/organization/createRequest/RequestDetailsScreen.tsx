@@ -412,6 +412,18 @@ export const RequestDetailsScreen = () => {
           {/* Dates and Times */}
           {helpType === 'single' ? (
             <>
+              <TouchableOpacity 
+                style={[styles.checkboxContainer, { marginBottom: 16 }]}
+                onPress={() => setIsMultipleDates(!isMultipleDates)}
+              >
+                {isMultipleDates ? (
+                  <CheckSquare color={Colors.primary[500]} size={20} />
+                ) : (
+                  <Square color={Colors.neutral[400]} size={20} />
+                )}
+                <Text style={[styles.checkboxText, { fontFamily: FontFamily.semiBold }]}>Request for multiple dates</Text>
+              </TouchableOpacity>
+
               <View style={styles.row}>
                 <View style={[styles.inputGroup, { flex: 1, marginRight: 8, marginBottom: 0 }]}>
                   <Text style={styles.label}>{isMultipleDates ? 'Start Date' : 'Date'} <Text style={{color: Colors.error}}>*</Text></Text>
@@ -430,18 +442,6 @@ export const RequestDetailsScreen = () => {
                   </View>
                 )}
               </View>
-
-              <TouchableOpacity 
-                style={styles.checkboxContainer}
-                onPress={() => setIsMultipleDates(!isMultipleDates)}
-              >
-                {isMultipleDates ? (
-                  <CheckSquare color={Colors.primary[600]} size={20} />
-                ) : (
-                  <Square color={Colors.neutral[400]} size={20} />
-                )}
-                <Text style={styles.checkboxText}>Request for multiple dates</Text>
-              </TouchableOpacity>
               <View style={styles.row}>
                 <View style={[styles.inputGroup, { flex: 1, marginRight: 8, marginBottom: errors.time ? 8 : 24 }]}>
                   <Text style={styles.label}>Start Time <Text style={{color: Colors.error}}>*</Text></Text>
@@ -583,16 +583,23 @@ export const RequestDetailsScreen = () => {
           {!!addressError ? (
             <Text style={styles.errorText}>{addressError}</Text>
           ) : addressValidation?.message ? (
-            <View style={{flexDirection: 'row', alignItems: 'flex-start', marginTop: 4}}>
+            <View style={{
+              flexDirection: 'row', 
+              alignItems: 'flex-start', 
+              backgroundColor: addressValidation.addressType === 'business' ? Colors.secondary[50] : Colors.primary[50],
+              borderRadius: 8,
+              padding: 12,
+              marginTop: 8
+            }}>
               <Info 
-                color={addressValidation.addressType === 'business' ? Colors.success : Colors.warning} 
-                size={16} 
-                style={{marginTop: 2, marginRight: 4}} 
+                color={addressValidation.addressType === 'business' ? Colors.success : Colors.info} 
+                size={20} 
+                style={{marginTop: 0, marginRight: 8}} 
               />
               <AppText 
                 variant="bodySmall" 
-                color={addressValidation.addressType === 'business' ? Colors.success : Colors.warning} 
-                style={{flex: 1}}
+                color={addressValidation.addressType === 'business' ? Colors.success : Colors.info} 
+                style={{flex: 1, lineHeight: 18}}
               >
                 {addressValidation.message}
               </AppText>
@@ -695,7 +702,7 @@ export const RequestDetailsScreen = () => {
           style={styles.primaryButton}
           onPress={handleContinue}
         >
-          <Text style={styles.primaryButtonText}>Continue</Text>
+          <Text style={styles.primaryButtonText}>Preview Request</Text>
         </TouchableOpacity>
       </View>
 
@@ -847,7 +854,7 @@ const styles = StyleSheet.create({
     color: Colors.neutral[700],
   },
   radioTextActive: {
-    color: Colors.primary[600],
+    color: Colors.primary[500],
   },
   helperText: {
     ...Typography.caption,
@@ -909,7 +916,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.neutral[0],
   },
   primaryButton: {
-    backgroundColor: Colors.primary[600],
+    backgroundColor: Colors.primary[500],
     paddingVertical: 16,
     borderRadius: 12,
     alignItems: 'center',
@@ -973,7 +980,7 @@ const styles = StyleSheet.create({
   },
   radiusValue: {
     ...Typography.labelMedium,
-    color: Colors.primary[600],
+    color: Colors.primary[500],
   },
   sliderContainer: {
     paddingHorizontal: 8,
@@ -990,18 +997,18 @@ const styles = StyleSheet.create({
     left: 0,
     top: 0,
     bottom: 0,
-    backgroundColor: Colors.primary[600],
+    backgroundColor: Colors.primary[500],
     borderRadius: 2,
   },
   sliderThumb: {
     position: 'absolute',
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: Colors.primary[600],
-    top: -8,
-    marginLeft: -10, // Center thumb
-    borderWidth: 2,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: Colors.primary[500],
+    top: -10,
+    marginLeft: -12, // Center thumb
+    borderWidth: 2.5,
     borderColor: Colors.neutral[0],
   },
   sliderLabels: {
@@ -1044,8 +1051,8 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.neutral[50],
   },
   urgencyButtonActive: {
-    backgroundColor: Colors.primary[600],
-    borderColor: Colors.primary[600],
+    backgroundColor: Colors.primary[500],
+    borderColor: Colors.primary[500],
   },
   urgencyText: {
     ...Typography.labelMedium,

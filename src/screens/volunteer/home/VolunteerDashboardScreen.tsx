@@ -29,6 +29,7 @@ import {
   Clock,
   ArrowRightLeft,
   Star,
+  ChevronRight,
 } from 'lucide-react-native';
 import {authApi, UserProfileResponse} from '../../../api/auth';
 import {api, getFullImageUrl} from '../../../api/client';
@@ -138,30 +139,40 @@ export default function VolunteerDashboardScreen() {
 
         {/* Browse Support Section */}
         <View style={styles.sectionContainer}>
-          <AppText variant="h5" style={{ marginBottom: 16 }}>Browse Support</AppText>
-          <View style={{ flexDirection: 'row', gap: 12 }}>
+          <AppText variant="h5" style={styles.browseSectionTitle}>Browse Support</AppText>
+          <View style={styles.browseCardsRow}>
             <TouchableOpacity 
-              style={[styles.supportCard, { backgroundColor: Colors.primary[50], borderColor: Colors.primary[200] }]}
+              style={styles.browseSupportCard}
               onPress={() => navigation.navigate('RequestsTab', { screen: 'BrowseRequests', params: { activeTab: 'beneficiary', timestamp: Date.now() } })}
               activeOpacity={0.7}
             >
-              <View style={[styles.supportIconWrapper, { backgroundColor: Colors.primary[100] }]}>
-                <User color={Colors.primary[600]} size={24} />
+              <View style={styles.browseCardTop}>
+                <View style={[styles.browseIconCircle, { backgroundColor: Colors.primary[50] }]}>
+                  <User color={Colors.primary[500]} size={22} />
+                </View>
+                <View style={styles.browseArrowCircle}>
+                  <ChevronRight color={Colors.primary[500]} size={16} />
+                </View>
               </View>
-              <AppText variant="labelLarge" weight="semiBold" color={Colors.primary[700]} style={{ marginTop: 12 }}>Beneficiary</AppText>
-              <AppText variant="caption" color={Colors.primary[600]}>Support</AppText>
+              <AppText variant="labelLarge" weight="semiBold" color={Colors.neutral[900]} style={styles.browseCardTitle}>Beneficiary</AppText>
+              <AppText variant="caption" color={Colors.neutral[500]} style={styles.browseCardDesc}>Help individuals with daily needs & errands</AppText>
             </TouchableOpacity>
 
             <TouchableOpacity 
-              style={[styles.supportCard, { backgroundColor: Colors.secondary[50], borderColor: Colors.secondary[200] }]}
+              style={styles.browseSupportCard}
               onPress={() => navigation.navigate('RequestsTab', { screen: 'BrowseRequests', params: { activeTab: 'organization', timestamp: Date.now() } })}
               activeOpacity={0.7}
             >
-              <View style={[styles.supportIconWrapper, { backgroundColor: Colors.secondary[100] }]}>
-                <Building color={Colors.secondary[600]} size={24} />
+              <View style={styles.browseCardTop}>
+                <View style={[styles.browseIconCircle, { backgroundColor: Colors.secondary[50] }]}>
+                  <Building color={Colors.secondary[500]} size={22} />
+                </View>
+                <View style={styles.browseArrowCircle}>
+                  <ChevronRight color={Colors.secondary[500]} size={16} />
+                </View>
               </View>
-              <AppText variant="labelLarge" weight="semiBold" color={Colors.secondary[700]} style={{ marginTop: 12 }}>Organization</AppText>
-              <AppText variant="caption" color={Colors.secondary[600]}>Support</AppText>
+              <AppText variant="labelLarge" weight="semiBold" color={Colors.neutral[900]} style={styles.browseCardTitle}>Organization</AppText>
+              <AppText variant="caption" color={Colors.neutral[500]} style={styles.browseCardDesc}>Volunteer for community events & programs</AppText>
             </TouchableOpacity>
           </View>
         </View>
@@ -383,5 +394,54 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  browseSectionTitle: {
+    marginBottom: verticalScale(16),
+    color: Colors.neutral[900],
+  },
+  browseCardsRow: {
+    flexDirection: 'row',
+    gap: horizontalScale(12),
+  },
+  browseSupportCard: {
+    flex: 1,
+    backgroundColor: Colors.neutral[0],
+    borderRadius: moderateScale(16),
+    padding: moderateScale(16),
+    shadowColor: Colors.neutral[900],
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: Colors.neutral[100],
+  },
+  browseCardTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    width: '100%',
+    marginBottom: verticalScale(12),
+  },
+  browseIconCircle: {
+    width: moderateScale(44),
+    height: moderateScale(44),
+    borderRadius: moderateScale(22),
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  browseArrowCircle: {
+    width: moderateScale(28),
+    height: moderateScale(28),
+    borderRadius: moderateScale(14),
+    backgroundColor: Colors.neutral[50],
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  browseCardTitle: {
+    marginBottom: verticalScale(4),
+  },
+  browseCardDesc: {
+    lineHeight: moderateScale(16),
   },
 });

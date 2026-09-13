@@ -21,7 +21,7 @@ import {
   MessageSquare,
   Map,
   Star,
-  ShieldAlert,
+  Info,
 } from 'lucide-react-native';
 
 export default function RequestDetailsScreen() {
@@ -91,7 +91,7 @@ export default function RequestDetailsScreen() {
 
         {/* Security Note */}
         <View style={styles.securityNote}>
-          <ShieldAlert color={Colors.warning} size={24} />
+          <Info color={Colors.info} size={24} />
           <Text style={styles.securityText}>
             For your safety, never share personal information or belongings like your SSN or bank details with anyone.
           </Text>
@@ -260,7 +260,7 @@ const styles = StyleSheet.create({
   },
   securityNote: {
     flexDirection: 'row',
-    backgroundColor: Colors.warning + '1A', // 10% opacity
+    backgroundColor: Colors.primary[50],
     padding: 16,
     borderRadius: 8,
     alignItems: 'flex-start',
@@ -271,6 +271,6 @@ const styles = StyleSheet.create({
     marginLeft: 12,
     lineHeight: 20,
     ...Typography.caption,
-    color: Colors.neutral[600],
+    color: Colors.info,
   },
 });

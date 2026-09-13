@@ -29,10 +29,10 @@ import {
   Users,
   MoreHorizontal,
   Clock,
-  ShieldAlert,
+  MessageCircle,
+  Info,
   User,
   Phone,
-  MessageCircle,
 } from 'lucide-react-native';
 import {formatDate, formatTime12Hour, formatDateTime} from '../../../utils/dateFormatter';
 
@@ -43,9 +43,22 @@ export default function RequestTrackingScreen() {
 
   const [requestDetail, setRequestDetail] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [currentUserId, setCurrentUserId] = useState<number | null>(null);
 
   useFocusEffect(
     useCallback(() => {
+      const fetchProfile = async () => {
+        try {
+          const profileData: any = await api.get('/profile');
+          if (profileData?.id) setCurrentUserId(profileData.id);
+          else if (profileData?.data?.id) setCurrentUserId(profileData.data.id);
+        } catch (e) {
+          console.error('Failed to fetch profile', e);
+        }
+      };
+
+      fetchProfile();
+
       if (requestId) {
         fetchRequestDetails();
       } else {
@@ -261,8 +274,8 @@ export default function RequestTrackingScreen() {
 
           <View style={styles.bottomContainer}>
             <View style={styles.safetyNoteContainer}>
-              <ShieldAlert color={Colors.warning} size={24} />
-              <AppText variant="caption" style={styles.safetyNoteText}>
+              <Info color={Colors.primary[500]} size={24} />
+              <AppText variant="caption" color={Colors.primary[500]} style={styles.safetyNoteText}>
                 For your safety, never share personal information or belongings like your SSN or bank details with anyone.
               </AppText>
             </View>
@@ -288,12 +301,12 @@ export default function RequestTrackingScreen() {
                 <Text style={styles.outlineBtnText}>Contact Helper</Text>
               </TouchableOpacity>
             )} */}
-            {requestDetail.status === 'completed' && (
+            {requestDetail.status === 'completed' && !requestDetail.ratings?.some((r: any) => r.rater_id === currentUserId) && (
               <TouchableOpacity 
                 style={[styles.outlineBtn, {backgroundColor: Colors.primary[500]}]}
                 onPress={() => navigation.navigate('RateHelper', {requestId})}
               >
-                <Text style={[styles.outlineBtnText, {color: Colors.neutral[0]}]}>Rate Helper</Text>
+                <Text style={[styles.outlineBtnText, {color: Colors.neutral[0]}]}>Rate Volunteer</Text>
               </TouchableOpacity>
             )}
             {requestDetail.status === 'pending' && (
@@ -505,7 +518,7 @@ const styles = StyleSheet.create({
   },
   safetyNoteContainer: {
     flexDirection: 'row',
-    backgroundColor: Colors.warning + '1A',
+    backgroundColor: Colors.primary[50],
     padding: 16,
     borderRadius: 8,
     marginBottom: 24,
@@ -515,6 +528,5 @@ const styles = StyleSheet.create({
     flex: 1,
     marginLeft: 12,
     lineHeight: 20,
-    color: Colors.neutral[600],
   },
 });

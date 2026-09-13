@@ -8,7 +8,7 @@ import {useNavigation, useRoute} from '@react-navigation/native';
 import {Colors} from '../../../theme/colors';
 import {AppText} from '../../../components/AppText';
 import {Button} from '../../../components/Button';
-import {Send, ShieldAlert} from 'lucide-react-native';
+import {Send, Info} from 'lucide-react-native';
 import {
   horizontalScale,
   verticalScale,
@@ -58,8 +58,8 @@ export default function RequestSubmittedScreen() {
           </View>
 
           <View style={styles.securityNote}>
-            <ShieldAlert color={Colors.warning} size={moderateScale(24)} />
-            <AppText variant="caption" color={Colors.neutral[600]} style={styles.securityText}>
+            <Info color={Colors.info} size={moderateScale(24)} />
+            <AppText variant="caption" color={Colors.info} style={styles.securityText}>
               For your safety, never share personal information or belongings like your SSN or bank details with anyone.
             </AppText>
           </View>
@@ -137,7 +137,7 @@ const styles = StyleSheet.create({
   },
   securityNote: {
     flexDirection: 'row',
-    backgroundColor: Colors.warning + '1A', // 10% opacity
+    backgroundColor: Colors.primary[50],
     padding: moderateScale(16),
     borderRadius: BorderRadius.md,
     alignItems: 'flex-start',

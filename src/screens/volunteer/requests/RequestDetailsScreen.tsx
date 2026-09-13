@@ -30,7 +30,7 @@ import {
   MapPin,
   FileText,
   Star,
-  ShieldAlert,
+  Info,
   MessageCircle,
 } from 'lucide-react-native';
 import {
@@ -55,6 +55,8 @@ export default function RequestDetailsScreen() {
 
   const [isOtpModalVisible, setIsOtpModalVisible] = useState(false);
   const [otpCode, setOtpCode] = useState('');
+  const [currentUserId, setCurrentUserId] = useState<number | null>(null);
+  const [isFullScreenImageVisible, setIsFullScreenImageVisible] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -72,9 +74,12 @@ export default function RequestDetailsScreen() {
       };
       const fetchProfile = async () => {
         try {
-          const profileData = await api.get('/profile');
+          const profileData: any = await api.get('/profile');
+          if (profileData?.id) setCurrentUserId(profileData.id);
+          else if (profileData?.data?.id) setCurrentUserId(profileData.data.id);
+
           console.log('profileData', profileData);
-          if ((profileData as any)?.teen_requires_parent_consent) {
+          if (profileData?.teen_requires_parent_consent) {
              setRequiresParentAccept(true);
              setParentEmail((profileData as any)?.parent_email || '');
           }
@@ -93,7 +98,9 @@ export default function RequestDetailsScreen() {
   const showStartBtn = forceAction === 'start' || request.status?.toLowerCase() === 'accepted';
   const showStartWithOtpBtn = forceAction === 'start_with_otp' || request.status?.toLowerCase() === 'on_the_way';
   const showCompleteBtn = !isOrgRequest && (forceAction === 'complete' || request.status?.toLowerCase() === 'in_progress');
-  const showRateBtn = forceAction === 'rate' || (request.status?.toLowerCase() === 'completed' && (!request.ratings || request.ratings.length === 0));
+  
+  const hasRated = request.ratings?.some((r: any) => r.rater_id === currentUserId);
+  const showRateBtn = forceAction === 'rate' || (request.status?.toLowerCase() === 'completed' && !hasRated);
 
   const handleAcceptClick = async () => {
     if (!request.id) return;
@@ -265,14 +272,20 @@ export default function RequestDetailsScreen() {
           <View style={styles.profileSection}>
             <View style={styles.avatarContainer}>
               {(request.organization?.profile_image_url || request.beneficiary?.profile_image_url) ? (
-                <Image 
-                  source={{uri: getFullImageUrl(request.organization?.profile_image_url || request.beneficiary?.profile_image_url) as string}} 
-                  style={styles.avatar} 
-                />
+                <TouchableOpacity onPress={() => setIsFullScreenImageVisible(true)} style={{flex: 1}}>
+                  <Image 
+                    source={{uri: getFullImageUrl(request.organization?.profile_image_url || request.beneficiary?.profile_image_url) as string}} 
+                    style={styles.avatar} 
+                  />
+                </TouchableOpacity>
               ) : (
                 <View style={[styles.avatar, {justifyContent: 'center', alignItems: 'center'}]}>
-                  <AppText variant="h6" color={Colors.neutral[600]}>
-                    {(request.organization?.organization_name || request.beneficiary?.first_name || 'O').charAt(0).toUpperCase()}
+                  <AppText variant="h6" color={Colors.neutral[0]}>
+                    {request.organization?.organization_name 
+                      ? request.organization.organization_name.charAt(0).toUpperCase()
+                      : (request.beneficiary?.first_name 
+                          ? `${request.beneficiary.first_name.charAt(0)}${request.beneficiary.last_name ? request.beneficiary.last_name.charAt(0) : ''}`.toUpperCase() 
+                          : 'O')}
                   </AppText>
                 </View>
               )}
@@ -425,8 +438,8 @@ export default function RequestDetailsScreen() {
 
         {/* Security Note */}
         <View style={styles.securityNote}>
-          <ShieldAlert color={Colors.warning} size={24} />
-          <AppText variant="caption" style={styles.securityText}>
+          <Info color={Colors.primary[500]} size={24} />
+          <AppText variant="caption" color={Colors.primary[500]} style={styles.securityText}>
             For your safety, never share personal information or belongings like your SSN or bank details with anyone.
           </AppText>
         </View>
@@ -502,7 +515,7 @@ export default function RequestDetailsScreen() {
 
 
 
-      {showRateBtn && (
+      {showRateBtn && !request.ratings?.some((r: any) => r.rater_id === currentUserId) && (
         <View style={styles.actionContainer}>
           <Button 
             title="Rate Experience" 
@@ -555,6 +568,29 @@ export default function RequestDetailsScreen() {
             />
           </View>
         </KeyboardAvoidingView>
+      </Modal>
+
+      <Modal
+        visible={isFullScreenImageVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setIsFullScreenImageVisible(false)}
+      >
+        <View style={styles.fullScreenModal}>
+          <TouchableOpacity 
+            style={styles.fullScreenCloseBtn} 
+            onPress={() => setIsFullScreenImageVisible(false)}
+          >
+            <AppText variant="h6" color={Colors.neutral[0]}>Close</AppText>
+          </TouchableOpacity>
+          {(request.organization?.profile_image_url || request.beneficiary?.profile_image_url) && (
+            <Image 
+              source={{uri: getFullImageUrl(request.organization?.profile_image_url || request.beneficiary?.profile_image_url) as string}} 
+              style={styles.fullScreenImage} 
+              resizeMode="contain"
+            />
+          )}
+        </View>
       </Modal>
       </SafeAreaView>
     </>
@@ -611,7 +647,7 @@ const styles = StyleSheet.create({
     height: moderateScale(56),
     borderRadius: moderateScale(28),
     overflow: 'hidden',
-    backgroundColor: Colors.neutral[100],
+    backgroundColor: Colors.primary[500],
     marginRight: horizontalScale(16),
   },
   avatar: {
@@ -690,7 +726,7 @@ const styles = StyleSheet.create({
   },
   securityNote: {
     flexDirection: 'row',
-    backgroundColor: Colors.warning + '1A', // 10% opacity
+    backgroundColor: Colors.primary[50],
     padding: 16,
     borderRadius: 8,
     alignItems: 'flex-start',
@@ -701,6 +737,22 @@ const styles = StyleSheet.create({
     flex: 1,
     marginLeft: 12,
     lineHeight: 20,
-    color: Colors.neutral[600],
+  },
+  fullScreenModal: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  fullScreenImage: {
+    width: '100%',
+    height: '80%',
+  },
+  fullScreenCloseBtn: {
+    position: 'absolute',
+    top: verticalScale(50),
+    right: horizontalScale(20),
+    padding: moderateScale(10),
+    zIndex: 1,
   },
 });

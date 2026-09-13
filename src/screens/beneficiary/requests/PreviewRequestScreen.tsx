@@ -103,7 +103,7 @@ export default function PreviewRequestScreen() {
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.iconButton}>
           <ChevronLeft color={Colors.neutral[0]} size={28} />
         </TouchableOpacity>
-        <AppText variant="h5" color={Colors.neutral[0]} style={styles.headerTitle}>Review Your Request</AppText>
+        <AppText variant="h5" color={Colors.neutral[0]} style={styles.headerTitle}>Preview Request</AppText>
         <View style={{width: 28}} />
       </View>
 

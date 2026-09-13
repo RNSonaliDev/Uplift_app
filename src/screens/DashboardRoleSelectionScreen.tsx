@@ -252,26 +252,20 @@ export const DashboardRoleSelectionScreen: React.FC = () => {
 
   return (
     <>
-      <SafeAreaView style={{ flex: 0, backgroundColor: Colors.primary[500] }} />
+      <SafeAreaView style={{ flex: 0, backgroundColor: Colors.neutral[0] }} />
       <View style={styles.container}>
-        <StatusBar barStyle="light-content" backgroundColor={Colors.primary[500]} />
+        <StatusBar barStyle="dark-content" backgroundColor={Colors.neutral[0]} />
         <View style={styles.headerRow}>
           {navigation.canGoBack() ? (
             <TouchableOpacity
               style={styles.backButton}
               onPress={() => navigation.goBack()}
               hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
-              <ChevronLeft color={Colors.neutral[0]} size={28} />
+              <ChevronLeft color={Colors.neutral[900]} size={28} />
             </TouchableOpacity>
           ) : (
             <View style={styles.rightSpacer} />
           )}
-
-          <AppText variant="h5" color={Colors.neutral[0]} style={styles.headerTitle}>
-            Choose Dashboard
-          </AppText>
-
-          <View style={styles.rightSpacer} />
         </View>
 
         <View style={{ flex: 1, backgroundColor: Colors.neutral[0] }}>
@@ -279,6 +273,10 @@ export const DashboardRoleSelectionScreen: React.FC = () => {
             contentContainerStyle={styles.scrollContent}
             showsVerticalScrollIndicator={false}
             bounces={false}>
+
+          <AppText variant="h4" center color={Colors.neutral[900]} style={styles.title}>
+            Choose Dashboard
+          </AppText>
 
           <AppText variant="bodyLarge" center color={Colors.neutral[500]} style={styles.subtitle}>
             Select which profile you'd like to access right now. You can switch between them anytime in settings.
@@ -312,7 +310,7 @@ const { width } = Dimensions.get('window');
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.primary[500],
+    backgroundColor: Colors.neutral[0],
   },
   scrollContent: {
     flexGrow: 1,
@@ -324,12 +322,12 @@ const styles = StyleSheet.create({
     // marginBottom: verticalScale(16),
   },
   headerRow: {
-    backgroundColor: Colors.primary[500],
+    backgroundColor: Colors.neutral[0],
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: horizontalScale(16),
-    paddingVertical: verticalScale(16),
+    paddingVertical: 0,
   },
   headerTitle: {
     flex: 1,
@@ -337,6 +335,9 @@ const styles = StyleSheet.create({
   },
   rightSpacer: {
     width: moderateScale(28),
+  },
+  title: {
+    marginTop: 0,
   },
   subtitle: {
     lineHeight: fontScale(24),

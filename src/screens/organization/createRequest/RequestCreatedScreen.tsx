@@ -108,7 +108,7 @@ const styles = StyleSheet.create({
     width: 96,
     height: 96,
     borderRadius: 48,
-    backgroundColor: Colors.primary[600],
+    backgroundColor: Colors.primary[500],
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -143,7 +143,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.neutral[0],
   },
   primaryButton: {
-    backgroundColor: Colors.primary[600],
+    backgroundColor: Colors.primary[500],
     paddingVertical: 16,
     borderRadius: 12,
     alignItems: 'center',
@@ -159,10 +159,10 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: Colors.primary[600],
+    borderColor: Colors.primary[500],
   },
   secondaryButtonText: {
     ...Typography.buttonLarge,
-    color: Colors.primary[600],
+    color: Colors.primary[500],
   },
 });

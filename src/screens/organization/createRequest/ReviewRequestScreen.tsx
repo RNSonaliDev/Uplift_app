@@ -22,6 +22,7 @@ import {
   MapPin,
   AlertTriangle,
   FileText,
+  Clock,
 } from 'lucide-react-native';
 
 import { Colors } from '../../../theme/colors';
@@ -79,17 +80,30 @@ export const ReviewRequestScreen = () => {
     }
   };
 
-  const SummaryItem = ({ icon: Icon, title, value, color = Colors.primary[600], bgColor = Colors.primary[50] }: any) => (
-    <View style={styles.summaryItem}>
-      <View style={[styles.iconContainer, { backgroundColor: bgColor }]}>
-        <Icon color={color} size={20} />
+  const SummaryItem = ({ icon: Icon, title, value, type = 'horizontal' }: any) => {
+    if (type === 'vertical') {
+      return (
+        <View style={styles.summaryItemVertical}>
+          <View style={styles.summaryItemTitleRow}>
+            {Icon && <Icon color={Colors.neutral[700]} size={20} />}
+            <Text style={[styles.itemTitleDark, Icon ? { marginLeft: 12 } : null]}>{title}</Text>
+          </View>
+          <View style={Icon ? { paddingLeft: 32 } : null}>
+            <Text style={styles.itemValueLight}>{value}</Text>
+          </View>
+        </View>
+      );
+    }
+    return (
+      <View style={styles.summaryItemHorizontal}>
+        <View style={styles.summaryItemTitleRow}>
+          {Icon && <Icon color={Colors.neutral[700]} size={20} />}
+          <Text style={[styles.itemTitleDark, Icon ? { marginLeft: 12 } : null]}>{title}</Text>
+        </View>
+        <Text style={styles.itemValueLightRight}>{value}</Text>
       </View>
-      <View style={styles.textContainer}>
-        <Text style={styles.itemTitle}>{title}</Text>
-        <Text style={styles.itemValue}>{value}</Text>
-      </View>
-    </View>
-  );
+    );
+  };
 
   return (
     <>
@@ -104,14 +118,14 @@ export const ReviewRequestScreen = () => {
         >
           <ArrowLeft color={Colors.neutral[0]} size={24} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Review Request</Text>
+        <Text style={styles.headerTitle}>Preview Request</Text>
         <View style={{ width: 40 }} />
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         
         <Text style={styles.instructions}>
-          Please review your request details before submitting.
+          Please review all details before submitting.
         </Text>
 
         <View style={styles.card}>
@@ -124,15 +138,22 @@ export const ReviewRequestScreen = () => {
           
           <SummaryItem 
             icon={FileText} 
-            title="Request Title" 
+            title="Title" 
             value={params.title || 'Grocery Assistance for Community Center'} 
           />
           <View style={styles.divider} />
           
           <SummaryItem 
-            icon={AlignLeft} 
-            title="Description" 
-            value={params.description || 'We need help with groceries for our upcoming weekend community meal program.'} 
+            icon={Calendar} 
+            title="Date" 
+            value={params.startDate !== params.endDate ? `${params.startDate} - ${params.endDate}` : params.startDate} 
+          />
+          <View style={styles.divider} />
+          
+          <SummaryItem 
+            icon={Clock} 
+            title="Time" 
+            value={`${params.startTime} - ${params.endTime}`} 
           />
           <View style={styles.divider} />
           
@@ -140,23 +161,6 @@ export const ReviewRequestScreen = () => {
             icon={Users} 
             title="Number of positions" 
             value={params.helpType === 'multiple' ? 'Multiple Volunteers' : 'Single Volunteer'} 
-          />
-          <View style={styles.divider} />
-          
-          <SummaryItem 
-            icon={Calendar} 
-            title="Dates & Times" 
-            value={params.endDate === '' 
-              ? `${params.startDate}\n${params.startTime} to ${params.endTime}`
-              : `${params.startDate} at ${params.startTime}\nto ${params.endDate} at ${params.endTime}`
-            } 
-          />
-          <View style={styles.divider} />
-          
-          <SummaryItem 
-            icon={MapPin} 
-            title="Location" 
-            value={params.address} 
           />
           <View style={styles.divider} />
           
@@ -171,8 +175,22 @@ export const ReviewRequestScreen = () => {
             icon={AlertTriangle} 
             title="Urgency" 
             value={params.urgency || 'High'} 
-            color={params.urgency === 'Urgent' ? Colors.error : params.urgency === 'High' ? Colors.warning : Colors.primary[600]}
-            bgColor={params.urgency === 'Urgent' ? '#FEF2F2' : params.urgency === 'High' ? '#FFFBEB' : Colors.primary[50]}
+          />
+          <View style={styles.divider} />
+
+          <SummaryItem 
+            icon={MapPin} 
+            title="Location" 
+            value={params.address}
+            type="vertical" 
+          />
+          <View style={styles.divider} />
+
+          <SummaryItem 
+            icon={AlignLeft} 
+            title="Description" 
+            value={params.description || 'We need help with groceries for our upcoming weekend community meal program.'}
+            type="vertical" 
           />
         </View>
 
@@ -236,29 +254,35 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.neutral[200],
   },
-  summaryItem: {
+  summaryItemHorizontal: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
-  },
-  iconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 10,
-    justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 16,
+    justifyContent: 'space-between',
   },
-  textContainer: {
-    flex: 1,
+  summaryItemVertical: {
+    flexDirection: 'column',
+    justifyContent: 'flex-start',
   },
-  itemTitle: {
-    ...Typography.caption,
-    color: Colors.neutral[500],
+  summaryItemTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
     marginBottom: 4,
   },
-  itemValue: {
+  itemTitleDark: {
     ...Typography.bodyMedium,
+    fontFamily: FontFamily.semiBold,
     color: Colors.neutral[900],
+  },
+  itemValueLightRight: {
+    ...Typography.bodyMedium,
+    color: Colors.neutral[500],
+    textAlign: 'right',
+    flex: 1,
+    marginLeft: 16,
+  },
+  itemValueLight: {
+    ...Typography.bodyMedium,
+    color: Colors.neutral[500],
   },
   divider: {
     height: 1,
@@ -273,7 +297,7 @@ const styles = StyleSheet.create({
     borderTopColor: Colors.neutral[100],
   },
   primaryButton: {
-    backgroundColor: Colors.primary[600],
+    backgroundColor: Colors.primary[500],
     paddingVertical: 16,
     borderRadius: 12,
     alignItems: 'center',

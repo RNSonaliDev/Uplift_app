@@ -731,10 +731,10 @@ export const VolunteerSetupScreen: React.FC = () => {
             </View> */}
 
             <Input
-              label=" Volunteering hours goal per week (Optional)"
+              label=" Volunteering hours goal per week"
               placeholder="Enter number of hours (e.g., 2)"
               leftIcon={<ClockIcon />}
-              rightIcon={<AppText variant="caption" color={Colors.neutral[500]}>hrs/week</AppText>}
+              // rightIcon={<AppText variant="caption" color={Colors.neutral[500]}>hrs/week</AppText>}
               value={hours}
               onChangeText={(text) => {
                 const numeric = text.replace(/[^0-9]/g, '');
@@ -742,6 +742,7 @@ export const VolunteerSetupScreen: React.FC = () => {
               }}
               keyboardType="number-pad"
               maxLength={3}
+              required={false}
             />
           </View>
 
@@ -754,9 +755,9 @@ export const VolunteerSetupScreen: React.FC = () => {
                   <AppText variant="labelMedium" color={Colors.neutral[900]} style={{ flexShrink: 1 }}>
                     Select service radius (within your selected radius)
                   </AppText>
-                  <TouchableOpacity style={{marginLeft: 6}}>
+                  {/* <TouchableOpacity style={{marginLeft: 6}}>
                     <InfoCircleIcon size={16} color={Colors.primary[500]} />
-                  </TouchableOpacity>
+                  </TouchableOpacity> */}
                 </View>
                 <View style={styles.pillContainer}>
                   <AppText variant="caption" color={Colors.primary[600]} weight="semiBold">
@@ -1068,7 +1069,7 @@ const styles = StyleSheet.create({
     marginBottom: verticalScale(16),
   },
   sliderContainer: {
-    height: 20,
+    height: 30,
     justifyContent: 'center',
     marginBottom: Spacing.xs,
   },
@@ -1085,13 +1086,13 @@ const styles = StyleSheet.create({
   },
   sliderThumb: {
     position: 'absolute',
-    width: 16,
-    height: 16,
-    borderRadius: 8,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     backgroundColor: Colors.neutral[0],
-    borderWidth: 2,
+    borderWidth: 2.5,
     borderColor: Colors.primary[500],
-    marginLeft: -8, // Center thumb
+    marginLeft: -12, // Center thumb
   },
   sliderLimitsRow: {
     flexDirection: 'row',

@@ -190,7 +190,7 @@ export default function ChatScreen() {
                   style={styles.avatarSmallImage}
                 />
               ) : (
-                <AppText variant="caption" color={Colors.neutral[600]} weight="semiBold">
+                <AppText variant="caption" color={Colors.neutral[0]} weight="semiBold">
                   {getInitials(recipientName || 'U')}
                 </AppText>
               )}
@@ -216,11 +216,13 @@ export default function ChatScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <>
+      <SafeAreaView style={{ flex: 0, backgroundColor: Colors.primary[500] }} />
+      <SafeAreaView style={styles.safeArea}>
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <ChevronLeft color={Colors.neutral[900]} size={28} strokeWidth={2} />
+          <ChevronLeft color={Colors.neutral[0]} size={28} strokeWidth={2} />
         </TouchableOpacity>
         <View style={styles.headerCenter}>
           <View style={styles.headerAvatar}>
@@ -230,13 +232,13 @@ export default function ChatScreen() {
                 style={styles.headerAvatarImage}
               />
             ) : (
-              <AppText variant="labelMedium" color={Colors.neutral[0]} weight="semiBold">
+              <AppText variant="labelMedium" color={Colors.primary[500]} weight="semiBold">
                 {getInitials(recipientName || 'User')}
               </AppText>
             )}
           </View>
           <View style={{ marginLeft: 12 }}>
-            <AppText variant="labelLarge" color={Colors.neutral[900]} numberOfLines={1}>
+            <AppText variant="labelLarge" color={Colors.neutral[0]} numberOfLines={1}>
               {recipientName || 'Chat'}
             </AppText>
             {/* {canSend && (
@@ -315,7 +317,8 @@ export default function ChatScreen() {
           </View>
         )}
       </KeyboardAvoidingView>
-    </SafeAreaView>
+      </SafeAreaView>
+    </>
   );
 }
 
@@ -330,8 +333,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: horizontalScale(16),
     paddingVertical: verticalScale(12),
     borderBottomWidth: 1,
-    borderBottomColor: Colors.neutral[200],
-    backgroundColor: Colors.neutral[0],
+    borderBottomColor: Colors.primary[500],
+    backgroundColor: Colors.primary[500],
   },
   backBtn: {
     padding: moderateScale(4),
@@ -346,7 +349,7 @@ const styles = StyleSheet.create({
     width: moderateScale(40),
     height: moderateScale(40),
     borderRadius: moderateScale(20),
-    backgroundColor: Colors.primary[500],
+    backgroundColor: Colors.neutral[0],
     justifyContent: 'center',
     alignItems: 'center',
     overflow: 'hidden',
@@ -399,7 +402,7 @@ const styles = StyleSheet.create({
     width: moderateScale(28),
     height: moderateScale(28),
     borderRadius: moderateScale(14),
-    backgroundColor: Colors.neutral[200],
+    backgroundColor: Colors.primary[500],
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: horizontalScale(8),

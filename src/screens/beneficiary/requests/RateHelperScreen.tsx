@@ -71,19 +71,23 @@ export default function RateHelperScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <>
+      <SafeAreaView style={{ flex: 0, backgroundColor: Colors.primary[500] }} />
+      <SafeAreaView style={styles.safeArea}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <ChevronLeft color={Colors.neutral[900]} size={28} />
+          <ChevronLeft color={Colors.neutral[0]} size={28} />
         </TouchableOpacity>
         <AppText variant="h5" style={styles.headerTitle}>Rate Experience</AppText>
-        <View style={{width: 28}} />
+        <View style={[styles.backBtn, {opacity: 0}]} pointerEvents="none">
+          <View style={{width: 28, height: 28}} />
+        </View>
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent} bounces={false}>
         <View style={styles.card}>
           <AppText variant="h5" color={Colors.neutral[900]} style={styles.title}>
-            Rate Your Helper
+            Rate Your Experience
           </AppText>
           
           <AppText variant="bodyLarge" color={Colors.neutral[700]} style={styles.subtitle}>
@@ -132,6 +136,7 @@ export default function RateHelperScreen() {
         </View>
       </ScrollView>
     </SafeAreaView>
+    </>
   );
 }
 
@@ -145,16 +150,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: horizontalScale(16),
-    paddingVertical: verticalScale(16),
-    backgroundColor: Colors.neutral[0],
+    paddingVertical: verticalScale(12),
+    backgroundColor: Colors.primary[500],
     borderBottomWidth: 1,
-    borderBottomColor: Colors.neutral[200],
+    borderBottomColor: Colors.primary[500],
   },
   backBtn: {
-    padding: moderateScale(4),
+    padding: moderateScale(8),
   },
   headerTitle: {
-    color: Colors.neutral[900],
+    color: Colors.neutral[0],
   },
   scrollContent: {
     padding: horizontalScale(24),

@@ -7,6 +7,7 @@ import {
   ScrollView,
   Image,
   Alert,
+  Modal,
 } from 'react-native';
 import Toast from 'react-native-toast-message';
 import {useNavigation, useRoute, useFocusEffect} from '@react-navigation/native';
@@ -21,7 +22,7 @@ import {
   Clock,
   MapPin,
   FileText,
-  ShieldAlert,
+  Info,
   MessageCircle,
 } from 'lucide-react-native';
 import {
@@ -35,6 +36,7 @@ export default function BeneficiaryRequestDetailsScreen() {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const [request, setRequest] = useState<any>(route.params?.request || {});
+  const [isFullScreenImageVisible, setIsFullScreenImageVisible] = useState(false);
   
   const requestId = route.params?.requestId || request.id;
 
@@ -76,13 +78,15 @@ export default function BeneficiaryRequestDetailsScreen() {
           <View style={styles.profileSection}>
             <View style={styles.avatarContainer}>
               {request.volunteer?.profile_image_url ? (
-                <Image 
-                  source={{uri: getFullImageUrl(request.volunteer.profile_image_url) as string}} 
-                  style={styles.avatar} 
-                />
+                <TouchableOpacity onPress={() => setIsFullScreenImageVisible(true)} style={{flex: 1}}>
+                  <Image 
+                    source={{uri: getFullImageUrl(request.volunteer.profile_image_url) as string}} 
+                    style={styles.avatar} 
+                  />
+                </TouchableOpacity>
               ) : (
                 <View style={[styles.avatar, {justifyContent: 'center', alignItems: 'center'}]}>
-                  <AppText variant="h6" color={Colors.neutral[600]}>
+                  <AppText variant="h6" color={Colors.neutral[0]}>
                     {request.volunteer?.first_name 
                       ? `${request.volunteer.first_name.charAt(0)}${request.volunteer.last_name ? request.volunteer.last_name.charAt(0) : ''}`.toUpperCase() 
                       : ''}
@@ -94,28 +98,52 @@ export default function BeneficiaryRequestDetailsScreen() {
               <AppText variant="labelLarge" color={Colors.neutral[900]} style={{marginBottom: 4}}>
                 {request.volunteer?.first_name ? `${request.volunteer.first_name} ${request.volunteer.last_name || ''}` : 'Volunteer'}
               </AppText>
-              <AppText variant="caption" color={Colors.neutral[500]}>Assigned Volunteer</AppText>
+              <AppText variant="caption" color={['on_the_way', 'in_progress'].includes(request.status) ? Colors.primary[500] : Colors.neutral[500]}>
+                {request.status === 'on_the_way' ? 'On the way' : 
+                 request.status === 'in_progress' ? 'In Progress' : 
+                 request.status === 'completed' ? 'Completed' : 
+                 'Assigned Volunteer'}
+              </AppText>
             </View>
 
-            <TouchableOpacity 
-              style={styles.messageIconContainer}
-              onPress={() => {
-                const assignId = request.assignments?.[0]?.id || 0;
-                const recipientName = request.volunteer?.first_name 
-                  ? `${request.volunteer.first_name} ${request.volunteer.last_name || ''}`.trim() 
-                  : 'Volunteer';
-                const recipientAvatar = request.volunteer?.profile_image_url;
-                navigation.navigate('ChatScreen', {
-                  helpRequestId: request.id,
-                  assignmentId: assignId,
-                  recipientName,
-                  recipientAvatar,
-                  requestStatus: request.status,
-                });
-              }}
-            >
-              <MessageCircle color={Colors.primary[500]} size={24} />
-            </TouchableOpacity>
+            {!['in_progress', 'completed'].includes((request.status || '').toLowerCase()) && (
+              <TouchableOpacity 
+                style={styles.messageIconContainer}
+                onPress={() => {
+                  const assignId = request.assignments?.[0]?.id || 0;
+                  const recipientName = request.volunteer?.first_name 
+                    ? `${request.volunteer.first_name} ${request.volunteer.last_name || ''}`.trim() 
+                    : 'Volunteer';
+                  const recipientAvatar = request.volunteer?.profile_image_url;
+                  navigation.navigate('ChatScreen', {
+                    helpRequestId: request.id,
+                    assignmentId: assignId,
+                    recipientName,
+                    recipientAvatar,
+                    requestStatus: request.status,
+                  });
+                }}
+              >
+                <MessageCircle color={Colors.primary[500]} size={24} />
+              </TouchableOpacity>
+            )}
+          </View>
+        )}
+
+        {/* Start Code Section */}
+        {request.start_code && (request.status || '').toLowerCase() === 'on_the_way' && (
+          <View style={styles.startCodeCard}>
+            <AppText variant="labelMedium" color={Colors.primary[900]} style={{marginBottom: 12}}>
+              Start Code
+            </AppText>
+            <View style={styles.startCodeBox}>
+              <AppText variant="h3" color={Colors.primary[900]} style={{letterSpacing: 12}}>
+                {request.start_code}
+              </AppText>
+            </View>
+            <AppText variant="caption" color={Colors.neutral[600]} style={{marginTop: 16, textAlign: 'center', lineHeight: 20}}>
+              Share this 6-digit code with the volunteer when they arrive to start the request.
+            </AppText>
           </View>
         )}
 
@@ -209,8 +237,8 @@ export default function BeneficiaryRequestDetailsScreen() {
 
         {/* Security Note */}
         <View style={styles.securityNote}>
-          <ShieldAlert color={Colors.warning} size={24} />
-          <AppText variant="caption" style={styles.securityText}>
+          <Info color={Colors.primary[500]} size={24} />
+          <AppText variant="caption" color={Colors.primary[500]} style={styles.securityText}>
             For your safety, never share personal information or belongings like your SSN or bank details with anyone.
           </AppText>
         </View>
@@ -223,6 +251,30 @@ export default function BeneficiaryRequestDetailsScreen() {
           style={styles.acceptBtn} 
         />
       </View>
+
+      <Modal
+        visible={isFullScreenImageVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setIsFullScreenImageVisible(false)}
+      >
+        <View style={styles.fullScreenModal}>
+          <TouchableOpacity 
+            style={styles.fullScreenCloseBtn} 
+            onPress={() => setIsFullScreenImageVisible(false)}
+          >
+            <AppText variant="h6" color={Colors.neutral[0]}>Close</AppText>
+          </TouchableOpacity>
+          {request.volunteer?.profile_image_url && (
+            <Image 
+              source={{uri: getFullImageUrl(request.volunteer.profile_image_url) as string}} 
+              style={styles.fullScreenImage} 
+              resizeMode="contain"
+            />
+          )}
+        </View>
+      </Modal>
+
       </SafeAreaView>
     </>
   );
@@ -273,7 +325,7 @@ const styles = StyleSheet.create({
     height: moderateScale(56),
     borderRadius: moderateScale(28),
     overflow: 'hidden',
-    backgroundColor: Colors.neutral[100],
+    backgroundColor: Colors.primary[500],
     marginRight: horizontalScale(16),
   },
   avatar: {
@@ -296,6 +348,31 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: Colors.neutral[100],
     marginBottom: verticalScale(24),
+  },
+  startCodeCard: {
+    backgroundColor: Colors.primary[50],
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: verticalScale(20),
+    alignItems: 'center',
+    width: '100%',
+    borderWidth: 1,
+    borderColor: Colors.primary[100],
+  },
+  startCodeBox: {
+    backgroundColor: Colors.neutral[0],
+    borderWidth: 1,
+    borderColor: Colors.primary[200],
+    borderRadius: 12,
+    paddingVertical: verticalScale(16),
+    paddingHorizontal: horizontalScale(24),
+    width: '100%',
+    alignItems: 'center',
+    shadowColor: Colors.primary[900],
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
   },
   detailsSection: {
     flex: 1,
@@ -325,7 +402,7 @@ const styles = StyleSheet.create({
   },
   securityNote: {
     flexDirection: 'row',
-    backgroundColor: Colors.warning + '1A', // 10% opacity
+    backgroundColor: Colors.primary[50],
     padding: 16,
     borderRadius: 8,
     alignItems: 'flex-start',
@@ -336,6 +413,22 @@ const styles = StyleSheet.create({
     flex: 1,
     marginLeft: 12,
     lineHeight: 20,
-    color: Colors.neutral[600],
+  },
+  fullScreenModal: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  fullScreenImage: {
+    width: '100%',
+    height: '80%',
+  },
+  fullScreenCloseBtn: {
+    position: 'absolute',
+    top: verticalScale(50),
+    right: horizontalScale(20),
+    padding: moderateScale(10),
+    zIndex: 1,
   },
 });

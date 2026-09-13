@@ -18,7 +18,7 @@ import {Colors} from '../../../theme/colors';
 import {AppText} from '../../../components/AppText';
 import {Input} from '../../../components/Input';
 import {Button} from '../../../components/Button';
-import {ChevronLeft, Calendar, MapPin, Clock, Info, Navigation, BadgeCheck, Phone, ChevronDown} from 'lucide-react-native';
+import {ChevronLeft, Calendar, MapPin, Clock, Info, Navigation, BadgeCheck, Phone, ChevronDown, Check} from 'lucide-react-native';
 import {Spacing} from '../../../theme/spacing';
 import {authApi} from '../../../api/auth';
 import Svg, { Circle } from 'react-native-svg';
@@ -143,7 +143,11 @@ export default function EditProfileScreen() {
   const GOOGLE_MAPS_API_KEY = 'AIzaSyAd20tmxrXZ1VCyhZx4q9aK0ejZtQtE92s';
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [showEmailVerifiedInfo, setShowEmailVerifiedInfo] = useState(false);
+  const [showPhoneVerifiedInfo, setShowPhoneVerifiedInfo] = useState(false);
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+  const [isTypeModalVisible, setTypeModalVisible] = useState(false);
+  const [organizationTypes, setOrganizationTypes] = useState<string[]>([]);
   const [date, setDate] = useState(new Date(2000, 0, 1));
   const [formData, setFormData] = useState({
     base_first_name: '',
@@ -200,9 +204,23 @@ export default function EditProfileScreen() {
         });
       } catch (error) {
         console.error('Failed to fetch profile', error);
-      } finally {
-        setLoading(false);
       }
+
+      if (currentRole === 'organization') {
+        try {
+          const categoriesData = await authApi.getOrganizationCategories();
+          if (categoriesData && Array.isArray(categoriesData)) {
+            const mappedTypes = categoriesData.map((c: any) => c.title || c.name || c.category_name || c);
+            if (mappedTypes.length > 0) {
+              setOrganizationTypes(mappedTypes);
+            }
+          }
+        } catch (error) {
+          console.error('Failed to fetch organization categories', error);
+        }
+      }
+      
+      setLoading(false);
     };
     fetchProfile();
   }, [currentRole]);
@@ -274,33 +292,59 @@ export default function EditProfileScreen() {
             value={formData.base_last_name}
             disabled={true}
           /> */}
-          <Input
-            label="Email Address"
-            value={formData.email}
-            disabled={true}
-            rightIcon={
-              formData.email_verified ? (
-                <TouchableOpacity onPress={() => Toast.show({ type: 'success', text1: 'Verified', text2: 'Email address is verified.' })}>
-                  <BadgeCheck color={Colors.success} size={20} />
-                </TouchableOpacity>
-              ) : undefined
-            }
-          />
-          <Input
-            label="Phone Number"
-            value={formData.phone.startsWith('+1') ? formData.phone.slice(2) : formData.phone}
-            onChangeText={v => handleChange('phone', v)}
-            keyboardType="phone-pad"
-            disabled={true}
-            leftIcon={<PhonePrefixPrefix />}
-            rightIcon={
-              formData.phone_verified ? (
-                <TouchableOpacity onPress={() => Toast.show({ type: 'success', text1: 'Verified', text2: 'Phone number is verified.' })}>
-                  <BadgeCheck color={Colors.success} size={20} />
-                </TouchableOpacity>
-              ) : undefined
-            }
-          />
+          <View style={{position: 'relative', zIndex: 11}}>
+            <Input
+              label="Email Address"
+              value={formData.email}
+              disabled={true}
+              rightIcon={
+                formData.email_verified ? (
+                  <TouchableOpacity onPress={() => setShowEmailVerifiedInfo(!showEmailVerifiedInfo)}>
+                    <BadgeCheck color={Colors.success} size={20} />
+                  </TouchableOpacity>
+                ) : undefined
+              }
+            />
+            {showEmailVerifiedInfo && (
+              <View style={styles.tooltipContainer}>
+                <View style={styles.tooltipTriangle} />
+                <AppText variant="labelMedium" weight="bold" color={Colors.neutral[900]} style={{marginBottom: 4}}>
+                  Verified
+                </AppText>
+                <AppText variant="caption" color={Colors.neutral[800]} style={{lineHeight: 18}}>
+                  Email address is verified.
+                </AppText>
+              </View>
+            )}
+          </View>
+          <View style={{position: 'relative', zIndex: 10}}>
+            <Input
+              label="Phone Number"
+              value={formData.phone.startsWith('+1') ? formData.phone.slice(2) : formData.phone}
+              onChangeText={v => handleChange('phone', v)}
+              keyboardType="phone-pad"
+              disabled={true}
+              leftIcon={<PhonePrefixPrefix />}
+              rightIcon={
+                formData.phone_verified ? (
+                  <TouchableOpacity onPress={() => setShowPhoneVerifiedInfo(!showPhoneVerifiedInfo)}>
+                    <BadgeCheck color={Colors.success} size={20} />
+                  </TouchableOpacity>
+                ) : undefined
+              }
+            />
+            {showPhoneVerifiedInfo && (
+              <View style={styles.tooltipContainer}>
+                <View style={styles.tooltipTriangle} />
+                <AppText variant="labelMedium" weight="bold" color={Colors.neutral[900]} style={{marginBottom: 4}}>
+                  Verified
+                </AppText>
+                <AppText variant="caption" color={Colors.neutral[800]} style={{lineHeight: 18}}>
+                  Phone number is verified.
+                </AppText>
+              </View>
+            )}
+          </View>
           <Input
             label="Date of Birth"
             value={getDisplayDob(formData.dob)}
@@ -421,11 +465,46 @@ export default function EditProfileScreen() {
 
           {currentRole === 'organization' && (
             <>
-              <Input
-                label="Organization Type"
-                value={formData.organization_type}
-                onChangeText={v => handleChange('organization_type', v)}
-              />
+              <TouchableOpacity activeOpacity={0.8} onPress={() => setTypeModalVisible(!isTypeModalVisible)}>
+                <View pointerEvents="none">
+                  <Input
+                    label="Organization Type"
+                    placeholder="Select organization type"
+                    value={formData.organization_type || ''}
+                    editable={false}
+                    rightIcon={<ChevronDown color={Colors.neutral[500]} size={20} />}
+                  />
+                </View>
+              </TouchableOpacity>
+
+              {isTypeModalVisible && (
+                <View style={styles.inlineDropdown}>
+                  {organizationTypes.map((item, index) => {
+                    const isSelected = formData.organization_type === item;
+                    const isLast = index === organizationTypes.length - 1;
+                    return (
+                      <TouchableOpacity
+                        key={item + index}
+                        style={[styles.dropdownItem, isLast && { borderBottomWidth: 0 }]}
+                        onPress={() => {
+                          setFormData(prev => ({ ...prev, organization_type: item }));
+                          setTypeModalVisible(false);
+                        }}
+                      >
+                        <AppText
+                          variant="bodyMedium"
+                          color={isSelected ? Colors.primary[500] : Colors.neutral[800]}
+                          weight={isSelected ? 'bold' : 'regular'}
+                        >
+                          {item || ''}
+                        </AppText>
+                        {isSelected && <Check color={Colors.primary[500]} size={18} />}
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              )}
+
               <Input
                 label="Organization Name"
                 value={formData.organization_name}
@@ -622,7 +701,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   sliderContainer: {
-    height: 20,
+    height: 30,
     justifyContent: 'center',
     marginBottom: 4,
   },
@@ -639,13 +718,13 @@ const styles = StyleSheet.create({
   },
   sliderThumb: {
     position: 'absolute',
-    width: 16,
-    height: 16,
-    borderRadius: 8,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     backgroundColor: Colors.neutral[0],
-    borderWidth: 2,
+    borderWidth: 2.5,
     borderColor: Colors.primary[500],
-    marginLeft: -8, // Center thumb
+    marginLeft: -12, // Center thumb
   },
   sliderLimitsRow: {
     flexDirection: 'row',
@@ -662,6 +741,37 @@ const styles = StyleSheet.create({
     borderColor: Colors.neutral[200],
     backgroundColor: Colors.neutral[0],
     marginBottom: 12,
+    alignItems: 'center',
+  },
+  tooltipContainer: {
+    position: 'absolute',
+    top: 75,
+    right: 0,
+    backgroundColor: Colors.neutral[0],
+    borderRadius: 8,
+    padding: Spacing.md,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 4,
+    zIndex: 20,
+    width: 200,
+  },
+  tooltipTriangle: {
+    position: 'absolute',
+    top: -10,
+    right: 18,
+    width: 0,
+    height: 0,
+    borderLeftWidth: 10,
+    borderRightWidth: 10,
+    borderBottomWidth: 10,
+    borderStyle: 'solid',
+    backgroundColor: 'transparent',
+    borderLeftColor: 'transparent',
+    borderRightColor: 'transparent',
+    borderBottomColor: Colors.neutral[0],
   },
   radioCardSelected: {
     borderColor: Colors.primary[500],
@@ -686,5 +796,28 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.neutral[200],
     marginLeft: Spacing.sm,
     marginRight: Spacing.sm,
+  },
+  inlineDropdown: {
+    backgroundColor: Colors.neutral[0],
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: Colors.neutral[200],
+    marginTop: -8, // slightly overlap with input spacing
+    marginBottom: 16,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  dropdownItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.neutral[100],
   },
 });

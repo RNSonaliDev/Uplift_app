@@ -490,16 +490,23 @@ export default function CreateRequestScreen() {
                 {errors.meeting_location}
               </AppText>
             ) : addressValidation?.message ? (
-              <View style={{flexDirection: 'row', alignItems: 'flex-start', marginTop: 4}}>
+              <View style={{
+                flexDirection: 'row', 
+                alignItems: 'flex-start', 
+                backgroundColor: addressValidation.addressType === 'business' ? Colors.secondary[50] : Colors.primary[50],
+                borderRadius: 8,
+                padding: 12,
+                marginTop: 8
+              }}>
                 <Info 
-                  color={addressValidation.addressType === 'business' ? Colors.success : Colors.warning} 
-                  size={16} 
-                  style={{marginTop: 2, marginRight: 4}} 
+                  color={addressValidation.addressType === 'business' ? Colors.success : Colors.info} 
+                  size={20} 
+                  style={{marginTop: 0, marginRight: 8}} 
                 />
                 <AppText 
                   variant="bodySmall" 
-                  color={addressValidation.addressType === 'business' ? Colors.success : Colors.warning} 
-                  style={{flex: 1}}
+                  color={addressValidation.addressType === 'business' ? Colors.success : Colors.info} 
+                  style={{flex: 1, lineHeight: 18}}
                 >
                   {addressValidation.message}
                 </AppText>

@@ -294,23 +294,17 @@ export const SelectRolesScreen: React.FC = () => {
 
   return (
     <>
-      <SafeAreaView style={{ flex: 0, backgroundColor: Colors.primary[500] }} />
+      <SafeAreaView style={{ flex: 0, backgroundColor: Colors.neutral[0] }} />
       <View style={styles.container}>
-        <StatusBar barStyle="light-content" backgroundColor={Colors.primary[500]} />
+        <StatusBar barStyle="dark-content" backgroundColor={Colors.neutral[0]} />
         
         <View style={styles.headerRow}>
           <TouchableOpacity
             style={styles.backButton}
             onPress={() => navigation.goBack()}
             hitSlop={{top: 12, bottom: 12, left: 12, right: 12}}>
-            <ChevronLeft color={Colors.neutral[0]} size={28} />
+            <ChevronLeft color={Colors.neutral[900]} size={28} />
           </TouchableOpacity>
-
-          <AppText variant="h5" color={Colors.neutral[0]} style={styles.headerTitle}>
-            {isFromProfile ? 'Add a New Role' : `How Would You Like\nTo Join Uplift?`}
-          </AppText>
-
-          <View style={styles.rightSpacer} />
         </View>
 
         <View style={{ flex: 1, backgroundColor: Colors.neutral[0] }}>
@@ -318,6 +312,10 @@ export const SelectRolesScreen: React.FC = () => {
             contentContainerStyle={styles.scrollContent}
             showsVerticalScrollIndicator={false}
             bounces={false}>
+
+        <AppText variant="h4" center color={Colors.neutral[900]} style={styles.title}>
+          {isFromProfile ? 'Add a New Role' : `How Would You Like\nTo Join Uplift?`}
+        </AppText>
 
         <AppText
           variant="bodyMedium"
@@ -427,7 +425,7 @@ export const SelectRolesScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.primary[500],
+    backgroundColor: Colors.neutral[0],
   },
   scrollContent: {
     flexGrow: 1,
@@ -435,12 +433,12 @@ const styles = StyleSheet.create({
     paddingBottom: verticalScale(24),
   },
   headerRow: {
-    backgroundColor: Colors.primary[500],
+    backgroundColor: Colors.neutral[0],
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: horizontalScale(16),
-    paddingVertical: verticalScale(16),
+    paddingVertical: 0,
   },
   headerTitle: {
     flex: 1,
@@ -457,7 +455,7 @@ const styles = StyleSheet.create({
     marginTop: verticalScale(0),
   },
   title: {
-    marginTop: verticalScale(16),
+    marginTop: 0,
   },
   subtitle: {
     marginTop: verticalScale(8),

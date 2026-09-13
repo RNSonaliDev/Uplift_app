@@ -549,8 +549,11 @@ const is14To17 = age !== null && age >= 14 && age < 18 ;  // Info tooltip visibi
                 {/* Phone Number with Tooltip */}
                 <View style={styles.phoneInputWrapper}>
                   <View style={styles.labelRow}>
-                    <AppText variant="labelMedium" color={errors.phoneNumber ? Colors.error : Colors.neutral[700]} style={{marginBottom: Spacing.xs}}>
+                    <AppText variant="labelMedium" color={Colors.neutral[700]} style={{marginBottom: Spacing.xs}}>
                       Phone number
+                    </AppText>
+                    <AppText variant="labelMedium" color={Colors.error} style={{marginLeft: 4, marginBottom: Spacing.xs}}>
+                      *
                     </AppText>
                     <TouchableOpacity 
                       style={{marginLeft: 6, marginBottom: Spacing.xs}}
@@ -807,7 +810,7 @@ const styles = StyleSheet.create({
   tooltipContainer: {
     position: 'absolute',
     top: 32, // Vertically aligned slightly below the label
-    right: 0,
+    left: 4,
     backgroundColor: Colors.neutral[0],
     borderRadius: BorderRadius.md,
     padding: Spacing.md,
@@ -818,18 +821,18 @@ const styles = StyleSheet.create({
   },
   tooltipTriangle: {
     position: 'absolute',
-    top: 18,
-    left: -10, // Pointing left, sticking out of the container
+    top: -10,
+    left: 104, // Pointing UP, aligned under the icon
     width: 0,
     height: 0,
-    borderTopWidth: 10,
-    borderBottomWidth: 10,
+    borderLeftWidth: 10,
     borderRightWidth: 10,
+    borderBottomWidth: 10,
     borderStyle: 'solid',
     backgroundColor: 'transparent',
-    borderTopColor: 'transparent',
-    borderBottomColor: 'transparent',
-    borderRightColor: Colors.neutral[0],
+    borderLeftColor: 'transparent',
+    borderRightColor: 'transparent',
+    borderBottomColor: Colors.neutral[0],
   },
   spacer: {
     flex: 1,
