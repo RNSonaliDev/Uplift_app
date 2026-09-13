@@ -25,6 +25,7 @@ import {
 } from 'lucide-react-native';
 import {authApi, CategoryResponse} from '../../../api/auth';
 import {api, getFullImageUrl} from '../../../api/client';
+import { AppText } from '../../../components';
 
 const {width} = Dimensions.get('window');
 const CARD_GAP = horizontalScale(16);
@@ -71,7 +72,7 @@ export default function RequestHelpScreen() {
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
           <ChevronLeft color={Colors.neutral[0]} size={28} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Request Help</Text>
+        <AppText variant="h5" color={Colors.neutral[0]} style={{textAlign: 'center'}}>Request Help</AppText>
         <View style={{width: 28}} />
       </View>
 

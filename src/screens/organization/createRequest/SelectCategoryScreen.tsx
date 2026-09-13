@@ -29,6 +29,7 @@ import {
 import { Colors } from '../../../theme/colors';
 import { Typography, FontFamily } from '../../../theme/typography';
 import { api, getFullImageUrl } from '../../../api/client';
+import { AppText } from '../../../components';
 
 export const SelectCategoryScreen = () => {
   const navigation = useNavigation<any>();
@@ -67,7 +68,7 @@ export const SelectCategoryScreen = () => {
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerAbsoluteCenter}>
-          <Text style={styles.headerTitle}>Select Category</Text>
+          <AppText variant="h5" color={Colors.neutral[0]} style={{textAlign: 'center'}}>Select Category</AppText>
         </View>
         <TouchableOpacity
           style={styles.backButton}

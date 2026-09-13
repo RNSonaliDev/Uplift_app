@@ -126,7 +126,7 @@ export default function RequestTrackingScreen() {
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
           <ChevronLeft color={Colors.neutral[0]} size={28} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Request Tracking</Text>
+        <AppText variant="h5" color={Colors.neutral[0]} style={{textAlign: 'center'}}>Request Tracking</AppText>
         <View style={{width: 28}} />
       </View>
 
@@ -261,12 +261,12 @@ export default function RequestTrackingScreen() {
               />
               <TimelineItem 
                 status={['completed'].includes(requestDetail.status) ? 'completed' : requestDetail.status === 'in_progress' ? 'active' : 'pending'} 
-                title="Job started" 
+                title="Check In" 
               />
               <TimelineItem 
                 status={requestDetail.status === 'completed' ? 'completed' : 'pending'} 
-                title="Completed" 
-                description={requestDetail.status === 'completed' ? 'Thanks you! Your request is completed.' : 'We will notify you when completed.'}
+                title="Check Out" 
+                description={requestDetail.status === 'completed' ? 'Thanks you! Your request is completed.' : 'We will notify you when checked out.'}
                 isLast
               />
             </View>
@@ -304,7 +304,7 @@ export default function RequestTrackingScreen() {
             {requestDetail.status === 'completed' && !requestDetail.ratings?.some((r: any) => r.rater_id === currentUserId) && (
               <TouchableOpacity 
                 style={[styles.outlineBtn, {backgroundColor: Colors.primary[500]}]}
-                onPress={() => navigation.navigate('RateHelper', {requestId})}
+                onPress={() => navigation.navigate('RateHelper', {requestId, rateeId: requestDetail.volunteer?.id || requestDetail.assignments?.[0]?.volunteer?.id})}
               >
                 <Text style={[styles.outlineBtnText, {color: Colors.neutral[0]}]}>Rate Volunteer</Text>
               </TouchableOpacity>

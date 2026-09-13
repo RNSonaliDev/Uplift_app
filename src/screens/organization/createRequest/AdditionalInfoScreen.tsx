@@ -16,6 +16,7 @@ import { ArrowLeft, Image as ImageIcon } from 'lucide-react-native';
 
 import { Colors } from '../../../theme/colors';
 import { Typography, FontFamily } from '../../../theme/typography';
+import { AppText } from '../../../components';
 
 export const AdditionalInfoScreen = () => {
   const navigation = useNavigation<any>();
@@ -47,7 +48,7 @@ export const AdditionalInfoScreen = () => {
         >
           <ArrowLeft color={Colors.neutral[900]} size={24} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Additional Information</Text>
+        <AppText variant="h5" color={Colors.neutral[0]} style={{textAlign: 'center'}}>Additional Information</AppText>
         <View style={{ width: 40 }} />
       </View>
 

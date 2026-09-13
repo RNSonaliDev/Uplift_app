@@ -273,7 +273,7 @@ export default function EditProfileScreen() {
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
           <ChevronLeft color={Colors.neutral[0]} size={28} />
         </TouchableOpacity>
-        <AppText variant="h5" style={styles.headerTitle}>Edit Profile</AppText>
+        <AppText variant="h5" color={Colors.neutral[0]} style={{textAlign: 'center'}}>Edit Profile</AppText>
         <View style={{width: 28}} />
       </View>
 

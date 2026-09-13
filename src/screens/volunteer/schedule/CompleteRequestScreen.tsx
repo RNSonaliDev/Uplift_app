@@ -66,7 +66,7 @@ export default function CompleteRequestScreen() {
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <ArrowLeft color={Colors.neutral[900]} size={24} />
         </TouchableOpacity>
-        <AppText variant="h6" color={Colors.neutral[900]} style={styles.headerTitle}>
+        <AppText variant="h5" color={Colors.neutral[0]} style={{textAlign: 'center'}}>
           Complete Request
         </AppText>
         <View style={styles.backButtonPlaceholder} />

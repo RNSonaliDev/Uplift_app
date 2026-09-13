@@ -8,7 +8,9 @@ import {ReviewRequestScreen} from '../screens/organization/createRequest/ReviewR
 import {RequestCreatedScreen} from '../screens/organization/createRequest/RequestCreatedScreen';
 import {OrgRequestDetailsScreen} from '../screens/organization/dashboard/OrgRequestDetailsScreen';
 import {OrgRequestTrackingScreen} from '../screens/organization/dashboard/OrgRequestTrackingScreen';
+import {AllVolunteersScreen} from '../screens/organization/dashboard/AllVolunteersScreen';
 import ChatScreen from '../screens/chat/ChatScreen';
+import RateHelperScreen from '../screens/beneficiary/requests/RateHelperScreen';
 
 type OrganizationHomeStackParamList = {
   OrganizationDashboard: undefined;
@@ -19,6 +21,7 @@ type OrganizationHomeStackParamList = {
   RequestCreated: undefined;
   OrgRequestDetails: { request: any };
   OrgRequestTracking: { request: any };
+  AllVolunteers: { request: any; requestId?: number };
 };
 
 const Stack = createNativeStackNavigator<OrganizationHomeStackParamList>();
@@ -37,7 +40,9 @@ export default function OrganizationHomeStack() {
       <Stack.Screen name="RequestCreated" component={RequestCreatedScreen} />
       <Stack.Screen name="OrgRequestDetails" component={OrgRequestDetailsScreen} />
       <Stack.Screen name="OrgRequestTracking" component={OrgRequestTrackingScreen} />
+      <Stack.Screen name="AllVolunteers" component={AllVolunteersScreen} />
       <Stack.Screen name="ChatScreen" component={ChatScreen} />
+      <Stack.Screen name="RateHelper" component={RateHelperScreen} />
     </Stack.Navigator>
   );
 }

@@ -292,7 +292,7 @@ export const RequestDetailsScreen = () => {
         >
           <ArrowLeft color={Colors.neutral[0]} size={24} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Request Details</Text>
+        <AppText variant="h5" color={Colors.neutral[0]} style={{textAlign: 'center'}}>Request Details</AppText>
         <View style={{ width: 40 }} />
       </View>
 

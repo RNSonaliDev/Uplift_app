@@ -11,7 +11,7 @@ import {useNavigation, useRoute} from '@react-navigation/native';
 import {Colors} from '../../../theme/colors';
 import {AppText} from '../../../components/AppText';
 import {Button} from '../../../components/Button';
-import {ChevronLeft, ClipboardList, Calendar, Clock, MapPin, FileText} from 'lucide-react-native';
+import {ChevronLeft, ClipboardList, Calendar, Clock, MapPin, FileText, AlignLeft} from 'lucide-react-native';
 import {
   horizontalScale,
   verticalScale,
@@ -66,32 +66,43 @@ export default function PreviewRequestScreen() {
     }
   };
 
-  const renderInlineRow = (icon: React.ReactNode, label: string, value: string) => (
+  const renderInlineRow = (icon: any, label: string, value: string) => (
     <View style={styles.inlineRow}>
       <View style={styles.rowLeft}>
         {icon}
-        <AppText variant="labelMedium" style={styles.inlineLabel}>{label}</AppText>
+        <AppText variant="bodyMedium" color={Colors.neutral[900]} style={styles.inlineLabel}>{label}</AppText>
       </View>
-      <AppText variant="labelMedium" color={Colors.neutral[500]} style={{flex: 1, textAlign: 'right', marginLeft: 16}} numberOfLines={1}>
-        {value}
-      </AppText>
+      {label === 'Category' ? (
+        <View style={{ flex: 1, alignItems: 'flex-end', paddingLeft: 16 }}>
+          <View style={[styles.categoryBadge, { paddingHorizontal: horizontalScale(12), paddingVertical: verticalScale(6), borderRadius: 16 }]}>
+            <AppText variant="labelMedium" color={Colors.primary[600]} style={{ textAlign: 'center' }}>
+              {value}
+            </AppText>
+          </View>
+        </View>
+      ) : (
+        <AppText variant="bodyMedium" color={Colors.neutral[600]} style={styles.inlineValue}>{value}</AppText>
+      )}
     </View>
   );
 
-  const renderColumnRow = (icon: React.ReactNode, label: string, value: string) => (
+  const renderColumnRow = (icon: any, label: string, value: string) => (
     <View style={styles.columnRow}>
-      {icon && <View style={styles.iconContainer}>{icon}</View>}
-      <View style={styles.columnContent}>
-        <AppText variant="labelMedium" style={styles.columnLabel}>{label}</AppText>
-        <AppText variant="bodyMedium" color={Colors.neutral[500]}>{value}</AppText>
+      <View style={styles.detailLabelRow}>
+        {icon}
+        <AppText variant="bodyMedium" color={Colors.neutral[900]} style={styles.columnLabel}>{label}</AppText>
       </View>
+      <AppText variant="bodyMedium" color={Colors.neutral[600]} style={styles.columnValue}>{value}</AppText>
     </View>
   );
 
   const renderNotesRow = (label: string, value: string) => (
     <View style={styles.notesRow}>
-      <AppText variant="labelMedium" style={styles.notesLabel}>{label}</AppText>
-      <AppText variant="bodyMedium" color={Colors.neutral[500]}>{value}</AppText>
+      <View style={styles.detailLabelRow}>
+        <AlignLeft color={Colors.neutral[700]} size={20} />
+        <AppText variant="bodyMedium" color={Colors.neutral[900]} style={styles.columnLabel}>{label}</AppText>
+      </View>
+      <AppText variant="bodyMedium" color={Colors.neutral[600]} style={styles.columnValue}>{value}</AppText>
     </View>
   );
 
@@ -103,7 +114,7 @@ export default function PreviewRequestScreen() {
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.iconButton}>
           <ChevronLeft color={Colors.neutral[0]} size={28} />
         </TouchableOpacity>
-        <AppText variant="h5" color={Colors.neutral[0]} style={styles.headerTitle}>Preview Request</AppText>
+        <AppText variant="h5" color={Colors.neutral[0]} style={{textAlign: 'center'}}>Preview Request</AppText>
         <View style={{width: 28}} />
       </View>
 
@@ -112,7 +123,7 @@ export default function PreviewRequestScreen() {
           Please review all details before submitting.
         </AppText>
 
-        <View style={styles.card}>
+        <View style={styles.detailsSection}>
           {renderInlineRow(
             <ClipboardList color={Colors.neutral[700]} size={20} />, 
             'Category', 
@@ -161,7 +172,7 @@ export default function PreviewRequestScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: Colors.neutral[50],
+    backgroundColor: Colors.neutral[0],
   },
   header: {
     backgroundColor: Colors.primary[500],
@@ -180,62 +191,65 @@ const styles = StyleSheet.create({
     color: Colors.neutral[0],
   },
   content: {
-    padding: horizontalScale(24),
-    paddingTop: verticalScale(12),
+    paddingHorizontal: horizontalScale(24),
+    paddingTop: verticalScale(24),
     paddingBottom: verticalScale(40),
   },
   subtitle: {
     marginBottom: verticalScale(24),
   },
-  card: {
-    backgroundColor: Colors.neutral[0],
-    borderRadius: moderateScale(16),
-    borderWidth: 1,
-    borderColor: Colors.neutral[200],
-    overflow: 'hidden',
+  detailsSection: {
+    flex: 1,
   },
   inlineRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: moderateScale(16),
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.neutral[100],
+    alignItems: 'flex-start',
+    marginBottom: verticalScale(16),
   },
   rowLeft: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   inlineLabel: {
-    marginLeft: horizontalScale(12),
-    color: Colors.neutral[900],
+    marginLeft: horizontalScale(8),
+    fontFamily: 'Inter-Medium',
+  },
+  inlineValue: {
+    flex: 1,
+    textAlign: 'right',
+    marginLeft: 16,
   },
   columnRow: {
+    flexDirection: 'column',
+    marginBottom: verticalScale(20),
+  },
+  detailLabelRow: {
     flexDirection: 'row',
-    padding: moderateScale(16),
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.neutral[100],
-  },
-  iconContainer: {
-    marginRight: horizontalScale(12),
-    marginTop: verticalScale(2),
-  },
-  columnContent: {
-    flex: 1,
+    alignItems: 'center',
+    marginBottom: verticalScale(4),
   },
   columnLabel: {
-    color: Colors.neutral[900],
-    marginBottom: verticalScale(4),
+    marginLeft: horizontalScale(8),
+    fontFamily: 'Inter-Medium',
+  },
+  columnValue: {
+    marginLeft: horizontalScale(28),
+    lineHeight: 22,
   },
   notesRow: {
-    padding: moderateScale(16),
+    flexDirection: 'column',
+    marginBottom: verticalScale(20),
   },
-  notesLabel: {
-    color: Colors.neutral[900],
-    marginBottom: verticalScale(4),
+  categoryBadge: {
+    backgroundColor: Colors.primary[50],
   },
   footer: {
-    padding: moderateScale(24),
-    backgroundColor: Colors.neutral[50],
+    paddingHorizontal: horizontalScale(24),
+    paddingTop: verticalScale(16),
+    paddingBottom: verticalScale(32),
+    backgroundColor: Colors.neutral[0],
+    borderTopWidth: 1,
+    borderTopColor: Colors.neutral[100],
   },
 });

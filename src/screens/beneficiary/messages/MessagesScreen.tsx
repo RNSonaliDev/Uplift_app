@@ -17,6 +17,7 @@ import {
   Edit,
   Search,
 } from 'lucide-react-native';
+import { AppText } from '../../../components';
 
 export default function MessagesScreen() {
   const navigation = useNavigation<any>();
@@ -35,7 +36,7 @@ export default function MessagesScreen() {
         >
           <ChevronLeft color={Colors.neutral[0]} size={28} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Messages</Text>
+        <AppText variant="h5" color={Colors.neutral[0]} style={{textAlign: 'center'}}>Messages</AppText>
         <TouchableOpacity style={styles.iconBtn}>
           <Edit color={Colors.neutral[0]} size={24} />
         </TouchableOpacity>

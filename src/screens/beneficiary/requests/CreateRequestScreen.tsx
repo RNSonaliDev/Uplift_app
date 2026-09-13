@@ -324,7 +324,7 @@ export default function CreateRequestScreen() {
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
           <ChevronLeft color={Colors.neutral[0]} size={28} />
         </TouchableOpacity>
-        <AppText variant="h5" color={Colors.neutral[0]} style={styles.headerTitle}>Create Help Request</AppText>
+        <AppText variant="h5" color={Colors.neutral[0]} style={{textAlign: 'center'}}>Create Help Request</AppText>
         <View style={{width: 28}} />
       </View>
 

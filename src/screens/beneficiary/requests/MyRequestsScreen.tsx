@@ -24,6 +24,7 @@ import {
   Calendar,
   MapPin
 } from 'lucide-react-native';
+import { AppText } from '../../../components';
 
 export default function MyRequestsScreen() {
   const navigation = useNavigation<any>();
@@ -61,7 +62,7 @@ export default function MyRequestsScreen() {
         {/* <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
           <ChevronLeft color={Colors.neutral[0]} size={28} />
         </TouchableOpacity> */}
-        <Text style={styles.headerTitle}>My Requests</Text>
+        <AppText variant="h5" color={Colors.neutral[0]} style={{textAlign: 'center'}}>My Requests</AppText>
         {/* <View style={{width: 28}} /> */}
       </View>
 

@@ -27,6 +27,8 @@ import {
 
 import { Colors } from '../../../theme/colors';
 import { Typography, FontFamily } from '../../../theme/typography';
+import { horizontalScale, verticalScale } from '../../../utils/responsive';
+import { AppText } from '../../../components';
 
 export const ReviewRequestScreen = () => {
   const navigation = useNavigation<any>();
@@ -85,10 +87,10 @@ export const ReviewRequestScreen = () => {
       return (
         <View style={styles.summaryItemVertical}>
           <View style={styles.summaryItemTitleRow}>
-            {Icon && <Icon color={Colors.neutral[700]} size={20} />}
-            <Text style={[styles.itemTitleDark, Icon ? { marginLeft: 12 } : null]}>{title}</Text>
+            {Icon && <Icon color={Colors.neutral[600]} size={20} />}
+            <Text style={[styles.itemTitleDark, Icon ? { marginLeft: 8 } : null]}>{title}</Text>
           </View>
-          <View style={Icon ? { paddingLeft: 32 } : null}>
+          <View style={Icon ? { paddingLeft: 28 } : null}>
             <Text style={styles.itemValueLight}>{value}</Text>
           </View>
         </View>
@@ -97,10 +99,20 @@ export const ReviewRequestScreen = () => {
     return (
       <View style={styles.summaryItemHorizontal}>
         <View style={styles.summaryItemTitleRow}>
-          {Icon && <Icon color={Colors.neutral[700]} size={20} />}
-          <Text style={[styles.itemTitleDark, Icon ? { marginLeft: 12 } : null]}>{title}</Text>
+          {Icon && <Icon color={Colors.neutral[600]} size={20} />}
+          <Text style={[styles.itemTitleDark, Icon ? { marginLeft: 8 } : null]}>{title}</Text>
         </View>
-        <Text style={styles.itemValueLightRight}>{value}</Text>
+        {title === 'Category' ? (
+          <View style={{ flex: 1, alignItems: 'flex-end', paddingLeft: 16 }}>
+            <View style={[styles.categoryBadge, { paddingHorizontal: horizontalScale(12), paddingVertical: verticalScale(6), borderRadius: 16 }]}>
+              <Text style={{ ...Typography.labelMedium, color: Colors.primary[600], textAlign: 'center' }}>
+                {value}
+              </Text>
+            </View>
+          </View>
+        ) : (
+          <Text style={styles.itemValueLightRight}>{value}</Text>
+        )}
       </View>
     );
   };
@@ -118,7 +130,7 @@ export const ReviewRequestScreen = () => {
         >
           <ArrowLeft color={Colors.neutral[0]} size={24} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Preview Request</Text>
+        <AppText variant="h5" color={Colors.neutral[0]} style={{textAlign: 'center'}}>Preview Request</AppText>
         <View style={{ width: 40 }} />
       </View>
 
@@ -128,68 +140,60 @@ export const ReviewRequestScreen = () => {
           Please review all details before submitting.
         </Text>
 
-        <View style={styles.card}>
+        <View style={styles.detailsSection}>
           <SummaryItem 
             icon={ShoppingBag} 
             title="Category" 
             value={params.categoryTitle || 'Grocery Assistance'} 
           />
-          <View style={styles.divider} />
           
           <SummaryItem 
             icon={FileText} 
             title="Title" 
             value={params.title || 'Grocery Assistance for Community Center'} 
           />
-          <View style={styles.divider} />
           
           <SummaryItem 
             icon={Calendar} 
             title="Date" 
             value={params.startDate !== params.endDate ? `${params.startDate} - ${params.endDate}` : params.startDate} 
           />
-          <View style={styles.divider} />
           
           <SummaryItem 
             icon={Clock} 
             title="Time" 
             value={`${params.startTime} - ${params.endTime}`} 
           />
-          <View style={styles.divider} />
           
           <SummaryItem 
             icon={Users} 
             title="Number of positions" 
             value={params.helpType === 'multiple' ? 'Multiple Volunteers' : 'Single Volunteer'} 
           />
-          <View style={styles.divider} />
           
           <SummaryItem 
             icon={Users} 
             title="Volunteers Needed" 
             value={`${params.volunteersNeeded || 2} Volunteers`} 
           />
-          <View style={styles.divider} />
           
           <SummaryItem 
             icon={AlertTriangle} 
             title="Urgency" 
             value={params.urgency || 'High'} 
           />
-          <View style={styles.divider} />
-
-          <SummaryItem 
-            icon={MapPin} 
-            title="Location" 
-            value={params.address}
-            type="vertical" 
-          />
-          <View style={styles.divider} />
 
           <SummaryItem 
             icon={AlignLeft} 
             title="Description" 
             value={params.description || 'We need help with groceries for our upcoming weekend community meal program.'}
+            type="vertical" 
+          />
+
+          <SummaryItem 
+            icon={MapPin} 
+            title="Location" 
+            value={params.address}
             type="vertical" 
           />
         </View>
@@ -218,7 +222,7 @@ export const ReviewRequestScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.neutral[50], // Slightly off-white for the review screen bg
+    backgroundColor: Colors.neutral[0],
   },
   header: {
     backgroundColor: Colors.primary[500],
@@ -247,42 +251,44 @@ const styles = StyleSheet.create({
     color: Colors.neutral[600],
     marginBottom: 24,
   },
-  card: {
-    backgroundColor: Colors.neutral[0],
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: Colors.neutral[200],
+  detailsSection: {
+    flex: 1,
   },
   summaryItemHorizontal: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     justifyContent: 'space-between',
+    marginBottom: verticalScale(16),
   },
   summaryItemVertical: {
     flexDirection: 'column',
     justifyContent: 'flex-start',
+    marginBottom: verticalScale(20),
   },
   summaryItemTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 4,
   },
   itemTitleDark: {
     ...Typography.bodyMedium,
-    fontFamily: FontFamily.semiBold,
+    fontFamily: FontFamily.medium,
     color: Colors.neutral[900],
   },
   itemValueLightRight: {
     ...Typography.bodyMedium,
-    color: Colors.neutral[500],
+    color: Colors.neutral[600],
     textAlign: 'right',
     flex: 1,
     marginLeft: 16,
   },
   itemValueLight: {
     ...Typography.bodyMedium,
-    color: Colors.neutral[500],
+    color: Colors.neutral[600],
+    marginTop: 4,
+    lineHeight: 22,
+  },
+  categoryBadge: {
+    backgroundColor: Colors.primary[50],
   },
   divider: {
     height: 1,

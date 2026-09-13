@@ -45,7 +45,8 @@ export function OrganizationTabNavigator() {
           'ContactSupport',
           'ContactSupportDetails',
           'CreateSupportRequest',
-          'ChatScreen'
+          'ChatScreen',
+          'RateHelper'
         ];
         const isHidden = hiddenRoutes.includes(routeName);
 

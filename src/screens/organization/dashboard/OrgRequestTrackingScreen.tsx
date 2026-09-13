@@ -16,6 +16,7 @@ import { api, getFullImageUrl } from '../../../api/client';
 import { Colors } from '../../../theme/colors';
 import { Typography, FontFamily } from '../../../theme/typography';
 import { CategoryIcon } from '../../../components/CategoryIcon';
+import { Button } from '../../../components/Button';
 import {
   ChevronLeft,
   CheckCircle2,
@@ -27,6 +28,7 @@ import {
   MessageCircle,
 } from 'lucide-react-native';
 import { formatDate, formatTime12Hour, formatDateTime } from '../../../utils/dateFormatter';
+import { AppText } from '../../../components';
 
 export const OrgRequestTrackingScreen = () => {
   const navigation = useNavigation<any>();
@@ -36,9 +38,21 @@ export const OrgRequestTrackingScreen = () => {
   
   const [requestDetail, setRequestDetail] = useState<any>(initialRequest);
   const [loading, setLoading] = useState(true);
+  const [currentUserId, setCurrentUserId] = useState<number | null>(null);
 
   useFocusEffect(
     useCallback(() => {
+      const fetchProfile = async () => {
+        try {
+          const profileData: any = await api.get('/profile');
+          if (profileData?.id) setCurrentUserId(profileData.id);
+          else if (profileData?.data?.id) setCurrentUserId(profileData.data.id);
+        } catch (e) {
+          console.error('Failed to fetch profile', e);
+        }
+      };
+      
+      fetchProfile();
       if (initialRequest.id) {
         fetchRequestDetails();
       } else {
@@ -88,6 +102,16 @@ export const OrgRequestTrackingScreen = () => {
     ]);
   };
 
+  const volunteerId = route.params?.volunteerId;
+  let specificAssignment = null;
+  let specificVolunteer = null;
+  if (volunteerId && requestDetail) {
+    specificAssignment = requestDetail.assignments?.find((a: any) => a.volunteer?.id === volunteerId || a.volunteer_id === volunteerId);
+    specificVolunteer = specificAssignment?.volunteer || requestDetail.volunteers?.find((v: any) => v.id === volunteerId);
+  }
+  
+  const trackStatus = specificAssignment?.status || requestDetail?.status || 'pending';
+
   return (
     <>
       <SafeAreaView style={{ flex: 0, backgroundColor: Colors.primary[500] }} />
@@ -96,7 +120,7 @@ export const OrgRequestTrackingScreen = () => {
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
           <ChevronLeft color={Colors.neutral[0]} size={28} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Request Tracking</Text>
+        <AppText variant="h5" color={Colors.neutral[0]} style={{textAlign: 'center'}}>Request Tracking</AppText>
         <View style={{ width: 28 }} />
       </View>
 
@@ -106,7 +130,47 @@ export const OrgRequestTrackingScreen = () => {
         </View>
       ) : requestDetail ? (
         <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-          <View style={styles.card}>
+              <>
+                {specificVolunteer ? (
+                  <View style={[styles.card, { padding: 16, flexDirection: 'row', alignItems: 'center' }]}>
+                    {specificVolunteer.profile_image_url ? (
+                      <Image 
+                        source={{ uri: getFullImageUrl(specificVolunteer.profile_image_url) as string }} 
+                        style={{width: 56, height: 56, borderRadius: 28, marginRight: 16}} 
+                      />
+                    ) : (
+                      <View style={{width: 56, height: 56, borderRadius: 28, marginRight: 16, backgroundColor: Colors.primary[500], justifyContent: 'center', alignItems: 'center'}}>
+                        <Text style={{color: Colors.neutral[0], ...Typography.h4}}>
+                          {specificVolunteer.first_name 
+                            ? `${specificVolunteer.first_name.charAt(0)}${specificVolunteer.last_name ? specificVolunteer.last_name.charAt(0) : ''}`.toUpperCase() 
+                            : ''}
+                        </Text>
+                      </View>
+                    )}
+                    <View style={{flex: 1}}>
+                      <Text style={{...Typography.h5, color: Colors.neutral[900], marginBottom: 4}}>
+                        {specificVolunteer.first_name} {specificVolunteer.last_name || ''}
+                      </Text>
+                      {specificVolunteer.phone_number && (
+                        <View style={{flexDirection: 'row', alignItems: 'center'}}>
+                          <Phone color={Colors.neutral[500]} size={14} style={{marginRight: 6}} />
+                          <Text style={{...Typography.bodyMedium, color: Colors.neutral[600]}}>
+                            {specificVolunteer.phone_number}
+                          </Text>
+                        </View>
+                      )}
+                      {trackStatus && (
+                        <View style={{flexDirection: 'row', alignItems: 'center', marginTop: 4, gap: 6}}>
+                          <View style={{width: 8, height: 8, borderRadius: 4, backgroundColor: trackStatus === 'completed' ? Colors.success : trackStatus === 'in_progress' ? Colors.primary[500] : trackStatus === 'on_the_way' ? Colors.warning : Colors.neutral[500]}} />
+                          <Text style={{...Typography.caption, color: Colors.neutral[600], textTransform: 'capitalize'}}>
+                            {trackStatus.replace('_', ' ')}
+                          </Text>
+                        </View>
+                      )}
+                    </View>
+                  </View>
+                ) : (
+                  <View style={styles.card}>
             <View style={styles.cardHeader}>
               <View style={styles.categoryIconCircle}>
                 {requestDetail.category?.logo_url ? (
@@ -144,7 +208,7 @@ export const OrgRequestTrackingScreen = () => {
               </View>
             </View>
           </View>
-
+        )}
 
 
           {requestDetail.status === 'cancelled' ? (
@@ -162,73 +226,30 @@ export const OrgRequestTrackingScreen = () => {
                 time={formatDateTime(requestDetail.created_at || Date.now())}
               />
               <TimelineItem 
-                status={['accepted', 'assigned', 'on_the_way', 'in_progress', 'completed'].includes(requestDetail.status) ? 'completed' : 'pending'} 
+                status={['accepted', 'assigned', 'on_the_way', 'in_progress', 'completed'].includes(trackStatus) ? 'completed' : 'pending'} 
                 title="Request Accepted" 
                 description={(requestDetail.volunteers && requestDetail.volunteers.length > 0) || requestDetail.volunteer ? undefined : "Waiting for a volunteer to accept."}
-              >
-                {(() => {
-                  const vols = requestDetail.volunteers?.length > 0 ? requestDetail.volunteers : (requestDetail.volunteer ? [requestDetail.volunteer] : []);
-                  return vols.map((vol: any, idx: number) => (
-                    <View key={idx} style={{flexDirection: 'row', alignItems: 'center', marginTop: 12, padding: 16, backgroundColor: Colors.neutral[0], borderRadius: 16, borderWidth: 1, borderColor: Colors.neutral[200]}}>
-                      {vol.profile_image_url ? (
-                        <Image 
-                          source={{ uri: getFullImageUrl(vol.profile_image_url) as string }} 
-                          style={{width: 48, height: 48, borderRadius: 24, marginRight: 12}} 
-                        />
-                      ) : (
-                        <View style={{width: 48, height: 48, borderRadius: 24, marginRight: 12, backgroundColor: Colors.neutral[200], justifyContent: 'center', alignItems: 'center'}}>
-                          <User color={Colors.neutral[500]} size={24} />
-                        </View>
-                      )}
-                      <View style={{flex: 1}}>
-                        <Text style={{...Typography.labelMedium, color: Colors.neutral[900], marginBottom: 2}}>
-                          {vol.first_name} {vol.last_name || ''}
-                        </Text>
-                        {vol.phone_number ? (
-                          <View style={{flexDirection: 'row', alignItems: 'center'}}>
-                            <Phone color={Colors.neutral[500]} size={12} style={{marginRight: 4}} />
-                            <Text style={{...Typography.caption, color: Colors.neutral[600]}}>
-                              {vol.phone_number}
-                            </Text>
-                          </View>
-                        ) : (
-                          <Text style={{...Typography.caption, color: Colors.neutral[600]}}>
-                            Volunteer
-                          </Text>
-                        )}
-                      </View>
-                      <TouchableOpacity 
-                        style={styles.msgBtn}
-                        onPress={() => {
-                          Toast.show({
-                            type: 'info',
-                            text1: 'Coming Soon',
-                            text2: 'Messaging feature will be available soon.',
-                          });
-                        }}
-                      >
-                        <MessageCircle color={Colors.primary[500]} size={20} />
-                      </TouchableOpacity>
-                    </View>
-                  ));
-                })()}
-              </TimelineItem>
-              <TimelineItem 
-                status={['in_progress', 'completed'].includes(requestDetail.status) ? 'completed' : requestDetail.status === 'on_the_way' ? 'active' : 'pending'} 
-                title="On the Way" 
               />
               <TimelineItem 
-                status={['completed'].includes(requestDetail.status) ? 'completed' : requestDetail.status === 'in_progress' ? 'active' : 'pending'} 
-                title="Job started" 
+                status={['in_progress', 'completed'].includes(trackStatus) ? 'completed' : trackStatus === 'on_the_way' ? 'active' : 'pending'} 
+                title="On the Way"
+                time={specificAssignment?.started_at ? formatDateTime(specificAssignment.started_at) : undefined} 
               />
               <TimelineItem 
-                status={requestDetail.status === 'completed' ? 'completed' : 'pending'} 
-                title="Completed" 
-                description={requestDetail.status === 'completed' ? 'Thanks you! Your request is completed.' : 'We will notify you when completed.'}
+                status={['completed'].includes(trackStatus) ? 'completed' : trackStatus === 'in_progress' ? 'active' : 'pending'} 
+                title="Check In"
+                time={specificAssignment?.checked_in_at ? formatDateTime(specificAssignment.checked_in_at) : undefined}
+              />
+              <TimelineItem 
+                status={trackStatus === 'completed' ? 'completed' : 'pending'} 
+                title="Check Out" 
+                description={trackStatus === 'completed' ? 'Thanks you! Your request is completed.' : 'We will notify you when checked out.'}
+                time={(specificAssignment?.checked_out_at || specificAssignment?.completed_at) ? formatDateTime(specificAssignment.checked_out_at || specificAssignment.completed_at) : undefined}
                 isLast
               />
             </View>
-          )}
+            )}
+          </>
 
           <View style={styles.bottomContainer}>
             {(!requestDetail.status || requestDetail.status === 'pending') && (
@@ -238,6 +259,12 @@ export const OrgRequestTrackingScreen = () => {
               >
                 <Text style={[styles.outlineBtnText, { color: Colors.error }]}>Cancel Request</Text>
               </TouchableOpacity>
+            )}
+            {trackStatus === 'completed' && !requestDetail.ratings?.some((r: any) => r.rater_id === currentUserId && r.ratee_id === specificVolunteer?.id) && (
+              <Button 
+                title="Rate Volunteer"
+                onPress={() => navigation.navigate('RateHelper', { requestId: initialRequest.id, rateeId: specificVolunteer?.id })}
+              />
             )}
           </View>
         </ScrollView>

@@ -56,7 +56,7 @@ export default function LegalContentScreen() {
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
           <ChevronLeft color={Colors.neutral[0]} size={28} />
         </TouchableOpacity>
-        <AppText variant="h5" style={styles.headerTitle}>{title}</AppText>
+        <AppText variant="h5" color={Colors.neutral[0]} style={{textAlign: 'center'}}>{title}</AppText>
         <View style={{ width: 28 }} />
       </View>
 

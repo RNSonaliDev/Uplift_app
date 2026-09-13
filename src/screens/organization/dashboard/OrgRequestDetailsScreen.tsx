@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   ScrollView,
   Image,
+  Modal,
 } from 'react-native';
 import {useNavigation, useRoute, useFocusEffect} from '@react-navigation/native';
 import Toast from 'react-native-toast-message';
@@ -23,6 +24,7 @@ import {
   ShieldAlert,
   MessageCircle,
   Users,
+  X,
 } from 'lucide-react-native';
 import {
   horizontalScale,
@@ -36,6 +38,7 @@ export const OrgRequestDetailsScreen = () => {
   const route = useRoute<any>();
   const [request, setRequest] = useState<any>(route.params?.request || {});
   const [isProcessing, setIsProcessing] = useState(false);
+  const [fullScreenImage, setFullScreenImage] = useState<string | null>(null);
   
   const requestId = route.params?.requestId || request.id;
 
@@ -43,8 +46,10 @@ export const OrgRequestDetailsScreen = () => {
     if (!requestId) return;
     try {
       setIsProcessing(true);
+      const assignment = request.assignments?.find((a: any) => a.volunteer?.id === vol.id || a.volunteer_id === vol.id);
+      const assignId = assignment?.id || vol.pivot?.id || vol.assignment?.id || 0;
       await api.post(`/help_requests/${requestId}/check_in`, {
-        assignment_id: vol.pivot?.id || vol.assignment?.id || request.assignments?.[0]?.id || 0,
+        assignment_id: assignId,
         volunteer_id: vol.id || 0
       });
       Toast.show({
@@ -69,8 +74,10 @@ export const OrgRequestDetailsScreen = () => {
     if (!requestId) return;
     try {
       setIsProcessing(true);
+      const assignment = request.assignments?.find((a: any) => a.volunteer?.id === vol.id || a.volunteer_id === vol.id);
+      const assignId = assignment?.id || vol.pivot?.id || vol.assignment?.id || 0;
       await api.post(`/help_requests/${requestId}/check_out`, {
-        assignment_id: vol.pivot?.id || vol.assignment?.id || request.assignments?.[0]?.id || 0,
+        assignment_id: assignId,
         volunteer_id: vol.id || 0
       });
       Toast.show({
@@ -124,93 +131,6 @@ export const OrgRequestDetailsScreen = () => {
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        
-        {/* Helper Section (If assigned) */}
-        {(() => {
-          const volunteersList = request.volunteers?.length > 0 
-            ? request.volunteers 
-            : (request.volunteer ? [request.volunteer] : []);
-            
-          if (volunteersList.length > 0) {
-            return (
-              <View style={styles.volunteersSection}>
-                <AppText variant="labelLarge" color={Colors.neutral[900]} style={{marginBottom: verticalScale(12)}}>
-                  Assigned Volunteers ({volunteersList.length})
-                </AppText>
-                {volunteersList.map((vol: any, index: number) => (
-                  <View key={index} style={[styles.profileSection, { flexDirection: 'column', alignItems: 'stretch' }]}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                      <View style={styles.avatarContainer}>
-                        {vol.profile_image_url ? (
-                          <Image 
-                            source={{uri: getFullImageUrl(vol.profile_image_url) as string}} 
-                            style={styles.avatar} 
-                          />
-                        ) : (
-                          <View style={[styles.avatar, {justifyContent: 'center', alignItems: 'center'}]}>
-                            <AppText variant="h6" color={Colors.neutral[600]}>
-                              {vol.first_name 
-                                ? `${vol.first_name.charAt(0)}${vol.last_name ? vol.last_name.charAt(0) : ''}`.toUpperCase() 
-                                : ''}
-                            </AppText>
-                          </View>
-                        )}
-                      </View>
-                      <View style={styles.profileInfo}>
-                        <AppText variant="labelLarge" color={Colors.neutral[900]} style={{marginBottom: 4}}>
-                          {vol.first_name ? `${vol.first_name} ${vol.last_name || ''}` : 'Volunteer'}
-                        </AppText>
-                        <AppText variant="caption" color={Colors.neutral[500]}>Assigned Volunteer</AppText>
-                      </View>
-                      {request.status?.toLowerCase() !== 'in_progress' && request.status?.toLowerCase() !== 'completed' && (
-                        <TouchableOpacity 
-                          style={styles.msgBtn}
-                          onPress={() => {
-                            const assignId = vol.pivot?.id || vol.assignment?.id || request.assignments?.[0]?.id || 0;
-                            const recipientName = vol.first_name 
-                              ? `${vol.first_name} ${vol.last_name || ''}`.trim() 
-                              : 'Volunteer';
-                            const recipientAvatar = vol.profile_image_url;
-                            navigation.navigate('ChatScreen', {
-                              helpRequestId: request.id,
-                              assignmentId: assignId,
-                              recipientName,
-                              recipientAvatar,
-                              requestStatus: request.status,
-                            });
-                          }}
-                        >
-                          <MessageCircle color={Colors.primary[500]} size={20} />
-                        </TouchableOpacity>
-                      )}
-                    </View>
-
-                    {/* Action Buttons */}
-                    {['on_the_way', 'in_progress'].includes(request.status?.toLowerCase()) && (
-                      <View style={{ flexDirection: 'row', marginTop: 16, gap: 12 }}>
-                        <Button 
-                          title="Check In"
-                          onPress={() => handleCheckIn(vol)}
-                          variant="outline"
-                          style={{ flex: 1 }}
-                          loading={isProcessing}
-                        />
-                        <Button 
-                          title="Check Out"
-                          onPress={() => handleCheckOut(vol)}
-                          style={{ flex: 1 }}
-                          loading={isProcessing}
-                        />
-                      </View>
-                    )}
-                  </View>
-                ))}
-                <View style={styles.divider} />
-              </View>
-            );
-          }
-          return null;
-        })()}
 
         {/* Request Details Section */}
         <View style={styles.detailsSection}>
@@ -328,16 +248,179 @@ export const OrgRequestDetailsScreen = () => {
           </View>
 
         </View>
+
+        {/* Assigned Volunteers Section - moved to bottom, show max 2 */}
+        {(() => {
+          const volunteersList = request.volunteers?.length > 0 
+            ? request.volunteers 
+            : (request.volunteer ? [request.volunteer] : []);
+            
+          if (volunteersList.length > 0) {
+            const displayedVolunteers = volunteersList.slice(0, 2);
+            return (
+              <View style={styles.volunteersSection}>
+                <View style={styles.volunteersSectionHeader}>
+                  <AppText variant="labelLarge" color={Colors.neutral[900]}>
+                    Assigned Volunteers ({volunteersList.length})
+                  </AppText>
+                  {volunteersList.length > 2 && (
+                    <TouchableOpacity 
+                      onPress={() => navigation.navigate('AllVolunteers', { request, requestId })}
+                    >
+                      <AppText variant="labelMedium" color={Colors.primary[500]}>View All</AppText>
+                    </TouchableOpacity>
+                  )}
+                </View>
+                {displayedVolunteers.map((vol: any, index: number) => {
+                  const assignment = request.assignments?.find((a: any) => a.volunteer?.id === vol.id || a.volunteer_id === vol.id);
+                  const volStatus = assignment?.status || vol.pivot?.status || vol.assignment?.status || request.status || '';
+                  const statusLabel = volStatus === 'on_the_way' ? 'On the Way' 
+                    : volStatus === 'in_progress' ? 'In Progress'
+                    : volStatus === 'completed' ? 'Completed'
+                    : volStatus === 'accepted' || volStatus === 'assigned' ? 'Accepted'
+                    : 'Assigned';
+                  const statusColor = volStatus === 'on_the_way' ? Colors.warning 
+                    : volStatus === 'in_progress' ? Colors.primary[500]
+                    : volStatus === 'completed' ? Colors.success
+                    : Colors.neutral[500];
+
+                  return (
+                  <View key={index} style={[styles.profileSection, { flexDirection: 'column', alignItems: 'stretch' }]}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                      <TouchableOpacity 
+                        style={styles.avatarContainer}
+                        onPress={() => vol.profile_image_url && setFullScreenImage(getFullImageUrl(vol.profile_image_url) as string)}
+                        activeOpacity={vol.profile_image_url ? 0.7 : 1}
+                      >
+                        {vol.profile_image_url ? (
+                          <Image 
+                            source={{uri: getFullImageUrl(vol.profile_image_url) as string}} 
+                            style={styles.avatar} 
+                          />
+                        ) : (
+                          <View style={[styles.avatar, {justifyContent: 'center', alignItems: 'center', backgroundColor: Colors.primary[500]}]}>
+                            <AppText variant="h6" color={Colors.neutral[0]}>
+                              {vol.first_name 
+                                ? `${vol.first_name.charAt(0)}${vol.last_name ? vol.last_name.charAt(0) : ''}`.toUpperCase() 
+                                : ''}
+                            </AppText>
+                          </View>
+                        )}
+                      </TouchableOpacity>
+                      <View style={styles.profileInfo}>
+                        <AppText variant="labelLarge" color={Colors.neutral[900]} style={{marginBottom: 4}}>
+                          {vol.first_name ? `${vol.first_name} ${vol.last_name || ''}` : 'Volunteer'}
+                        </AppText>
+                        <View style={{flexDirection: 'row', alignItems: 'center', gap: 6}}>
+                          <View style={{width: 8, height: 8, borderRadius: 4, backgroundColor: statusColor}} />
+                          <AppText variant="caption" color={statusColor}>{statusLabel}</AppText>
+                        </View>
+                      </View>
+                      <View style={{ flexDirection: 'row', gap: 8 }}>
+                        {volStatus.toLowerCase() !== 'in_progress' && (
+                          <TouchableOpacity 
+                            style={styles.msgBtn}
+                            onPress={() => {
+                              navigation.navigate('OrgRequestTracking', { request, volunteerId: vol.id });
+                            }}
+                          >
+                            <MapPin color={Colors.primary[500]} size={20} />
+                          </TouchableOpacity>
+                        )}
+                        {volStatus.toLowerCase() !== 'in_progress' && volStatus.toLowerCase() !== 'completed' && (
+                          <TouchableOpacity 
+                            style={styles.msgBtn}
+                            onPress={() => {
+                              const assignment = request.assignments?.find((a: any) => a.volunteer?.id === vol.id || a.volunteer_id === vol.id);
+                              const assignId = assignment?.id || vol.pivot?.id || vol.assignment?.id || 0;
+                              const recipientName = vol.first_name 
+                                ? `${vol.first_name} ${vol.last_name || ''}`.trim() 
+                                : 'Volunteer';
+                              const recipientAvatar = vol.profile_image_url;
+                              navigation.navigate('ChatScreen', {
+                                helpRequestId: request.id,
+                                assignmentId: assignId,
+                                recipientName,
+                                recipientAvatar,
+                                requestStatus: request.status,
+                              });
+                            }}
+                          >
+                            <MessageCircle color={Colors.primary[500]} size={20} />
+                          </TouchableOpacity>
+                        )}
+                      </View>
+                    </View>
+
+                    {/* Action Buttons */}
+                    {['on_the_way', 'in_progress'].includes(volStatus.toLowerCase()) && (
+                      <View style={{ flexDirection: 'row', marginTop: 16, gap: 12 }}>
+                        {volStatus.toLowerCase() === 'on_the_way' && (
+                          <Button 
+                            title="Check In"
+                            onPress={() => handleCheckIn(vol)}
+                            variant="outline"
+                            style={{ flex: 1 }}
+                            loading={isProcessing}
+                          />
+                        )}
+                        {volStatus.toLowerCase() === 'in_progress' && (
+                          <Button 
+                            title="Check Out"
+                            onPress={() => handleCheckOut(vol)}
+                            style={{ flex: 1 }}
+                            loading={isProcessing}
+                          />
+                        )}
+                      </View>
+                    )}
+                  </View>
+                );
+              })}
+              </View>
+            );
+          }
+          return null;
+        })()}
+
       </ScrollView>
 
-      <View style={styles.actionContainer}>
+      {/* <View style={styles.actionContainer}>
         <Button 
           title="Track Request" 
           onPress={() => navigation.navigate('OrgRequestTracking', { request: request })} 
           style={styles.acceptBtn} 
         />
-      </View>
+      </View> */}
       </SafeAreaView>
+
+      {/* Full Screen Image Viewer Modal */}
+      <Modal
+        visible={!!fullScreenImage}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setFullScreenImage(null)}
+      >
+        <SafeAreaView style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <TouchableOpacity 
+              style={styles.closeButton}
+              onPress={() => setFullScreenImage(null)}
+            >
+              <X color={Colors.neutral[0]} size={28} />
+            </TouchableOpacity>
+          </View>
+          <View style={styles.modalImageContainer}>
+            {fullScreenImage && (
+              <Image 
+                source={{uri: fullScreenImage}} 
+                style={styles.fullScreenImage}
+                resizeMode="contain"
+              />
+            )}
+          </View>
+        </SafeAreaView>
+      </Modal>
     </>
   );
 };
@@ -372,6 +455,12 @@ const styles = StyleSheet.create({
   volunteersSection: {
     marginBottom: verticalScale(8),
     marginTop: verticalScale(8),
+  },
+  volunteersSectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: verticalScale(12),
   },
   profileSection: {
     flexDirection: 'row',
@@ -437,5 +526,29 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginLeft: 12,
+  },
+  modalContainer: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.9)',
+  },
+  modalHeader: {
+    alignItems: 'flex-end',
+    paddingHorizontal: horizontalScale(16),
+    paddingVertical: verticalScale(12),
+  },
+  closeButton: {
+    padding: moderateScale(8),
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: moderateScale(20),
+  },
+  modalImageContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: moderateScale(16),
+  },
+  fullScreenImage: {
+    width: '100%',
+    height: '80%',
   },
 });

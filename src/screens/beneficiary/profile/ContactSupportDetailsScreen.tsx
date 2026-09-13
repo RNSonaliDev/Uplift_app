@@ -50,7 +50,7 @@ export default function ContactSupportDetailsScreen() {
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
             <ChevronLeft color={Colors.neutral[900]} size={28} />
           </TouchableOpacity>
-          <AppText variant="h5" style={styles.headerTitle}>Support Request</AppText>
+          <AppText variant="h5" color={Colors.neutral[0]} style={{textAlign: 'center'}}>Support Request</AppText>
           <View style={{ width: 32 }} />
         </View>
         <View style={styles.centerContainer}>
@@ -67,7 +67,7 @@ export default function ContactSupportDetailsScreen() {
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
             <ChevronLeft color={Colors.neutral[900]} size={28} />
           </TouchableOpacity>
-          <AppText variant="h5" style={styles.headerTitle}>Support Request</AppText>
+          <AppText variant="h5" color={Colors.neutral[0]} style={{textAlign: 'center'}}>Support Request</AppText>
           <View style={{ width: 32 }} />
         </View>
         <View style={styles.centerContainer}>
@@ -86,7 +86,7 @@ export default function ContactSupportDetailsScreen() {
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
           <ChevronLeft color={Colors.neutral[900]} size={28} />
         </TouchableOpacity>
-        <AppText variant="h5" style={styles.headerTitle}>Request Details</AppText>
+        <AppText variant="h5" color={Colors.neutral[0]} style={{textAlign: 'center'}}>Request Details</AppText>
         <View style={{ width: 32 }} />
       </View>
 

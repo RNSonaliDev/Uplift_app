@@ -77,7 +77,7 @@ export default function RateExperienceScreen() {
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
           <ChevronLeft color={Colors.neutral[0]} size={28} />
         </TouchableOpacity>
-        <AppText variant="h5" style={styles.headerTitle}>Rate Your Experience</AppText>
+        <AppText variant="h5" color={Colors.neutral[0]} style={{textAlign: 'center'}}>Rate Your Experience</AppText>
         <View style={[styles.backBtn, {opacity: 0}]} pointerEvents="none">
           <View style={{width: 28, height: 28}} />
         </View>

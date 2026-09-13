@@ -23,6 +23,7 @@ import {
   Star,
   Info,
 } from 'lucide-react-native';
+import { AppText } from '../../../components';
 
 export default function RequestDetailsScreen() {
   const navigation = useNavigation<any>();
@@ -36,7 +37,7 @@ export default function RequestDetailsScreen() {
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
           <ChevronLeft color={Colors.neutral[0]} size={28} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Request Details</Text>
+        <AppText variant="h5" color={Colors.neutral[0]} style={{textAlign: 'center'}}>Request Details</AppText>
         <View style={{width: 28}} />
       </View>
 

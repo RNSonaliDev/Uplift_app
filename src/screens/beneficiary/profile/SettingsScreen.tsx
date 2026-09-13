@@ -31,6 +31,7 @@ import {
   Headphones,
   LogOut,
 } from 'lucide-react-native';
+import { AppText } from '../../../components';
 
 export default function SettingsScreen() {
   const navigation = useNavigation<any>();
@@ -110,7 +111,7 @@ export default function SettingsScreen() {
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
           <ChevronLeft color={Colors.neutral[0]} size={28} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Settings</Text>
+        <AppText variant="h5" color={Colors.neutral[0]} style={{textAlign: 'center'}}>Settings</AppText>
         <View style={{ width: 28 }} />
       </View>
 

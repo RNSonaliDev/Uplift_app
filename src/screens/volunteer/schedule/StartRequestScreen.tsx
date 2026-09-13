@@ -84,7 +84,7 @@ export default function StartRequestScreen() {
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.iconButton}>
           <ArrowLeft color={Colors.neutral[900]} size={24} />
         </TouchableOpacity>
-        <AppText variant="h4" color={Colors.neutral[900]} style={styles.headerTitle}>
+        <AppText variant="h5" color={Colors.neutral[0]} style={{textAlign: 'center'}}>
           Start Request
         </AppText>
         <View style={styles.iconButtonPlaceholder} />

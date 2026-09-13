@@ -87,7 +87,7 @@ export default function ContactSupportScreen() {
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
           <ChevronLeft color={Colors.neutral[900]} size={28} />
         </TouchableOpacity>
-        <AppText variant="h5" style={styles.headerTitle}>Support Requests</AppText>
+        <AppText variant="h5" color={Colors.neutral[0]} style={{textAlign: 'center'}}>Support Requests</AppText>
         <View style={{ width: 32 }} />
       </View>
 

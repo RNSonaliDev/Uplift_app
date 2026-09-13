@@ -154,7 +154,7 @@ export default function NotificationsScreen() {
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
           <ChevronLeft color={Colors.neutral[0]} size={28} />
         </TouchableOpacity>
-        <AppText variant="h5" style={styles.headerTitle}>Notifications</AppText>
+        <AppText variant="h5" color={Colors.neutral[0]} style={{textAlign: 'center'}}>Notifications</AppText>
         
         {/* {notifications.some(n => !n.is_read) ? (
           <TouchableOpacity onPress={handleMarkAllAsRead} style={styles.markAllBtn}>

@@ -183,7 +183,7 @@ export default function MyScheduleScreen() {
       <SafeAreaView style={styles.safeArea}>
       <View style={styles.header}>
         <View style={styles.backButtonPlaceholder} />
-        <AppText variant="h5" color={Colors.neutral[0]} style={styles.headerTitle}>
+        <AppText variant="h5" color={Colors.neutral[0]} style={{textAlign: 'center'}}>
           My Schedule
         </AppText>
         <View style={styles.backButtonPlaceholder} />

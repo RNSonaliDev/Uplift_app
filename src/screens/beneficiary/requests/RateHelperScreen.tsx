@@ -25,6 +25,7 @@ export default function RateHelperScreen() {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const requestId = route.params?.requestId;
+  const rateeId = route.params?.rateeId;
 
   const [rating, setRating] = useState(0);
   const [notes, setNotes] = useState('');
@@ -44,19 +45,24 @@ export default function RateHelperScreen() {
 
     try {
       setLoading(true);
-      await api.post(`/help_requests/${requestId}/rate`, {
+      const payload: any = {
         rating: {
           score: rating,
           comment: notes,
         },
-      });
+      };
+      if (rateeId) {
+        payload.rating.ratee_id = rateeId;
+      }
+
+      await api.post(`/help_requests/${requestId}/rate`, payload);
       
       Toast.show({
         type: 'success',
         text1: 'Success',
         text2: 'Thank you for your feedback!',
         onHide: () => {
-          navigation.navigate('MyRequests');
+          navigation.goBack();
         }
       });
     } catch (error: any) {
@@ -78,7 +84,7 @@ export default function RateHelperScreen() {
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
           <ChevronLeft color={Colors.neutral[0]} size={28} />
         </TouchableOpacity>
-        <AppText variant="h5" style={styles.headerTitle}>Rate Experience</AppText>
+        <AppText variant="h5" color={Colors.neutral[0]} style={{textAlign: 'center'}}>Rate Experience</AppText>
         <View style={[styles.backBtn, {opacity: 0}]} pointerEvents="none">
           <View style={{width: 28, height: 28}} />
         </View>
