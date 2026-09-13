@@ -14,6 +14,7 @@ import Toast from 'react-native-toast-message';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Svg, { Path, Circle } from 'react-native-svg';
+import { ChevronLeft } from 'lucide-react-native';
 
 import { authApi } from '../api';
 import { AppText } from '../components/AppText';
@@ -250,48 +251,59 @@ export const DashboardRoleSelectionScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor={Colors.neutral[0]} />
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-        bounces={false}>
-        {navigation.canGoBack() && (
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => navigation.goBack()}
-            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
-            <BackArrowIcon size={moderateScale(24)} />
-          </TouchableOpacity>
-        )}
+    <>
+      <SafeAreaView style={{ flex: 0, backgroundColor: Colors.primary[500] }} />
+      <View style={styles.container}>
+        <StatusBar barStyle="light-content" backgroundColor={Colors.primary[500]} />
+        <View style={styles.headerRow}>
+          {navigation.canGoBack() ? (
+            <TouchableOpacity
+              style={styles.backButton}
+              onPress={() => navigation.goBack()}
+              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
+              <ChevronLeft color={Colors.neutral[0]} size={28} />
+            </TouchableOpacity>
+          ) : (
+            <View style={styles.rightSpacer} />
+          )}
 
-        <View style={styles.header}>
-          <AppText variant="h2" color={Colors.primary[900]} style={styles.title}>
+          <AppText variant="h5" color={Colors.neutral[0]} style={styles.headerTitle}>
             Choose Dashboard
           </AppText>
-          <AppText variant="bodyLarge" color={Colors.neutral[500]} style={styles.subtitle}>
+
+          <View style={styles.rightSpacer} />
+        </View>
+
+        <View style={{ flex: 1, backgroundColor: Colors.neutral[0] }}>
+          <ScrollView
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+            bounces={false}>
+
+          <AppText variant="bodyLarge" center color={Colors.neutral[500]} style={styles.subtitle}>
             Select which profile you'd like to access right now. You can switch between them anytime in settings.
           </AppText>
-        </View>
 
-        <View style={styles.cardsContainer}>
-          {selectedRoles.map((role, index) => (
-            <DashboardCard
-              key={`${role}-${index}`}
-              role={role}
-              onPress={() => handleRoleSelect(role)}
-              disabled={isLoading || role === currentRole}
-            />
-          ))}
-        </View>
-
-        {isLoading && (
-          <View style={styles.loaderContainer}>
-            <ActivityIndicator size="large" color={Colors.primary[500]} />
+          <View style={styles.cardsContainer}>
+            {selectedRoles.map((role, index) => (
+              <DashboardCard
+                key={`${role}-${index}`}
+                role={role}
+                onPress={() => handleRoleSelect(role)}
+                disabled={isLoading || role === currentRole}
+              />
+            ))}
           </View>
-        )}
-      </ScrollView>
-    </SafeAreaView>
+
+          {isLoading && (
+            <View style={{ marginTop: 24 }}>
+              <ActivityIndicator size="large" color={Colors.primary[500]} />
+            </View>
+          )}
+          </ScrollView>
+        </View>
+      </View>
+    </>
   );
 };
 
@@ -300,7 +312,7 @@ const { width } = Dimensions.get('window');
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.neutral[0],
+    backgroundColor: Colors.primary[500],
   },
   scrollContent: {
     flexGrow: 1,
@@ -309,18 +321,27 @@ const styles = StyleSheet.create({
     paddingBottom: verticalScale(32),
   },
   backButton: {
-    alignSelf: 'flex-start',
-    marginBottom: verticalScale(16),
+    // marginBottom: verticalScale(16),
   },
-  header: {
-    // backgroundColor: Colors.primary[500],
-    marginBottom: verticalScale(32),
+  headerRow: {
+    backgroundColor: Colors.primary[500],
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: horizontalScale(16),
+    paddingVertical: verticalScale(16),
   },
-  title: {
-    marginBottom: verticalScale(12),
+  headerTitle: {
+    flex: 1,
+    textAlign: 'center',
+  },
+  rightSpacer: {
+    width: moderateScale(28),
   },
   subtitle: {
     lineHeight: fontScale(24),
+    marginTop: verticalScale(16),
+    marginBottom: verticalScale(32),
   },
   cardsContainer: {
     flexDirection: 'row',

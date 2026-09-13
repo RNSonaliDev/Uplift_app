@@ -546,7 +546,7 @@ export default function RequestDetailsScreen() {
               maxLength={6}
             />
             <Button 
-              title="Start Task" 
+              title="Start Job" 
               onPress={handleStartWithOtp}
               loading={isStarting}
               disabled={otpCode.length !== 6 || isStarting}

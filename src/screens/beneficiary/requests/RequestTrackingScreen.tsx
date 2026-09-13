@@ -183,7 +183,7 @@ export default function RequestTrackingScreen() {
                 title="Request Accepted" 
                 description={requestDetail.volunteer ? undefined : 'Waiting for a volunteer to accept.'}
               >
-                {requestDetail.volunteer && (
+                {/* {requestDetail.volunteer && (
                   <View style={{flexDirection: 'row', alignItems: 'center', marginTop: 12, padding: 16, backgroundColor: Colors.neutral[0], borderRadius: 16, borderWidth: 1, borderColor: Colors.neutral[200]}}>
                     {requestDetail.volunteer.profile_image_url ? (
                       <Image 
@@ -240,7 +240,7 @@ export default function RequestTrackingScreen() {
                       <MessageCircle color={Colors.primary[500]} size={20} />
                     </TouchableOpacity>
                   </View>
-                )}
+                )} */}
               </TimelineItem>
               <TimelineItem 
                 status={['in_progress', 'completed'].includes(requestDetail.status) ? 'completed' : requestDetail.status === 'on_the_way' ? 'active' : 'pending'} 
@@ -267,7 +267,7 @@ export default function RequestTrackingScreen() {
               </AppText>
             </View>
 
-            {requestDetail.volunteer && requestDetail.status !== 'completed' && (
+            {/* {requestDetail.volunteer && requestDetail.status !== 'completed' && (
               <TouchableOpacity 
                 style={styles.outlineBtn}
                 onPress={() => {
@@ -287,7 +287,7 @@ export default function RequestTrackingScreen() {
               >
                 <Text style={styles.outlineBtnText}>Contact Helper</Text>
               </TouchableOpacity>
-            )}
+            )} */}
             {requestDetail.status === 'completed' && (
               <TouchableOpacity 
                 style={[styles.outlineBtn, {backgroundColor: Colors.primary[500]}]}
@@ -326,11 +326,7 @@ const TimelineItem = ({
       <View style={styles.timelineLeft}>
         <View style={styles.timelineIcon}>
           {status === 'completed' && <CheckCircle2 color={Colors.success} size={24} />}
-          {status === 'active' && (
-            <View style={styles.activeIconContainer}>
-              <Car color={Colors.neutral[0]} size={14} />
-            </View>
-          )}
+          {status === 'active' && <CheckCircle2 color={Colors.success} size={24} />}
           {status === 'pending' && <CheckCircle2 color={Colors.neutral[300]} size={24} />}
         </View>
         {!isLast && (

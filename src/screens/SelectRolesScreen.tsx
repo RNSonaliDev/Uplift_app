@@ -14,6 +14,8 @@ import {authApi} from '../api/auth';
 import {AppText} from '../components/AppText';
 import {Button} from '../components/Button';
 import {UpliftLogo} from '../components/UpliftLogo';
+import { BackArrowIcon } from '../assets/icons';
+import { ChevronLeft } from 'lucide-react-native';
 import {Colors} from '../theme/colors';
 import {FontFamily} from '../theme/typography';
 import {Spacing, BorderRadius} from '../theme/spacing';
@@ -25,15 +27,6 @@ import {
 } from '../utils/responsive';
 
 // ── Icon Components ──────────────────────────────────────
-
-const BackArrowIcon: React.FC<{size?: number; color?: string}> = ({
-  size = 24,
-  color = Colors.primary[900],
-}) => (
-  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M15 18L9 12L15 6" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-  </Svg>
-);
 
 const CheckCircleFilled: React.FC<{size?: number; color?: string}> = ({
   size = 24,
@@ -300,29 +293,32 @@ export const SelectRolesScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor={Colors.neutral[0]} />
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-        bounces={false}>
-        {/* Header with Back Button */}
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-          hitSlop={{top: 12, bottom: 12, left: 12, right: 12}}>
-          <BackArrowIcon size={moderateScale(24)} />
-        </TouchableOpacity>
+    <>
+      <SafeAreaView style={{ flex: 0, backgroundColor: Colors.primary[500] }} />
+      <View style={styles.container}>
+        <StatusBar barStyle="light-content" backgroundColor={Colors.primary[500]} />
+        
+        <View style={styles.headerRow}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+            hitSlop={{top: 12, bottom: 12, left: 12, right: 12}}>
+            <ChevronLeft color={Colors.neutral[0]} size={28} />
+          </TouchableOpacity>
 
-        {/* Logo */}
-        {/* <View style={styles.logoSection}>
-          <UpliftLogo size={moderateScale(0.9, 0.3)} />
-        </View> */}
+          <AppText variant="h5" color={Colors.neutral[0]} style={styles.headerTitle}>
+            {isFromProfile ? 'Add a New Role' : `How Would You Like\nTo Join Uplift?`}
+          </AppText>
 
-        {/* Title & Subtitle */}
-        <AppText variant="h2" center color={Colors.primary[900]} style={styles.title}>
-          {isFromProfile ? 'Add a New Role' : `How Would You Like\nTo Join Uplift?`}
-        </AppText>
+          <View style={styles.rightSpacer} />
+        </View>
+
+        <View style={{ flex: 1, backgroundColor: Colors.neutral[0] }}>
+          <ScrollView
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+            bounces={false}>
+
         <AppText
           variant="bodyMedium"
           center
@@ -421,24 +417,39 @@ export const SelectRolesScreen: React.FC = () => {
           disabled={selectedRoles.length === 0}
           style={styles.continueButton}
         />
-      </ScrollView>
-    </SafeAreaView>
+        </ScrollView>
+        </View>
+      </View>
+    </>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.neutral[0],
+    backgroundColor: Colors.primary[500],
   },
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: horizontalScale(24),
     paddingBottom: verticalScale(24),
   },
+  headerRow: {
+    backgroundColor: Colors.primary[500],
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: horizontalScale(16),
+    paddingVertical: verticalScale(16),
+  },
+  headerTitle: {
+    flex: 1,
+    textAlign: 'center',
+  },
+  rightSpacer: {
+    width: moderateScale(28),
+  },
   backButton: {
-    alignSelf: 'flex-start',
-    marginTop: verticalScale(8),
     padding: moderateScale(4),
   },
   logoSection: {

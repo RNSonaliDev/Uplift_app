@@ -25,13 +25,13 @@ import {Button} from '../../../components/Button';
 import DatePicker from 'react-native-date-picker';
 import {api, getFullImageUrl} from '../../../api/client';
 import {authApi, CategoryResponse} from '../../../api/auth';
-import {ChevronLeft, ShoppingCart, MapPin, Navigation, X} from 'lucide-react-native';
+import {ChevronLeft, ShoppingCart, MapPin, Navigation, X, Info} from 'lucide-react-native';
 import {Spacing} from '../../../theme/spacing';
 import {horizontalScale, verticalScale, moderateScale} from '../../../utils/responsive';
 import MapView, { Marker, Circle } from 'react-native-maps';
 import { GooglePlacesAutocomplete, GooglePlacesAutocompleteRef } from 'react-native-google-places-autocomplete';
 import Geolocation from '@react-native-community/geolocation';
-import { validateAddressType, ValidationResult } from '../../../utils/addressValidation';
+import { validateAddressType, validateBusinessAddressWithAPI, ValidationResult } from '../../../utils/addressValidation';
 
 LogBox.ignoreLogs(['VirtualizedLists should never be nested']);
 
@@ -121,10 +121,13 @@ export default function CreateRequestScreen() {
       const response = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${GOOGLE_MAPS_API_KEY}`);
       const data = await response.json();
       if (data.results && data.results.length > 0) {
-        console.log("Address", data.results[0]);
         const address = data.results[0].formatted_address;
-        const types = data.results[0].types || [];
-        setAddressValidation(validateAddressType(types));
+        console.log('Selected Address:', address);
+
+        // Validate address using Address Validation API
+        const validationData = await validateBusinessAddressWithAPI(address, GOOGLE_MAPS_API_KEY);
+        setAddressValidation(validationData);
+
         handleChange('meeting_location', address);
         googlePlacesRef.current?.setAddressText(address);
       }
@@ -420,17 +423,28 @@ export default function CreateRequestScreen() {
           /> */}
 
           <View style={styles.addressSection}>
-            <AppText variant="labelLarge" color={Colors.neutral[700]} style={{marginBottom: 8}}>
-              Meeting Location <AppText color={Colors.error}>*</AppText>
-            </AppText>
+            <View style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8}}>
+              <AppText variant="labelLarge" color={Colors.neutral[700]}>
+                Meeting Location <AppText color={Colors.error}>*</AppText>
+              </AppText>
+              {(formData.latitude && formData.longitude) ? (
+                <TouchableOpacity onPress={() => setIsMapModalVisible(true)}>
+                  <AppText variant="bodyMedium" color={Colors.primary[500]} style={{ textDecorationLine: 'underline' }}>
+                    Show on map
+                  </AppText>
+                </TouchableOpacity>
+              ) : null}
+            </View>
             <GooglePlacesAutocomplete
               ref={googlePlacesRef}
               placeholder="e.g. 123 Main St, Beverly Hills, CA"
               fetchDetails={true}
-              onPress={(data, details = null) => {
+              onPress={async (data, details = null) => {
                 if (details) {
                   console.log("Selected Address Details: ", details);
-                  setAddressValidation(validateAddressType(details.types));
+                  const validationData = await validateBusinessAddressWithAPI(data.description, GOOGLE_MAPS_API_KEY);
+                  setAddressValidation(validationData);
+                  
                   handleChange('meeting_location', data.description);
                   handleChange('latitude', details.geometry.location.lat.toString());
                   handleChange('longitude', details.geometry.location.lng.toString());
@@ -476,22 +490,23 @@ export default function CreateRequestScreen() {
                 {errors.meeting_location}
               </AppText>
             ) : addressValidation?.message ? (
-              <AppText 
-                variant="bodySmall" 
-                color={addressValidation.addressType === 'business' ? Colors.success : Colors.warning} 
-                style={{marginTop: 4}}
-              >
-                {addressValidation.message}
-              </AppText>
+              <View style={{flexDirection: 'row', alignItems: 'flex-start', marginTop: 4}}>
+                <Info 
+                  color={addressValidation.addressType === 'business' ? Colors.success : Colors.warning} 
+                  size={16} 
+                  style={{marginTop: 2, marginRight: 4}} 
+                />
+                <AppText 
+                  variant="bodySmall" 
+                  color={addressValidation.addressType === 'business' ? Colors.success : Colors.warning} 
+                  style={{flex: 1}}
+                >
+                  {addressValidation.message}
+                </AppText>
+              </View>
             ) : null}
 
-            {(formData.latitude && formData.longitude) ? (
-              <TouchableOpacity onPress={() => setIsMapModalVisible(true)} style={{ marginTop: Spacing.sm, marginBottom: Spacing.md, alignSelf: 'flex-end' }}>
-                <AppText variant="bodyMedium" color={Colors.primary[500]} style={{ textDecorationLine: 'underline' }}>
-                  Show on map
-                </AppText>
-              </TouchableOpacity>
-            ) : null}
+
           </View>
 
         </ScrollView>

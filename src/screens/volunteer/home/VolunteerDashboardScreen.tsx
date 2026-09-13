@@ -149,7 +149,7 @@ export default function VolunteerDashboardScreen() {
                 <User color={Colors.primary[600]} size={24} />
               </View>
               <AppText variant="labelLarge" weight="semiBold" color={Colors.primary[700]} style={{ marginTop: 12 }}>Beneficiary</AppText>
-              {/* <AppText variant="caption" color={Colors.primary[600]}>Support</AppText> */}
+              <AppText variant="caption" color={Colors.primary[600]}>Support</AppText>
             </TouchableOpacity>
 
             <TouchableOpacity 
@@ -161,7 +161,7 @@ export default function VolunteerDashboardScreen() {
                 <Building color={Colors.secondary[600]} size={24} />
               </View>
               <AppText variant="labelLarge" weight="semiBold" color={Colors.secondary[700]} style={{ marginTop: 12 }}>Organization</AppText>
-              {/* <AppText variant="caption" color={Colors.secondary[600]}>Support</AppText> */}
+              <AppText variant="caption" color={Colors.secondary[600]}>Support</AppText>
             </TouchableOpacity>
           </View>
         </View>

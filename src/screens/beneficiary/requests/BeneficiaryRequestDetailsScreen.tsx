@@ -248,7 +248,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: horizontalScale(24),
-    paddingTop: verticalScale(8),
+    paddingTop: verticalScale(24),
     paddingBottom: verticalScale(40),
   },
   categoryBadge: {

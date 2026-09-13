@@ -119,7 +119,7 @@ export default function SponsorDashboardScreen() {
             <View style={styles.statsRow}>
               <View style={styles.statItem}>
                 <AppText variant="h3" style={styles.statNumber} numberOfLines={1} adjustsFontSizeToFit>
-                  {stats ? (stats.donations_total + stats.donations_pending) : contributions.length}
+                  {stats?.donations_total}
                 </AppText>
                 <AppText variant="caption" style={styles.statLabel} center>Contribution {"\n"}Count</AppText>
               </View>

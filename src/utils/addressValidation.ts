@@ -77,3 +77,65 @@ export const validateAddressType = (types: string[] = []): ValidationResult => {
     message: 'Unable to confidently verify the property type. Please ensure this is a public business address.',
   };
 };
+
+export const validateBusinessAddressWithAPI = async (address: string, apiKey: string): Promise<ValidationResult> => {
+  try {
+    const response = await fetch(
+      `https://addressvalidation.googleapis.com/v1:validateAddress?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          address: {
+            regionCode: 'US',
+            addressLines: [address],
+          },
+        }),
+      }
+    );
+
+    const data = await response.json();
+    console.log('Address Validation Response:', data);
+
+    const metadata = data?.result?.metadata;
+    const isResidential = metadata?.residential === true;
+    const isBusiness = metadata?.business === true;
+    
+    console.log('Is Residential:', isResidential);
+    console.log('Is Business:', isBusiness);
+
+    if (isResidential) {
+      return {
+        isBusinessAddress: false,
+        addressType: 'residential',
+        confidence: 'high',
+        message: 'This appears to be a residential address. For your safety, we recommend meeting at a public business address if possible.',
+      };
+    } else if (isBusiness) {
+      return {
+        isBusinessAddress: true,
+        addressType: 'business',
+        confidence: 'high',
+        message: '',
+      };
+    }
+
+    return {
+      isBusinessAddress: 'unknown',
+      addressType: 'unknown',
+      confidence: 'low',
+      message: 'Unable to confidently verify the property type. Please ensure this is a public business address.',
+    };
+
+  } catch (error) {
+    console.log('Address Validation Error:', error);
+    return {
+      isBusinessAddress: 'unknown',
+      addressType: 'unknown',
+      confidence: 'low',
+      message: 'Unable to confidently verify the property type. Please ensure this is a public business address.',
+    };
+  }
+};

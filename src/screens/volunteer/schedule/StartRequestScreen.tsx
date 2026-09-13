@@ -145,7 +145,7 @@ export default function StartRequestScreen() {
         </View>
 
         <Button 
-          title="Start Task" 
+          title="Start Job" 
           onPress={handleStartTask}
           loading={loading}
           disabled={code.length !== 6 || loading}

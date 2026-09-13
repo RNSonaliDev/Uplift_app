@@ -18,7 +18,8 @@ import {Colors} from '../../../theme/colors';
 import {AppText} from '../../../components/AppText';
 import {Input} from '../../../components/Input';
 import {Button} from '../../../components/Button';
-import {ChevronLeft, Calendar, MapPin, Clock, Info, Navigation} from 'lucide-react-native';
+import {ChevronLeft, Calendar, MapPin, Clock, Info, Navigation, BadgeCheck, Phone, ChevronDown} from 'lucide-react-native';
+import {Spacing} from '../../../theme/spacing';
 import {authApi} from '../../../api/auth';
 import Svg, { Circle } from 'react-native-svg';
 
@@ -124,6 +125,17 @@ const RadioCard = ({
   </TouchableOpacity>
 );
 
+const PhonePrefixPrefix = () => (
+  <View style={styles.phonePrefixContainer}>
+    <Phone size={18} color={Colors.primary[500]} />
+    <AppText variant="bodyMedium" style={{marginLeft: 8, marginRight: 4}}>
+      +1
+    </AppText>
+    <ChevronDown color={Colors.neutral[500]} size={16} />
+    <View style={styles.verticalDivider} />
+  </View>
+);
+
 export default function EditProfileScreen() {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
@@ -140,6 +152,8 @@ export default function EditProfileScreen() {
     last_name: '',
     phone: '',
     email: '',
+    email_verified: false,
+    phone_verified: false,
     zip_code: '',
     dob: '',
     service_radius: '',
@@ -168,6 +182,8 @@ export default function EditProfileScreen() {
           last_name: roleProfile.last_name || data.last_name || '',
           phone: data.phone || '',
           email: data.email || '',
+          email_verified: data.email_verified || false,
+          phone_verified: data.phone_verified || false,
           zip_code: data.zip_code || roleProfile.zip_code || '',
           dob: data.date_of_birth || '',
           service_radius: roleProfile.service_radius ? String(roleProfile.service_radius) : '',
@@ -248,7 +264,7 @@ export default function EditProfileScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView contentContainerStyle={styles.content}>
           <AppText variant="labelLarge" color={Colors.neutral[900]} weight="bold" style={{ marginBottom: 12 }}>Basic Details</AppText>
-          <Input
+          {/* <Input
             label="First Name"
             value={formData.base_first_name}
             disabled={true}
@@ -257,18 +273,33 @@ export default function EditProfileScreen() {
             label="Last Name"
             value={formData.base_last_name}
             disabled={true}
-          />
+          /> */}
           <Input
             label="Email Address"
             value={formData.email}
             disabled={true}
+            rightIcon={
+              formData.email_verified ? (
+                <TouchableOpacity onPress={() => Toast.show({ type: 'success', text1: 'Verified', text2: 'Email address is verified.' })}>
+                  <BadgeCheck color={Colors.success} size={20} />
+                </TouchableOpacity>
+              ) : undefined
+            }
           />
           <Input
             label="Phone Number"
-            value={formData.phone}
+            value={formData.phone.startsWith('+1') ? formData.phone.slice(2) : formData.phone}
             onChangeText={v => handleChange('phone', v)}
             keyboardType="phone-pad"
             disabled={true}
+            leftIcon={<PhonePrefixPrefix />}
+            rightIcon={
+              formData.phone_verified ? (
+                <TouchableOpacity onPress={() => Toast.show({ type: 'success', text1: 'Verified', text2: 'Phone number is verified.' })}>
+                  <BadgeCheck color={Colors.success} size={20} />
+                </TouchableOpacity>
+              ) : undefined
+            }
           />
           <Input
             label="Date of Birth"
@@ -482,9 +513,10 @@ export default function EditProfileScreen() {
               />
               <Input
                 label="Contact Phone"
-                value={formData.contact_phone}
+                value={formData.contact_phone?.startsWith('+1') ? formData.contact_phone.slice(2) : formData.contact_phone}
                 onChangeText={v => handleChange('contact_phone', v)}
                 keyboardType="phone-pad"
+                leftIcon={<PhonePrefixPrefix />}
               />
             </>
           )}
@@ -642,5 +674,17 @@ const styles = StyleSheet.create({
   },
   radioTextContainer: {
     flex: 1,
+  },
+  phonePrefixContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingLeft: Spacing.xs,
+  },
+  verticalDivider: {
+    width: 1,
+    height: 24,
+    backgroundColor: Colors.neutral[200],
+    marginLeft: Spacing.sm,
+    marginRight: Spacing.sm,
   },
 });

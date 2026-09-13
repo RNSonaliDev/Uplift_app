@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ArrowLeft, Calendar as CalendarIcon, Clock, CheckSquare, Square, MapPin, Crosshair, Map as MapIcon, Minus, Plus, Navigation, X } from 'lucide-react-native';
+import { ArrowLeft, Calendar as CalendarIcon, Clock, CheckSquare, Square, MapPin, Crosshair, Map as MapIcon, Minus, Plus, Navigation, X, Info } from 'lucide-react-native';
 import MapView, { Marker, Circle as MapCircle } from 'react-native-maps';
 import { GooglePlacesAutocomplete, GooglePlacesAutocompleteRef } from 'react-native-google-places-autocomplete';
 import Geolocation from '@react-native-community/geolocation';
@@ -499,9 +499,18 @@ export const RequestDetailsScreen = () => {
           )}
 
         
-{/* Address */}
+        {/* Address */}
         <View style={styles.inputGroup}>
-          <Text style={styles.label}>Address <Text style={{color: Colors.error}}>*</Text></Text>
+          <View style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8}}>
+            <Text style={[styles.label, {marginBottom: 0}]}>Address <Text style={{color: Colors.error}}>*</Text></Text>
+            {(latitude && longitude) ? (
+              <TouchableOpacity onPress={() => setIsMapModalVisible(true)}>
+                <AppText variant="bodyMedium" color={Colors.primary[500]} style={{ textDecorationLine: 'underline' }}>
+                  Show on map
+                </AppText>
+              </TouchableOpacity>
+            ) : null}
+          </View>
           <GooglePlacesAutocomplete
             ref={googlePlacesRef}
             placeholder="Enter address"
@@ -574,24 +583,24 @@ export const RequestDetailsScreen = () => {
           {!!addressError ? (
             <Text style={styles.errorText}>{addressError}</Text>
           ) : addressValidation?.message ? (
-            <AppText 
-              variant="bodySmall" 
-              color={addressValidation.addressType === 'business' ? Colors.success : Colors.warning} 
-              style={{marginTop: 4}}
-            >
-              {addressValidation.message}
-            </AppText>
+            <View style={{flexDirection: 'row', alignItems: 'flex-start', marginTop: 4}}>
+              <Info 
+                color={addressValidation.addressType === 'business' ? Colors.success : Colors.warning} 
+                size={16} 
+                style={{marginTop: 2, marginRight: 4}} 
+              />
+              <AppText 
+                variant="bodySmall" 
+                color={addressValidation.addressType === 'business' ? Colors.success : Colors.warning} 
+                style={{flex: 1}}
+              >
+                {addressValidation.message}
+              </AppText>
+            </View>
           ) : null}
         </View>
 
-        {/* Map */}
-        {(latitude && longitude) ? (
-          <TouchableOpacity onPress={() => setIsMapModalVisible(true)} style={{ marginTop: 8, marginBottom: 16, alignSelf: 'flex-end' }}>
-            <AppText variant="bodyMedium" color={Colors.primary[500]} style={{ textDecorationLine: 'underline' }}>
-              Show on map
-            </AppText>
-          </TouchableOpacity>
-        ) : null}
+
 
  
 
