@@ -15,7 +15,7 @@ import {Shadows} from '../theme/common';
 
 type ButtonVariant = 'solid' | 'outline' | 'ghost';
 type ButtonSize = 'sm' | 'md' | 'lg';
-type ButtonColor = 'primary' | 'secondary' | 'accent' | 'neutral';
+type ButtonColor = 'primary' | 'secondary' | 'accent' | 'neutral' | 'error';
 
 interface ButtonProps extends TouchableOpacityProps {
   /** Button label */
@@ -68,6 +68,14 @@ const colorMap = {
     border: Colors.neutral[300],
     outlineText: Colors.neutral[800],
     ghostText: Colors.neutral[700],
+  },
+  error: {
+    bg: Colors.error,
+    bgPressed: '#DC2626',
+    text: Colors.neutral[0],
+    border: Colors.error,
+    outlineText: Colors.error,
+    ghostText: Colors.error,
   },
 };
 

@@ -241,9 +241,9 @@ export default function BeneficiaryDashboardScreen() {
                   }
                   title={category.title}
                   onPress={() => navigation.navigate('RequestsTab', {
-                  screen: 'CreateRequest',
-                  params: { category_id: category.id.toString() }
-                })}
+                    screen: 'CreateRequest',
+                    params: { category_id: category.id.toString(), fromDashboard: true }
+                  })}
                 />
               );
             })

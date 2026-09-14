@@ -216,7 +216,10 @@ export default function ChatScreen() {
   };
 
   return (
-    <>
+    <KeyboardAvoidingView
+      style={{ flex: 1, backgroundColor: Colors.neutral[0] }}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
       <SafeAreaView style={{ flex: 0, backgroundColor: Colors.primary[500] }} />
       <SafeAreaView style={styles.safeArea}>
       {/* Header */}
@@ -252,11 +255,7 @@ export default function ChatScreen() {
       </View>
 
       {/* Messages */}
-      <KeyboardAvoidingView
-        style={styles.chatContainer}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={0}
-      >
+      <View style={styles.chatContainer}>
         {loading ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color={Colors.primary[500]} />
@@ -316,9 +315,9 @@ export default function ChatScreen() {
             </AppText>
           </View>
         )}
-      </KeyboardAvoidingView>
+      </View>
       </SafeAreaView>
-    </>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -435,11 +434,12 @@ const styles = StyleSheet.create({
   },
   inputWrapper: {
     flexDirection: 'row',
-    alignItems: 'flex-end',
+    alignItems: 'center',
     backgroundColor: Colors.neutral[100],
     borderRadius: moderateScale(24),
     paddingHorizontal: horizontalScale(16),
     paddingVertical: Platform.OS === 'ios' ? verticalScale(8) : verticalScale(4),
+    minHeight: moderateScale(48),
   },
   textInput: {
     flex: 1,
@@ -448,6 +448,7 @@ const styles = StyleSheet.create({
     color: Colors.neutral[900],
     maxHeight: 100,
     paddingTop: Platform.OS === 'ios' ? 0 : verticalScale(4),
+    paddingBottom: Platform.OS === 'ios' ? 0 : verticalScale(4),
   },
   sendButton: {
     width: moderateScale(36),

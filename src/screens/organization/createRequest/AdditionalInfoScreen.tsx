@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ArrowLeft, Image as ImageIcon } from 'lucide-react-native';
+import { ChevronLeft, Image as ImageIcon } from 'lucide-react-native';
 
 import { Colors } from '../../../theme/colors';
 import { Typography, FontFamily } from '../../../theme/typography';
@@ -46,7 +46,7 @@ export const AdditionalInfoScreen = () => {
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          <ArrowLeft color={Colors.neutral[900]} size={24} />
+          <ChevronLeft color={Colors.neutral[900]} size={28} />
         </TouchableOpacity>
         <AppText variant="h5" color={Colors.neutral[0]} style={{textAlign: 'center'}}>Additional Information</AppText>
         <View style={{ width: 40 }} />

@@ -7,7 +7,7 @@ import {
   SafeAreaView,
   Platform,
 } from 'react-native';
-import { useNavigation, CommonActions } from '@react-navigation/native';
+import { useNavigation, useRoute, CommonActions } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Check } from 'lucide-react-native';
 
@@ -16,7 +16,9 @@ import { Typography, FontFamily } from '../../../theme/typography';
 
 export const RequestCreatedScreen = () => {
   const navigation = useNavigation<any>();
+  const route = useRoute<any>();
   const insets = useSafeAreaInsets();
+  const { referenceNumber } = route.params || {};
 
   const handleViewRequests = () => {
     // Reset current stack to Dashboard so user can't go back to success screen
@@ -66,6 +68,13 @@ export const RequestCreatedScreen = () => {
         <Text style={styles.description}>
           Volunteers within the selected radius can now view and accept your request.
         </Text>
+
+        <View style={styles.card}>
+          <Text style={styles.cardLabel}>Request ID</Text>
+          <Text style={styles.cardValue}>
+            {referenceNumber ? `#${referenceNumber}` : '#REQ-2024-0522-001'}
+          </Text>
+        </View>
 
       </View>
 
@@ -136,6 +145,25 @@ const styles = StyleSheet.create({
     color: Colors.neutral[600],
     textAlign: 'center',
     lineHeight: 24,
+    marginBottom: 24,
+  },
+  card: {
+    backgroundColor: Colors.primary[50],
+    padding: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+    width: '100%',
+    marginBottom: 24,
+  },
+  cardLabel: {
+    ...Typography.labelMedium,
+    color: Colors.primary[900],
+    marginBottom: 4,
+  },
+  cardValue: {
+    ...Typography.bodyLarge,
+    fontFamily: FontFamily.semiBold,
+    color: Colors.neutral[900],
   },
   footer: {
     paddingHorizontal: 20,

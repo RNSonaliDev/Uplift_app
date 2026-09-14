@@ -57,7 +57,7 @@ export const OrganizationRequestsScreen = () => {
       <SafeAreaView style={{ flex: 0, backgroundColor: Colors.primary[500] }} />
       <SafeAreaView style={styles.safeArea}>
       <View style={styles.header}>
-        <AppText variant="bodyLarge" color={Colors.neutral[0]}>Browse Requests</AppText>
+        <AppText variant="h5" color={Colors.neutral[0]}>Browse Requests</AppText>
       </View>
 
       <View style={styles.container}>

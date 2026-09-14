@@ -3,7 +3,10 @@ import {
   requestPermission,
   getToken,
   onMessage,
-  AuthorizationStatus
+  AuthorizationStatus,
+  getAPNSToken,
+  registerDeviceForRemoteMessages,
+  isDeviceRegisteredForRemoteMessages,
 } from '@react-native-firebase/messaging';
 import notifee, { AndroidImportance } from '@notifee/react-native';
 import { Platform } from 'react-native';
@@ -34,6 +37,34 @@ class PushNotificationService {
     try {
       const msg = getMessaging();
       
+      // On iOS, ensure the device is registered for remote messages first
+      if (Platform.OS === 'ios') {
+        const isRegistered = isDeviceRegisteredForRemoteMessages(msg);
+        if (!isRegistered) {
+          await registerDeviceForRemoteMessages(msg);
+        }
+        
+        // Wait for APNs token to be available (needed for both device and simulator)
+        let apnsToken = await getAPNSToken(msg);
+        if (!apnsToken) {
+          // Retry a few times with delay - APNs token may take a moment
+          for (let i = 0; i < 5; i++) {
+            await new Promise(resolve => setTimeout(resolve, 1500));
+            apnsToken = await getAPNSToken(msg);
+            if (apnsToken) {
+              console.log('APNs token received on retry', i + 1);
+              break;
+            }
+          }
+        }
+        
+        if (!apnsToken) {
+          console.log('APNs token not available. Push notifications may not work.');
+          return;
+        }
+        console.log('APNs token available:', apnsToken.substring(0, 20) + '...');
+      }
+      
       const fcmToken = await getToken(msg);
       if (fcmToken) {
         console.log('Your Firebase Token is:', fcmToken);
@@ -52,11 +83,7 @@ class PushNotificationService {
         console.log('Failed to get FCM token');
       }
     } catch (error: any) {
-      if (error.code === 'messaging/unregistered' || error.code === 'messaging/registration-timeout') {
-        console.log('FCM token generation failed. This is expected on iOS Simulators. Use a physical device for push notifications.');
-      } else {
-        console.error('Error getting FCM token:', error);
-      }
+      console.error('Error getting FCM token:', error?.code, error?.message || error);
     }
   }
 

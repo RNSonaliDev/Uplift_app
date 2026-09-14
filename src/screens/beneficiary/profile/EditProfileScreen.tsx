@@ -9,7 +9,10 @@ import {
   Platform,
   Alert,
   PanResponder,
+  Dimensions,
+  Pressable,
 } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import Toast from 'react-native-toast-message';
 import {useNavigation, useRoute} from '@react-navigation/native';
 import DatePicker from 'react-native-date-picker';
@@ -277,10 +280,13 @@ export default function EditProfileScreen() {
         <View style={{width: 28}} />
       </View>
 
-      <KeyboardAvoidingView
-        style={{flex: 1}}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <ScrollView contentContainerStyle={styles.content}>
+      <KeyboardAwareScrollView
+        style={{ flex: 1, backgroundColor: Colors.neutral[50] }}
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+        enableOnAndroid={true}
+        extraScrollHeight={100}
+      >
           <AppText variant="labelLarge" color={Colors.neutral[900]} weight="bold" style={{ marginBottom: 12 }}>Basic Details</AppText>
           {/* <Input
             label="First Name"
@@ -293,6 +299,19 @@ export default function EditProfileScreen() {
             disabled={true}
           /> */}
           <View style={{position: 'relative', zIndex: 11}}>
+            {showEmailVerifiedInfo && (
+              <Pressable
+                style={{
+                  position: 'absolute',
+                  top: -Dimensions.get('window').height,
+                  bottom: -Dimensions.get('window').height,
+                  left: -Dimensions.get('window').width,
+                  right: -Dimensions.get('window').width,
+                  backgroundColor: 'transparent',
+                }}
+                onPress={() => setShowEmailVerifiedInfo(false)}
+              />
+            )}
             <Input
               label="Email Address"
               value={formData.email}
@@ -308,9 +327,6 @@ export default function EditProfileScreen() {
             {showEmailVerifiedInfo && (
               <View style={styles.tooltipContainer}>
                 <View style={styles.tooltipTriangle} />
-                <AppText variant="labelMedium" weight="bold" color={Colors.neutral[900]} style={{marginBottom: 4}}>
-                  Verified
-                </AppText>
                 <AppText variant="caption" color={Colors.neutral[800]} style={{lineHeight: 18}}>
                   Email address is verified.
                 </AppText>
@@ -318,6 +334,19 @@ export default function EditProfileScreen() {
             )}
           </View>
           <View style={{position: 'relative', zIndex: 10}}>
+            {showPhoneVerifiedInfo && (
+              <Pressable
+                style={{
+                  position: 'absolute',
+                  top: -Dimensions.get('window').height,
+                  bottom: -Dimensions.get('window').height,
+                  left: -Dimensions.get('window').width,
+                  right: -Dimensions.get('window').width,
+                  backgroundColor: 'transparent',
+                }}
+                onPress={() => setShowPhoneVerifiedInfo(false)}
+              />
+            )}
             <Input
               label="Phone Number"
               value={formData.phone.startsWith('+1') ? formData.phone.slice(2) : formData.phone}
@@ -414,9 +443,9 @@ export default function EditProfileScreen() {
                     <AppText variant="labelMedium" color={Colors.neutral[900]} style={{ flexShrink: 1 }}>
                       Service Radius (within your selected radius)
                     </AppText>
-                    <TouchableOpacity style={{marginLeft: 6}}>
+                    {/* <TouchableOpacity style={{marginLeft: 6}}>
                       <Info size={16} color={Colors.primary[500]} />
-                    </TouchableOpacity>
+                    </TouchableOpacity> */}
                   </View>
                   <View style={styles.pillContainer}>
                     <AppText variant="caption" color={Colors.primary[600]} weight="semiBold">
@@ -465,21 +494,35 @@ export default function EditProfileScreen() {
 
           {currentRole === 'organization' && (
             <>
-              <TouchableOpacity activeOpacity={0.8} onPress={() => setTypeModalVisible(!isTypeModalVisible)}>
-                <View pointerEvents="none">
-                  <Input
-                    label="Organization Type"
-                    placeholder="Select organization type"
-                    value={formData.organization_type || ''}
-                    editable={false}
-                    rightIcon={<ChevronDown color={Colors.neutral[500]} size={20} />}
+              <View style={{ position: 'relative', zIndex: 9 }}>
+                {isTypeModalVisible && (
+                  <Pressable
+                    style={{
+                      position: 'absolute',
+                      top: -Dimensions.get('window').height,
+                      bottom: -Dimensions.get('window').height,
+                      left: -Dimensions.get('window').width,
+                      right: -Dimensions.get('window').width,
+                      backgroundColor: 'transparent',
+                    }}
+                    onPress={() => setTypeModalVisible(false)}
                   />
-                </View>
-              </TouchableOpacity>
+                )}
+                <TouchableOpacity activeOpacity={0.8} onPress={() => setTypeModalVisible(!isTypeModalVisible)}>
+                  <View pointerEvents="none">
+                    <Input
+                      label="Organization Type"
+                      placeholder="Select organization type"
+                      value={formData.organization_type || ''}
+                      editable={false}
+                      rightIcon={<ChevronDown color={Colors.neutral[500]} size={20} />}
+                    />
+                  </View>
+                </TouchableOpacity>
 
-              {isTypeModalVisible && (
-                <View style={styles.inlineDropdown}>
-                  {organizationTypes.map((item, index) => {
+                {isTypeModalVisible && (
+                  <View style={styles.inlineDropdown}>
+                    {organizationTypes.map((item, index) => {
                     const isSelected = formData.organization_type === item;
                     const isLast = index === organizationTypes.length - 1;
                     return (
@@ -504,6 +547,7 @@ export default function EditProfileScreen() {
                   })}
                 </View>
               )}
+              </View>
 
               <Input
                 label="Organization Name"
@@ -600,8 +644,7 @@ export default function EditProfileScreen() {
             </>
           )}
 
-        </ScrollView>
-      </KeyboardAvoidingView>
+      </KeyboardAwareScrollView>
 
       <View style={styles.footer}>
         <Button

@@ -8,7 +8,7 @@ import {
 } from 'react-native';
 import Toast from 'react-native-toast-message';
 import {useNavigation, useRoute} from '@react-navigation/native';
-import {ArrowLeft, ShieldCheck, ShoppingCart, Pill, Soup, Car, Users, MoreHorizontal, Calendar, Clock, MapPin} from 'lucide-react-native';
+import {ChevronLeft, ShieldCheck, ShoppingCart, Pill, Soup, Car, Users, MoreHorizontal, Calendar, Clock, MapPin} from 'lucide-react-native';
 import {formatDate, formatTime12Hour} from '../../../utils/dateFormatter';
 import {AppText} from '../../../components/AppText';
 import {Button} from '../../../components/Button';
@@ -82,7 +82,7 @@ export default function StartRequestScreen() {
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.iconButton}>
-          <ArrowLeft color={Colors.neutral[900]} size={24} />
+          <ChevronLeft color={Colors.neutral[900]} size={28} />
         </TouchableOpacity>
         <AppText variant="h5" color={Colors.neutral[0]} style={{textAlign: 'center'}}>
           Start Request

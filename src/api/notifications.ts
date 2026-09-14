@@ -51,8 +51,9 @@ export const notificationsApi = {
     return api.put<NotificationSettingsResponse>('/notification_settings', payload);
   },
   
-  getNotifications: () => {
-    return api.get<AppNotification[]>('/notifications');
+  getNotifications: (role?: string) => {
+    const url = role ? `/notifications?role=${encodeURIComponent(role)}` : '/notifications';
+    return api.get<AppNotification[]>(url);
   },
   
   markAsRead: (id: number) => {

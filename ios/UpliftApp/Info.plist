@@ -81,5 +81,11 @@
 		<string>Poppins-Italic.ttf</string>
 		<string>Poppins-MediumItalic.ttf</string>
 	</array>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
+	</array>
+	<key>FirebaseMessagingAutoInitEnabled</key>
+	<true/>
 </dict>
 </plist>

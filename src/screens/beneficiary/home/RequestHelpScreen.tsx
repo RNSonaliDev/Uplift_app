@@ -97,7 +97,7 @@ export default function RequestHelpScreen() {
                 title={cat.title}
                 onPress={() => navigation.navigate('RequestsTab', {
                   screen: 'CreateRequest',
-                  params: { category_id: cat.id.toString() }
+                  params: { category_id: cat.id.toString(), fromDashboard: true }
                 })}
               />
             ))}

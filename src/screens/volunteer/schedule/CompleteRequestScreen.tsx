@@ -10,7 +10,7 @@ import {
 import Toast from 'react-native-toast-message';
 import {useNavigation, useRoute} from '@react-navigation/native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
-import {ArrowLeft, Circle, CircleDot} from 'lucide-react-native';
+import {ChevronLeft, Circle, CircleDot} from 'lucide-react-native';
 import {AppText} from '../../../components/AppText';
 import {Button} from '../../../components/Button';
 import {Colors} from '../../../theme/colors';
@@ -64,7 +64,7 @@ export default function CompleteRequestScreen() {
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <ArrowLeft color={Colors.neutral[900]} size={24} />
+          <ChevronLeft color={Colors.neutral[900]} size={28} />
         </TouchableOpacity>
         <AppText variant="h5" color={Colors.neutral[0]} style={{textAlign: 'center'}}>
           Complete Request

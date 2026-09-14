@@ -73,17 +73,17 @@ export const Input: React.FC<InputProps> = ({
   return (
     <View style={[styles.container, containerStyle]}>
       {label && (
-        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: Spacing.xs }}>
+        <View style={{ marginBottom: Spacing.xs }}>
           <AppText
             variant="labelMedium"
             color={Colors.neutral[700]}>
             {label}
+            {(required || (required === undefined && !label.toLowerCase().includes('optional'))) && (
+              <AppText variant="labelMedium" color={Colors.error}>
+                {' *'}
+              </AppText>
+            )}
           </AppText>
-          {(required || (required === undefined && !label.toLowerCase().includes('optional'))) && (
-            <AppText variant="labelMedium" color={Colors.error} style={{ marginLeft: 4 }}>
-              *
-            </AppText>
-          )}
         </View>
       )}
 

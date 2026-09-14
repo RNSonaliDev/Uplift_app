@@ -7,6 +7,7 @@ import {
   ScrollView,
   Image,
   Modal,
+  Alert,
 } from 'react-native';
 import {useNavigation, useRoute, useFocusEffect} from '@react-navigation/native';
 import Toast from 'react-native-toast-message';
@@ -25,6 +26,7 @@ import {
   MessageCircle,
   Users,
   X,
+  Info,
 } from 'lucide-react-native';
 import {
   horizontalScale,
@@ -98,6 +100,40 @@ export const OrgRequestDetailsScreen = () => {
     }
   };
 
+  const handleCancelRequest = () => {
+    Alert.alert(
+      "Cancel Request",
+      "Are you sure you want to cancel this request?",
+      [
+        { text: "No", style: "cancel" },
+        { 
+          text: "Yes, Cancel", 
+          style: "destructive",
+          onPress: async () => {
+            try {
+              setIsProcessing(true);
+              await api.post(`/help_requests/${requestId}/cancel`);
+              Toast.show({
+                type: 'success',
+                text1: 'Cancelled',
+                text2: 'Request has been cancelled successfully.',
+              });
+              navigation.goBack();
+            } catch (error: any) {
+              Toast.show({
+                type: 'error',
+                text1: 'Error',
+                text2: error?.data?.errors?.[0] || error?.message || 'Failed to cancel request.',
+              });
+            } finally {
+              setIsProcessing(false);
+            }
+          }
+        }
+      ]
+    );
+  };
+
   useFocusEffect(
     useCallback(() => {
       const fetchRequest = async () => {
@@ -126,7 +162,7 @@ export const OrgRequestDetailsScreen = () => {
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.iconButton}>
           <ChevronLeft color={Colors.neutral[0]} size={28} strokeWidth={2} />
         </TouchableOpacity>
-        <AppText variant="bodyLarge" color={Colors.neutral[0]}>Request Details</AppText>
+        <AppText variant="h5" color={Colors.neutral[0]}>Request Details</AppText>
         <View style={{width: 40}} />
       </View>
 
@@ -248,6 +284,16 @@ export const OrgRequestDetailsScreen = () => {
           </View>
 
         </View>
+
+        {/* Cancel Note */}
+        {(request.status || '').toLowerCase() === 'cancelled' && (
+          <View style={{ flexDirection: 'row', backgroundColor: '#FEE2E2', padding: 16, borderRadius: 8, alignItems: 'flex-start', marginBottom: 24, marginTop: 16 }}>
+            <Info color={Colors.error} size={24} />
+            <AppText variant="caption" color={Colors.error} style={{ flex: 1, marginLeft: 12, lineHeight: 20 }}>
+              {request.cancel_reason ? `Reason for cancellation: ${request.cancel_reason}` : 'Cancelled'}
+            </AppText>
+          </View>
+        )}
 
         {/* Assigned Volunteers Section - moved to bottom, show max 2 */}
         {(() => {
@@ -385,13 +431,17 @@ export const OrgRequestDetailsScreen = () => {
 
       </ScrollView>
 
-      {/* <View style={styles.actionContainer}>
-        <Button 
-          title="Track Request" 
-          onPress={() => navigation.navigate('OrgRequestTracking', { request: request })} 
-          style={styles.acceptBtn} 
-        />
-      </View> */}
+      {['cancelled', 'completed'].indexOf((request.status || '').toLowerCase()) === -1 && (
+        <View style={styles.actionContainer}>
+          <Button 
+            title="Cancel Request" 
+            onPress={handleCancelRequest} 
+            variant="outline"
+            color="error"
+            loading={isProcessing}
+          />
+        </View>
+      )}
       </SafeAreaView>
 
       {/* Full Screen Image Viewer Modal */}

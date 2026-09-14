@@ -291,7 +291,7 @@ export const CreateAccountScreen: React.FC = () => {
                 text2: 'This feature is not yet available. Please check back later!'
               })}
             />
-            <SocialButton
+            {/* <SocialButton
               icon={<FacebookIcon size={moderateScale(22)} />}
               label="Continue with Facebook"
               onPress={() => Toast.show({
@@ -299,7 +299,7 @@ export const CreateAccountScreen: React.FC = () => {
                 text1: 'Coming Soon',
                 text2: 'This feature is not yet available. Please check back later!'
               })}
-            />
+            /> */}
             <SocialButton
               icon={<AppleIcon size={moderateScale(22)} />}
               label="Continue with Apple"

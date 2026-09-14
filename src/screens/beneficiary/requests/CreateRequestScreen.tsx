@@ -32,6 +32,7 @@ import MapView, { Marker, Circle } from 'react-native-maps';
 import { GooglePlacesAutocomplete, GooglePlacesAutocompleteRef } from 'react-native-google-places-autocomplete';
 import Geolocation from '@react-native-community/geolocation';
 import { validateAddressType, validateBusinessAddressWithAPI, ValidationResult } from '../../../utils/addressValidation';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 
 LogBox.ignoreLogs(['VirtualizedLists should never be nested']);
 
@@ -321,17 +322,29 @@ export default function CreateRequestScreen() {
       <SafeAreaView style={{ flex: 0, backgroundColor: Colors.primary[500] }} />
       <SafeAreaView style={styles.safeArea}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+        <TouchableOpacity 
+          onPress={() => {
+            if (route.params?.fromDashboard) {
+              navigation.navigate('HomeTab');
+            } else {
+              navigation.goBack();
+            }
+          }} 
+          style={styles.backBtn}
+        >
           <ChevronLeft color={Colors.neutral[0]} size={28} />
         </TouchableOpacity>
         <AppText variant="h5" color={Colors.neutral[0]} style={{textAlign: 'center'}}>Create Help Request</AppText>
         <View style={{width: 28}} />
       </View>
 
-      <KeyboardAvoidingView
+      <KeyboardAwareScrollView
         style={{flex: 1, backgroundColor: Colors.neutral[50]}}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+        contentContainerStyle={styles.content} 
+        keyboardShouldPersistTaps="handled"
+        enableOnAndroid={true}
+        extraScrollHeight={100}
+      >
           <AppText variant="bodyMedium" color={Colors.neutral[500]} style={styles.subtitle}>
             Fill out the details below to request assistance from a Volunteer.
           </AppText>
@@ -358,6 +371,7 @@ export default function CreateRequestScreen() {
             multiline={true}
             style={{ minHeight: 60, textAlignVertical: 'top' }}
             error={errors.title}
+            required={true}
           />
 
           <Input
@@ -516,8 +530,7 @@ export default function CreateRequestScreen() {
 
           </View>
 
-        </ScrollView>
-      </KeyboardAvoidingView>
+        </KeyboardAwareScrollView>
       <View style={styles.footer}>
         <Button
           title="Preview Request"

@@ -235,22 +235,33 @@ export default function BeneficiaryRequestDetailsScreen() {
 
         </View>
 
-        {/* Security Note */}
-        <View style={styles.securityNote}>
-          <Info color={Colors.primary[500]} size={24} />
-          <AppText variant="caption" color={Colors.primary[500]} style={styles.securityText}>
-            For your safety, never share personal information or belongings like your SSN or bank details with anyone.
-          </AppText>
-        </View>
+        {/* Security / Cancel Note */}
+        {(request.status || '').toLowerCase() === 'cancelled' ? (
+          <View style={[styles.securityNote, { backgroundColor: '#FEE2E2' }]}>
+            <Info color={Colors.error} size={24} />
+            <AppText variant="caption" color={Colors.error} style={styles.securityText}>
+              {request.cancel_reason ? `Reason for cancellation: ${request.cancel_reason}` : 'Cancelled'}
+            </AppText>
+          </View>
+        ) : (
+          <View style={styles.securityNote}>
+            <Info color={Colors.primary[500]} size={24} />
+            <AppText variant="caption" color={Colors.primary[500]} style={styles.securityText}>
+              For your safety, never share personal information or belongings like your SSN or bank details with anyone.
+            </AppText>
+          </View>
+        )}
       </ScrollView>
 
-      <View style={styles.actionContainer}>
-        <Button 
-          title="Track Request" 
-          onPress={() => navigation.navigate('RequestTracking', { requestId: request.id || requestId })} 
-          style={styles.acceptBtn} 
-        />
-      </View>
+      {(request.status || '').toLowerCase() !== 'cancelled' && (
+        <View style={styles.actionContainer}>
+          <Button 
+            title="Track Request" 
+            onPress={() => navigation.navigate('RequestTracking', { requestId: request.id || requestId })} 
+            style={styles.acceptBtn} 
+          />
+        </View>
+      )}
 
       <Modal
         visible={isFullScreenImageVisible}

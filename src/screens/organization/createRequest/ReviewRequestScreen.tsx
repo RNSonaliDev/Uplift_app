@@ -14,7 +14,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 import { api } from '../../../api/client';
 import {
-  ArrowLeft,
+  ChevronLeft,
   ShoppingBag,
   AlignLeft,
   Users,
@@ -67,9 +67,11 @@ export const ReviewRequestScreen = () => {
         }
       };
 
-      await api.post('/help_requests', payload);
+      const response = await api.post('/help_requests', payload);
       
-      navigation.navigate('RequestCreated');
+      navigation.navigate('RequestCreated', {
+        referenceNumber: response.data?.reference_number || response.reference_number || `REQ-${Math.floor(1000 + Math.random() * 9000)}`
+      });
     } catch (error: any) {
       console.error('Error creating request:', error);
       Toast.show({
@@ -128,7 +130,7 @@ export const ReviewRequestScreen = () => {
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          <ArrowLeft color={Colors.neutral[0]} size={24} />
+          <ChevronLeft color={Colors.neutral[0]} size={28} />
         </TouchableOpacity>
         <AppText variant="h5" color={Colors.neutral[0]} style={{textAlign: 'center'}}>Preview Request</AppText>
         <View style={{ width: 40 }} />

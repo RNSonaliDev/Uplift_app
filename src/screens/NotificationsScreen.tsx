@@ -14,6 +14,7 @@ import { Typography } from '../theme/typography';
 import { AppText } from '../components/AppText';
 import { horizontalScale, verticalScale, moderateScale } from '../utils/responsive';
 import { notificationsApi, AppNotification } from '../api/notifications';
+import { authApi } from '../api/auth';
 import Toast from 'react-native-toast-message';
 import {
   ChevronLeft,
@@ -30,7 +31,9 @@ export default function NotificationsScreen() {
 
   const fetchNotifications = useCallback(async () => {
     try {
-      const data = await notificationsApi.getNotifications();
+      const profile = await authApi.getProfile();
+      const role = profile?.default_role || 'beneficiary';
+      const data = await notificationsApi.getNotifications(role);
       let notifs = [];
       if (Array.isArray(data)) {
         notifs = data;
@@ -287,7 +290,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingTop: verticalScale(80),
   },
   emptyIconContainer: {
     width: moderateScale(100),

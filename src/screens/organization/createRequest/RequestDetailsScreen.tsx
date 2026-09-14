@@ -12,9 +12,10 @@ import {
   KeyboardAvoidingView,
   Modal,
 } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ArrowLeft, Calendar as CalendarIcon, Clock, CheckSquare, Square, MapPin, Crosshair, Map as MapIcon, Minus, Plus, Navigation, X, Info } from 'lucide-react-native';
+import { ChevronLeft, Calendar as CalendarIcon, Clock, CheckSquare, Square, MapPin, Crosshair, Map as MapIcon, Minus, Plus, Navigation, X, Info } from 'lucide-react-native';
 import MapView, { Marker, Circle as MapCircle } from 'react-native-maps';
 import { GooglePlacesAutocomplete, GooglePlacesAutocompleteRef } from 'react-native-google-places-autocomplete';
 import Geolocation from '@react-native-community/geolocation';
@@ -212,7 +213,7 @@ export const RequestDetailsScreen = () => {
   const placeholders = getPlaceholders();
 
   const incrementVolunteers = () => setVolunteersNeeded(v => v + 1);
-  const decrementVolunteers = () => setVolunteersNeeded(v => Math.max(1, v - 1));
+  const decrementVolunteers = () => setVolunteersNeeded(v => Math.max(helpType === 'multiple' ? 2 : 1, v - 1));
 
   
   const handleContinue = () => {
@@ -230,9 +231,8 @@ export const RequestDetailsScreen = () => {
     }
 
     const isSingleDate = 
-      (helpType === 'single' && !isMultipleDates) || 
-      (helpType === 'single' && isMultipleDates && startDate.toDateString() === endDate.toDateString()) ||
-      (helpType === 'multiple' && startDate.toDateString() === endDate.toDateString());
+      (!isMultipleDates) || 
+      (isMultipleDates && startDate.toDateString() === endDate.toDateString());
 
     const startMinutes = startTime.getHours() * 60 + startTime.getMinutes();
     const endMinutes = endTime.getHours() * 60 + endTime.getMinutes();
@@ -264,11 +264,11 @@ export const RequestDetailsScreen = () => {
       helpType,
       startDate: formatDate(startDate),
       startTime: formatTime(startTime),
-      endDate: formatDate(endDate),
+      endDate: isMultipleDates ? formatDate(endDate) : formatDate(startDate),
       endTime: formatTime(endTime),
       startDateISO: startDate.toISOString().split('T')[0],
       startTimeISO: startTime.toTimeString().substring(0, 5),
-      endDateISO: endDate.toISOString().split('T')[0],
+      endDateISO: isMultipleDates ? endDate.toISOString().split('T')[0] : startDate.toISOString().split('T')[0],
       endTimeISO: endTime.toTimeString().substring(0, 5),
       address,
       latitude,
@@ -290,17 +290,20 @@ export const RequestDetailsScreen = () => {
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          <ArrowLeft color={Colors.neutral[0]} size={24} />
+          <ChevronLeft color={Colors.neutral[0]} size={28} />
         </TouchableOpacity>
         <AppText variant="h5" color={Colors.neutral[0]} style={{textAlign: 'center'}}>Request Details</AppText>
         <View style={{ width: 40 }} />
       </View>
 
-      <KeyboardAvoidingView 
+      <KeyboardAwareScrollView 
         style={styles.flex1} 
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        contentContainerStyle={styles.scrollContent} 
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        enableOnAndroid={true}
+        extraScrollHeight={100}
       >
-        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
           
           {/* Category */}
           <View style={styles.inputGroup}>
@@ -386,13 +389,18 @@ export const RequestDetailsScreen = () => {
                   styles.radioButton,
                   helpType === 'multiple' && styles.radioButtonActive,
                 ]}
-                onPress={() => setHelpType('multiple')}
+                onPress={() => {
+                  setHelpType('multiple');
+                  if (volunteersNeeded < 2) {
+                    setVolunteersNeeded(2);
+                  }
+                }}
               >
                 <View style={[styles.radioCircle, helpType === 'multiple' && styles.radioCircleActive]} />
                 <Text style={[styles.radioText, helpType === 'multiple' && styles.radioTextActive]}>Multiple</Text>
               </TouchableOpacity>
             </View>
-            <Text style={styles.helperText}>Do you need one or multiple volunteers?</Text>
+            {/* <Text style={styles.helperText}>Do you need one or multiple volunteers?</Text> */}
           </View>
        {/* Volunteers Needed */}
         {helpType !== 'single' && (
@@ -410,93 +418,53 @@ export const RequestDetailsScreen = () => {
           </View>
         )}
           {/* Dates and Times */}
-          {helpType === 'single' ? (
-            <>
-              <TouchableOpacity 
-                style={[styles.checkboxContainer, { marginBottom: 16 }]}
-                onPress={() => setIsMultipleDates(!isMultipleDates)}
-              >
-                {isMultipleDates ? (
-                  <CheckSquare color={Colors.primary[500]} size={20} />
-                ) : (
-                  <Square color={Colors.neutral[400]} size={20} />
-                )}
-                <Text style={[styles.checkboxText, { fontFamily: FontFamily.semiBold }]}>Request for multiple dates</Text>
-              </TouchableOpacity>
+          <TouchableOpacity 
+            style={[styles.checkboxContainer, { marginBottom: 16 }]}
+            onPress={() => setIsMultipleDates(!isMultipleDates)}
+          >
+            {isMultipleDates ? (
+              <CheckSquare color={Colors.primary[500]} size={20} />
+            ) : (
+              <Square color={Colors.neutral[400]} size={20} />
+            )}
+            <Text style={[styles.checkboxText, { fontFamily: FontFamily.semiBold }]}>Request for multiple dates</Text>
+          </TouchableOpacity>
 
-              <View style={styles.row}>
-                <View style={[styles.inputGroup, { flex: 1, marginRight: 8, marginBottom: 0 }]}>
-                  <Text style={styles.label}>{isMultipleDates ? 'Start Date' : 'Date'} <Text style={{color: Colors.error}}>*</Text></Text>
-                  <TouchableOpacity style={styles.dateInput} onPress={() => setIsStartDatePickerOpen(true)}>
-                    <Text style={styles.dateText}>{formatDate(startDate)}</Text>
-                    <CalendarIcon color={Colors.neutral[500]} size={20} />
-                  </TouchableOpacity>
-                </View>
-                {isMultipleDates && (
-                  <View style={[styles.inputGroup, { flex: 1, marginLeft: 8, marginBottom: 0 }]}>
-                    <Text style={styles.label}>End Date <Text style={{color: Colors.error}}>*</Text></Text>
-                    <TouchableOpacity style={styles.dateInput} onPress={() => setIsEndDatePickerOpen(true)}>
-                      <Text style={styles.dateText}>{formatDate(endDate)}</Text>
-                      <CalendarIcon color={Colors.neutral[500]} size={20} />
-                    </TouchableOpacity>
-                  </View>
-                )}
+          <View style={styles.row}>
+            <View style={[styles.inputGroup, { flex: 1, marginRight: 8, marginBottom: 24 }]}>
+              <Text style={styles.label}>{isMultipleDates ? 'Start Date' : 'Date'} <Text style={{color: Colors.error}}>*</Text></Text>
+              <TouchableOpacity style={styles.dateInput} onPress={() => setIsStartDatePickerOpen(true)}>
+                <Text style={styles.dateText}>{formatDate(startDate)}</Text>
+                <CalendarIcon color={Colors.neutral[500]} size={20} />
+              </TouchableOpacity>
+            </View>
+            {isMultipleDates && (
+              <View style={[styles.inputGroup, { flex: 1, marginLeft: 8, marginBottom: 24 }]}>
+                <Text style={styles.label}>End Date <Text style={{color: Colors.error}}>*</Text></Text>
+                <TouchableOpacity style={styles.dateInput} onPress={() => setIsEndDatePickerOpen(true)}>
+                  <Text style={styles.dateText}>{formatDate(endDate)}</Text>
+                  <CalendarIcon color={Colors.neutral[500]} size={20} />
+                </TouchableOpacity>
               </View>
-              <View style={styles.row}>
-                <View style={[styles.inputGroup, { flex: 1, marginRight: 8, marginBottom: errors.time ? 8 : 24 }]}>
-                  <Text style={styles.label}>Start Time <Text style={{color: Colors.error}}>*</Text></Text>
-                  <TouchableOpacity style={[styles.dateInput, errors.time ? styles.inputError : null]} onPress={() => setIsStartTimePickerOpen(true)}>
-                    <Text style={styles.dateText}>{formatTime(startTime)}</Text>
-                    <Clock color={Colors.neutral[500]} size={20} />
-                  </TouchableOpacity>
-                </View>
-                <View style={[styles.inputGroup, { flex: 1, marginLeft: 8, marginBottom: errors.time ? 8 : 24 }]}>
-                  <Text style={styles.label}>End Time <Text style={{color: Colors.error}}>*</Text></Text>
-                  <TouchableOpacity style={[styles.dateInput, errors.time ? styles.inputError : null]} onPress={() => setIsEndTimePickerOpen(true)}>
-                    <Text style={styles.dateText}>{formatTime(endTime)}</Text>
-                    <Clock color={Colors.neutral[500]} size={20} />
-                  </TouchableOpacity>
-                </View>
-              </View>
-              {!!errors.time && <Text style={[styles.errorText, { marginBottom: 24, marginTop: 0 }]}>{errors.time}</Text>}
-            </>
-          ) : (
-            <>
-              <View style={styles.row}>
-                <View style={[styles.inputGroup, { flex: 1, marginRight: 8, marginBottom: 24 }]}>
-                  <Text style={styles.label}>Start Date <Text style={{color: Colors.error}}>*</Text></Text>
-                  <TouchableOpacity style={styles.dateInput} onPress={() => setIsStartDatePickerOpen(true)}>
-                    <Text style={styles.dateText}>{formatDate(startDate)}</Text>
-                    <CalendarIcon color={Colors.neutral[500]} size={20} />
-                  </TouchableOpacity>
-                </View>
-                <View style={[styles.inputGroup, { flex: 1, marginLeft: 8, marginBottom: 24 }]}>
-                  <Text style={styles.label}>End Date <Text style={{color: Colors.error}}>*</Text></Text>
-                  <TouchableOpacity style={styles.dateInput} onPress={() => setIsEndDatePickerOpen(true)}>
-                    <Text style={styles.dateText}>{formatDate(endDate)}</Text>
-                    <CalendarIcon color={Colors.neutral[500]} size={20} />
-                  </TouchableOpacity>
-                </View>
-              </View>
-              <View style={styles.row}>
-                <View style={[styles.inputGroup, { flex: 1, marginRight: 8, marginBottom: errors.time ? 8 : 24 }]}>
-                  <Text style={styles.label}>Start Time <Text style={{color: Colors.error}}>*</Text></Text>
-                  <TouchableOpacity style={[styles.dateInput, errors.time ? styles.inputError : null]} onPress={() => setIsStartTimePickerOpen(true)}>
-                    <Text style={styles.dateText}>{formatTime(startTime)}</Text>
-                    <Clock color={Colors.neutral[500]} size={20} />
-                  </TouchableOpacity>
-                </View>
-                <View style={[styles.inputGroup, { flex: 1, marginLeft: 8, marginBottom: errors.time ? 8 : 24 }]}>
-                  <Text style={styles.label}>End Time <Text style={{color: Colors.error}}>*</Text></Text>
-                  <TouchableOpacity style={[styles.dateInput, errors.time ? styles.inputError : null]} onPress={() => setIsEndTimePickerOpen(true)}>
-                    <Text style={styles.dateText}>{formatTime(endTime)}</Text>
-                    <Clock color={Colors.neutral[500]} size={20} />
-                  </TouchableOpacity>
-                </View>
-              </View>
-              {!!errors.time && <Text style={[styles.errorText, { marginBottom: 24, marginTop: 0 }]}>{errors.time}</Text>}
-            </>
-          )}
+            )}
+          </View>
+          <View style={styles.row}>
+            <View style={[styles.inputGroup, { flex: 1, marginRight: 8, marginBottom: errors.time ? 8 : 24 }]}>
+              <Text style={styles.label}>Start Time <Text style={{color: Colors.error}}>*</Text></Text>
+              <TouchableOpacity style={[styles.dateInput, errors.time ? styles.inputError : null]} onPress={() => setIsStartTimePickerOpen(true)}>
+                <Text style={styles.dateText}>{formatTime(startTime)}</Text>
+                <Clock color={Colors.neutral[500]} size={20} />
+              </TouchableOpacity>
+            </View>
+            <View style={[styles.inputGroup, { flex: 1, marginLeft: 8, marginBottom: errors.time ? 8 : 24 }]}>
+              <Text style={styles.label}>End Time <Text style={{color: Colors.error}}>*</Text></Text>
+              <TouchableOpacity style={[styles.dateInput, errors.time ? styles.inputError : null]} onPress={() => setIsEndTimePickerOpen(true)}>
+                <Text style={styles.dateText}>{formatTime(endTime)}</Text>
+                <Clock color={Colors.neutral[500]} size={20} />
+              </TouchableOpacity>
+            </View>
+          </View>
+          {!!errors.time && <Text style={[styles.errorText, { marginBottom: 24, marginTop: 0 }]}>{errors.time}</Text>}
 
         
         {/* Address */}
@@ -632,8 +600,7 @@ export const RequestDetailsScreen = () => {
           </View>
         </View>
 
-      </ScrollView>
-      </KeyboardAvoidingView>
+      </KeyboardAwareScrollView>
 
       <DatePicker
         modal

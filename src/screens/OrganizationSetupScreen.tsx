@@ -5,12 +5,12 @@ import {
   StatusBar,
   ScrollView,
   TouchableOpacity,
-  KeyboardAvoidingView,
   Alert,
   Modal,
   FlatList,
   TouchableWithoutFeedback,
 } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 import {useNavigation, useRoute} from '@react-navigation/native';
@@ -419,14 +419,14 @@ export const OrganizationSetupScreen: React.FC = () => {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={Colors.neutral[0]} />
-      <KeyboardAvoidingView
-        style={styles.flex}
-        behavior={isIOS ? 'padding' : undefined}>
-        <ScrollView
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-          onScrollBeginDrag={() => setTypeModalVisible(false)}>
+      <KeyboardAwareScrollView
+        style={{flex: 1}}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        enableOnAndroid={true}
+        extraScrollHeight={100}
+        onScrollBeginDrag={() => setTypeModalVisible(false)}>
           
           <TouchableWithoutFeedback onPress={() => setTypeModalVisible(false)} accessible={false}>
             <View style={{ flex: 1 }}>
@@ -533,9 +533,18 @@ export const OrganizationSetupScreen: React.FC = () => {
             />
 
             <View style={{marginBottom: Spacing.lg}}>
-              <AppText variant="labelMedium" color={Colors.neutral[700]} style={{marginBottom: 8}}>
-                Organization Address <AppText color={Colors.error}>*</AppText>
-              </AppText>
+              <View style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8}}>
+                <AppText variant="labelMedium" color={Colors.neutral[700]}>
+                  Organization Address <AppText color={Colors.error}>*</AppText>
+                </AppText>
+                {(latitude && longitude) ? (
+                  <TouchableOpacity onPress={() => setIsMapModalVisible(true)}>
+                    <AppText variant="bodyMedium" color={Colors.primary[500]} style={{ textDecorationLine: 'underline' }}>
+                      Show on map
+                    </AppText>
+                  </TouchableOpacity>
+                ) : null}
+              </View>
               <GooglePlacesAutocomplete
                 ref={googlePlacesRef}
                 placeholder="Enter organization address"
@@ -612,14 +621,6 @@ export const OrganizationSetupScreen: React.FC = () => {
                   {errors.orgAddress}
                 </AppText>
               ) : null}
-
-              {(latitude && longitude) ? (
-                <TouchableOpacity onPress={() => setIsMapModalVisible(true)} style={{ marginTop: Spacing.sm, marginBottom: 16, alignSelf: 'flex-end' }}>
-                  <AppText variant="bodyMedium" color={Colors.primary[500]} style={{ textDecorationLine: 'underline' }}>
-                    Show on map
-                  </AppText>
-                </TouchableOpacity>
-              ) : null}
             </View>
           </View>
 
@@ -688,8 +689,7 @@ export const OrganizationSetupScreen: React.FC = () => {
           />
           </View>
         </TouchableWithoutFeedback>
-        </ScrollView>
-      </KeyboardAvoidingView>
+      </KeyboardAwareScrollView>
 
 
       <Modal visible={isMapModalVisible} transparent animationType="slide">

@@ -10,7 +10,9 @@ import {
   PanResponder,
   Modal,
   FlatList,
+  Platform,
 } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 import {useNavigation, useRoute} from '@react-navigation/native';
@@ -473,13 +475,14 @@ export const VolunteerSetupScreen: React.FC = () => {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={Colors.neutral[0]} />
-      <KeyboardAvoidingView
-        style={styles.flex}
-        behavior={isIOS ? 'padding' : undefined}>
-        <ScrollView
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled">
+      <KeyboardAwareScrollView
+        style={{flex: 1}}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        enableOnAndroid={true}
+        extraScrollHeight={100}
+      >
           
           {/* Header with Back Button */}
           <TouchableOpacity
@@ -820,8 +823,7 @@ export const VolunteerSetupScreen: React.FC = () => {
             onPress={handleContinue}
             style={styles.continueButton}
           />
-        </ScrollView>
-      </KeyboardAvoidingView>
+      </KeyboardAwareScrollView>
 
       {/* Category Multi-Select Modal */}
       <Modal

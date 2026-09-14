@@ -10,6 +10,8 @@ import {
   TextInput,
   Modal,
   Alert,
+  Pressable,
+  Dimensions,
 } from 'react-native';
 
 const RELATIONSHIP_OPTIONS = ['Parent', 'Spouse/Partner', 'Child', 'Sibling', 'Grandchild', 'Friend'];
@@ -217,7 +219,20 @@ export default function EmergencyContactsScreen() {
                     error={isEditing ? editErrors.name : undefined}
                   />
                   {isEditing ? (
-                    <View>
+                    <View style={{ position: 'relative', zIndex: 9 }}>
+                      {isRelationshipModalVisible && (
+                        <Pressable
+                          style={{
+                            position: 'absolute',
+                            top: -Dimensions.get('window').height,
+                            bottom: -Dimensions.get('window').height,
+                            left: -Dimensions.get('window').width,
+                            right: -Dimensions.get('window').width,
+                            backgroundColor: 'transparent',
+                          }}
+                          onPress={() => setIsRelationshipModalVisible(false)}
+                        />
+                      )}
                       <TouchableOpacity onPress={() => setIsRelationshipModalVisible(!isRelationshipModalVisible)} activeOpacity={0.7}>
                         <View pointerEvents="none">
                           <Input
@@ -327,7 +342,20 @@ export default function EmergencyContactsScreen() {
                 }}
                 error={errors.name}
               />
-              <View>
+              <View style={{ position: 'relative', zIndex: 9 }}>
+                {isRelationshipModalVisible && (
+                  <Pressable
+                    style={{
+                      position: 'absolute',
+                      top: -Dimensions.get('window').height,
+                      bottom: -Dimensions.get('window').height,
+                      left: -Dimensions.get('window').width,
+                      right: -Dimensions.get('window').width,
+                      backgroundColor: 'transparent',
+                    }}
+                    onPress={() => setIsRelationshipModalVisible(false)}
+                  />
+                )}
                 <TouchableOpacity onPress={() => setIsRelationshipModalVisible(!isRelationshipModalVisible)} activeOpacity={0.7}>
                   <View pointerEvents="none">
                     <Input
