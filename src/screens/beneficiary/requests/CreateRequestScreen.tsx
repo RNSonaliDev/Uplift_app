@@ -325,7 +325,7 @@ export default function CreateRequestScreen() {
         <TouchableOpacity 
           onPress={() => {
             if (route.params?.fromDashboard) {
-              navigation.navigate('HomeTab');
+              navigation.navigate('BeneficiaryTabs', { screen: 'BeneficiaryDashboard' });
             } else {
               navigation.goBack();
             }

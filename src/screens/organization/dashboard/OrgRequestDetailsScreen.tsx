@@ -15,6 +15,7 @@ import {Colors} from '../../../theme/colors';
 import {FontFamily} from '../../../theme/typography';
 import {AppText} from '../../../components/AppText';
 import {formatDate, formatTime12Hour} from '../../../utils/dateFormatter';
+import {getStatusColors, formatStatus} from '../../../utils/statusUtils';
 import {Button} from '../../../components/Button';
 import {
   ChevronLeft,
@@ -186,6 +187,16 @@ export const OrgRequestDetailsScreen = () => {
 
           <View style={styles.detailRowItem}>
             <View style={styles.detailLabelRow}>
+              <Info color={Colors.neutral[600]} size={20} />
+              <AppText variant="bodyMedium" color={Colors.neutral[900]} style={{marginLeft: 8, fontFamily: FontFamily.medium}}>Status</AppText>
+            </View>
+            <AppText variant="bodyMedium" color={getStatusColors(request.status || 'pending').text} style={{flex: 1, textAlign: 'right', marginLeft: 16}}>
+              {formatStatus(request.status || 'pending')}
+            </AppText>
+          </View>
+
+          <View style={styles.detailRowItem}>
+            <View style={styles.detailLabelRow}>
               <FileText color={Colors.neutral[600]} size={20} />
               <AppText variant="bodyMedium" color={Colors.neutral[900]} style={{marginLeft: 8, fontFamily: FontFamily.medium}}>Reference</AppText>
             </View>
@@ -286,7 +297,7 @@ export const OrgRequestDetailsScreen = () => {
         </View>
 
         {/* Cancel Note */}
-        {(request.status || '').toLowerCase() === 'cancelled' && (
+        {(request.status || '').toLowerCase() === 'cancelled' && request.cancel_reason &&  (
           <View style={{ flexDirection: 'row', backgroundColor: '#FEE2E2', padding: 16, borderRadius: 8, alignItems: 'flex-start', marginBottom: 24, marginTop: 16 }}>
             <Info color={Colors.error} size={24} />
             <AppText variant="caption" color={Colors.error} style={{ flex: 1, marginLeft: 12, lineHeight: 20 }}>
@@ -320,15 +331,12 @@ export const OrgRequestDetailsScreen = () => {
                 {displayedVolunteers.map((vol: any, index: number) => {
                   const assignment = request.assignments?.find((a: any) => a.volunteer?.id === vol.id || a.volunteer_id === vol.id);
                   const volStatus = assignment?.status || vol.pivot?.status || vol.assignment?.status || request.status || '';
+                  const statusColors = getStatusColors(volStatus);
                   const statusLabel = volStatus === 'on_the_way' ? 'On the Way' 
                     : volStatus === 'in_progress' ? 'In Progress'
                     : volStatus === 'completed' ? 'Completed'
                     : volStatus === 'accepted' || volStatus === 'assigned' ? 'Accepted'
                     : 'Assigned';
-                  const statusColor = volStatus === 'on_the_way' ? Colors.warning 
-                    : volStatus === 'in_progress' ? Colors.primary[500]
-                    : volStatus === 'completed' ? Colors.success
-                    : Colors.neutral[500];
 
                   return (
                   <View key={index} style={[styles.profileSection, { flexDirection: 'column', alignItems: 'stretch' }]}>
@@ -358,8 +366,8 @@ export const OrgRequestDetailsScreen = () => {
                           {vol.first_name ? `${vol.first_name} ${vol.last_name || ''}` : 'Volunteer'}
                         </AppText>
                         <View style={{flexDirection: 'row', alignItems: 'center', gap: 6}}>
-                          <View style={{width: 8, height: 8, borderRadius: 4, backgroundColor: statusColor}} />
-                          <AppText variant="caption" color={statusColor}>{statusLabel}</AppText>
+                          <View style={{width: 8, height: 8, borderRadius: 4, backgroundColor: statusColors.text}} />
+                          <AppText variant="caption" color={statusColors.text}>{statusLabel}</AppText>
                         </View>
                       </View>
                       <View style={{ flexDirection: 'row', gap: 8 }}>
@@ -388,7 +396,7 @@ export const OrgRequestDetailsScreen = () => {
                                 assignmentId: assignId,
                                 recipientName,
                                 recipientAvatar,
-                                requestStatus: request.status,
+                                requestStatus: volStatus,
                               });
                             }}
                           >
@@ -492,8 +500,8 @@ const styles = StyleSheet.create({
     padding: moderateScale(8),
   },
   scrollContent: {
-    paddingHorizontal: horizontalScale(24),
     paddingTop: verticalScale(24),
+    paddingHorizontal: horizontalScale(24),
     paddingBottom: verticalScale(40),
   },
   categoryBadge: {

@@ -26,7 +26,7 @@ import { ParentVerificationScreen } from './src/screens/ParentVerificationScreen
 import {SuccessScreen} from './src/screens/SuccessScreen';
 import {DashboardRoleSelectionScreen} from './src/screens/DashboardRoleSelectionScreen';
 import {Colors} from './src/theme/colors';
-import {BeneficiaryTabNavigator} from './src/navigation/BeneficiaryTabNavigator';
+import {BeneficiaryRootStack} from './src/navigation/BeneficiaryRootStack';
 import {VolunteerTabNavigator} from './src/navigation/VolunteerTabNavigator';
 import {OrganizationTabNavigator} from './src/navigation/OrganizationTabNavigator';
 import {SponsorTabNavigator} from './src/navigation/SponsorTabNavigator';
@@ -176,7 +176,7 @@ function App() {
           <Stack.Screen name="ParentVerification" component={ParentVerificationScreen} />
               <Stack.Screen name="Success" component={SuccessScreen} />
               <Stack.Screen name="DashboardRoleSelection" component={DashboardRoleSelectionScreen} />
-              <Stack.Screen name="BeneficiaryFlow" component={BeneficiaryTabNavigator} />
+              <Stack.Screen name="BeneficiaryFlow" component={BeneficiaryRootStack} />
               <Stack.Screen name="VolunteerFlow" component={VolunteerTabNavigator} />
               <Stack.Screen name="OrganizationFlow" component={OrganizationTabNavigator} />
               <Stack.Screen name="SponsorFlow" component={SponsorTabNavigator} />

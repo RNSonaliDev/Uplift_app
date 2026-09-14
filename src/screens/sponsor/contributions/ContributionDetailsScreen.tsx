@@ -12,6 +12,7 @@ import { AppText } from '../../../components/AppText';
 import { ChevronLeft, Calendar } from 'lucide-react-native';
 import { horizontalScale, verticalScale, moderateScale } from '../../../utils/responsive';
 import { formatDate, formatTime12Hour } from '../../../utils/dateFormatter';
+import { getStatusColors, formatStatus } from '../../../utils/statusUtils';
 
 export default function ContributionDetailsScreen() {
   const navigation = useNavigation<any>();
@@ -22,8 +23,7 @@ export default function ContributionDetailsScreen() {
   const isSuccess = normalizedStatus === 'completed' || normalizedStatus === 'succeeded';
   const isPending = normalizedStatus === 'pending';
 
-  const statusBgColor = isSuccess ? '#E8F5E9' : isPending ? '#FFF8E1' : '#FFEBEE';
-  const statusTextColor = isSuccess ? (Colors.success || '#4CAF50') : isPending ? (Colors.warning || '#FFC107') : (Colors.error || '#F44336');
+  const statusColors = getStatusColors(normalizedStatus);
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -52,13 +52,13 @@ export default function ContributionDetailsScreen() {
           <AppText variant="h1" color={Colors.neutral[900]}>
             ${contribution.amount || '0'}
           </AppText>
-          <View style={[styles.statusBadge, { backgroundColor: statusBgColor }]}>
+          <View style={[styles.statusBadge, { backgroundColor: statusColors.bg }]}>
             <AppText 
               variant="caption" 
               weight="semiBold"
-              color={statusTextColor}
+              color={statusColors.text}
             >
-              {(contribution.status || 'Completed').charAt(0).toUpperCase() + (contribution.status || 'Completed').slice(1).toLowerCase()}
+              {formatStatus(contribution.status || 'Completed')}
             </AppText>
           </View>
         </View>
@@ -92,9 +92,9 @@ export default function ContributionDetailsScreen() {
             <AppText 
               variant="bodyMedium" 
               weight="semiBold" 
-              color={statusTextColor}
+              color={statusColors.text}
             >
-              {(contribution.status || 'Completed').charAt(0).toUpperCase() + (contribution.status || 'Completed').slice(1).toLowerCase()}
+              {formatStatus(contribution.status || 'Completed')}
             </AppText>
           </View>
         </View>

@@ -30,11 +30,13 @@ export default function MyScheduleScreen() {
   const [activeTab, setActiveTab] = useState<Tab>('Upcoming');
   const [requests, setRequests] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [currentUserId, setCurrentUserId] = useState<number | null>(null);
 
   useFocusEffect(
     useCallback(() => {
       setActiveTab('Upcoming');
       fetchSchedule();
+      fetchProfile();
     }, [])
   );
 
@@ -47,6 +49,22 @@ export default function MyScheduleScreen() {
       console.error('Failed to fetch schedule', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchProfile = async () => {
+    try {
+      const profileData: any = await api.get('/profile');
+      const roleId = profileData?.active_profile?.id || profileData?.data?.active_profile?.id || profileData?.current_role?.id || profileData?.data?.current_role?.id;
+      if (roleId) {
+        setCurrentUserId(roleId);
+      } else if (profileData?.id) {
+        setCurrentUserId(profileData.id);
+      } else if (profileData?.data?.id) {
+        setCurrentUserId(profileData.data.id);
+      }
+    } catch (error) {
+      console.error('Failed to fetch profile', error);
     }
   };
 
@@ -63,20 +81,22 @@ export default function MyScheduleScreen() {
   // Process data for SectionList
   const getSections = () => {
     const filtered = requests.filter(req => {
+      const volunteerAssignment = currentUserId ? req.assignments?.find((a: any) => a.volunteer?.id === currentUserId) : undefined;
+      const status = volunteerAssignment?.status || req.status;
       // Very basic filtering logic based on our assumptions
       if (activeTab === 'Upcoming') {
-        return req.status === 'accepted' || req.status === 'pending';
+        return status === 'accepted' || status === 'pending';
       }
       if (activeTab === 'On the Way') {
-        return req.status === 'on_the_way';
+        return status === 'on_the_way';
       }
       if (activeTab === 'In Progress') {
-        return req.status === 'in_progress';
+        return status === 'in_progress';
       }
       if (activeTab === 'Cancelled') {
-        return req.status === 'cancelled';
+        return status === 'cancelled';
       }
-      return req.status === 'completed';
+      return status === 'completed';
     });
 
     // Fallback mock data if API returns empty, just to demonstrate the UI matching the design.
@@ -98,8 +118,10 @@ export default function MyScheduleScreen() {
 
 
   const renderCard = ({item}: {item: any}) => {
-    const displayStatus = formatStatus(item.status);
-    const statusColors = getStatusColors(item.status);
+    const volunteerAssignment = currentUserId ? item.assignments?.find((a: any) => a.volunteer?.id === currentUserId) : undefined;
+    const status = volunteerAssignment?.status || item.status;
+    const displayStatus = formatStatus(status);
+    const statusColors = getStatusColors(status);
 
     return (
       <TouchableOpacity 

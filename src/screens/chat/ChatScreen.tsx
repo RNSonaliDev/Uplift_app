@@ -43,7 +43,7 @@ export default function ChatScreen() {
     recipientAvatar,
     requestStatus,
   } = (route.params || {}) as ChatRouteParams;
-
+  console.log("@@@ route.params================", route.params)
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputText, setInputText] = useState('');
   const [loading, setLoading] = useState(true);
@@ -53,7 +53,7 @@ export default function ChatScreen() {
 
   // Determine if chat input is enabled
   const status = (requestStatus || '').toLowerCase();
-  const canSend = ['accepted', 'on_the_way'].includes(status);
+  const canSend = ['accepted', 'on_the_way','in_progress'].includes(status);
 
   // Fetch current user profile to identify sent vs received messages
   useEffect(() => {
@@ -120,7 +120,6 @@ export default function ChatScreen() {
 
     setSending(true);
     setInputText('');
-
     try {
       const sentMsg = await chatApi.sendMessage(helpRequestId, body, assignmentId);
       // Add to local list optimistically (Action Cable will also broadcast it)
@@ -280,7 +279,6 @@ export default function ChatScreen() {
         )}
 
         {/* Input Bar or Disabled Banner */}
-        {canSend ? (
           <View style={styles.inputContainer}>
             <View style={styles.inputWrapper}>
               <TextInput
@@ -308,13 +306,7 @@ export default function ChatScreen() {
               </TouchableOpacity>
             </View>
           </View>
-        ) : (
-          <View style={styles.disabledBanner}>
-            <AppText variant="caption" color={Colors.neutral[500]} center>
-              Chat is no longer available for this request.
-            </AppText>
-          </View>
-        )}
+     
       </View>
       </SafeAreaView>
     </KeyboardAvoidingView>

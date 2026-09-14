@@ -25,11 +25,11 @@ export default function RequestSubmittedScreen() {
     navigation.dispatch(
       CommonActions.reset({
         index: 0,
-        routes: [{ name: 'HomeTab', params: { screen: 'BeneficiaryDashboard' } }],
+        routes: [{ name: 'BeneficiaryTabs', params: { screen: 'BeneficiaryDashboard' } }],
       })
     );
     // Navigate to Requests Tab
-    navigation.navigate('RequestsTab', { screen: 'MyRequests' });
+    navigation.navigate('MyRequests');
   };
 
   const handleGoToDashboard = () => {
@@ -37,7 +37,7 @@ export default function RequestSubmittedScreen() {
     navigation.dispatch(
       CommonActions.reset({
         index: 0,
-        routes: [{ name: 'HomeTab', params: { screen: 'BeneficiaryDashboard' } }],
+        routes: [{ name: 'BeneficiaryTabs', params: { screen: 'BeneficiaryDashboard' } }],
       })
     );
   };

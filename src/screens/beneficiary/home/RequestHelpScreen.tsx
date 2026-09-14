@@ -95,9 +95,8 @@ export default function RequestHelpScreen() {
                   />
                 ) : getIconForCategory(cat.title)}
                 title={cat.title}
-                onPress={() => navigation.navigate('RequestsTab', {
-                  screen: 'CreateRequest',
-                  params: { category_id: cat.id.toString(), fromDashboard: true }
+                onPress={() => navigation.navigate('CreateRequest', {
+                  category_id: cat.id.toString(), fromDashboard: true
                 })}
               />
             ))}

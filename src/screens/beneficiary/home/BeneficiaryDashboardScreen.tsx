@@ -142,7 +142,7 @@ export default function BeneficiaryDashboardScreen() {
           {/* Upcoming Request */}
           <View style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 8, marginBottom: 16}}>
             <Text style={[styles.sectionTitle, {marginTop: 0, marginBottom: 0}]}>Upcoming Request</Text>
-            <TouchableOpacity onPress={() => navigation.navigate('RequestsTab')}>
+            <TouchableOpacity onPress={() => navigation.navigate('MyRequests')}>
               <Text style={{color: Colors.primary[500], fontFamily: FontFamily.medium}}>View All</Text>
             </TouchableOpacity>
           </View>
@@ -199,7 +199,7 @@ export default function BeneficiaryDashboardScreen() {
               
               <TouchableOpacity 
                 style={styles.requestHelpBtn}
-                onPress={() => navigation.navigate('RequestsTab', { screen: 'BeneficiaryRequestDetails', params: { requestId: upcomingRequest.id } })}
+                onPress={() => navigation.navigate('BeneficiaryRequestDetails', { requestId: upcomingRequest.id })}
               >
                 <Text style={styles.requestHelpText}>View Details</Text>
               </TouchableOpacity>
@@ -240,9 +240,8 @@ export default function BeneficiaryDashboardScreen() {
                     )
                   }
                   title={category.title}
-                  onPress={() => navigation.navigate('RequestsTab', {
-                    screen: 'CreateRequest',
-                    params: { category_id: category.id.toString(), fromDashboard: true }
+                  onPress={() => navigation.navigate('CreateRequest', {
+                    category_id: category.id.toString(), fromDashboard: true
                   })}
                 />
               );

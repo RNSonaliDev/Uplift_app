@@ -43,6 +43,10 @@ export const chatApi = {
     body: string,
     assignmentId: number,
   ): Promise<ChatMessage> => {
+    console.log("@@@ assignment_id================", {
+        body,
+        assignment_id: assignmentId,
+      })
     const data = await api.post<any>(`/help_requests/${helpRequestId}/messages`, {
       message: {
         body,

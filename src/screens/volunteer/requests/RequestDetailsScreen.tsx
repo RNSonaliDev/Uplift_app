@@ -20,6 +20,7 @@ import {Colors} from '../../../theme/colors';
 import {FontFamily} from '../../../theme/typography';
 import {AppText} from '../../../components/AppText';
 import {formatDate, formatTime12Hour} from '../../../utils/dateFormatter';
+import {getStatusColors, formatStatus} from '../../../utils/statusUtils';
 import {Button} from '../../../components/Button';
 import {TaskParentConfirmationModal} from '../../../components';
 import {
@@ -75,8 +76,14 @@ export default function RequestDetailsScreen() {
       const fetchProfile = async () => {
         try {
           const profileData: any = await api.get('/profile');
-          if (profileData?.id) setCurrentUserId(profileData.id);
-          else if (profileData?.data?.id) setCurrentUserId(profileData.data.id);
+          const roleId = profileData?.active_profile?.id || profileData?.data?.active_profile?.id || profileData?.current_role?.id || profileData?.data?.current_role?.id;
+          if (roleId) {
+            setCurrentUserId(roleId);
+          } else if (profileData?.id) {
+            setCurrentUserId(profileData.id);
+          } else if (profileData?.data?.id) {
+            setCurrentUserId(profileData.data.id);
+          }
 
           console.log('profileData', profileData);
           if (profileData?.teen_requires_parent_consent) {
@@ -94,13 +101,16 @@ export default function RequestDetailsScreen() {
 
   const isOrgRequest = request.request_type === 'organization';
 
-  const showAcceptBtn = !forceAction && (!request.status || request.status.toLowerCase() === 'pending');
-  const showStartBtn = forceAction === 'start' || request.status?.toLowerCase() === 'accepted';
-  const showStartWithOtpBtn = forceAction === 'start_with_otp' || request.status?.toLowerCase() === 'on_the_way';
-  const showCompleteBtn = !isOrgRequest && (forceAction === 'complete' || request.status?.toLowerCase() === 'in_progress');
+  const volunteerAssignment = request.assignments?.find((a: any) => a.volunteer?.id === currentUserId);
+  const reqStatus = volunteerAssignment?.status || request.status;
+
+  const showAcceptBtn = !forceAction && (!reqStatus || reqStatus.toLowerCase() === 'pending');
+  const showStartBtn = forceAction === 'start' || reqStatus?.toLowerCase() === 'accepted';
+  const showStartWithOtpBtn = forceAction === 'start_with_otp' || reqStatus?.toLowerCase() === 'on_the_way';
+  const showCompleteBtn = forceAction === 'complete' || reqStatus?.toLowerCase() === 'in_progress';
   
   const hasRated = request.ratings?.some((r: any) => r.rater_id === currentUserId);
-  const showRateBtn = forceAction === 'rate' || (request.status?.toLowerCase() === 'completed' && !hasRated);
+  const showRateBtn = forceAction === 'rate' || (reqStatus?.toLowerCase() === 'completed' && !hasRated);
 
   const handleAcceptClick = async () => {
     if (!request.id) return;
@@ -268,7 +278,7 @@ export default function RequestDetailsScreen() {
 
         {/* Profile Section */}
         {/* Profile Section */}
-        {(request.status && request.status.toLowerCase() !== 'pending') && (
+        {(reqStatus && reqStatus.toLowerCase() !== 'pending') && (
           <View style={styles.profileSection}>
             <View style={styles.avatarContainer}>
               {(request.organization?.profile_image_url || request.beneficiary?.profile_image_url) ? (
@@ -299,11 +309,11 @@ export default function RequestDetailsScreen() {
               </AppText>
             </View>
 
-            {request.status?.toLowerCase() !== 'in_progress' && request.status?.toLowerCase() !== 'completed' && (
+            {reqStatus?.toLowerCase() !== 'in_progress' && reqStatus?.toLowerCase() !== 'completed' && (
               <TouchableOpacity 
                 style={styles.messageIconContainer}
                 onPress={() => {
-                  const assignId = request.assignments?.[0]?.id || 0;
+                  const assignId = volunteerAssignment?.id || 0;
                   const recipientName = request.organization?.organization_name || 
                     (request.beneficiary?.first_name ? `${request.beneficiary?.first_name || ''} ${request.beneficiary?.last_name || ''}`.trim() : 'User');
                   const recipientAvatar = request.organization?.profile_image_url || request.beneficiary?.profile_image_url;
@@ -312,7 +322,7 @@ export default function RequestDetailsScreen() {
                     assignmentId: assignId,
                     recipientName,
                     recipientAvatar,
-                    requestStatus: request.status,
+                    requestStatus: reqStatus,
                   });
                 }}
               >
@@ -338,6 +348,16 @@ export default function RequestDetailsScreen() {
                 </AppText>
               </View>
             </View>
+          </View>
+
+          <View style={styles.detailRowItem}>
+            <View style={styles.detailLabelRow}>
+              <Info color={Colors.neutral[600]} size={20} />
+              <AppText variant="bodyMedium" color={Colors.neutral[900]} style={{marginLeft: 8, fontFamily: FontFamily.medium}}>Status</AppText>
+            </View>
+            <AppText variant="bodyMedium" color={getStatusColors(reqStatus || 'pending').text} style={{flex: 1, textAlign: 'right', marginLeft: 16}}>
+              {formatStatus(reqStatus || 'pending')}
+            </AppText>
           </View>
 
           <View style={styles.detailRowItem}>
@@ -481,23 +501,20 @@ export default function RequestDetailsScreen() {
           <TouchableOpacity 
             style={[
               styles.cancelTextBtn, 
-              { marginTop: 0, marginRight: !isOrgRequest ? 16 : 0 },
-              isOrgRequest && { flex: 1 }
+              { marginTop: 0, marginRight: 16 }
             ]} 
             onPress={handleCancelRequest}
           >
             <AppText variant="buttonMedium" style={{ color: Colors.error }}>Cancel Request</AppText>
           </TouchableOpacity>
-          {!isOrgRequest && (
-            <View style={{ flex: 1 }}>
-              <Button 
-                title="Start Request" 
-                onPress={() => setIsOtpModalVisible(true)} 
-                style={styles.acceptBtn} 
-                fullWidth
-              />
-            </View>
-          )}
+          <View style={{ flex: 1 }}>
+            <Button 
+              title="Start Request" 
+              onPress={() => setIsOtpModalVisible(true)} 
+              style={styles.acceptBtn} 
+              fullWidth
+            />
+          </View>
         </View>
       )}
 
@@ -616,6 +633,7 @@ const styles = StyleSheet.create({
     padding: moderateScale(8),
   },
   scrollContent: {
+    paddingTop: verticalScale(24),
     paddingHorizontal: horizontalScale(24),
     paddingBottom: verticalScale(40),
   },

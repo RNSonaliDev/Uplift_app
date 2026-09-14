@@ -15,6 +15,7 @@ import {Colors} from '../../../theme/colors';
 import {FontFamily} from '../../../theme/typography';
 import {AppText} from '../../../components/AppText';
 import {formatDate, formatTime12Hour} from '../../../utils/dateFormatter';
+import {getStatusColors, formatStatus} from '../../../utils/statusUtils';
 import {Button} from '../../../components/Button';
 import {
   ChevronLeft,
@@ -167,6 +168,16 @@ export default function BeneficiaryRequestDetailsScreen() {
 
           <View style={styles.detailRowItem}>
             <View style={styles.detailLabelRow}>
+              <Info color={Colors.neutral[600]} size={20} />
+              <AppText variant="bodyMedium" color={Colors.neutral[900]} style={{marginLeft: 8, fontFamily: FontFamily.medium}}>Status</AppText>
+            </View>
+            <AppText variant="bodyMedium" color={getStatusColors(request.status || 'pending').text} style={{flex: 1, textAlign: 'right', marginLeft: 16}}>
+              {formatStatus(request.status || 'pending')}
+            </AppText>
+          </View>
+
+          <View style={styles.detailRowItem}>
+            <View style={styles.detailLabelRow}>
               <FileText color={Colors.neutral[600]} size={20} />
               <AppText variant="bodyMedium" color={Colors.neutral[900]} style={{marginLeft: 8, fontFamily: FontFamily.medium}}>Reference</AppText>
             </View>
@@ -236,7 +247,7 @@ export default function BeneficiaryRequestDetailsScreen() {
         </View>
 
         {/* Security / Cancel Note */}
-        {(request.status || '').toLowerCase() === 'cancelled' ? (
+        {(request.status || '').toLowerCase() === 'cancelled' && request.cancel_reason ? (
           <View style={[styles.securityNote, { backgroundColor: '#FEE2E2' }]}>
             <Info color={Colors.error} size={24} />
             <AppText variant="caption" color={Colors.error} style={styles.securityText}>
@@ -310,8 +321,8 @@ const styles = StyleSheet.create({
     padding: moderateScale(8),
   },
   scrollContent: {
-    paddingHorizontal: horizontalScale(24),
     paddingTop: verticalScale(24),
+    paddingHorizontal: horizontalScale(24),
     paddingBottom: verticalScale(40),
   },
   categoryBadge: {

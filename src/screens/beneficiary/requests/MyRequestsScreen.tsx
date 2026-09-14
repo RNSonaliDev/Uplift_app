@@ -125,7 +125,7 @@ export default function MyRequestsScreen() {
         </ScrollView>
         <TouchableOpacity 
           style={styles.fab} 
-          onPress={() => navigation.navigate('HomeTab', { screen: 'RequestHelp' })}
+          onPress={() => navigation.navigate('RequestHelp')}
         >
           <Plus color={Colors.neutral[0]} size={24} />
         </TouchableOpacity>

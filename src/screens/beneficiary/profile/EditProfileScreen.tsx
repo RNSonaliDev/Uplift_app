@@ -26,7 +26,7 @@ import {Spacing} from '../../../theme/spacing';
 import {authApi} from '../../../api/auth';
 import Svg, { Circle } from 'react-native-svg';
 
-const CustomSlider = ({ value, onValueChange, min = 0, max = 100 }: { value: number, onValueChange: (val: number) => void, min?: number, max?: number }) => {
+const CustomSlider = ({ value, onValueChange, min = 0, max = 100, onSlidingStart, onSlidingComplete }: { value: number, onValueChange: (val: number) => void, min?: number, max?: number, onSlidingStart?: () => void, onSlidingComplete?: () => void }) => {
   const [width, setWidth] = useState(0);
   const widthRef = React.useRef(0);
   widthRef.current = width;
@@ -39,8 +39,12 @@ const CustomSlider = ({ value, onValueChange, min = 0, max = 100 }: { value: num
   const panResponder = React.useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
+      onStartShouldSetPanResponderCapture: () => true,
       onMoveShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponderCapture: () => true,
+      onPanResponderTerminationRequest: () => false,
       onPanResponderGrant: (evt) => {
+        if (onSlidingStart) onSlidingStart();
         if (widthRef.current > 0) {
           const locX = evt.nativeEvent.locationX;
           const percent = Math.max(0, Math.min(1, locX / widthRef.current));
@@ -56,6 +60,12 @@ const CustomSlider = ({ value, onValueChange, min = 0, max = 100 }: { value: num
           newValue = Math.max(min, Math.min(max, newValue));
           onValueChangeRef.current(newValue);
         }
+      },
+      onPanResponderRelease: () => {
+        if (onSlidingComplete) onSlidingComplete();
+      },
+      onPanResponderTerminate: () => {
+        if (onSlidingComplete) onSlidingComplete();
       },
     })
   ).current;
@@ -146,6 +156,7 @@ export default function EditProfileScreen() {
   const GOOGLE_MAPS_API_KEY = 'AIzaSyAd20tmxrXZ1VCyhZx4q9aK0ejZtQtE92s';
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [isScrollEnabled, setIsScrollEnabled] = useState(true);
   const [showEmailVerifiedInfo, setShowEmailVerifiedInfo] = useState(false);
   const [showPhoneVerifiedInfo, setShowPhoneVerifiedInfo] = useState(false);
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
@@ -286,6 +297,7 @@ export default function EditProfileScreen() {
         keyboardShouldPersistTaps="handled"
         enableOnAndroid={true}
         extraScrollHeight={100}
+        scrollEnabled={isScrollEnabled}
       >
           <AppText variant="labelLarge" color={Colors.neutral[900]} weight="bold" style={{ marginBottom: 12 }}>Basic Details</AppText>
           {/* <Input
@@ -461,7 +473,9 @@ export default function EditProfileScreen() {
                   value={Number(formData.service_radius) || 20} 
                   onValueChange={(val) => handleChange('service_radius', String(Math.round(val)))} 
                   min={5} 
-                  max={50} 
+                  max={50}
+                  onSlidingStart={() => setIsScrollEnabled(false)}
+                  onSlidingComplete={() => setIsScrollEnabled(true)} 
                 />
                 
                 <View style={styles.sliderLimitsRow}>
@@ -744,30 +758,30 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   sliderContainer: {
-    height: 30,
+    height: 40,
     justifyContent: 'center',
     marginBottom: 4,
   },
   sliderTrack: {
-    height: 4,
+    height: 6,
     backgroundColor: Colors.neutral[200],
-    borderRadius: 2,
+    borderRadius: 3,
     width: '100%',
   },
   sliderFill: {
-    height: 4,
+    height: 6,
     backgroundColor: Colors.primary[500],
-    borderRadius: 2,
+    borderRadius: 3,
   },
   sliderThumb: {
     position: 'absolute',
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     backgroundColor: Colors.neutral[0],
-    borderWidth: 2.5,
+    borderWidth: 3,
     borderColor: Colors.primary[500],
-    marginLeft: -12, // Center thumb
+    marginLeft: -14, // Center thumb
   },
   sliderLimitsRow: {
     flexDirection: 'row',

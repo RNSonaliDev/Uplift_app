@@ -13,6 +13,7 @@ import Toast from 'react-native-toast-message';
 import {Colors} from '../../../theme/colors';
 import {FontFamily} from '../../../theme/typography';
 import {AppText} from '../../../components/AppText';
+import {getStatusColors} from '../../../utils/statusUtils';
 import {Button} from '../../../components/Button';
 import {
   ChevronLeft,
@@ -163,15 +164,12 @@ export const AllVolunteersScreen = () => {
             volunteersList.map((vol: any, index: number) => {
               const assignment = request.assignments?.find((a: any) => a.volunteer?.id === vol.id || a.volunteer_id === vol.id);
               const volStatus = assignment?.status || vol.pivot?.status || vol.assignment?.status || request.status || '';
+              const statusColors = getStatusColors(volStatus);
               const statusLabel = volStatus === 'on_the_way' ? 'On the Way' 
                 : volStatus === 'in_progress' ? 'In Progress'
                 : volStatus === 'completed' ? 'Completed'
                 : volStatus === 'accepted' || volStatus === 'assigned' ? 'Accepted'
                 : 'Assigned';
-              const statusColor = volStatus === 'on_the_way' ? Colors.warning 
-                : volStatus === 'in_progress' ? Colors.primary[500]
-                : volStatus === 'completed' ? Colors.success
-                : Colors.neutral[500];
 
               return (
               <View key={index} style={styles.volunteerCard}>
@@ -201,8 +199,8 @@ export const AllVolunteersScreen = () => {
                       {vol.first_name ? `${vol.first_name} ${vol.last_name || ''}` : 'Volunteer'}
                     </AppText>
                     <View style={{flexDirection: 'row', alignItems: 'center', gap: 6}}>
-                      <View style={{width: 8, height: 8, borderRadius: 4, backgroundColor: statusColor}} />
-                      <AppText variant="caption" color={statusColor}>{statusLabel}</AppText>
+                      <View style={{width: 8, height: 8, borderRadius: 4, backgroundColor: statusColors.text}} />
+                      <AppText variant="caption" color={statusColors.text}>{statusLabel}</AppText>
                     </View>
                   </View>
                   <View style={{ flexDirection: 'row', gap: 8 }}>
