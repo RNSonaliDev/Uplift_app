@@ -41,6 +41,7 @@ export default function BrowseRequestsScreen() {
   const navigation = useNavigation<any>();
   const [searchQuery, setSearchQuery] = useState('');
   const [categories, setCategories] = useState<CategoryResponse[]>([]);
+  const [orgCategories, setOrgCategories] = useState<CategoryResponse[]>([]);
   const [requests, setRequests] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState<number | null>(null);
@@ -62,11 +63,13 @@ export default function BrowseRequestsScreen() {
       const fetchData = async () => {
         try {
           setLoading(true);
-          const [catData, reqData] = await Promise.all([
+          const [catData, orgCatData, reqData] = await Promise.all([
             authApi.getCategories(),
+            authApi.getOrganizationCategories(),
             api.get<any[]>('/help_requests/browse')
           ]);
           setCategories(catData);
+          setOrgCategories(orgCatData);
           setRequests(reqData || []);
         } catch (error) {
           console.error('Failed to fetch data', error);
@@ -174,7 +177,10 @@ export default function BrowseRequestsScreen() {
         <View style={styles.tabContainer}>
           <TouchableOpacity 
             style={[styles.tab, activeTab === 'beneficiary' && styles.activeTab]}
-            onPress={() => setActiveTab('beneficiary')}
+            onPress={() => {
+              setActiveTab('beneficiary');
+              setActiveCategory(null);
+            }}
           >
             <AppText 
               variant="labelLarge" 
@@ -188,7 +194,10 @@ export default function BrowseRequestsScreen() {
           
           <TouchableOpacity 
             style={[styles.tab, activeTab === 'organization' && styles.activeTab]}
-            onPress={() => setActiveTab('organization')}
+            onPress={() => {
+              setActiveTab('organization');
+              setActiveCategory(null);
+            }}
           >
             <AppText 
               variant="labelLarge" 
@@ -249,7 +258,7 @@ export default function BrowseRequestsScreen() {
                   </TouchableOpacity>
                 </View>
                 <FlatList
-                  data={[{ id: null as number | null, title: 'All Categories' }, ...categories]}
+                  data={[{ id: null as number | null, title: 'All Categories' }, ...(activeTab === 'organization' ? orgCategories : categories)]}
                   keyExtractor={(item, index) => item.id?.toString() || `all-${index}`}
                   renderItem={({ item }) => (
                     <TouchableOpacity

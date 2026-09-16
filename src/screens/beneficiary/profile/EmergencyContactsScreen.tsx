@@ -89,7 +89,8 @@ export default function EmergencyContactsScreen() {
     setErrors({});
 
     try {
-      await emergencyContactsApi.createContact({ emergency_contact: form });
+      const submitForm = { ...form, phone: form.phone.startsWith('+1') ? form.phone : `+1${form.phone}` };
+      await emergencyContactsApi.createContact({ emergency_contact: submitForm });
       Toast.show({ type: 'success', text1: 'Success', text2: 'Contact added successfully' });
       setIsAdding(false);
       setForm({ name: '', relationship: '', phone: '', email: '' });
@@ -113,7 +114,8 @@ export default function EmergencyContactsScreen() {
     setEditErrors({});
 
     try {
-      await emergencyContactsApi.updateContact(id, { emergency_contact: editForm });
+      const submitForm = { ...editForm, phone: editForm.phone.startsWith('+1') ? editForm.phone : `+1${editForm.phone}` };
+      await emergencyContactsApi.updateContact(id, { emergency_contact: submitForm });
       Toast.show({ type: 'success', text1: 'Success', text2: 'Contact updated successfully' });
       setEditingId(null);
       fetchContacts();
@@ -290,7 +292,10 @@ export default function EmergencyContactsScreen() {
                       containerStyle={{ marginBottom: 0 }}
                       placeholder="(201) 555-0123"
                       keyboardType="phone-pad"
-                      value={isEditing ? editForm.phone : contact.phone}
+                      value={(() => {
+                        const p = isEditing ? editForm.phone : contact.phone;
+                        return p?.startsWith('+1') ? p.slice(2) : p;
+                      })()}
                       onChangeText={(text) => {
                         if (isEditing) {
                           setEditForm({ ...editForm, phone: text });
@@ -406,7 +411,7 @@ export default function EmergencyContactsScreen() {
                   containerStyle={{ marginBottom: 0 }}
                   placeholder="(201) 555-0123"
                   keyboardType="phone-pad"
-                  value={form.phone}
+                  value={form.phone?.startsWith('+1') ? form.phone.slice(2) : form.phone}
                   onChangeText={(text) => {
                     setForm({ ...form, phone: text });
                     setErrors({ ...errors, phone: undefined });

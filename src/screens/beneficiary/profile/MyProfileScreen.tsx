@@ -187,7 +187,16 @@ export default function MyProfileScreen() {
   
   const displayName = activeRole === 'organization' 
     ? (roleProfile?.organization_name || profile?.first_name || 'Organization')
-    : (roleProfile?.first_name || profile?.first_name || 'User');
+    : `${roleProfile?.first_name || profile?.first_name || ''} ${roleProfile?.last_name || profile?.last_name || ''}`.trim() || 'User';
+
+  let initials = 'U';
+  if (activeRole === 'organization') {
+    initials = (roleProfile?.organization_name || profile?.first_name || 'O').charAt(0).toUpperCase();
+  } else {
+    const fName = roleProfile?.first_name || profile?.first_name || '';
+    const lName = roleProfile?.last_name || profile?.last_name || '';
+    initials = `${fName.charAt(0)}${lName.charAt(0)}`.toUpperCase() || 'U';
+  }
     
   const displayEmail = activeRole === 'organization'
     ? (roleProfile?.contact_email || roleProfile?.email || profile?.email)
@@ -222,7 +231,7 @@ export default function MyProfileScreen() {
                   ) : (
                     <View style={[styles.avatar, {justifyContent: 'center', alignItems: 'center', backgroundColor: Colors.neutral[0]}]}>
                       <AppText variant="h2" color={Colors.primary[500]}>
-                        {displayName ? displayName.charAt(0).toUpperCase() : 'U'}
+                        {initials}
                       </AppText>
                     </View>
                   )}

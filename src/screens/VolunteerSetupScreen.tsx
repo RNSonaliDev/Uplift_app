@@ -281,7 +281,7 @@ export const VolunteerSetupScreen: React.FC = () => {
   });
   const [isMapModalVisible, setIsMapModalVisible] = useState(false);
 
-  const GOOGLE_MAPS_API_KEY = 'AIzaSyAd20tmxrXZ1VCyhZx4q9aK0ejZtQtE92s';
+  const GOOGLE_MAPS_API_KEY = 'AIzaSyAfVdKkV8tvaV4yQnLLtCKZ91qbuRWFBR0';
   const googlePlacesRef = useRef<GooglePlacesAutocompleteRef>(null);
 
   const handleCurrentLocation = () => {
@@ -622,11 +622,11 @@ export const VolunteerSetupScreen: React.FC = () => {
                       longitude: details.geometry.location.lng,
                     });
                     
-                    const zipComponent = details.address_components.find((c: any) => c.types.includes('postal_code'));
-                    if (zipComponent) {
-                      setZipCode(zipComponent.long_name);
-                      if (errors.zipCode) setErrors({...errors, zipCode: ''});
-                    }
+                    // const zipComponent = details.address_components.find((c: any) => c.types.includes('postal_code'));
+                    // if (zipComponent) {
+                    //   setZipCode(zipComponent.long_name);
+                    //   if (errors.zipCode) setErrors({...errors, zipCode: ''});
+                    // }
                   }
                 }}
                 query={{

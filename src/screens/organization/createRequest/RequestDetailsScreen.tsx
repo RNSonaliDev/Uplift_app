@@ -20,7 +20,7 @@ import MapView, { Marker, Circle as MapCircle } from 'react-native-maps';
 import { GooglePlacesAutocomplete, GooglePlacesAutocompleteRef } from 'react-native-google-places-autocomplete';
 import Geolocation from '@react-native-community/geolocation';
 import DatePicker from 'react-native-date-picker';
-import { validateAddressType, ValidationResult } from '../../../utils/addressValidation';
+import { validateBusinessAddressWithAPI, ValidationResult } from '../../../utils/addressValidation';
 
 import { Colors } from '../../../theme/colors';
 import { Typography, FontFamily } from '../../../theme/typography';
@@ -134,7 +134,7 @@ export const RequestDetailsScreen = () => {
   });
   const [isMapModalVisible, setIsMapModalVisible] = useState(false);
 
-  const GOOGLE_MAPS_API_KEY = 'AIzaSyAd20tmxrXZ1VCyhZx4q9aK0ejZtQtE92s';
+  const GOOGLE_MAPS_API_KEY = 'AIzaSyAfVdKkV8tvaV4yQnLLtCKZ91qbuRWFBR0';
   const googlePlacesRef = useRef<GooglePlacesAutocompleteRef>(null);
 
   const handleCurrentLocation = () => {
@@ -172,8 +172,10 @@ export const RequestDetailsScreen = () => {
       const data = await response.json();
       if (data.results && data.results.length > 0) {
         const fetchedAddress = data.results[0].formatted_address;
-        const types = data.results[0].types || [];
-        setAddressValidation(validateAddressType(types));
+        
+        const validationData = await validateBusinessAddressWithAPI(fetchedAddress, GOOGLE_MAPS_API_KEY);
+        setAddressValidation(validationData);
+        
         setAddress(fetchedAddress);
         googlePlacesRef.current?.setAddressText(fetchedAddress);
       }
@@ -483,11 +485,14 @@ export const RequestDetailsScreen = () => {
             ref={googlePlacesRef}
             placeholder="Enter address"
             fetchDetails={true}
-            onPress={(data, details = null) => {
+            onPress={async (data, details = null) => {
               if (addressError) setAddressError('');
               if (details) {
                 console.log("Selected Address Details: ", details);
-                setAddressValidation(validateAddressType(details.types));
+                
+                const validationData = await validateBusinessAddressWithAPI(data.description, GOOGLE_MAPS_API_KEY);
+                setAddressValidation(validationData);
+                
                 setAddress(data.description);
                 setLatitude(details.geometry.location.lat.toString());
                 setLongitude(details.geometry.location.lng.toString());

@@ -143,7 +143,7 @@ export const authApi = {
     return api.get<CategoryResponse[]>('/categories');
   },
   getOrganizationCategories: () => {
-    return api.get<any[]>('/organization_categories');
+    return api.get<CategoryResponse[]>('/categories?category_type=organization');
   },
   setDefaultRole: (payload: { default_role: string }) => {
     return api.patch<{message: string}>('/profile/default_role', payload);

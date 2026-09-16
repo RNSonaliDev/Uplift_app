@@ -99,7 +99,7 @@ export default function BeneficiaryRequestDetailsScreen() {
               <AppText variant="labelLarge" color={Colors.neutral[900]} style={{marginBottom: 4}}>
                 {request.volunteer?.first_name ? `${request.volunteer.first_name} ${request.volunteer.last_name || ''}` : 'Volunteer'}
               </AppText>
-              <AppText variant="caption" color={['on_the_way', 'in_progress'].includes(request.status) ? Colors.primary[500] : Colors.neutral[500]}>
+              <AppText variant="caption" color={getStatusColors(request.status || 'pending').text}>
                 {request.status === 'on_the_way' ? 'On the way' : 
                  request.status === 'in_progress' ? 'In Progress' : 
                  request.status === 'completed' ? 'Completed' : 

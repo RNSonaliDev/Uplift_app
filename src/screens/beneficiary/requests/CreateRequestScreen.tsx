@@ -85,7 +85,7 @@ export default function CreateRequestScreen() {
   });
   const [isMapModalVisible, setIsMapModalVisible] = useState(false);
 
-  const GOOGLE_MAPS_API_KEY = 'AIzaSyAd20tmxrXZ1VCyhZx4q9aK0ejZtQtE92s'; // TODO: Provide your Google Maps API Key here
+  const GOOGLE_MAPS_API_KEY = 'AIzaSyAfVdKkV8tvaV4yQnLLtCKZ91qbuRWFBR0'; // TODO: Provide your Google Maps API Key here
 
   const googlePlacesRef = useRef<GooglePlacesAutocompleteRef>(null);
 

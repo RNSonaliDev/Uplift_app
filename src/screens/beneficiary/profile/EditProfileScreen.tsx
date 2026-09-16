@@ -11,6 +11,7 @@ import {
   PanResponder,
   Dimensions,
   Pressable,
+  Modal,
 } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import Toast from 'react-native-toast-message';
@@ -21,10 +22,11 @@ import {Colors} from '../../../theme/colors';
 import {AppText} from '../../../components/AppText';
 import {Input} from '../../../components/Input';
 import {Button} from '../../../components/Button';
-import {ChevronLeft, Calendar, MapPin, Clock, Info, Navigation, BadgeCheck, Phone, ChevronDown, Check} from 'lucide-react-native';
+import {ChevronLeft, Calendar, MapPin, Clock, Info, Navigation, BadgeCheck, Phone, ChevronDown, Check, X} from 'lucide-react-native';
 import {Spacing} from '../../../theme/spacing';
 import {authApi} from '../../../api/auth';
 import Svg, { Circle } from 'react-native-svg';
+import MapView, { Marker, Circle as MapCircle } from 'react-native-maps';
 
 const CustomSlider = ({ value, onValueChange, min = 0, max = 100, onSlidingStart, onSlidingComplete }: { value: number, onValueChange: (val: number) => void, min?: number, max?: number, onSlidingStart?: () => void, onSlidingComplete?: () => void }) => {
   const [width, setWidth] = useState(0);
@@ -153,7 +155,7 @@ export default function EditProfileScreen() {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const currentRole = route.params?.role || 'beneficiary';
-  const GOOGLE_MAPS_API_KEY = 'AIzaSyAd20tmxrXZ1VCyhZx4q9aK0ejZtQtE92s';
+  const GOOGLE_MAPS_API_KEY = 'AIzaSyAfVdKkV8tvaV4yQnLLtCKZ91qbuRWFBR0';
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [isScrollEnabled, setIsScrollEnabled] = useState(true);
@@ -163,6 +165,35 @@ export default function EditProfileScreen() {
   const [isTypeModalVisible, setTypeModalVisible] = useState(false);
   const [organizationTypes, setOrganizationTypes] = useState<string[]>([]);
   const [date, setDate] = useState(new Date(2000, 0, 1));
+  const [isMapModalVisible, setIsMapModalVisible] = useState(false);
+  const [region, setRegion] = useState({
+    latitude: 37.78825,
+    longitude: -122.4324,
+    latitudeDelta: 0.05,
+    longitudeDelta: 0.05,
+  });
+
+  const handleMarkerDragEnd = async (e: any) => {
+    const { latitude, longitude } = e.nativeEvent.coordinate;
+    handleChange('latitude', latitude.toString());
+    handleChange('longitude', longitude.toString());
+    setRegion({
+      ...region,
+      latitude,
+      longitude,
+    });
+    
+    try {
+      const response = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${GOOGLE_MAPS_API_KEY}`);
+      const data = await response.json();
+      if (data.results && data.results.length > 0) {
+        const address = data.results[0].formatted_address;
+        handleChange('address', address);
+      }
+    } catch (error) {
+      console.log('Reverse geocoding error:', error);
+    }
+  };
   const [formData, setFormData] = useState({
     base_first_name: '',
     base_last_name: '',
@@ -569,9 +600,18 @@ export default function EditProfileScreen() {
                 onChangeText={v => handleChange('organization_name', v)}
               />
               <View style={{marginBottom: 16}}>
-                <AppText variant="labelMedium" color={Colors.neutral[700]} style={{marginBottom: 8}}>
-                  Address
-                </AppText>
+                <View style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8}}>
+                  <AppText variant="labelMedium" color={Colors.neutral[700]}>
+                    Address
+                  </AppText>
+                  {(formData.latitude && formData.longitude) ? (
+                    <TouchableOpacity onPress={() => setIsMapModalVisible(true)}>
+                      <AppText variant="bodyMedium" color={Colors.primary[500]} style={{ textDecorationLine: 'underline' }}>
+                        Show on map
+                      </AppText>
+                    </TouchableOpacity>
+                  ) : null}
+                </View>
                 <GooglePlacesAutocomplete
                   placeholder="Enter address"
                   fetchDetails={true}
@@ -579,6 +619,15 @@ export default function EditProfileScreen() {
                     if (details) {
                       console.log("Selected Address Details: ", details);
                       handleChange('address', data.description);
+                      if (details.geometry) {
+                        handleChange('latitude', details.geometry.location.lat.toString());
+                        handleChange('longitude', details.geometry.location.lng.toString());
+                        setRegion({
+                          ...region,
+                          latitude: details.geometry.location.lat,
+                          longitude: details.geometry.location.lng,
+                        });
+                      }
                     }
                   }}
                   query={{
@@ -668,6 +717,41 @@ export default function EditProfileScreen() {
           disabled={saving || loading}
         />
       </View>
+
+      <Modal visible={isMapModalVisible} transparent animationType="slide">
+        <View style={styles.mapModalContainer}>
+          <View style={styles.mapModalHeader}>
+            <AppText variant="h5" style={{ color: Colors.neutral[900] }}>Location on Map</AppText>
+            <TouchableOpacity onPress={() => setIsMapModalVisible(false)} style={{ padding: 4 }}>
+              <X color={Colors.neutral[500]} size={24} />
+            </TouchableOpacity>
+          </View>
+          <MapView
+            style={{ flex: 1 }}
+            region={{
+              latitude: Number(formData.latitude) || region.latitude,
+              longitude: Number(formData.longitude) || region.longitude,
+              latitudeDelta: 0.05,
+              longitudeDelta: 0.05,
+            }}
+          >
+            <Marker 
+              draggable
+              coordinate={{ latitude: Number(formData.latitude) || region.latitude, longitude: Number(formData.longitude) || region.longitude }} 
+              onDragEnd={handleMarkerDragEnd}
+            />
+            <MapCircle
+              center={{ latitude: Number(formData.latitude) || region.latitude, longitude: Number(formData.longitude) || region.longitude }}
+              radius={1000}
+              fillColor="rgba(91, 77, 255, 0.2)"
+              strokeColor="rgba(91, 77, 255, 0.5)"
+            />
+          </MapView>
+          <View style={{ padding: 16, backgroundColor: Colors.neutral[0], paddingBottom: Math.max(16, 24) }}>
+             <Button title="Done" onPress={() => setIsMapModalVisible(false)} fullWidth />
+          </View>
+        </View>
+      </Modal>
 
       <DatePicker
         modal
@@ -876,5 +960,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderBottomWidth: 1,
     borderBottomColor: Colors.neutral[100],
+  },
+  mapModalContainer: {
+    flex: 1,
+    backgroundColor: Colors.neutral[0],
+    marginTop: 50,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    overflow: 'hidden',
+  },
+  mapModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.neutral[200],
   },
 });
