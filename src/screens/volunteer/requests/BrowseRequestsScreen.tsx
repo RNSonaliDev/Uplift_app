@@ -135,7 +135,7 @@ export default function BrowseRequestsScreen() {
           </View>
           <View style={[styles.newBadge, { backgroundColor: Colors.accent[50] }]}>
             <AppText variant="labelMedium" color={Colors.accent[700]}>
-              {item.service_radius_km != null ? `${parseFloat(item.service_radius_km).toFixed(1)} km` : displayStatus}
+              {item.service_radius_km != null ? `${(parseFloat(item.service_radius_km) * 0.621371).toFixed(1)} miles` : displayStatus}
             </AppText>
           </View>
         </View>

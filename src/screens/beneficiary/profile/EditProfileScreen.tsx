@@ -281,7 +281,7 @@ export default function EditProfileScreen() {
       const profilePayload: any = {
         ...restProfile,
         service_radius: Number(formData.service_radius) || 0,
-        hours_goal_per_week: Number(formData.hours_goal_per_week) || 0,
+        hours_goal_per_week: Number(formData.hours_goal_per_week) || null,
       };
       
       if (latitude) profilePayload.latitude = Number(latitude);

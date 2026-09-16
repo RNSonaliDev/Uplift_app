@@ -11,6 +11,8 @@ import {
   Modal,
   FlatList,
   Platform,
+  Dimensions,
+  Pressable,
 } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -471,6 +473,7 @@ export const VolunteerSetupScreen: React.FC = () => {
 
   // Info tooltip visibility
   const [showPhoneInfo, setShowPhoneInfo] = useState(false);
+  const [showAddressInfo, setShowAddressInfo] = useState(false);
 
   const handleSelectPhoto = async () => {
     const result = await launchImageLibrary({
@@ -514,7 +517,7 @@ export const VolunteerSetupScreen: React.FC = () => {
               center
               color={Colors.neutral[500]}
               style={styles.subtitle}>
-              let's setup Volunteer profile
+              Let’s set up your profile
             </AppText>
           </View>
 
@@ -572,7 +575,10 @@ export const VolunteerSetupScreen: React.FC = () => {
                 </AppText>
                 <TouchableOpacity 
                   style={{marginLeft: 6, marginBottom: Spacing.xs}}
-                  onPress={() => setShowPhoneInfo(!showPhoneInfo)}
+                  onPress={() => {
+                    setShowPhoneInfo(!showPhoneInfo);
+                    setShowAddressInfo(false);
+                  }}
                 >
                   <InfoCircleIcon size={18} color={Colors.primary[500]} />
                 </TouchableOpacity>
@@ -593,20 +599,71 @@ export const VolunteerSetupScreen: React.FC = () => {
 
               {/* Floating Tooltip */}
               {showPhoneInfo && (
-                <View style={styles.tooltipContainer}>
-                  {/* Left pointing triangle */}
-                  <View style={styles.tooltipTriangle} />
-                  <AppText variant="caption" color={Colors.neutral[800]} style={{lineHeight: 18}}>
-                    We use your phone number to verify your identity and enable important safety notifications.
-                  </AppText>
-                </View>
+                <>
+                  <Pressable
+                    style={{
+                      position: 'absolute',
+                      top: -Dimensions.get('window').height,
+                      bottom: -Dimensions.get('window').height,
+                      left: -Dimensions.get('window').width,
+                      right: -Dimensions.get('window').width,
+                      backgroundColor: 'transparent',
+                      zIndex: 10,
+                    }}
+                    onPress={() => setShowPhoneInfo(false)}
+                  />
+                  <View style={styles.tooltipContainer}>
+                    {/* Left pointing triangle */}
+                    <View style={styles.tooltipTriangle} />
+                    <AppText variant="caption" color={Colors.neutral[800]} style={{lineHeight: 18}}>
+                      We use your phone number to verify your identity and enable important safety notifications.
+                    </AppText>
+                  </View>
+                </>
               )}
             </View>
 
-            <View style={{marginBottom: Spacing.lg}}>
-              <AppText variant="labelMedium" color={Colors.neutral[700]} style={{marginBottom: 8}}>
-                 Address <AppText color={Colors.error}>*</AppText>
-              </AppText>
+            <View style={[styles.phoneInputWrapper, {marginBottom: Spacing.lg, zIndex: 9}]}>
+              <View style={styles.labelRow}>
+                <AppText variant="labelMedium" color={Colors.neutral[700]} style={{marginBottom: Spacing.xs}}>
+                   Address <AppText color={Colors.error}>*</AppText>
+                </AppText>
+                <TouchableOpacity 
+                  style={{marginLeft: 6, marginBottom: Spacing.xs}}
+                  onPress={() => {
+                    setShowAddressInfo(!showAddressInfo);
+                    setShowPhoneInfo(false);
+                  }}
+                >
+                  <InfoCircleIcon size={18} color={Colors.primary[500]} />
+                </TouchableOpacity>
+              </View>
+
+              {/* Floating Tooltip */}
+              {showAddressInfo && (
+                <>
+                  <Pressable
+                    style={{
+                      position: 'absolute',
+                      top: -Dimensions.get('window').height,
+                      bottom: -Dimensions.get('window').height,
+                      left: -Dimensions.get('window').width,
+                      right: -Dimensions.get('window').width,
+                      backgroundColor: 'transparent',
+                      zIndex: 10,
+                    }}
+                    onPress={() => setShowAddressInfo(false)}
+                  />
+                  <View style={styles.tooltipContainer}>
+                    {/* Left pointing triangle */}
+                    <View style={styles.tooltipTriangle} />
+                    <AppText variant="caption" color={Colors.neutral[800]} style={{lineHeight: 18}}>
+                      Used to determine distance from the service requests; not shared with anyone
+                    </AppText>
+                  </View>
+                </>
+              )}
+
               <GooglePlacesAutocomplete
                 ref={googlePlacesRef}
                 placeholder="e.g. 123 Main St, Beverly Hills, CA"

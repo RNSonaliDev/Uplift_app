@@ -121,17 +121,17 @@ export default function VolunteerDashboardScreen() {
             <View style={styles.statsRow}>
               <View style={styles.statItem}>
                 <AppText variant="h3" style={styles.statNumber}>{stats?.hours_completed || 0}</AppText>
-                <AppText variant="caption" style={styles.statLabel} center>Hours{'\n'}Contributed</AppText>
+                <AppText variant="caption" style={styles.statLabel} center>Hours {"\n"}volunteered</AppText>
               </View>
               <View style={styles.statDivider} />
               <View style={styles.statItem}>
                 <AppText variant="h3" style={styles.statNumber}>{stats?.requests_completed || 0}</AppText>
-                <AppText variant="caption" style={styles.statLabel} center>Requests{'\n'}Completed</AppText>
+                <AppText variant="caption" style={styles.statLabel} center>Requests {"\n"}completed </AppText>
               </View>
               <View style={styles.statDivider} />
               <View style={styles.statItem}>
                 <AppText variant="h3" style={styles.statNumber}>{stats?.community_help || 0}</AppText>
-                <AppText variant="caption" style={styles.statLabel} center>Communities{'\n'}Helped</AppText>
+                <AppText variant="caption" style={styles.statLabel} center>Communities {"\n"}helped</AppText>
               </View>
             </View>
           </View>
@@ -139,7 +139,7 @@ export default function VolunteerDashboardScreen() {
 
         {/* Browse Support Section */}
         <View style={styles.sectionContainer}>
-          <AppText variant="h5" style={styles.browseSectionTitle}>Browse Support</AppText>
+          <AppText variant="h5" style={styles.browseSectionTitle}>Browse support requests</AppText>
           <View style={styles.browseCardsRow}>
             <TouchableOpacity 
               style={styles.browseSupportCard}

@@ -127,12 +127,12 @@ export default function BeneficiaryDashboardScreen() {
             <View style={styles.statsRow}>
               <View style={styles.statItem}>
                 <AppText variant="h3" style={styles.statNumber}>{stats?.hours_given || 0}</AppText>
-                <AppText variant="caption" style={styles.statLabel} center>Hours{'\n'}Given</AppText>
+                <AppText variant="caption" style={styles.statLabel} center>Hours {'\n'}served</AppText>
               </View>
               <View style={styles.statDivider} />
               <View style={styles.statItem}>
                 <AppText variant="h3" style={styles.statNumber}>{stats?.requests_given || 0}</AppText>
-                <AppText variant="caption" style={styles.statLabel} center>Requests{'\n'}Given</AppText>
+                <AppText variant="caption" style={styles.statLabel} center>Requests {'\n'}completed</AppText>
               </View>
             </View>
           </View>
@@ -222,7 +222,7 @@ export default function BeneficiaryDashboardScreen() {
        
 
           {/* Need Help with? */}
-          <Text style={styles.sectionTitle}>Need Help with?</Text>
+          <Text style={styles.sectionTitle}>Need help? Create a request</Text>
           {categories.length > 0 ? (
             categories.map((category) => {
               return (

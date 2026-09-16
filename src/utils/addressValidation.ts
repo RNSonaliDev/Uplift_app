@@ -74,7 +74,7 @@ export const validateAddressType = (types: string[] = []): ValidationResult => {
     isBusinessAddress: 'unknown',
     addressType: 'unknown',
     confidence: 'low',
-    message: 'Unable to confidently verify the property type. Please ensure this is a public business address.',
+    message: 'Please ensure this is a public business address.',
   };
 };
 
@@ -89,7 +89,7 @@ export const validateBusinessAddressWithAPI = async (address: string, apiKey: st
         },
         body: JSON.stringify({
           address: {
-            regionCode: 'US',
+            // regionCode: 'US',
             addressLines: [address],
           },
         }),
@@ -114,21 +114,13 @@ export const validateBusinessAddressWithAPI = async (address: string, apiKey: st
         message: 'This appears to be a residential address. For your safety, we recommend meeting at a public business address if possible.',
       };
     } else if (isBusiness) {
-      return {
-        isBusinessAddress: true,
-        addressType: 'business',
-        confidence: 'high',
-        message: '',
-      };
+      // return {
+      //   isBusinessAddress: true,
+      //   addressType: 'business',
+      //   confidence: 'high',
+      //   message: '',
+      // };
     }
-
-    return {
-      isBusinessAddress: 'unknown',
-      addressType: 'unknown',
-      confidence: 'low',
-      message: 'Unable to confidently verify the property type. Please ensure this is a public business address.',
-    };
-
   } catch (error) {
     console.log('Address Validation Error:', error);
     return {

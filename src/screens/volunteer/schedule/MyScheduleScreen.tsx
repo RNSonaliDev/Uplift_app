@@ -190,7 +190,7 @@ export default function MyScheduleScreen() {
             <View style={styles.detailRow}>
               <MapPin color={Colors.primary[500]} size={14} />
               <AppText variant="caption" color={Colors.primary[600]} style={styles.detailText}>
-                {parseFloat(item.service_radius_km).toFixed(1)} km
+                {(parseFloat(item.service_radius_km) * 0.621371).toFixed(1)} miles
               </AppText>
             </View>
           )}

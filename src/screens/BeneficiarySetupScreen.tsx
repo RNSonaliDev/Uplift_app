@@ -323,7 +323,7 @@ export const BeneficiarySetupScreen: React.FC = () => {
               center
               color={Colors.neutral[500]}
               style={styles.subtitle}>
-              let's setup Beneficiary profile
+              Let’s set up your profile
             </AppText>
           </View>
 

@@ -346,7 +346,7 @@ export const SponsorSetupScreen: React.FC = () => {
               center
               color={Colors.neutral[500]}
               style={styles.subtitle}>
-              Let’s create your Sponsor profile
+              Let’s set up your profile
             </AppText>
           </View>
 

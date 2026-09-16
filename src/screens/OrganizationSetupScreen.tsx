@@ -448,7 +448,7 @@ export const OrganizationSetupScreen: React.FC = () => {
               center
               color={Colors.neutral[500]}
               style={styles.subtitle}>
-              Let’s setup your organization’s profile
+              Let’s set up your profile
             </AppText>
           </View>
 

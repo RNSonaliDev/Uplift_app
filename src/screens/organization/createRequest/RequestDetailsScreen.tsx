@@ -703,7 +703,7 @@ export const RequestDetailsScreen = () => {
             />
             <MapCircle
               center={{ latitude: Number(latitude) || region.latitude, longitude: Number(longitude) || region.longitude }}
-              radius={radius * 1000} // converting km to meters
+              radius={radius * 1609.34} // converting miles to meters
               fillColor="rgba(91, 77, 255, 0.2)"
               strokeColor="rgba(91, 77, 255, 0.5)"
             />

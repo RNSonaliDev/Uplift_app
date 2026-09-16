@@ -412,7 +412,7 @@ export default function RequestDetailsScreen() {
                 <AppText variant="bodyMedium" color={Colors.neutral[900]} style={{marginLeft: 8, fontFamily: FontFamily.medium}}>Distance</AppText>
               </View>
               <AppText variant="bodyMedium" color={Colors.neutral[600]} style={{flex: 1, textAlign: 'right', marginLeft: 16}}>
-                {parseFloat(request.service_radius_km).toFixed(1)} km
+                {(parseFloat(request.service_radius_km) * 0.621371).toFixed(1)} miles
               </AppText>
             </View>
           ) : null}
