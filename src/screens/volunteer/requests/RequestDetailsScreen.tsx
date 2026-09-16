@@ -400,19 +400,19 @@ export default function RequestDetailsScreen() {
               <AppText variant="bodyMedium" color={Colors.neutral[900]} style={{marginLeft: 8, fontFamily: FontFamily.medium}}>Time</AppText>
             </View>
             <AppText variant="bodyMedium" color={Colors.neutral[600]} style={{flex: 1, textAlign: 'right', marginLeft: 16}}>
-              {request.preferred_start_time ? `${formatTime12Hour(request.preferred_start_time)} - ${formatTime12Hour(request.preferred_end_time)}` : '2:00 PM - 3:00 PM'}
+              {request.preferred_start_time ? `${formatTime12Hour(request.preferred_start_time)} - ${formatTime12Hour(request.preferred_end_time)}` : '2:00 PM - 3:00 PM'}{request.hours_required != null ? ` (${request.hours_required} hours)` : ''}
             </AppText>
           </View>
 
           {/* Distance */}
-          {request.service_radius_km != null ? (
+          {request.distance != null ? (
             <View style={styles.detailRowItem}>
               <View style={styles.detailLabelRow}>
                 <MapPin color={Colors.neutral[600]} size={20} />
                 <AppText variant="bodyMedium" color={Colors.neutral[900]} style={{marginLeft: 8, fontFamily: FontFamily.medium}}>Distance</AppText>
               </View>
-              <AppText variant="bodyMedium" color={Colors.neutral[600]} style={{flex: 1, textAlign: 'right', marginLeft: 16}}>
-                {(parseFloat(request.service_radius_km) * 0.621371).toFixed(1)} miles
+              <AppText variant="bodyMedium" color={Colors.neutral[800]} style={{flex: 1, textAlign: 'right', marginLeft: 16}}>
+                {(parseFloat(request.distance) * 0.621371).toFixed(1)} miles
               </AppText>
             </View>
           ) : null}

@@ -114,6 +114,7 @@ export default function MyRequestsScreen() {
                 status={req.status}
                 statusColor={req.status === 'pending' ? Colors.warning : Colors.info}
                 helperImage={getFullImageUrl(req.volunteer?.profile_image_url) || undefined}
+                hoursRequired={req.hours_required}
                 onPress={() => navigation.navigate('BeneficiaryRequestDetails', { requestId: req.id })}
               />
             ))
@@ -136,9 +137,9 @@ export default function MyRequestsScreen() {
 }
 
 const RequestCard = ({
-  icon, title, requestTitle, referenceNumber, date, time, location, status, statusColor, helperImage, onPress
+  icon, title, requestTitle, referenceNumber, date, time, location, status, statusColor, helperImage, hoursRequired, onPress
 }: {
-  icon: React.ReactNode, title: string, requestTitle?: string, referenceNumber: string, date: string, time: string, location: string, status: string, statusColor: string, helperImage?: string, onPress: () => void
+  icon: React.ReactNode, title: string, requestTitle?: string, referenceNumber: string, date: string, time: string, location: string, status: string, statusColor: string, helperImage?: string, hoursRequired?: number, onPress: () => void
 }) => {
   const badge = getStatusColors(status);
   const displayStatus = formatStatus(status);
@@ -169,6 +170,7 @@ const RequestCard = ({
           <Text style={[styles.infoText, { flex: 1, lineHeight: 18 }]}>
             {date}
             {time ? <Text style={styles.infoDot}> • {time}</Text> : null}
+            {hoursRequired != null ? <Text style={styles.infoDot}> ({hoursRequired} hours)</Text> : null}
           </Text>
         </View>
         
@@ -278,11 +280,11 @@ const styles = StyleSheet.create({
   },
   infoText: {
     ...Typography.caption,
-    color: Colors.neutral[600],
+    color: Colors.neutral[800],
   },
   infoDot: {
     ...Typography.bodySmall,
-    color: Colors.neutral[400],
+    color: Colors.neutral[800],
     marginHorizontal: horizontalScale(6),
   },
   cardFooterAligned: {

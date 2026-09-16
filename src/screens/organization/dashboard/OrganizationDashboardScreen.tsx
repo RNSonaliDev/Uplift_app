@@ -3,10 +3,10 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView, Pla
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { api, getFullImageUrl } from '../../../api/client';
 import { authApi, UserProfileResponse } from '../../../api/auth';
-import { formatDate } from '../../../utils/dateFormatter';
+import { formatDate, formatTime12Hour } from '../../../utils/dateFormatter';
 import { formatStatus, getStatusColors } from '../../../utils/statusUtils';
 import { CategoryIcon } from '../../../components/CategoryIcon';
-import { Menu, Bell, Plus, Lock, Calendar, Pill, ChevronRight, MapPin } from 'lucide-react-native';
+import { Menu, Bell, Plus, Lock, Calendar, Pill, ChevronRight, MapPin, Users } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Colors } from '../../../theme/colors';
@@ -186,7 +186,7 @@ export const OrganizationDashboardScreen = () => {
                     <View style={styles.row}>
                       <Calendar color={Colors.neutral[500]} size={14} />
                       <Text style={styles.cardSubtitle}>
-                        {formatDate(request.preferred_date || request.preferred_start_date)} • {vCount} {vCount === 1 ? 'Volunteer' : 'Volunteers'}
+                        {formatDate(request.preferred_date || request.preferred_start_date)}{request.preferred_start_time ? ` • ${formatTime12Hour(request.preferred_start_time)} - ${formatTime12Hour(request.preferred_end_time)}` : ''}{request.hours_required ? ` (${request.hours_required} hours)` : ''}
                       </Text>
                     </View>
                     <View style={[styles.row, { alignItems: 'flex-start', marginTop: 4 }]}>
@@ -195,6 +195,12 @@ export const OrganizationDashboardScreen = () => {
                       </View>
                       <Text style={[styles.cardSubtitle, { flex: 1, marginLeft: 6 }]} numberOfLines={1}>
                         {request.address || request.location?.address || request.meeting_location || 'Location TBD'}
+                      </Text>
+                    </View>
+                    <View style={[styles.row, { marginTop: 4 }]}>
+                      <Users color={Colors.neutral[500]} size={14} />
+                      <Text style={styles.cardSubtitle}>
+                        {vCount} {vCount === 1 ? 'Volunteer' : 'Volunteers'}
                       </Text>
                     </View>
                   </View>
@@ -374,7 +380,7 @@ const styles = StyleSheet.create({
   },
   cardSubtitle: {
     ...Typography.caption,
-    color: Colors.neutral[600],
+    color: Colors.neutral[800],
     marginLeft: horizontalScale(4) || 4,
   },
   statusBadge: {

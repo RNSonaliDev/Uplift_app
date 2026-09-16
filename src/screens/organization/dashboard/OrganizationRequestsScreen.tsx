@@ -20,7 +20,8 @@ import {horizontalScale, verticalScale, moderateScale} from '../../../utils/resp
 import {
   Calendar,
   MapPin,
-  Plus
+  Plus,
+  Users
 } from 'lucide-react-native';
 
 export const OrganizationRequestsScreen = () => {
@@ -106,6 +107,8 @@ export const OrganizationRequestsScreen = () => {
                 time={req.preferred_start_time && req.preferred_end_time ? `${formatTime12Hour(req.preferred_start_time)} - ${formatTime12Hour(req.preferred_end_time)}` : ''}
                 location={req.location?.address || req.meeting_location}
                 status={req.status}
+                hoursRequired={req.hours_required}
+                vCount={req.volunteers_needed || 1}
                 onPress={() => {
                   navigation.navigate('HomeTab', { screen: 'OrgRequestDetails', params: { request: req } })
                 }}
@@ -131,9 +134,9 @@ export const OrganizationRequestsScreen = () => {
 }
 
 const RequestCard = ({
-  icon, title, requestTitle, referenceNumber, date, time, location, status, onPress
+  icon, title, requestTitle, referenceNumber, date, time, location, status, hoursRequired, vCount, onPress
 }: {
-  icon: React.ReactNode, title: string, requestTitle?: string, referenceNumber: string, date: string, time: string, location: string, status: string, onPress: () => void
+  icon: React.ReactNode, title: string, requestTitle?: string, referenceNumber: string, date: string, time: string, location: string, status: string, hoursRequired?: number, vCount?: number, onPress: () => void
 }) => {
   const badge = getStatusColors(status);
   const displayStatus = formatStatus(status);
@@ -164,6 +167,7 @@ const RequestCard = ({
           <Text style={[styles.infoText, { flex: 1, lineHeight: 18 }]}>
             {date}
             {time ? <Text style={styles.infoDot}> • {time}</Text> : null}
+            {hoursRequired != null ? <Text style={styles.infoDot}> ({hoursRequired} hours)</Text> : null}
           </Text>
         </View>
         
@@ -171,6 +175,15 @@ const RequestCard = ({
           <MapPin color={Colors.neutral[400]} size={14} style={[styles.infoIcon, { marginTop: 2 }]} />
           <Text style={[styles.infoText, { flex: 1, lineHeight: 18 }]} numberOfLines={1}>{location}</Text>
         </View>
+
+        {vCount != null ? (
+          <View style={[styles.infoRow, { alignItems: 'flex-start', marginTop: 6 }]}>
+            <Users color={Colors.neutral[400]} size={14} style={[styles.infoIcon, { marginTop: 2 }]} />
+            <Text style={[styles.infoText, { flex: 1, lineHeight: 18 }]} numberOfLines={1}>
+              {vCount} {vCount === 1 ? 'Volunteer' : 'Volunteers'}
+            </Text>
+          </View>
+        ) : null}
       </View>
     </TouchableOpacity>
   );
@@ -270,11 +283,11 @@ const styles = StyleSheet.create({
   },
   infoText: {
     ...Typography.caption,
-    color: Colors.neutral[600],
+    color: Colors.neutral[800],
   },
   infoDot: {
     ...Typography.bodySmall,
-    color: Colors.neutral[400],
+    color: Colors.neutral[800],
     marginHorizontal: horizontalScale(6),
   },
   statusBadge: {

@@ -16,6 +16,26 @@ const ORDER_OPTIONS = [
   { label: 'Recently Published', value: 'recently_published' },
 ];
 
+
+const JOB_TYPES = [
+  { id: 'Full-Time', title: 'Full-Time' },
+  { id: 'Part-Time', title: 'Part-Time' },
+  { id: 'Internship', title: 'Internship' },
+  { id: 'Temporary', title: 'Temporary' },
+];
+
+const WORK_SETTINGS = [
+  { id: 'Onsite', title: 'Onsite' },
+  { id: 'Remote', title: 'Remote' },
+  { id: 'Hybrid', title: 'Hybrid' },
+];
+
+const COMPENSATIONS = [
+  { id: 'Paid - Hourly', title: 'Paid - Hourly' },
+  { id: 'Paid - Salary', title: 'Paid - Salary' },
+  { id: 'Unpaid', title: 'Unpaid' },
+];
+
 export const BrowseJobsScreen = () => {
   const navigation = useNavigation<any>();
   const [jobs, setJobs] = useState<any[]>([]);
@@ -23,32 +43,35 @@ export const BrowseJobsScreen = () => {
   const [searchQuery, setSearchQuery] = useState('');
 
   // Filter state
-  const [categories, setCategories] = useState<any[]>([]);
-  const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
-  const [selectedSubCategoryId, setSelectedSubCategoryId] = useState<number | null>(null);
+  const [selectedDepartment, setSelectedDepartment] = useState<string | number | null>(null);
+  const [selectedJobType, setSelectedJobType] = useState<string | null>(null);
+  const [selectedWorkSetting, setSelectedWorkSetting] = useState<string | null>(null);
+  const [selectedCompensation, setSelectedCompensation] = useState<string | null>(null);
   const [orderBy, setOrderBy] = useState('newest');
 
   // Modal visibility
-  const [categoryModalVisible, setCategoryModalVisible] = useState(false);
-  const [subCategoryModalVisible, setSubCategoryModalVisible] = useState(false);
+  const [departmentModalVisible, setDepartmentModalVisible] = useState(false);
+  const [jobTypeModalVisible, setJobTypeModalVisible] = useState(false);
+  const [workSettingModalVisible, setWorkSettingModalVisible] = useState(false);
+  const [compensationModalVisible, setCompensationModalVisible] = useState(false);
   const [orderModalVisible, setOrderModalVisible] = useState(false);
   const [filtersVisible, setFiltersVisible] = useState(false);
 
-  const selectedCategory = categories.find(c => c.id === selectedCategoryId);
-  const selectedSubCategory = selectedCategory?.sub_categories?.find((s: any) => s.id === selectedSubCategoryId);
-  const selectedOrderLabel = ORDER_OPTIONS.find(o => o.value === orderBy)?.label || 'Newest';
+  const [departments, setDepartments] = useState<any[]>([]);
 
   useEffect(() => {
-    const fetchCategories = async () => {
+    const fetchDepartments = async () => {
       try {
         const data = await api.get<any[]>('/job_categories');
-        setCategories(data);
+        setDepartments(data);
       } catch (error) {
-        console.error('Failed to fetch categories', error);
+        console.error('Failed to fetch departments', error);
       }
     };
-    fetchCategories();
+    fetchDepartments();
   }, []);
+
+  const selectedOrderLabel = ORDER_OPTIONS.find(o => o.value === orderBy)?.label || 'Newest';
 
   const fetchJobs = useCallback(async () => {
     try {
@@ -58,11 +81,17 @@ export const BrowseJobsScreen = () => {
       if (searchQuery.trim()) {
         params.push(`title=${encodeURIComponent(searchQuery.trim())}`);
       }
-      if (selectedCategoryId) {
-        params.push(`job_category_id=${selectedCategoryId}`);
+      if (selectedDepartment) {
+        params.push(`department_id=${encodeURIComponent(selectedDepartment)}`);
       }
-      if (selectedSubCategoryId) {
-        params.push(`job_sub_category_id=${selectedSubCategoryId}`);
+      if (selectedJobType) {
+        params.push(`job_type=${encodeURIComponent(selectedJobType)}`);
+      }
+      if (selectedWorkSetting) {
+        params.push(`work_setting=${encodeURIComponent(selectedWorkSetting)}`);
+      }
+      if (selectedCompensation) {
+        params.push(`compensation=${encodeURIComponent(selectedCompensation)}`);
       }
       if (orderBy) {
         params.push(`order_by=${orderBy}`);
@@ -77,7 +106,7 @@ export const BrowseJobsScreen = () => {
     } finally {
       setLoading(false);
     }
-  }, [searchQuery, selectedCategoryId, selectedSubCategoryId, orderBy]);
+  }, [searchQuery, selectedDepartment, selectedJobType, selectedWorkSetting, selectedCompensation, orderBy]);
 
   useFocusEffect(
     useCallback(() => {
@@ -86,12 +115,14 @@ export const BrowseJobsScreen = () => {
   );
 
   const clearFilters = () => {
-    setSelectedCategoryId(null);
-    setSelectedSubCategoryId(null);
+    setSelectedDepartment(null);
+    setSelectedJobType(null);
+    setSelectedWorkSetting(null);
+    setSelectedCompensation(null);
     setOrderBy('newest');
   };
 
-  const hasActiveFilters = selectedCategoryId !== null || orderBy !== 'newest';
+  const hasActiveFilters = selectedDepartment !== null || selectedJobType !== null || selectedWorkSetting !== null || selectedCompensation !== null || orderBy !== 'newest';
 
   const renderJobCard = (job: any) => (
     <TouchableOpacity
@@ -109,19 +140,19 @@ export const BrowseJobsScreen = () => {
             {job.title}
           </AppText>
 
-          {(job.job_category?.title || job.job_sub_category?.title) && (
+          {(job.department || job.job_type) && (
             <View style={styles.badgeRow}>
-              {job.job_category?.title && (
+              {job.department && (
                 <View style={styles.categoryBadge}>
                   <AppText variant="labelSmall" color={Colors.primary[700]}>
-                    {job.job_category.title}
+                    {typeof job.department === 'object' && job.department !== null ? job.department.title : job.department}
                   </AppText>
                 </View>
               )}
-              {job.job_sub_category?.title && (
+              {job.job_type && (
                 <View style={styles.subCategoryBadge}>
                   <AppText variant="labelSmall" color={Colors.neutral[600]}>
-                    {job.job_sub_category.title}
+                    {job.job_type}
                   </AppText>
                 </View>
               )}
@@ -152,7 +183,7 @@ export const BrowseJobsScreen = () => {
     onClose: () => void,
     title: string,
     data: any[],
-    selectedId: number | string | null,
+    selectedId: string | null,
     onSelect: (item: any) => void,
     keyField = 'id',
     labelField = 'title'
@@ -208,7 +239,7 @@ export const BrowseJobsScreen = () => {
           <Search color={Colors.neutral[400]} size={20} />
           <TextInput
             style={styles.searchInput}
-            placeholder=""
+            placeholder="Search"
             placeholderTextColor={Colors.neutral[400]}
             value={searchQuery}
             onChangeText={setSearchQuery}
@@ -226,23 +257,37 @@ export const BrowseJobsScreen = () => {
       {filtersVisible && (
         <View style={styles.filtersRow}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filtersScroll}>
-            {/* Category Filter */}
-            <TouchableOpacity style={styles.filterChip} onPress={() => setCategoryModalVisible(true)}>
-              <AppText variant="labelSmall" color={selectedCategoryId ? Colors.primary[600] : Colors.neutral[600]}>
-                {selectedCategoryId ? selectedCategory?.title : 'Category'}
+            {/* Department Filter */}
+            <TouchableOpacity style={styles.filterChip} onPress={() => setDepartmentModalVisible(true)}>
+              <AppText variant="labelSmall" color={selectedDepartment ? Colors.primary[600] : Colors.neutral[600]}>
+                {selectedDepartment ? (departments.find(d => d.id === selectedDepartment)?.title || 'Department') : 'Department'}
               </AppText>
-              <ChevronDown color={selectedCategoryId ? Colors.primary[600] : Colors.neutral[400]} size={14} style={{marginLeft: 4}} />
+              <ChevronDown color={selectedDepartment ? Colors.primary[600] : Colors.neutral[400]} size={14} style={{marginLeft: 4}} />
             </TouchableOpacity>
 
-            {/* Sub Category Filter */}
-            {selectedCategory?.sub_categories?.length > 0 && (
-              <TouchableOpacity style={styles.filterChip} onPress={() => setSubCategoryModalVisible(true)}>
-                <AppText variant="labelSmall" color={selectedSubCategoryId ? Colors.primary[600] : Colors.neutral[600]}>
-                  {selectedSubCategoryId ? selectedSubCategory?.title : 'Sub Category'}
-                </AppText>
-                <ChevronDown color={selectedSubCategoryId ? Colors.primary[600] : Colors.neutral[400]} size={14} style={{marginLeft: 4}} />
-              </TouchableOpacity>
-            )}
+            {/* Job Type Filter */}
+            <TouchableOpacity style={styles.filterChip} onPress={() => setJobTypeModalVisible(true)}>
+              <AppText variant="labelSmall" color={selectedJobType ? Colors.primary[600] : Colors.neutral[600]}>
+                {selectedJobType || 'Job Type'}
+              </AppText>
+              <ChevronDown color={selectedJobType ? Colors.primary[600] : Colors.neutral[400]} size={14} style={{marginLeft: 4}} />
+            </TouchableOpacity>
+
+            {/* Work Setting Filter */}
+            <TouchableOpacity style={styles.filterChip} onPress={() => setWorkSettingModalVisible(true)}>
+              <AppText variant="labelSmall" color={selectedWorkSetting ? Colors.primary[600] : Colors.neutral[600]}>
+                {selectedWorkSetting || 'Work Setting'}
+              </AppText>
+              <ChevronDown color={selectedWorkSetting ? Colors.primary[600] : Colors.neutral[400]} size={14} style={{marginLeft: 4}} />
+            </TouchableOpacity>
+
+            {/* Compensation Filter */}
+            <TouchableOpacity style={styles.filterChip} onPress={() => setCompensationModalVisible(true)}>
+              <AppText variant="labelSmall" color={selectedCompensation ? Colors.primary[600] : Colors.neutral[600]}>
+                {selectedCompensation || 'Compensation'}
+              </AppText>
+              <ChevronDown color={selectedCompensation ? Colors.primary[600] : Colors.neutral[400]} size={14} style={{marginLeft: 4}} />
+            </TouchableOpacity>
 
             {/* Order By Filter */}
             <TouchableOpacity style={styles.filterChip} onPress={() => setOrderModalVisible(true)}>
@@ -282,30 +327,55 @@ export const BrowseJobsScreen = () => {
         )}
       </ScrollView>
 
-      {/* Category Modal */}
+      {/* Department Modal */}
       {renderDropdownModal(
-        categoryModalVisible,
-        () => setCategoryModalVisible(false),
-        'Select Category',
-        [{ id: null, title: 'All Categories' }, ...categories],
-        selectedCategoryId,
+        departmentModalVisible,
+        () => setDepartmentModalVisible(false),
+        'Select Department',
+        [{ id: null, title: 'All Departments' }, ...departments],
+        selectedDepartment,
         (item) => {
-          setSelectedCategoryId(item.id);
-          setSelectedSubCategoryId(null);
-          setCategoryModalVisible(false);
+          setSelectedDepartment(item.id);
+          setDepartmentModalVisible(false);
         }
       )}
 
-      {/* Sub Category Modal */}
-      {selectedCategory && renderDropdownModal(
-        subCategoryModalVisible,
-        () => setSubCategoryModalVisible(false),
-        'Select Sub Category',
-        [{ id: null, title: 'All Sub Categories' }, ...(selectedCategory?.sub_categories || [])],
-        selectedSubCategoryId,
+      {/* Job Type Modal */}
+      {renderDropdownModal(
+        jobTypeModalVisible,
+        () => setJobTypeModalVisible(false),
+        'Select Job Type',
+        [{ id: null, title: 'All Job Types' }, ...JOB_TYPES],
+        selectedJobType,
         (item) => {
-          setSelectedSubCategoryId(item.id);
-          setSubCategoryModalVisible(false);
+          setSelectedJobType(item.id);
+          setJobTypeModalVisible(false);
+        }
+      )}
+
+      {/* Work Setting Modal */}
+      {renderDropdownModal(
+        workSettingModalVisible,
+        () => setWorkSettingModalVisible(false),
+        'Select Work Setting',
+        [{ id: null, title: 'All Work Settings' }, ...WORK_SETTINGS],
+        selectedWorkSetting,
+        (item) => {
+          setSelectedWorkSetting(item.id);
+          setWorkSettingModalVisible(false);
+        }
+      )}
+
+      {/* Compensation Modal */}
+      {renderDropdownModal(
+        compensationModalVisible,
+        () => setCompensationModalVisible(false),
+        'Select Compensation',
+        [{ id: null, title: 'All Compensations' }, ...COMPENSATIONS],
+        selectedCompensation,
+        (item) => {
+          setSelectedCompensation(item.id);
+          setCompensationModalVisible(false);
         }
       )}
 
@@ -443,16 +513,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 3,
     borderRadius: 12,
-    borderWidth: 1,
-    borderColor: Colors.primary[100],
   },
   subCategoryBadge: {
     backgroundColor: Colors.neutral[50],
     paddingHorizontal: 10,
     paddingVertical: 3,
     borderRadius: 12,
-    borderWidth: 1,
-    borderColor: Colors.neutral[200],
   },
   urlRow: {
     flexDirection: 'row',

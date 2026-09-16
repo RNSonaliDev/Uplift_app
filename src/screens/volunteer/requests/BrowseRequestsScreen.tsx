@@ -135,7 +135,7 @@ export default function BrowseRequestsScreen() {
           </View>
           <View style={[styles.newBadge, { backgroundColor: Colors.accent[50] }]}>
             <AppText variant="labelMedium" color={Colors.accent[700]}>
-              {item.service_radius_km != null ? `${(parseFloat(item.service_radius_km) * 0.621371).toFixed(1)} miles` : displayStatus}
+              {item.distance != null ? `${(parseFloat(item.distance) * 0.621371).toFixed(1)} miles` : displayStatus}
             </AppText>
           </View>
         </View>
@@ -151,13 +151,13 @@ export default function BrowseRequestsScreen() {
           </AppText>
           <View style={styles.detailRow}>
             <Calendar color={Colors.neutral[500]} size={14} />
-            <AppText variant="caption" color={Colors.neutral[600]} style={styles.detailText}>
-              {formatDate(item.preferred_date)} • {(item.preferred_start_time || item.start_time) ? `${formatTime12Hour(item.preferred_start_time || item.start_time)}${(item.preferred_end_time || item.end_time) ? ` - ${formatTime12Hour(item.preferred_end_time || item.end_time)}` : ''}` : (item.preferred_time || (item.hours_required ? `${item.hours_required} hours` : 'Time TBD'))}
+            <AppText variant="caption" color={Colors.neutral[800]} style={styles.detailText}>
+              {formatDate(item.preferred_date)} • {(item.preferred_start_time || item.start_time) ? `${formatTime12Hour(item.preferred_start_time || item.start_time)}${(item.preferred_end_time || item.end_time) ? ` - ${formatTime12Hour(item.preferred_end_time || item.end_time)}` : ''}` : (item.preferred_time || 'Time TBD')}{item.hours_required ? ` (${item.hours_required} hours)` : ''}
             </AppText>
           </View>
           <View style={styles.detailRow}>
             <MapPin color={Colors.neutral[500]} size={14} />
-            <AppText variant="caption" color={Colors.neutral[600]} style={styles.detailText} numberOfLines={1}>
+            <AppText variant="caption" color={Colors.neutral[800]} style={styles.detailText} numberOfLines={1}>
               {item.location?.address || item.meeting_location || 'Location TBD'}
             </AppText>
           </View>

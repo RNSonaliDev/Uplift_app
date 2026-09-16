@@ -200,7 +200,7 @@ export const OrgRequestDetailsScreen = () => {
               <FileText color={Colors.neutral[600]} size={20} />
               <AppText variant="bodyMedium" color={Colors.neutral[900]} style={{marginLeft: 8, fontFamily: FontFamily.medium}}>Reference</AppText>
             </View>
-            <AppText variant="bodyMedium" color={Colors.neutral[600]} style={{flex: 1, textAlign: 'right', marginLeft: 16}}>
+            <AppText variant="bodyMedium" color={Colors.neutral[800]} style={{flex: 1, textAlign: 'right', marginLeft: 16}}>
               #{request.reference_number || request.id}
             </AppText>
           </View>
@@ -211,7 +211,7 @@ export const OrgRequestDetailsScreen = () => {
                 <FileText color={Colors.neutral[600]} size={20} />
                 <AppText variant="bodyMedium" color={Colors.neutral[900]} style={{marginLeft: 8, fontFamily: FontFamily.medium}}>Title</AppText>
               </View>
-              <AppText variant="bodyMedium" color={Colors.neutral[600]} style={{flex: 1, textAlign: 'right', marginLeft: 16}}>
+              <AppText variant="bodyMedium" color={Colors.neutral[800]} style={{flex: 1, textAlign: 'right', marginLeft: 16}}>
                 {request.title}
               </AppText>
             </View>
@@ -223,7 +223,7 @@ export const OrgRequestDetailsScreen = () => {
               <Users color={Colors.neutral[600]} size={20} />
               <AppText variant="bodyMedium" color={Colors.neutral[900]} style={{marginLeft: 8, fontFamily: FontFamily.medium}}>Volunteers Needed</AppText>
             </View>
-            <AppText variant="bodyMedium" color={Colors.neutral[600]} style={{flex: 1, textAlign: 'right', marginLeft: 16}}>
+            <AppText variant="bodyMedium" color={Colors.neutral[800]} style={{flex: 1, textAlign: 'right', marginLeft: 16}}>
               {request.volunteers_needed || 0}
             </AppText>
           </View>
@@ -233,7 +233,7 @@ export const OrgRequestDetailsScreen = () => {
               <Users color={Colors.neutral[600]} size={20} />
               <AppText variant="bodyMedium" color={Colors.neutral[900]} style={{marginLeft: 8, fontFamily: FontFamily.medium}}>Volunteers Accepted</AppText>
             </View>
-            <AppText variant="bodyMedium" color={Colors.neutral[600]} style={{flex: 1, textAlign: 'right', marginLeft: 16}}>
+            <AppText variant="bodyMedium" color={Colors.neutral[800]} style={{flex: 1, textAlign: 'right', marginLeft: 16}}>
               {request.volunteers_accepted !== undefined ? request.volunteers_accepted : (request.volunteers?.length || 0)}
             </AppText>
           </View>
@@ -243,30 +243,19 @@ export const OrgRequestDetailsScreen = () => {
               <Users color={Colors.neutral[600]} size={20} />
               <AppText variant="bodyMedium" color={Colors.neutral[900]} style={{marginLeft: 8, fontFamily: FontFamily.medium}}>Volunteers Remaining</AppText>
             </View>
-            <AppText variant="bodyMedium" color={Colors.neutral[600]} style={{flex: 1, textAlign: 'right', marginLeft: 16}}>
+            <AppText variant="bodyMedium" color={Colors.neutral[800]} style={{flex: 1, textAlign: 'right', marginLeft: 16}}>
               {request.volunteers_remaining !== undefined ? request.volunteers_remaining : Math.max(0, (request.volunteers_needed || 0) - (request.volunteers_accepted !== undefined ? request.volunteers_accepted : (request.volunteers?.length || 0)))}
             </AppText>
           </View>
 
-          {/* Date */}
+          {/* Date & Time */}
           <View style={styles.detailRowItem}>
             <View style={styles.detailLabelRow}>
               <Calendar color={Colors.neutral[600]} size={20} />
-              <AppText variant="bodyMedium" color={Colors.neutral[900]} style={{marginLeft: 8, fontFamily: FontFamily.medium}}>Date</AppText>
+              <AppText variant="bodyMedium" color={Colors.neutral[900]} style={{marginLeft: 8, fontFamily: FontFamily.medium}}>Date & Time</AppText>
             </View>
-            <AppText variant="bodyMedium" color={Colors.neutral[600]} style={{flex: 1, textAlign: 'right', marginLeft: 16}}>
-              {formatDate(request.preferred_date || request.preferred_start_date) || 'Date TBD'}
-            </AppText>
-          </View>
-
-          {/* Time */}
-          <View style={styles.detailRowItem}>
-            <View style={styles.detailLabelRow}>
-              <Clock color={Colors.neutral[600]} size={20} />
-              <AppText variant="bodyMedium" color={Colors.neutral[900]} style={{marginLeft: 8, fontFamily: FontFamily.medium}}>Time</AppText>
-            </View>
-            <AppText variant="bodyMedium" color={Colors.neutral[600]} style={{flex: 1, textAlign: 'right', marginLeft: 16}}>
-              {request.preferred_start_time ? `${formatTime12Hour(request.preferred_start_time)} - ${formatTime12Hour(request.preferred_end_time)}` : 'Time TBD'}
+            <AppText variant="bodyMedium" color={Colors.neutral[800]} style={{flex: 1, textAlign: 'right', marginLeft: 16}}>
+              {formatDate(request.preferred_date || request.preferred_start_date) || 'Date TBD'}{request.preferred_start_time ? ` • ${formatTime12Hour(request.preferred_start_time)} - ${formatTime12Hour(request.preferred_end_time)}` : ''}{request.hours_required != null ? ` (${request.hours_required} hours)` : ''}
             </AppText>
           </View>
 
@@ -277,7 +266,7 @@ export const OrgRequestDetailsScreen = () => {
                 <FileText color={Colors.neutral[600]} size={20} />
                 <AppText variant="bodyMedium" color={Colors.neutral[900]} style={{marginLeft: 8, fontFamily: FontFamily.medium}}>Description</AppText>
               </View>
-              <AppText variant="bodyMedium" color={Colors.neutral[600]} style={{marginLeft: 28, marginTop: 4, lineHeight: 22}}>
+              <AppText variant="bodyMedium" color={Colors.neutral[800]} style={{marginLeft: 28, marginTop: 4, lineHeight: 22}}>
                 {request.description}
               </AppText>
             </View>
@@ -289,7 +278,7 @@ export const OrgRequestDetailsScreen = () => {
               <MapPin color={Colors.neutral[600]} size={20} />
               <AppText variant="bodyMedium" color={Colors.neutral[900]} style={{marginLeft: 8, fontFamily: FontFamily.medium}}>Location</AppText>
             </View>
-            <AppText variant="bodyMedium" color={Colors.neutral[600]} style={{marginLeft: 28, marginTop: 4, lineHeight: 22}}>
+            <AppText variant="bodyMedium" color={Colors.neutral[800]} style={{marginLeft: 28, marginTop: 4, lineHeight: 22}}>
               {request.location?.address || request.address || request.meeting_location || 'Location TBD'}
             </AppText>
           </View>

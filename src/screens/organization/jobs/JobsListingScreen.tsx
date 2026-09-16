@@ -8,8 +8,6 @@ import { AppText } from '../../../components/AppText';
 import { api } from '../../../api/client';
 import { formatStatus, getStatusColors } from '../../../utils/statusUtils';
 
-
-
 export const JobsListingScreen = () => {
   const navigation = useNavigation<any>();
   const [jobs, setJobs] = useState<any[]>([]);
@@ -35,8 +33,6 @@ export const JobsListingScreen = () => {
     }, [fetchJobs])
   );
 
-
-
   const renderJobCard = (job: any) => {
     const statusStyle = getStatusColors(job.status);
     return (
@@ -55,26 +51,26 @@ export const JobsListingScreen = () => {
               <AppText variant="labelLarge" color={Colors.neutral[900]} numberOfLines={1} style={{flex: 1}}>
                 {job.title}
               </AppText>
-              <View style={[styles.statusBadge, { backgroundColor: statusStyle.bg }]}>
+              <View style={[styles.statusBadge, { backgroundColor: statusStyle.bg, borderColor: statusStyle.text }]}>
                 <AppText variant="labelSmall" color={statusStyle.text}>
                   {formatStatus(job.status)}
                 </AppText>
               </View>
             </View>
 
-            {(job.job_category?.title || job.job_sub_category?.title) && (
+            {(job.department || job.job_type) && (
               <View style={styles.badgeRow}>
-                {job.job_category?.title && (
+                {job.department && (
                   <View style={styles.categoryBadge}>
                     <AppText variant="labelSmall" color={Colors.primary[700]}>
-                      {job.job_category.title}
+                      {typeof job.department === 'object' && job.department !== null ? job.department.title : job.department}
                     </AppText>
                   </View>
                 )}
-                {job.job_sub_category?.title && (
+                {job.job_type && (
                   <View style={styles.subCategoryBadge}>
                     <AppText variant="labelSmall" color={Colors.neutral[600]}>
-                      {job.job_sub_category.title}
+                      {job.job_type}
                     </AppText>
                   </View>
                 )}
@@ -240,16 +236,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 3,
     borderRadius: 12,
-    borderWidth: 1,
-    borderColor: Colors.primary[100],
   },
   subCategoryBadge: {
     backgroundColor: Colors.neutral[50],
     paddingHorizontal: 10,
     paddingVertical: 3,
     borderRadius: 12,
-    borderWidth: 1,
-    borderColor: Colors.neutral[200],
   },
   urlRow: {
     flexDirection: 'row',

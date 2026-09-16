@@ -176,21 +176,21 @@ export default function MyScheduleScreen() {
           </AppText>
           <View style={styles.detailRow}>
             <Calendar color={Colors.neutral[500]} size={14} />
-            <AppText variant="caption" color={Colors.neutral[600]} style={styles.detailText}>
-              {formatDate(item.preferred_date)}{((item.preferred_start_time || item.start_time) || item.preferred_time || item.hours_required) ? ' • ' : ''}{(item.preferred_start_time || item.start_time) ? `${formatTime12Hour(item.preferred_start_time || item.start_time)}${(item.preferred_end_time || item.end_time) ? ` - ${formatTime12Hour(item.preferred_end_time || item.end_time)}` : ''}` : (item.preferred_time || (item.hours_required ? `${item.hours_required} hours` : 'Time TBD'))}
+            <AppText variant="caption" color={Colors.neutral[800]} style={styles.detailText}>
+              {formatDate(item.preferred_date)} • {(item.preferred_start_time || item.start_time) ? `${formatTime12Hour(item.preferred_start_time || item.start_time)}${(item.preferred_end_time || item.end_time) ? ` - ${formatTime12Hour(item.preferred_end_time || item.end_time)}` : ''}` : (item.preferred_time || 'Time TBD')}{item.hours_required ? ` (${item.hours_required} hours)` : ''}
             </AppText>
           </View>
           <View style={styles.detailRow}>
             <MapPin color={Colors.neutral[500]} size={14} />
-            <AppText variant="caption" color={Colors.neutral[600]} style={styles.detailText} numberOfLines={1}>
+            <AppText variant="caption" color={Colors.neutral[800]} style={styles.detailText} numberOfLines={1}>
               {item.location?.address || item.meeting_location || 'Location TBD'}
             </AppText>
           </View>
-          {item.service_radius_km != null && (
-            <View style={styles.detailRow}>
-              <MapPin color={Colors.primary[500]} size={14} />
-              <AppText variant="caption" color={Colors.primary[600]} style={styles.detailText}>
-                {(parseFloat(item.service_radius_km) * 0.621371).toFixed(1)} miles
+          {item.distance != null && (
+            <View style={styles.distanceBadge}>
+              <MapPin color={Colors.primary[600]} size={12} style={{marginRight: 4}} />
+              <AppText variant="caption" color={Colors.primary[600]} style={{fontFamily: FontFamily.medium}}>
+                {(parseFloat(item.distance) * 0.621371).toFixed(1)} miles
               </AppText>
             </View>
           )}
