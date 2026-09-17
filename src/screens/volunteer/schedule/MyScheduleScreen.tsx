@@ -34,7 +34,6 @@ export default function MyScheduleScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      setActiveTab('Upcoming');
       fetchSchedule();
       fetchProfile();
     }, [])
@@ -177,9 +176,19 @@ export default function MyScheduleScreen() {
           <View style={styles.detailRow}>
             <Calendar color={Colors.neutral[500]} size={14} />
             <AppText variant="caption" color={Colors.neutral[800]} style={styles.detailText}>
-              {formatDate(item.preferred_date)} • {(item.preferred_start_time || item.start_time) ? `${formatTime12Hour(item.preferred_start_time || item.start_time)}${(item.preferred_end_time || item.end_time) ? ` - ${formatTime12Hour(item.preferred_end_time || item.end_time)}` : ''}` : (item.preferred_time || 'Time TBD')}{item.hours_required ? ` (${item.hours_required} hours)` : ''}
+              {formatDate(item.preferred_date)}
             </AppText>
           </View>
+          {(item.preferred_start_time || item.start_time || item.preferred_time || item.hours_required) ? (
+            <View style={[styles.detailRow, { marginTop: 4 }]}>
+              <Clock color={Colors.neutral[500]} size={14} />
+              <AppText variant="caption" color={Colors.neutral[800]} style={styles.detailText}>
+                {(item.preferred_start_time || item.start_time) ? `${formatTime12Hour(item.preferred_start_time || item.start_time)}${(item.preferred_end_time || item.end_time) ? ` - ${formatTime12Hour(item.preferred_end_time || item.end_time)}` : ''}` : (item.preferred_time || 'Time TBD')}
+                {(item.preferred_start_time || item.start_time || item.preferred_time) && item.hours_required ? ' ' : ''}
+                {item.hours_required ? `(${item.hours_required} hours)` : ''}
+              </AppText>
+            </View>
+          ) : null}
           <View style={styles.detailRow}>
             <MapPin color={Colors.neutral[500]} size={14} />
             <AppText variant="caption" color={Colors.neutral[800]} style={styles.detailText} numberOfLines={1}>
@@ -187,9 +196,9 @@ export default function MyScheduleScreen() {
             </AppText>
           </View>
           {item.distance != null && (
-            <View style={styles.distanceBadge}>
-              <MapPin color={Colors.primary[600]} size={12} style={{marginRight: 4}} />
-              <AppText variant="caption" color={Colors.primary[600]} style={{fontFamily: FontFamily.medium}}>
+            <View style={[styles.detailRow, { marginTop: 4 }]}>
+              <MapPin color={Colors.primary[600]} size={14} />
+              <AppText variant="caption" color={Colors.primary[600]} style={[styles.detailText, {fontFamily: FontFamily.medium}]}>
                 {(parseFloat(item.distance) * 0.621371).toFixed(1)} miles
               </AppText>
             </View>
@@ -366,5 +375,10 @@ const styles = StyleSheet.create({
   detailText: {
     marginLeft: horizontalScale(8),
     flex: 1,
+  },
+  distanceBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: verticalScale(4),
   },
 });

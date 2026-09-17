@@ -153,7 +153,7 @@ export const JobPreviewScreen = () => {
         
       </ScrollView>
       <View style={styles.footer}>
-        <Button title="Publish Job" onPress={handlePublish} loading={publishing} />
+        <Button title="Publish Job" onPress={handlePublish} loading={publishing} size="lg" fullWidth />
       </View>
       </SafeAreaView>
     </>

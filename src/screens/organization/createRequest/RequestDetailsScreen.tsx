@@ -15,7 +15,7 @@ import {
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ChevronLeft, Calendar as CalendarIcon, Clock, CheckSquare, Square, MapPin, Crosshair, Map as MapIcon, Minus, Plus, Navigation, X, Info } from 'lucide-react-native';
+import { ChevronLeft, ChevronDown, Calendar as CalendarIcon, Clock, CheckSquare, Square, MapPin, Crosshair, Map as MapIcon, Minus, Plus, Navigation, X, Info } from 'lucide-react-native';
 import MapView, { Marker, Circle as MapCircle } from 'react-native-maps';
 import { GooglePlacesAutocomplete, GooglePlacesAutocompleteRef } from 'react-native-google-places-autocomplete';
 import Geolocation from '@react-native-community/geolocation';
@@ -26,13 +26,31 @@ import { Colors } from '../../../theme/colors';
 import { Typography, FontFamily } from '../../../theme/typography';
 import { AppText } from '../../../components/AppText';
 import { Button } from '../../../components/Button';
+import { api } from '../../../api/client';
 
 export const RequestDetailsScreen = () => {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const insets = useSafeAreaInsets();
   
-  const { categoryId, categoryTitle } = route.params || {};
+  const { categoryId: initialCategoryId, categoryTitle: initialCategoryTitle } = route.params || {};
+
+  const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(initialCategoryId || null);
+  const [selectedCategoryTitle, setSelectedCategoryTitle] = useState(initialCategoryTitle || '');
+  const [categories, setCategories] = useState<any[]>([]);
+  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await api.get<any[]>('/categories?category_type=organization');
+        setCategories(response);
+      } catch (error) {
+        console.error('Failed to fetch categories:', error);
+      }
+    };
+    fetchCategories();
+  }, []);
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -185,7 +203,7 @@ export const RequestDetailsScreen = () => {
   };
 
   const getPlaceholders = () => {
-    const name = (categoryTitle || '').toLowerCase();
+    const name = (selectedCategoryTitle || '').toLowerCase();
     
     if (name.includes('community')) {
       return {
@@ -259,8 +277,8 @@ export const RequestDetailsScreen = () => {
     }
 
     navigation.navigate('ReviewRequest', {
-      categoryId,
-      categoryTitle,
+      categoryId: selectedCategoryId,
+      categoryTitle: selectedCategoryTitle,
       title,
       description,
       helpType,
@@ -310,14 +328,37 @@ export const RequestDetailsScreen = () => {
           {/* Category */}
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Category <Text style={{color: Colors.error}}>*</Text></Text>
-            <TextInput
+            <TouchableOpacity 
               style={[
-                styles.input, 
-                { backgroundColor: Colors.neutral[100], color: Colors.neutral[500] }
-              ]}
-              value={categoryTitle}
-              editable={false}
-            />
+                styles.dropdownInput, 
+                isCategoryModalOpen ? { borderBottomLeftRadius: 0, borderBottomRightRadius: 0, marginBottom: 0 } : null
+              ]} 
+              onPress={() => setIsCategoryModalOpen(!isCategoryModalOpen)}
+            >
+              <Text style={[styles.dropdownText, !selectedCategoryId && { color: Colors.neutral[400] }]}>
+                {selectedCategoryTitle || 'Select a Category'}
+              </Text>
+              <ChevronDown color={Colors.neutral[400]} size={20} />
+            </TouchableOpacity>
+            {isCategoryModalOpen && (
+              <ScrollView style={styles.inlineDropdownContent} nestedScrollEnabled={true} keyboardShouldPersistTaps="handled">
+                {categories.map(item => (
+                  <TouchableOpacity
+                    key={item.id}
+                    style={styles.modalOption}
+                    onPress={() => {
+                      setSelectedCategoryId(item.id);
+                      setSelectedCategoryTitle(item.title);
+                      setIsCategoryModalOpen(false);
+                    }}
+                  >
+                    <Text style={[styles.modalOptionText, selectedCategoryId === item.id && { color: Colors.primary[600], fontFamily: FontFamily.semiBold }]}>
+                      {item.title}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            )}
           </View>
 
           {/* Request Title */}
@@ -1033,5 +1074,38 @@ const styles = StyleSheet.create({
   urgencyTextActive: {
     color: Colors.neutral[0],
   },
-
+  dropdownInput: {
+    backgroundColor: Colors.neutral[50],
+    borderWidth: 1,
+    borderColor: Colors.neutral[200],
+    borderRadius: 12,
+    padding: 12,
+    paddingHorizontal: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  dropdownText: {
+    ...Typography.bodyMedium,
+    color: Colors.neutral[900],
+  },
+  inlineDropdownContent: {
+    backgroundColor: Colors.neutral[0],
+    borderWidth: 1,
+    borderTopWidth: 0,
+    borderColor: Colors.neutral[200],
+    borderBottomLeftRadius: 12,
+    borderBottomRightRadius: 12,
+    maxHeight: 250,
+  },
+  modalOption: {
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.neutral[100],
+  },
+  modalOptionText: {
+    ...Typography.bodyMedium,
+    color: Colors.neutral[700],
+  }
 });

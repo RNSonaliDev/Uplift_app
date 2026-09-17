@@ -21,23 +21,25 @@ export const RequestCreatedScreen = () => {
   const { referenceNumber } = route.params || {};
 
   const handleViewRequests = () => {
-    // Reset current stack to Dashboard so user can't go back to success screen
     navigation.dispatch(
       CommonActions.reset({
         index: 0,
-        routes: [{ name: 'OrganizationDashboard' }],
+        routes: [{ 
+          name: 'OrganizationTabs', 
+          params: { screen: 'RequestsTab' }
+        }],
       })
     );
-    // Navigate to Requests Tab
-    navigation.navigate('RequestsTab');
   };
 
   const handleGoToDashboard = () => {
-    // Reset current stack to Dashboard
     navigation.dispatch(
       CommonActions.reset({
         index: 0,
-        routes: [{ name: 'OrganizationDashboard' }],
+        routes: [{ 
+          name: 'OrganizationTabs',
+          params: { screen: 'HomeTab' }
+        }],
       })
     );
   };

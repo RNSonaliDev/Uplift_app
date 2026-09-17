@@ -248,14 +248,25 @@ export const OrgRequestDetailsScreen = () => {
             </AppText>
           </View>
 
-          {/* Date & Time */}
+          {/* Date */}
           <View style={styles.detailRowItem}>
             <View style={styles.detailLabelRow}>
               <Calendar color={Colors.neutral[600]} size={20} />
-              <AppText variant="bodyMedium" color={Colors.neutral[900]} style={{marginLeft: 8, fontFamily: FontFamily.medium}}>Date & Time</AppText>
+              <AppText variant="bodyMedium" color={Colors.neutral[900]} style={{marginLeft: 8, fontFamily: FontFamily.medium}}>Date</AppText>
             </View>
             <AppText variant="bodyMedium" color={Colors.neutral[800]} style={{flex: 1, textAlign: 'right', marginLeft: 16}}>
-              {formatDate(request.preferred_date || request.preferred_start_date) || 'Date TBD'}{request.preferred_start_time ? ` • ${formatTime12Hour(request.preferred_start_time)} - ${formatTime12Hour(request.preferred_end_time)}` : ''}{request.hours_required != null ? ` (${request.hours_required} hours)` : ''}
+              {formatDate(request.preferred_date || request.preferred_start_date) || 'Date TBD'}
+            </AppText>
+          </View>
+
+          {/* Time */}
+          <View style={styles.detailRowItem}>
+            <View style={styles.detailLabelRow}>
+              <Clock color={Colors.neutral[600]} size={20} />
+              <AppText variant="bodyMedium" color={Colors.neutral[900]} style={{marginLeft: 8, fontFamily: FontFamily.medium}}>Time</AppText>
+            </View>
+            <AppText variant="bodyMedium" color={Colors.neutral[800]} style={{flex: 1, textAlign: 'right', marginLeft: 16}}>
+              {request.preferred_start_time ? `${formatTime12Hour(request.preferred_start_time)} - ${formatTime12Hour(request.preferred_end_time)}` : 'Time TBD'}{request.hours_required != null ? ` (${request.hours_required} hours)` : ''}
             </AppText>
           </View>
 

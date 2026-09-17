@@ -36,6 +36,7 @@ import {
   MapPin,
   Calendar,
   FileText,
+  Clock,
 } from 'lucide-react-native';
 
 export default function BeneficiaryDashboardScreen() {
@@ -151,7 +152,11 @@ export default function BeneficiaryDashboardScreen() {
               <Text style={{color: Colors.neutral[500]}}>Loading...</Text>
             </View>
           ) : upcomingRequest ? (
-            <View style={styles.card}>
+            <TouchableOpacity 
+              style={styles.card}
+              onPress={() => navigation.navigate('BeneficiaryRequestDetails', { requestId: upcomingRequest.id })}
+              activeOpacity={0.7}
+            >
               <View style={styles.cardHeader}>
                 <View style={styles.iconContainer}>
                   {upcomingRequest.category?.logo_url ? (
@@ -187,23 +192,26 @@ export default function BeneficiaryDashboardScreen() {
                 </Text>
                 <View style={styles.row}>
                   <Calendar color={Colors.neutral[500]} size={14} />
-                  <Text style={styles.cardSubtitle}> {formatDate(upcomingRequest.preferred_date)}{upcomingRequest.preferred_start_time ? ` • ${formatTime12Hour(upcomingRequest.preferred_start_time)}${upcomingRequest.preferred_end_time ? ` - ${formatTime12Hour(upcomingRequest.preferred_end_time)}` : ''}` : ''}</Text>
+                  <Text style={styles.cardSubtitle}> {formatDate(upcomingRequest.preferred_date)}</Text>
                 </View>
-                <View style={[styles.row, { alignItems: 'flex-start' }]}>
+                {(upcomingRequest.preferred_start_time || upcomingRequest.preferred_end_time || upcomingRequest.hours_required) ? (
+                  <View style={[styles.row, { alignItems: 'flex-start', marginTop: 4 }]}>
+                    <Clock color={Colors.neutral[500]} size={14} />
+                    <Text style={styles.cardSubtitle}>
+                      {upcomingRequest.preferred_start_time ? ` ${formatTime12Hour(upcomingRequest.preferred_start_time)}${upcomingRequest.preferred_end_time ? ` - ${formatTime12Hour(upcomingRequest.preferred_end_time)}` : ''}` : ''}
+                      {upcomingRequest.preferred_start_time && upcomingRequest.hours_required ? ' ' : ''}
+                      {upcomingRequest.hours_required ? `(${upcomingRequest.hours_required} hours)` : ''}
+                    </Text>
+                  </View>
+                ) : null}
+                <View style={[styles.row, { alignItems: 'flex-start', marginTop: 4 }]}>
                   <View style={{ marginTop: 2 }}>
                     <MapPin color={Colors.neutral[500]} size={14} />
                   </View>
                   <Text style={[styles.cardSubtitle, { flex: 1, marginLeft: 6 }]} numberOfLines={1}>{upcomingRequest.location?.address || upcomingRequest.meeting_location || 'Location TBD'}</Text>
                 </View>
               </View>
-              
-              <TouchableOpacity 
-                style={styles.requestHelpBtn}
-                onPress={() => navigation.navigate('BeneficiaryRequestDetails', { requestId: upcomingRequest.id })}
-              >
-                <Text style={styles.requestHelpText}>View Details</Text>
-              </TouchableOpacity>
-            </View>
+            </TouchableOpacity>
           ) : (
             <View style={[styles.card, {alignItems: 'center'}]}>
               <Text style={{color: Colors.neutral[500], marginBottom: 16}}>No upcoming requests.</Text>

@@ -216,6 +216,7 @@ const otpStyles = StyleSheet.create({
     fontFamily: FontFamily.semiBold,
     color: Colors.primary[500],
     backgroundColor: Colors.neutral[0],
+    padding: 0,
   },
   inputFilled: {
     borderColor: Colors.primary[500],

@@ -163,9 +163,19 @@ export default function RequestTrackingScreen() {
                   <Calendar color={Colors.neutral[500]} size={20} />
                 </View>
                 <Text style={[styles.detailText, { flex: 1 }]}>
-                  {formatDate(requestDetail.preferred_date)} • {(requestDetail.preferred_start_time || requestDetail.start_time) ? `${formatTime12Hour(requestDetail.preferred_start_time || requestDetail.start_time)}${(requestDetail.preferred_end_time || requestDetail.end_time) ? ` - ${formatTime12Hour(requestDetail.preferred_end_time || requestDetail.end_time)}` : ''}` : (requestDetail.preferred_time || (requestDetail.hours_required ? `${requestDetail.hours_required} hours` : 'Time TBD'))}
+                  {formatDate(requestDetail.preferred_date)}
                 </Text>
               </View>
+              {(requestDetail.preferred_start_time || requestDetail.start_time || requestDetail.preferred_time || requestDetail.hours_required) ? (
+                <View style={[styles.detailRow, { alignItems: 'flex-start', marginTop: 8 }]}>
+                  <View style={{ marginTop: 2 }}>
+                    <Clock color={Colors.neutral[500]} size={20} />
+                  </View>
+                  <Text style={[styles.detailText, { flex: 1 }]}>
+                    {(requestDetail.preferred_start_time || requestDetail.start_time) ? `${formatTime12Hour(requestDetail.preferred_start_time || requestDetail.start_time)}${(requestDetail.preferred_end_time || requestDetail.end_time) ? ` - ${formatTime12Hour(requestDetail.preferred_end_time || requestDetail.end_time)}` : ''}` : (requestDetail.preferred_time || (requestDetail.hours_required ? `${requestDetail.hours_required} hours` : 'Time TBD'))}
+                  </Text>
+                </View>
+              ) : null}
               <View style={[styles.detailRow, { alignItems: 'flex-start' }]}>
                 <View style={{ marginTop: 2 }}>
                   <MapPin color={Colors.neutral[500]} size={20} />

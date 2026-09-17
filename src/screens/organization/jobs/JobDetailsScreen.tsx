@@ -208,11 +208,11 @@ export const JobDetailsScreen = () => {
       </ScrollView>
       {job.status === 'draft' ? (
         <View style={styles.footer}>
-          <Button title="Publish Job" onPress={handlePublish} loading={publishing} />
+          <Button title="Publish Job" onPress={handlePublish} loading={publishing} size="lg" fullWidth />
         </View>
       ) : job.status !== 'closed' ? (
         <View style={styles.footer}>
-          <Button title="Close Job" onPress={handleClose} loading={closing} style={{ backgroundColor: Colors.error }} />
+          <Button title="Close Job" onPress={handleClose} loading={closing} size="lg" fullWidth style={{ backgroundColor: Colors.error }} />
         </View>
       ) : null}
     </SafeAreaView>

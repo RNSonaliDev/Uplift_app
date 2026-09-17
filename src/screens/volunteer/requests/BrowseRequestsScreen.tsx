@@ -57,9 +57,6 @@ export default function BrowseRequestsScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      setActiveTab(route.params?.activeTab || 'beneficiary');
-      setSearchQuery('');
-      setActiveCategory(null);
       const fetchData = async () => {
         try {
           setLoading(true);
@@ -152,9 +149,19 @@ export default function BrowseRequestsScreen() {
           <View style={styles.detailRow}>
             <Calendar color={Colors.neutral[500]} size={14} />
             <AppText variant="caption" color={Colors.neutral[800]} style={styles.detailText}>
-              {formatDate(item.preferred_date)} • {(item.preferred_start_time || item.start_time) ? `${formatTime12Hour(item.preferred_start_time || item.start_time)}${(item.preferred_end_time || item.end_time) ? ` - ${formatTime12Hour(item.preferred_end_time || item.end_time)}` : ''}` : (item.preferred_time || 'Time TBD')}{item.hours_required ? ` (${item.hours_required} hours)` : ''}
+              {formatDate(item.preferred_date)}
             </AppText>
           </View>
+          {(item.preferred_start_time || item.start_time || item.preferred_time || item.hours_required) ? (
+            <View style={[styles.detailRow, { marginTop: 4 }]}>
+              <Clock color={Colors.neutral[500]} size={14} />
+              <AppText variant="caption" color={Colors.neutral[800]} style={styles.detailText}>
+                {(item.preferred_start_time || item.start_time) ? `${formatTime12Hour(item.preferred_start_time || item.start_time)}${(item.preferred_end_time || item.end_time) ? ` - ${formatTime12Hour(item.preferred_end_time || item.end_time)}` : ''}` : (item.preferred_time || 'Time TBD')}
+                {(item.preferred_start_time || item.start_time || item.preferred_time) && item.hours_required ? ' ' : ''}
+                {item.hours_required ? `(${item.hours_required} hours)` : ''}
+              </AppText>
+            </View>
+          ) : null}
           <View style={styles.detailRow}>
             <MapPin color={Colors.neutral[500]} size={14} />
             <AppText variant="caption" color={Colors.neutral[800]} style={styles.detailText} numberOfLines={1}>

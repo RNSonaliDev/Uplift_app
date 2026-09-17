@@ -6,7 +6,7 @@ import { authApi, UserProfileResponse } from '../../../api/auth';
 import { formatDate, formatTime12Hour } from '../../../utils/dateFormatter';
 import { formatStatus, getStatusColors } from '../../../utils/statusUtils';
 import { CategoryIcon } from '../../../components/CategoryIcon';
-import { Menu, Bell, Plus, Lock, Calendar, Pill, ChevronRight, MapPin, Users } from 'lucide-react-native';
+import { Menu, Bell, Plus, Lock, Calendar, Pill, ChevronRight, MapPin, Users, Clock } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Colors } from '../../../theme/colors';
@@ -132,7 +132,7 @@ export const OrganizationDashboardScreen = () => {
         <View style={styles.sectionContainer}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>My Requests</Text>
-            <TouchableOpacity onPress={() => navigation.navigate('RequestsTab')}>
+            <TouchableOpacity onPress={() => navigation.navigate('OrganizationTabs', { screen: 'RequestsTab' })}>
               <Text style={styles.viewAllText}>View all</Text>
             </TouchableOpacity>
           </View>
@@ -186,9 +186,19 @@ export const OrganizationDashboardScreen = () => {
                     <View style={styles.row}>
                       <Calendar color={Colors.neutral[500]} size={14} />
                       <Text style={styles.cardSubtitle}>
-                        {formatDate(request.preferred_date || request.preferred_start_date)}{request.preferred_start_time ? ` • ${formatTime12Hour(request.preferred_start_time)} - ${formatTime12Hour(request.preferred_end_time)}` : ''}{request.hours_required ? ` (${request.hours_required} hours)` : ''}
+                        {formatDate(request.preferred_date || request.preferred_start_date)}
                       </Text>
                     </View>
+                    {(request.preferred_start_time || request.preferred_end_time || request.hours_required) ? (
+                      <View style={[styles.row, { marginTop: 4 }]}>
+                        <Clock color={Colors.neutral[500]} size={14} />
+                        <Text style={styles.cardSubtitle}>
+                          {request.preferred_start_time ? `${formatTime12Hour(request.preferred_start_time)} - ${formatTime12Hour(request.preferred_end_time)}` : ''}
+                          {request.preferred_start_time && request.hours_required ? ' ' : ''}
+                          {request.hours_required ? `(${request.hours_required} hours)` : ''}
+                        </Text>
+                      </View>
+                    ) : null}
                     <View style={[styles.row, { alignItems: 'flex-start', marginTop: 4 }]}>
                       <View style={{ marginTop: 2 }}>
                         <MapPin color={Colors.neutral[500]} size={14} />

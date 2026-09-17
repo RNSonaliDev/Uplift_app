@@ -22,7 +22,8 @@ import {
   Car,
   Plus,
   Calendar,
-  MapPin
+  MapPin,
+  Clock
 } from 'lucide-react-native';
 import { AppText } from '../../../components';
 
@@ -34,7 +35,6 @@ export default function MyRequestsScreen() {
 
   useFocusEffect(
     React.useCallback(() => {
-      setActiveTab('Active');
       fetchRequests();
     }, [])
   );
@@ -169,10 +169,18 @@ const RequestCard = ({
           <Calendar color={Colors.neutral[400]} size={14} style={[styles.infoIcon, { marginTop: 2 }]} />
           <Text style={[styles.infoText, { flex: 1, lineHeight: 18 }]}>
             {date}
-            {time ? <Text style={styles.infoDot}> • {time}</Text> : null}
-            {hoursRequired != null ? <Text style={styles.infoDot}> ({hoursRequired} hours)</Text> : null}
           </Text>
         </View>
+        {(time || hoursRequired != null) ? (
+          <View style={[styles.infoRow, { alignItems: 'flex-start', marginTop: 6 }]}>
+            <Clock color={Colors.neutral[400]} size={14} style={[styles.infoIcon, { marginTop: 2 }]} />
+            <Text style={[styles.infoText, { flex: 1, lineHeight: 18 }]}>
+              {time ? time : ''}
+              {time && hoursRequired != null ? ' ' : ''}
+              {hoursRequired != null ? `(${hoursRequired} hours)` : ''}
+            </Text>
+          </View>
+        ) : null}
         
         <View style={[styles.infoRow, { alignItems: 'flex-start', marginTop: 6 }]}>
           <MapPin color={Colors.neutral[400]} size={14} style={[styles.infoIcon, { marginTop: 2 }]} />

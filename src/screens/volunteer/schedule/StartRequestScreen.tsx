@@ -112,9 +112,17 @@ export default function StartRequestScreen() {
             <View style={styles.detailRow}>
               <Calendar color={Colors.neutral[500]} size={20} />
               <AppText variant="bodyLarge" color={Colors.neutral[700]} style={styles.detailText}>
-                {formatDate(request.preferred_date)} • {(request.preferred_start_time || request.start_time) ? `${formatTime12Hour(request.preferred_start_time || request.start_time)}${(request.preferred_end_time || request.end_time) ? ` - ${formatTime12Hour(request.preferred_end_time || request.end_time)}` : ''}` : (request.preferred_time || (request.hours_required ? `${request.hours_required} hours` : 'Time TBD'))}
+                {formatDate(request.preferred_date)}
               </AppText>
             </View>
+            {(request.preferred_start_time || request.start_time || request.preferred_time || request.hours_required) ? (
+              <View style={[styles.detailRow, { marginTop: 8 }]}>
+                <Clock color={Colors.neutral[500]} size={20} />
+                <AppText variant="bodyLarge" color={Colors.neutral[700]} style={styles.detailText}>
+                  {(request.preferred_start_time || request.start_time) ? `${formatTime12Hour(request.preferred_start_time || request.start_time)}${(request.preferred_end_time || request.end_time) ? ` - ${formatTime12Hour(request.preferred_end_time || request.end_time)}` : ''}` : (request.preferred_time || (request.hours_required ? `${request.hours_required} hours` : 'Time TBD'))}
+                </AppText>
+              </View>
+            ) : null}
             <View style={styles.detailRow}>
               <MapPin color={Colors.neutral[500]} size={20} />
               <AppText variant="bodyLarge" color={Colors.neutral[700]} style={styles.detailText}>

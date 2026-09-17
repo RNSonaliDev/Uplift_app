@@ -5,10 +5,10 @@ import {Colors} from '../theme/colors';
 import {Home, List, Users, Briefcase, User} from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import OrganizationHomeStack from './OrganizationHomeStack';
-import BeneficiaryProfileStack from './BeneficiaryProfileStack'; // Reusing profile stack for now
 import {OrganizationRequestsScreen} from '../screens/organization/dashboard/OrganizationRequestsScreen';
-import OrganizationJobsStack from './OrganizationJobsStack';
+import {OrganizationDashboardScreen} from '../screens/organization/dashboard/OrganizationDashboardScreen';
+import {JobsListingScreen} from '../screens/organization/jobs/JobsListingScreen';
+import MyProfileScreen from '../screens/beneficiary/profile/MyProfileScreen';
 
 const Tab = createBottomTabNavigator();
 
@@ -18,56 +18,28 @@ const ComingSoonScreen = () => (
   </View>
 );
 
-import { getFocusedRouteNameFromRoute } from '@react-navigation/native';
-
 export function OrganizationTabNavigator() {
   const insets = useSafeAreaInsets();
   
   return (
     <Tab.Navigator
-      screenOptions={({ route }) => {
-        const routeName = getFocusedRouteNameFromRoute(route) ?? '';
-        const hiddenRoutes = [
-          'SelectCategory',
-          'RequestDetails',
-          'AdditionalInfo',
-          'ReviewRequest',
-          'RequestCreated',
-          'CreateJob',
-          'JobPreview',
-          'JobDetails',
-          'EditProfile',
-          'OrgRequestDetails',
-          'OrgRequestTracking',
-          'Settings',
-          'LegalContent',
-          'EmergencyContacts',
-          'ContactSupport',
-          'ContactSupportDetails',
-          'CreateSupportRequest',
-          'ChatScreen',
-          'RateHelper'
-        ];
-        const isHidden = hiddenRoutes.includes(routeName);
-
-        return {
-          headerShown: false,
-          unmountOnBlur: true,
-          tabBarActiveTintColor: Colors.primary[500],
-          tabBarInactiveTintColor: Colors.neutral[900],
-          tabBarStyle: isHidden ? { display: 'none' } : {
-            borderTopWidth: 1,
-            borderTopColor: Colors.neutral[200],
-            backgroundColor: Colors.neutral[0],
-            height: 60 + insets.bottom,
-            paddingBottom: 8 + insets.bottom,
-            paddingTop: 8,
-          },
-        };
+      screenOptions={{
+        headerShown: false,
+        unmountOnBlur: true,
+        tabBarActiveTintColor: Colors.primary[500],
+        tabBarInactiveTintColor: Colors.neutral[900],
+        tabBarStyle: {
+          borderTopWidth: 1,
+          borderTopColor: Colors.neutral[200],
+          backgroundColor: Colors.neutral[0],
+          height: 60 + insets.bottom,
+          paddingBottom: 8 + insets.bottom,
+          paddingTop: 8,
+        },
       }}>
       <Tab.Screen
         name="HomeTab"
-        component={OrganizationHomeStack}
+        component={OrganizationDashboardScreen}
         options={{
           tabBarLabel: 'Dashboard',
           tabBarIcon: ({color}) => <Home color={color} size={24} />,
@@ -75,7 +47,7 @@ export function OrganizationTabNavigator() {
         listeners={({navigation}) => ({
           tabPress: (e) => {
             e.preventDefault();
-            navigation.navigate('HomeTab', { screen: 'OrganizationDashboard' });
+            navigation.navigate('HomeTab');
           },
         })}
       />
@@ -86,30 +58,40 @@ export function OrganizationTabNavigator() {
           tabBarLabel: 'Requests',
           tabBarIcon: ({color}) => <List color={color} size={24} />,
         }}
+        listeners={({navigation}) => ({
+          tabPress: (e) => {
+            e.preventDefault();
+            navigation.navigate('RequestsTab');
+          },
+        })}
       />
-      {/* <Tab.Screen
-        name="VolunteersTab"
-        component={ComingSoonScreen}
-        options={{
-          tabBarLabel: 'Volunteers',
-          tabBarIcon: ({color}) => <Users color={color} size={24} />,
-        }}
-      /> */}
       <Tab.Screen
         name="JobsTab"
-        component={OrganizationJobsStack}
+        component={JobsListingScreen}
         options={{
           tabBarLabel: 'Jobs',
           tabBarIcon: ({color}) => <Briefcase color={color} size={24} />,
         }}
+        listeners={({navigation}) => ({
+          tabPress: (e) => {
+            e.preventDefault();
+            navigation.navigate('JobsTab');
+          },
+        })}
       />
       <Tab.Screen
         name="ProfileTab"
-        component={BeneficiaryProfileStack}
+        component={MyProfileScreen}
         options={{
           tabBarLabel: 'Profile',
           tabBarIcon: ({color}) => <User color={color} size={24} />,
         }}
+        listeners={({navigation}) => ({
+          tabPress: (e) => {
+            e.preventDefault();
+            navigation.navigate('ProfileTab');
+          },
+        })}
       />
     </Tab.Navigator>
   );

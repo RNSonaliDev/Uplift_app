@@ -28,7 +28,6 @@ export const JobsListingScreen = () => {
 
   useFocusEffect(
     useCallback(() => {
-      setActiveTab('active');
       fetchJobs();
     }, [fetchJobs])
   );

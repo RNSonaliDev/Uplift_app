@@ -175,8 +175,8 @@ export const CreateJobScreen = () => {
           ]} 
           onPress={() => setActiveModal(isModalOpen ? null : (field as any))}
         >
-          <Text style={[styles.dropdownText, !value && { color: Colors.neutral[300] }]}>
-            {options.find(o => o.id === value)?.title || `Select a ${label}`}
+          <Text style={[styles.dropdownText, !value && { color: Colors.neutral[400] }]}>
+            {options.find(o => o.id === value)?.title || (label === 'Compensation' ? 'Select Compensation' : `Select a ${label}`)}
           </Text>
           <ChevronDown color={Colors.neutral[400]} size={20} />
         </TouchableOpacity>
@@ -213,7 +213,7 @@ export const CreateJobScreen = () => {
       <SafeAreaView style={styles.safeArea}>
       <View style={styles.header}>
         <View style={styles.headerAbsoluteCenter}>
-          <AppText variant="bodyLarge" color={Colors.neutral[0]}>{isEditing ? 'Edit Job' : 'Create Job'}</AppText>
+          <AppText variant="h5" color={Colors.neutral[0]}>{isEditing ? 'Edit Job' : 'Create Job'}</AppText>
         </View>
         <TouchableOpacity onPress={handleBack} style={styles.iconButton}>
           <ChevronLeft color={Colors.neutral[0]} size={28} strokeWidth={2} />
@@ -236,6 +236,7 @@ export const CreateJobScreen = () => {
                 if (fieldErrors.title) setFieldErrors(prev => ({ ...prev, title: '' }));
               }} 
               placeholder="e.g. Summer Intern" 
+              placeholderTextColor={Colors.neutral[400]}
             />
             {fieldErrors.title ? <Text style={styles.fieldErrorText}>{fieldErrors.title}</Text> : null}
             
@@ -248,6 +249,7 @@ export const CreateJobScreen = () => {
                 if (fieldErrors.description) setFieldErrors(prev => ({ ...prev, description: '' }));
               }} 
               placeholder="Job description..." 
+              placeholderTextColor={Colors.neutral[400]}
               multiline 
             />
             {fieldErrors.description ? <Text style={styles.fieldErrorText}>{fieldErrors.description}</Text> : null}
@@ -266,6 +268,7 @@ export const CreateJobScreen = () => {
                 if (fieldErrors.companyUrl) setFieldErrors(prev => ({ ...prev, companyUrl: '' }));
               }} 
               placeholder="https://..." 
+              placeholderTextColor={Colors.neutral[400]}
               keyboardType="url" 
               autoCapitalize="none" 
             />
@@ -277,6 +280,7 @@ export const CreateJobScreen = () => {
               value={jobUrl} 
               onChangeText={setJobUrl} 
               placeholder="https://..." 
+              placeholderTextColor={Colors.neutral[400]}
               keyboardType="url" 
               autoCapitalize="none" 
             />
@@ -289,6 +293,8 @@ export const CreateJobScreen = () => {
           title="Preview Job" 
           onPress={handlePreview} 
           loading={loading}
+          size="lg"
+          fullWidth
         />
       </View>
       </SafeAreaView>
@@ -303,7 +309,7 @@ const styles = StyleSheet.create({
   iconButton: { padding: 4 },
   content: { padding: 16 },
   label: { ...Typography.labelMedium, marginBottom: 8, color: Colors.neutral[700] },
-  input: { backgroundColor: '#FFF', borderWidth: 1, borderColor: Colors.neutral[200], borderRadius: 8, padding: 12, marginBottom: 16 },
+  input: { ...Typography.bodyMedium, color: Colors.neutral[900], backgroundColor: '#FFF', borderWidth: 1, borderColor: Colors.neutral[200], borderRadius: 8, padding: 12, marginBottom: 16 },
   inputError: {
     borderColor: Colors.error,
     marginBottom: 4,
