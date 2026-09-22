@@ -9,6 +9,7 @@ import {
   Platform,
   Alert,
   SafeAreaView,
+  ActivityIndicator,
 } from 'react-native';
 import Svg, {Path, Circle, Rect, G} from 'react-native-svg';
 import {AppText} from '../components/AppText';
@@ -17,6 +18,8 @@ import {Input} from '../components/Input';
 import {UpliftLogo} from '../components/UpliftLogo';
 import Toast from 'react-native-toast-message';
 import {authApi} from '../api';
+import {socialAuthService} from '../services/SocialAuthService';
+import {handlePostAuthNavigation} from '../utils/navigationHelpers';
 import {Colors} from '../theme/colors';
 import {Spacing, BorderRadius} from '../theme/spacing';
 import {
@@ -135,16 +138,21 @@ interface SocialButtonProps {
   icon: React.ReactNode;
   label: string;
   onPress?: () => void;
+  loading?: boolean;
+  disabled?: boolean;
 }
 
-const SocialButton: React.FC<SocialButtonProps> = ({icon, label, onPress}) => (
+const SocialButton: React.FC<SocialButtonProps> = ({icon, label, onPress, loading, disabled}) => (
   <TouchableOpacity
-    style={styles.socialButton}
+    style={[styles.socialButton, disabled && { opacity: 0.6 }]}
     activeOpacity={0.7}
+    disabled={disabled || loading}
     onPress={onPress}>
-    <View style={styles.socialIconContainer}>{icon}</View>
+    <View style={styles.socialIconContainer}>
+      {loading ? <ActivityIndicator size="small" color={Colors.primary[500]} /> : icon}
+    </View>
     <AppText variant="labelMedium" color={Colors.primary[900]}>
-      {label}
+      {loading ? 'Connecting...' : label}
     </AppText>
   </TouchableOpacity>
 );
@@ -156,6 +164,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 type RootStackParamList = {
   Welcome: undefined;
+  Login: undefined;
   CreateAccount: undefined;
   VerifyAccount: { emailOrPhone: string };
   SelectRoles: undefined;
@@ -166,6 +175,8 @@ type NavigationProps = NativeStackNavigationProp<RootStackParamList>;
 export const LoginScreen: React.FC = () => {
   const [emailOrPhone, setEmailOrPhone] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [isAppleLoading, setIsAppleLoading] = useState(false);
   const navigation = useNavigation<NavigationProps>();
 
   const handleContinue = async () => {
@@ -188,6 +199,67 @@ export const LoginScreen: React.FC = () => {
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    try {
+      setIsGoogleLoading(true);
+      const result = await socialAuthService.signInWithGoogle();
+
+      const response = await authApi.socialLogin({
+        provider: result.provider,
+        id_token: result.idToken,
+        user: {
+          email: result.user.email,
+          first_name: result.user.firstName,
+          last_name: result.user.lastName,
+        },
+      });
+
+      await handlePostAuthNavigation(response, navigation);
+    } catch (error: any) {
+      if (error?.message === 'CANCELLED') {
+        return;
+      }
+      Toast.show({
+        type: 'error',
+        text1: 'Google Sign In Error',
+        text2: error?.data?.errors?.[0] || error?.message || 'Failed to sign in with Google',
+      });
+    } finally {
+      setIsGoogleLoading(false);
+    }
+  };
+
+  const handleAppleLogin = async () => {
+    try {
+      setIsAppleLoading(true);
+      const result = await socialAuthService.signInWithApple();
+
+      const response = await authApi.socialLogin({
+        provider: result.provider,
+        id_token: result.idToken,
+        authorization_code: result.authorizationCode,
+        user: {
+          email: result.user.email,
+          first_name: result.user.firstName,
+          last_name: result.user.lastName,
+        },
+      });
+
+      await handlePostAuthNavigation(response, navigation);
+    } catch (error: any) {
+      if (error?.message === 'CANCELLED') {
+        return;
+      }
+      Toast.show({
+        type: 'error',
+        text1: 'Apple Sign In Error',
+        text2: error?.data?.errors?.[0] || error?.message || 'Failed to sign in with Apple',
+      });
+    } finally {
+      setIsAppleLoading(false);
     }
   };
 
@@ -285,30 +357,19 @@ export const LoginScreen: React.FC = () => {
             <SocialButton
               icon={<GoogleIcon size={moderateScale(22)} />}
               label="Continue with Google"
-              onPress={() => Toast.show({
-                type: 'info',
-                text1: 'Coming Soon',
-                text2: 'This feature is not yet available. Please check back later!'
-              })}
+              loading={isGoogleLoading}
+              disabled={isGoogleLoading || isAppleLoading}
+              onPress={handleGoogleLogin}
             />
-            {/* <SocialButton
-              icon={<FacebookIcon size={moderateScale(22)} />}
-              label="Continue with Facebook"
-              onPress={() => Toast.show({
-                type: 'info',
-                text1: 'Coming Soon',
-                text2: 'This feature is not yet available. Please check back later!'
-              })}
-            /> */}
-            <SocialButton
-              icon={<AppleIcon size={moderateScale(22)} />}
-              label="Continue with Apple"
-              onPress={() => Toast.show({
-                type: 'info',
-                text1: 'Coming Soon',
-                text2: 'This feature is not yet available. Please check back later!'
-              })}
-            />
+            {isIOS && (
+              <SocialButton
+                icon={<AppleIcon size={moderateScale(22)} />}
+                label="Continue with Apple"
+                loading={isAppleLoading}
+                disabled={isGoogleLoading || isAppleLoading}
+                onPress={handleAppleLogin}
+              />
+            )}
           </View>
 
           {/* Login Link */}

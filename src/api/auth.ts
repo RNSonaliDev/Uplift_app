@@ -57,6 +57,18 @@ export interface VerifyOtpResponse {
   };
 }
 
+export interface SocialLoginPayload {
+  provider: 'google' | 'apple';
+  id_token?: string;
+  access_token?: string;
+  authorization_code?: string;
+  user?: {
+    first_name?: string;
+    last_name?: string;
+    email?: string;
+  };
+}
+
 export interface RegistrationResponse {
   message: string;
   token?: string;
@@ -166,5 +178,8 @@ export const authApi = {
   },
   deleteProfile: () => {
     return api.delete<{message: string}>('/profile');
+  },
+  socialLogin: (payload: SocialLoginPayload) => {
+    return api.post<VerifyOtpResponse>('/auth/social', payload);
   },
 };
