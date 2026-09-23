@@ -170,8 +170,8 @@ export const authApi = {
       }
     });
   },
-  sendParentVerification: () => {
-    return api.post<{message: string}>('/auth/parent_verification');
+  sendParentVerification: (payload?: { parent_email?: string; parent_phone?: string }) => {
+    return api.post<{message: string}>('/auth/parent_verification', payload);
   },
   verifyParentVerification: (payload: { parent_verification: { code: string } }) => {
     return api.post<VerifyOtpResponse>('/auth/parent_verification/verify', payload);

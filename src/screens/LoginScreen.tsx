@@ -203,64 +203,64 @@ export const LoginScreen: React.FC = () => {
   };
 
   const handleGoogleLogin = async () => {
-    try {
-      setIsGoogleLoading(true);
-      const result = await socialAuthService.signInWithGoogle();
+    // try {
+    //   setIsGoogleLoading(true);
+    //   const result = await socialAuthService.signInWithGoogle();
 
-      const response = await authApi.socialLogin({
-        provider: result.provider,
-        id_token: result.idToken,
-        user: {
-          email: result.user.email,
-          first_name: result.user.firstName,
-          last_name: result.user.lastName,
-        },
-      });
+    //   const response = await authApi.socialLogin({
+    //     provider: result.provider,
+    //     id_token: result.idToken,
+    //     user: {
+    //       email: result.user.email,
+    //       first_name: result.user.firstName,
+    //       last_name: result.user.lastName,
+    //     },
+    //   });
 
-      await handlePostAuthNavigation(response, navigation);
-    } catch (error: any) {
-      if (error?.message === 'CANCELLED') {
-        return;
-      }
-      Toast.show({
-        type: 'error',
-        text1: 'Google Sign In Error',
-        text2: error?.data?.errors?.[0] || error?.message || 'Failed to sign in with Google',
-      });
-    } finally {
-      setIsGoogleLoading(false);
-    }
+    //   await handlePostAuthNavigation(response, navigation);
+    // } catch (error: any) {
+    //   if (error?.message === 'CANCELLED') {
+    //     return;
+    //   }
+    //   Toast.show({
+    //     type: 'error',
+    //     text1: 'Google Sign In Error',
+    //     text2: error?.data?.errors?.[0] || error?.message || 'Failed to sign in with Google',
+    //   });
+    // } finally {
+    //   setIsGoogleLoading(false);
+    // }
   };
 
   const handleAppleLogin = async () => {
-    try {
-      setIsAppleLoading(true);
-      const result = await socialAuthService.signInWithApple();
+    // try {
+    //   setIsAppleLoading(true);
+    //   const result = await socialAuthService.signInWithApple();
 
-      const response = await authApi.socialLogin({
-        provider: result.provider,
-        id_token: result.idToken,
-        authorization_code: result.authorizationCode,
-        user: {
-          email: result.user.email,
-          first_name: result.user.firstName,
-          last_name: result.user.lastName,
-        },
-      });
+    //   const response = await authApi.socialLogin({
+    //     provider: result.provider,
+    //     id_token: result.idToken,
+    //     authorization_code: result.authorizationCode,
+    //     user: {
+    //       email: result.user.email,
+    //       first_name: result.user.firstName,
+    //       last_name: result.user.lastName,
+    //     },
+    //   });
 
-      await handlePostAuthNavigation(response, navigation);
-    } catch (error: any) {
-      if (error?.message === 'CANCELLED') {
-        return;
-      }
-      Toast.show({
-        type: 'error',
-        text1: 'Apple Sign In Error',
-        text2: error?.data?.errors?.[0] || error?.message || 'Failed to sign in with Apple',
-      });
-    } finally {
-      setIsAppleLoading(false);
-    }
+    //   await handlePostAuthNavigation(response, navigation);
+    // } catch (error: any) {
+    //   if (error?.message === 'CANCELLED') {
+    //     return;
+    //   }
+    //   Toast.show({
+    //     type: 'error',
+    //     text1: 'Apple Sign In Error',
+    //     text2: error?.data?.errors?.[0] || error?.message || 'Failed to sign in with Apple',
+    //   });
+    // } finally {
+    //   setIsAppleLoading(false);
+    // }
   };
 
   return (

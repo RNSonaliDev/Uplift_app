@@ -250,9 +250,11 @@ const ContactInfoRow: React.FC<ContactInfoRowProps> = ({
         {value}
       </AppText>
     </View>
-    {/* <TouchableOpacity onPress={onChangePress} hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}>
-      <EditIcon size={moderateScale(20)} color={Colors.primary[500]} />
-    </TouchableOpacity> */}
+    {onChangePress && (
+      <TouchableOpacity onPress={onChangePress} hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}>
+        <EditIcon size={moderateScale(20)} color={Colors.primary[500]} />
+      </TouchableOpacity>
+    )}
   </View>
 );
 
@@ -283,8 +285,8 @@ type RootStackParamList = {
   Welcome: undefined;
   CreateAccount: undefined;
   VerifyAccount: { emailOrPhone: string, dob?: string, parentEmail?: string };
-  ParentVerification: { parentEmail: string };
-  CreateProfile: { verificationToken: string, emailOrPhone: string, dob?: string, parentEmail?: string };
+  ParentVerification: { parentEmail?: string, parentPhone?: string };
+  CreateProfile: { verificationToken: string, emailOrPhone: string, dob?: string, parentEmail?: string, parentPhone?: string };
   SelectRoles: undefined;
   BeneficiaryFlow: undefined;
 };
@@ -296,8 +298,15 @@ export const ParentVerificationScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProps>();
   const route = useRoute<ParentVerificationRouteProp>();
   
-  const parentEmail = route.params?.parentEmail || '';
-  const [otp, setOtp] = useState<string[]>(Array(OTP_LENGTH).fill(''));
+  const [parentEmail, setParentEmail] = useState(route.params?.parentEmail || '');
+  const [parentPhone, setParentPhone] = useState(route.params?.parentPhone || '');
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editEmail, setEditEmail] = useState(parentEmail);
+  const [editPhone, setEditPhone] = useState(parentPhone);
+  const [isUpdatingContact, setIsUpdatingContact] = useState(false);
+
+  const [emailOtp, setEmailOtp] = useState<string[]>(Array(OTP_LENGTH).fill(''));
+  const [phoneOtp, setPhoneOtp] = useState<string[]>(Array(OTP_LENGTH).fill(''));
   const [timer, setTimer] = useState(RESEND_TIMER_SECONDS);
   const [canResend, setCanResend] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
@@ -323,26 +332,72 @@ export const ParentVerificationScreen: React.FC = () => {
     
     try {
       setIsResending(true);
-      await authApi.sendParentVerification();
+      await authApi.sendParentVerification({
+        parent_email: parentEmail || undefined,
+        parent_phone: parentPhone ? `+1${parentPhone.replace(/\D/g, '')}` : undefined,
+      });
 
       setTimer(RESEND_TIMER_SECONDS);
       setCanResend(false);
-      setOtp(Array(OTP_LENGTH).fill(''));
+      setEmailOtp(Array(OTP_LENGTH).fill(''));
+      setPhoneOtp(Array(OTP_LENGTH).fill(''));
       Toast.show({
         type: 'success',
         text1: 'Success',
-        text2: 'Verification code resent successfully',
+        text2: 'Verification codes resent to parent email & phone',
       });
     } catch (error: any) {
       Toast.show({
         type: 'error',
         text1: 'Error',
-        text2: error?.data?.errors?.[0] || error?.message || 'Failed to resend code',
+        text2: error?.data?.errors?.[0] || error?.message || 'Failed to resend codes',
       });
     } finally {
       setIsResending(false);
     }
-  }, [canResend, isResending]);
+  }, [canResend, isResending, parentEmail, parentPhone]);
+
+  const handleSaveContact = async () => {
+    if (!editEmail.trim()) {
+      Toast.show({ type: 'error', text1: 'Required', text2: 'Parent email address is required' });
+      return;
+    }
+    const editPhoneDigits = editPhone.replace(/\D/g, '');
+    if (!editPhone.trim() || editPhoneDigits.length < 10) {
+      Toast.show({ type: 'error', text1: 'Required', text2: 'Please enter a valid 10-digit parent phone number' });
+      return;
+    }
+
+    try {
+      setIsUpdatingContact(true);
+      await authApi.sendParentVerification({
+        parent_email: editEmail,
+        parent_phone: `+1${editPhoneDigits}`,
+      });
+
+      setParentEmail(editEmail);
+      setParentPhone(editPhone);
+      setIsEditModalOpen(false);
+      setTimer(RESEND_TIMER_SECONDS);
+      setCanResend(false);
+      setEmailOtp(Array(OTP_LENGTH).fill(''));
+      setPhoneOtp(Array(OTP_LENGTH).fill(''));
+
+      Toast.show({
+        type: 'success',
+        text1: 'Contact Updated',
+        text2: 'New verification codes sent to updated parent email & phone',
+      });
+    } catch (error: any) {
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: error?.data?.errors?.[0] || error?.message || 'Failed to update parent contact',
+      });
+    } finally {
+      setIsUpdatingContact(false);
+    }
+  };
 
   const formatTime = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);
@@ -350,19 +405,24 @@ export const ParentVerificationScreen: React.FC = () => {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const isOtpComplete = otp.every(digit => digit !== '');
+  const isEmailOtpComplete = emailOtp.every(digit => digit !== '');
+  const isPhoneOtpComplete = phoneOtp.every(digit => digit !== '');
+  const isFormComplete = isEmailOtpComplete && isPhoneOtpComplete;
 
   const handleVerify = async () => {
-    if (!isOtpComplete) return;
+    if (!isFormComplete) return;
 
     try {
       setIsVerifying(true);
-      const code = otp.join('');
+      const emailCode = emailOtp.join('');
+      const phoneCode = phoneOtp.join('');
       
       const response = await authApi.verifyParentVerification({
         parent_verification: {
-          code,
-        }
+          code: emailCode,
+          email_code: emailCode,
+          phone_code: phoneCode,
+        } as any
       });
       console.log("@@@@responseresponseresponseresponse ========================", response.registration_step)
         if (response.access_token) {
@@ -447,25 +507,67 @@ export const ParentVerificationScreen: React.FC = () => {
             center
             color={Colors.neutral[600]}
             style={styles.subtitle}>
-            Enter the 6-digit verification code{'\n'}we sent to your parent's email.
+            Please enter both verification codes sent to your parent's email and phone.
           </AppText>
+
+          <View style={{backgroundColor: Colors.primary[50], padding: 12, borderRadius: 10, marginTop: 12, alignItems: 'center', borderWidth: 1, borderColor: Colors.primary[100]}}>
+            <AppText variant="caption" color={Colors.primary[800]} center style={{lineHeight: 18}}>
+              ℹ️ Volunteers aged 14–17 require email acknowledgement and phone verification. Government ID is not required for this age group.
+            </AppText>
+          </View>
 
           <View style={styles.contactSection}>
             <ContactInfoRow
               icon={<MailIcon size={moderateScale(22)} />}
               label="Parent Email"
-              value={parentEmail}
-              onChangePress={() => navigation.goBack()}
+              value={parentEmail || 'Not provided'}
+              onChangePress={() => {
+                setEditEmail(parentEmail);
+                setEditPhone(parentPhone);
+                setIsEditModalOpen(true);
+              }}
             />
+            {parentPhone ? (
+              <View style={{marginTop: verticalScale(8)}}>
+                <ContactInfoRow
+                  icon={<PhoneIcon size={moderateScale(22)} />}
+                  label="Parent Phone"
+                  value={parentPhone}
+                  onChangePress={() => {
+                    setEditEmail(parentEmail);
+                    setEditPhone(parentPhone);
+                    setIsEditModalOpen(true);
+                  }}
+                />
+              </View>
+            ) : null}
           </View>
 
+          {/* Email Acknowledgement Code Section */}
           <View style={styles.otpSection}>
-            <OtpInput length={OTP_LENGTH} value={otp} onChange={setOtp} />
+            <AppText variant="labelMedium" color={Colors.neutral[800]} style={{marginBottom: 4}}>
+              1. Parent Email Acknowledgement Code
+            </AppText>
+            <AppText variant="caption" color={Colors.neutral[500]} style={{marginBottom: 10}}>
+              Sent to {parentEmail || "parent's email"}
+            </AppText>
+            <OtpInput length={OTP_LENGTH} value={emailOtp} onChange={setEmailOtp} />
+          </View>
+
+          {/* Phone Verification Code Section */}
+          <View style={[styles.otpSection, {marginTop: verticalScale(20)}]}>
+            <AppText variant="labelMedium" color={Colors.neutral[800]} style={{marginBottom: 4}}>
+              2. Parent Phone Verification Code
+            </AppText>
+            <AppText variant="caption" color={Colors.neutral[500]} style={{marginBottom: 10}}>
+              Sent to {parentPhone || "parent's phone"}
+            </AppText>
+            <OtpInput length={OTP_LENGTH} value={phoneOtp} onChange={setPhoneOtp} />
           </View>
 
           <View style={styles.resendSection}>
             <AppText variant="bodySmall" color={Colors.neutral[500]}>
-              Didn't receive the code?
+              Didn't receive the codes?
             </AppText>
             {canResend ? (
               <TouchableOpacity
@@ -500,7 +602,7 @@ export const ParentVerificationScreen: React.FC = () => {
             color="primary"
             size="lg"
             fullWidth
-            disabled={!isOtpComplete || isVerifying}
+            disabled={!isFormComplete || isVerifying}
             loading={isVerifying}
             onPress={handleVerify}
             style={styles.verifyButton}
@@ -517,6 +619,67 @@ export const ParentVerificationScreen: React.FC = () => {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      {/* Edit Parent Contact Modal */}
+      <Modal visible={isEditModalOpen} transparent animationType="slide" onRequestClose={() => setIsEditModalOpen(false)}>
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setIsEditModalOpen(false)}
+        >
+          <TouchableOpacity
+            style={styles.modalContent}
+            activeOpacity={1}
+            onPress={(e) => e.stopPropagation?.()}
+          >
+            <AppText variant="h5" color={Colors.neutral[900]} style={{marginBottom: 4}}>
+              Update Parent Contact Info
+            </AppText>
+            <AppText variant="bodySmall" color={Colors.neutral[500]} center style={{marginBottom: 16}}>
+              Enter your parent's email and phone number to resend the verification code.
+            </AppText>
+
+            <View style={{width: '100%'}}>
+              <Input
+                label="Parent Email Address"
+                placeholder="parent@example.com"
+                value={editEmail}
+                onChangeText={setEditEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
+              />
+
+              <View style={{marginTop: 12}}>
+                <Input
+                  label="Parent Phone Number"
+                  placeholder="(201) 555-0123"
+                  value={editPhone}
+                  onChangeText={setEditPhone}
+                  keyboardType="phone-pad"
+                  maxLength={10}
+                />
+              </View>
+            </View>
+
+            <View style={{flexDirection: 'row', gap: 12, marginTop: 24, width: '100%'}}>
+              <Button
+                title="Cancel"
+                variant="outline"
+                color="primary"
+                onPress={() => setIsEditModalOpen(false)}
+                style={{flex: 1}}
+              />
+              <Button
+                title="Update & Resend"
+                color="primary"
+                loading={isUpdatingContact}
+                onPress={handleSaveContact}
+                style={{flex: 1.2}}
+              />
+            </View>
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal>
     </SafeAreaView>
   );
 };

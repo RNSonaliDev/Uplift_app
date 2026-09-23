@@ -293,7 +293,7 @@ export default function MyProfileScreen() {
             <MenuItem 
               icon={<SettingsIcon color={Colors.neutral[500]} size={24} />} 
               title="Switch Role" 
-              onPress={() => profile && navigation.navigate('DashboardRoleSelection', { selectedRoles: userRoles })} 
+              onPress={() => profile && navigation.navigate('DashboardRoleSelection', { selectedRoles: userRoles, currentRole: profile.default_role })} 
             />
           )}
           {/* <MenuItem 

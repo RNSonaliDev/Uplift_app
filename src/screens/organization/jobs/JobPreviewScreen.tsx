@@ -20,7 +20,7 @@ export const JobPreviewScreen = () => {
       setPublishing(true);
       await api.post(`/job_posts/${job.id}/publish`);
       Toast.show({ type: 'success', text1: 'Success', text2: 'Job published successfully!' });
-      navigation.navigate('JobsListing');
+      navigation.navigate('OrganizationTabs', { screen: 'JobsTab' });
     } catch (error: any) {
       Toast.show({ type: 'error', text1: 'Error', text2: error?.message || 'Failed to publish job.' });
     } finally {

@@ -143,21 +143,23 @@ interface DashboardCardProps {
   role: string;
   onPress: () => void;
   disabled?: boolean;
+  isCurrent?: boolean;
 }
 
-const DashboardCard: React.FC<DashboardCardProps> = ({ role, onPress, disabled }) => {
+const DashboardCard: React.FC<DashboardCardProps> = ({ role, onPress, disabled, isCurrent }) => {
   const getIcon = () => {
+    const iconColor = isCurrent ? Colors.neutral[500] : Colors.primary[500];
     switch (role) {
       case 'beneficiary':
-        return <BeneficiaryIcon size={moderateScale(28)} />;
+        return <BeneficiaryIcon size={moderateScale(26)} color={iconColor} />;
       case 'volunteer':
-        return <VolunteerIcon size={moderateScale(28)} />;
+        return <VolunteerIcon size={moderateScale(26)} color={iconColor} />;
       case 'organization':
-        return <OrganizationIcon size={moderateScale(28)} />;
+        return <OrganizationIcon size={moderateScale(26)} color={iconColor} />;
       case 'sponsor':
-        return <SponsorIcon size={moderateScale(28)} />;
+        return <SponsorIcon size={moderateScale(26)} color={iconColor} />;
       default:
-        return <BeneficiaryIcon size={moderateScale(28)} />;
+        return <BeneficiaryIcon size={moderateScale(26)} color={iconColor} />;
     }
   };
 
@@ -181,14 +183,43 @@ const DashboardCard: React.FC<DashboardCardProps> = ({ role, onPress, disabled }
   };
 
   return (
-    <TouchableOpacity style={[styles.card, disabled && styles.cardDisabled]} onPress={onPress} activeOpacity={0.7} disabled={disabled}>
+    <TouchableOpacity
+      style={[
+        styles.card,
+        isCurrent ? styles.cardCurrent : styles.cardAvailable,
+        disabled && !isCurrent && styles.cardLoading,
+      ]}
+      onPress={onPress}
+      activeOpacity={isCurrent ? 1 : 0.7}
+      disabled={disabled || isCurrent}>
       <View style={styles.cardHeader}>
-        <View style={styles.iconContainer}>{getIcon()}</View>
+        <View style={[styles.iconContainer, isCurrent && styles.iconContainerCurrent]}>
+          {getIcon()}
+        </View>
+        {isCurrent ? (
+          <View style={styles.currentBadge}>
+            <AppText variant="caption" style={styles.currentBadgeText}>
+              Current Role
+            </AppText>
+          </View>
+        ) : (
+          <View style={styles.availableBadge}>
+            <AppText variant="caption" style={styles.availableBadgeText}>
+              Available
+            </AppText>
+          </View>
+        )}
       </View>
-      <AppText variant="h6" color={Colors.neutral[900]} style={styles.cardTitle}>
+      <AppText
+        variant="h6"
+        color={isCurrent ? Colors.neutral[600] : Colors.neutral[900]}
+        style={styles.cardTitle}>
         {getTitle()} Dashboard
       </AppText>
-      <AppText variant="caption" color={Colors.neutral[500]} style={styles.cardDescription}>
+      <AppText
+        variant="caption"
+        color={isCurrent ? Colors.neutral[400] : Colors.neutral[500]}
+        style={styles.cardDescription}>
         {getDescription()}
       </AppText>
     </TouchableOpacity>
@@ -200,16 +231,21 @@ const DashboardCard: React.FC<DashboardCardProps> = ({ role, onPress, disabled }
 export const DashboardRoleSelectionScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProps>();
   const route = useRoute<DashboardRoleSelectionRouteProp>();
-  const selectedRoles = route.params?.selectedRoles || [];
+  const routeSelectedRoles = route.params?.selectedRoles || [];
+  const [userRoles, setUserRoles] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [currentRole, setCurrentRole] = useState<string | null>(route.params?.currentRole || null);
 
   React.useEffect(() => {
     const fetchProfile = async () => {
-      if (currentRole) return;
       try {
         const profile = await authApi.getProfile();
-        setCurrentRole(profile.default_role);
+        if (!currentRole && profile.default_role) {
+          setCurrentRole(profile.default_role);
+        }
+        if (profile.roles && profile.roles.length > 0) {
+          setUserRoles(profile.roles);
+        }
       } catch (e) {
         // ignore
       }
@@ -217,16 +253,17 @@ export const DashboardRoleSelectionScreen: React.FC = () => {
     fetchProfile();
   }, [currentRole]);
 
+  const rolesToDisplay =
+    routeSelectedRoles.length > 0
+      ? routeSelectedRoles
+      : userRoles.length > 0
+      ? userRoles
+      : ['beneficiary', 'volunteer', 'organization', 'sponsor'];
+
   const handleRoleSelect = async (role: string) => {
     try {
       setIsLoading(true);
       await authApi.setDefaultRole({ default_role: role });
-
-      // if (role === 'volunteer') {
-      //   navigation.navigate('VolunteerFlow');
-      // } else {
-      //   navigation.navigate('BeneficiaryFlow');
-      // }
 
       if (role === 'volunteer') {
         navigation.reset({ index: 0, routes: [{ name: 'VolunteerFlow' as any }] });
@@ -237,7 +274,7 @@ export const DashboardRoleSelectionScreen: React.FC = () => {
       } else if (role === 'beneficiary') {
         navigation.reset({ index: 0, routes: [{ name: 'BeneficiaryFlow' as any }] });
       } else {
-        navigation.reset({ index: 0, routes: [{ name: 'DashboardRoleSelection' as any, params: { selectedRoles } }] });
+        navigation.reset({ index: 0, routes: [{ name: 'DashboardRoleSelection' as any, params: { selectedRoles: rolesToDisplay } }] });
       }
     } catch (error: any) {
       Toast.show({
@@ -283,14 +320,18 @@ export const DashboardRoleSelectionScreen: React.FC = () => {
           </AppText>
 
           <View style={styles.cardsContainer}>
-            {selectedRoles.map((role, index) => (
-              <DashboardCard
-                key={`${role}-${index}`}
-                role={role}
-                onPress={() => handleRoleSelect(role)}
-                disabled={isLoading || role === currentRole}
-              />
-            ))}
+            {rolesToDisplay.map((role, index) => {
+              const isCurrent = role === currentRole;
+              return (
+                <DashboardCard
+                  key={`${role}-${index}`}
+                  role={role}
+                  onPress={() => handleRoleSelect(role)}
+                  disabled={isLoading}
+                  isCurrent={isCurrent}
+                />
+              );
+            })}
           </View>
 
           {isLoading && (
@@ -351,11 +392,8 @@ const styles = StyleSheet.create({
   },
   card: {
     width: (width - horizontalScale(48) - horizontalScale(16)) / 2,
-    backgroundColor: Colors.neutral[0],
     borderRadius: BorderRadius.xl,
-    borderWidth: 1,
-    borderColor: Colors.neutral[200],
-    padding: moderateScale(16),
+    padding: moderateScale(14),
     marginBottom: verticalScale(16),
     shadowColor: Colors.neutral[900],
     shadowOffset: {
@@ -366,7 +404,18 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 2,
   },
-  cardDisabled: {
+  cardAvailable: {
+    backgroundColor: Colors.neutral[0],
+    borderWidth: 2,
+    borderColor: Colors.primary[500],
+  },
+  cardCurrent: {
+    backgroundColor: Colors.neutral[100],
+    borderWidth: 1.5,
+    borderColor: Colors.neutral[300],
+    opacity: 0.8,
+  },
+  cardLoading: {
     opacity: 0.6,
   },
   cardHeader: {
@@ -376,12 +425,39 @@ const styles = StyleSheet.create({
     marginBottom: verticalScale(16),
   },
   iconContainer: {
-    width: moderateScale(56),
-    height: moderateScale(56),
+    width: moderateScale(44),
+    height: moderateScale(44),
     borderRadius: BorderRadius.md,
     backgroundColor: Colors.primary[50],
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  iconContainerCurrent: {
+    backgroundColor: Colors.neutral[200],
+  },
+  currentBadge: {
+    backgroundColor: Colors.neutral[200],
+    paddingHorizontal: horizontalScale(6),
+    paddingVertical: verticalScale(3),
+    borderRadius: BorderRadius.full,
+  },
+  currentBadgeText: {
+    color: Colors.neutral[700],
+    fontFamily: FontFamily.semiBold,
+    fontSize: fontScale(10),
+  },
+  availableBadge: {
+    backgroundColor: Colors.primary[50],
+    paddingHorizontal: horizontalScale(6),
+    paddingVertical: verticalScale(3),
+    borderRadius: BorderRadius.full,
+    borderWidth: 1,
+    borderColor: Colors.primary[200],
+  },
+  availableBadgeText: {
+    color: Colors.primary[700],
+    fontFamily: FontFamily.semiBold,
+    fontSize: fontScale(10),
   },
   cardTitle: {
     fontFamily: FontFamily.semiBold,

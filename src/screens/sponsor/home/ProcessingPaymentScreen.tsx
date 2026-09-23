@@ -25,7 +25,7 @@ export default function ProcessingPaymentScreen() {
       if (!donationId) {
         // Fallback if donationId is missing
         setTimeout(() => {
-          navigation.replace('PaymentSuccessful', { amount });
+          navigation.replace('PaymentSuccessful', { amount, recipientType });
         }, 1500);
         return;
       }
@@ -41,13 +41,13 @@ export default function ProcessingPaymentScreen() {
           }, 1500);
         } else {
           setTimeout(() => {
-            navigation.replace('PaymentSuccessful', { amount, donation: res });
+            navigation.replace('PaymentSuccessful', { amount, recipientType, donation: res });
           }, 1500);
         }
       } catch (error) {
         console.error('Failed to confirm donation', error);
         setTimeout(() => {
-          navigation.replace('PaymentSuccessful', { amount });
+          navigation.replace('PaymentSuccessful', { amount, recipientType });
         }, 1500);
       }
     };

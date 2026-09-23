@@ -254,21 +254,23 @@ export const CreateProfileScreen: React.FC = () => {
   const [phoneNumber, setPhoneNumber] = useState(!isEmail ? emailOrPhone.replace('+1', '') : '');
   const [dob, setDob] = useState<Date | null>(route.params?.dob ? new Date(route.params.dob) : null);
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
-  const [parentEmail, setParentEmail] = useState(route.params?.parentEmail || '');
+  const [parentEmail, setParentEmail] = useState((route.params as any)?.parentEmail || '');
+  const [parentPhone, setParentPhone] = useState((route.params as any)?.parentPhone || '');
   const [showParentVerificationModal, setShowParentVerificationModal] = useState(false);
   const [isSendingParentVerification, setIsSendingParentVerification] = useState(false);
   const [contactPhone, setContactPhone] = useState('');
   const [contactAddress, setContactAddress] = useState('');
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
+  const [governmentId, setGovernmentId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<{[key: string]: string}>({});
 
-  // const age = dob ? (new Date().getTime() - dob.getTime()) / (1000 * 60 * 60 * 24 * 365.25) : null;
   const age = dob
   ? (new Date().getTime() - (dob.getTime() - 24 * 60 * 60 * 1000)) /
     (1000 * 60 * 60 * 24 * 365.25)
   : null;
-const is14To17 = age !== null && age >= 14 && age < 18 ;  // Info tooltip visibility
+  const is14To17 = age !== null && age >= 14 && age < 18;
+  const is18Plus = age !== null && age >= 18;
   const [showPhoneInfo, setShowPhoneInfo] = useState(false);
 
   const validate = () => {
@@ -296,11 +298,22 @@ const is14To17 = age !== null && age >= 14 && age < 18 ;  // Info tooltip visibi
       newErrors.dob = 'You must be at least 14 years old';
     }
 
+    if (is18Plus && !governmentId) {
+      newErrors.governmentId = 'Government ID photo is required for ages 18+';
+    }
+
     if (is14To17) {
       if (!parentEmail.trim()) {
-        newErrors.parentEmail = 'Parent email is required';
+        newErrors.parentEmail = 'Parent email address is required';
       } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(parentEmail)) {
         newErrors.parentEmail = 'Please enter a valid email address';
+      }
+
+      const pPhoneDigits = parentPhone.replace(/\D/g, '');
+      if (!parentPhone.trim()) {
+        newErrors.parentPhone = 'Parent phone number is required';
+      } else if (pPhoneDigits.length < 10) {
+        newErrors.parentPhone = 'Please enter a valid 10-digit phone number';
       }
     }
 
@@ -308,17 +321,32 @@ const is14To17 = age !== null && age >= 14 && age < 18 ;  // Info tooltip visibi
     return Object.keys(newErrors).length === 0;
   };
 
+  const handleSelectGovernmentId = async () => {
+    const result = await launchImageLibrary({
+      mediaType: 'photo',
+      quality: 0.8,
+    });
+    
+    if (result.assets && result.assets.length > 0) {
+      setGovernmentId(result.assets[0].uri || null);
+      if (errors.governmentId) setErrors({...errors, governmentId: ''});
+    }
+  };
+
   const handleSendParentVerification = async () => {
     try {
       setIsSendingParentVerification(true);
-      await authApi.sendParentVerification();
+      await authApi.sendParentVerification({
+        parent_email: parentEmail,
+        parent_phone: parentPhone ? `+1${parentPhone.replace(/\D/g, '')}` : undefined,
+      });
       setShowParentVerificationModal(false);
       Toast.show({
         type: 'success',
         text1: 'Success',
-        text2: 'Verification code sent to parent email',
+        text2: 'Verification code sent to parent email & phone',
       });
-      navigation.navigate('ParentVerification' as any, { parentEmail });
+      navigation.navigate('ParentVerification' as any, { parentEmail, parentPhone });
     } catch (error: any) {
       Toast.show({
         type: 'error',
@@ -349,8 +377,17 @@ const is14To17 = age !== null && age >= 14 && age < 18 ;  // Info tooltip visibi
         formData.append('date_of_birth', dob.toISOString().split('T')[0]);
       }
       
-      if (is14To17 && parentEmail) {
-        formData.append('parent_email', parentEmail);
+      if (is14To17) {
+        if (parentEmail) formData.append('parent_email', parentEmail);
+        if (parentPhone) formData.append('parent_phone', `+1${parentPhone.replace(/\D/g, '')}`);
+      }
+
+      if (is18Plus && governmentId) {
+        formData.append('government_id', {
+          uri: governmentId,
+          type: 'image/jpeg',
+          name: 'government_id.jpg',
+        } as any);
       }
 
       if (profilePhoto) {
@@ -603,8 +640,61 @@ const is14To17 = age !== null && age >= 14 && age < 18 ;  // Info tooltip visibi
                   </View>
                 </TouchableOpacity>
 
-                {is14To17 && (
+                {/* Government ID Photo (Required for Ages 18+) */}
+                {is18Plus && (
                   <View style={{marginTop: verticalScale(16)}}>
+                    <View style={{flexDirection: 'row', alignItems: 'center', marginBottom: 6}}>
+                      <AppText variant="labelMedium" color={Colors.neutral[700]}>
+                        Government ID Photo
+                      </AppText>
+                      <AppText variant="labelMedium" color={Colors.error} style={{marginLeft: 4}}>
+                        *
+                      </AppText>
+                    </View>
+                    <TouchableOpacity
+                      style={[
+                        styles.idUploadBox,
+                        errors.governmentId ? { borderColor: Colors.error } : null
+                      ]}
+                      onPress={handleSelectGovernmentId}
+                      activeOpacity={0.7}
+                    >
+                      {governmentId ? (
+                        <View style={styles.idPreviewContainer}>
+                          <Image source={{ uri: governmentId }} style={styles.idImagePreview} resizeMode="cover" />
+                          <View style={styles.changeIdBadge}>
+                            <AppText variant="labelSmall" color={Colors.neutral[0]} weight="bold">Change ID</AppText>
+                          </View>
+                        </View>
+                      ) : (
+                        <View style={styles.idUploadPlaceholder}>
+                          <CameraIcon size={32} color={Colors.primary[500]} />
+                          <AppText variant="bodySmall" color={Colors.neutral[600]} style={{marginTop: 8, textAlign: 'center'}}>
+                            Upload a clear photo of your Government ID{'\n'}(Driver's License, Passport, State ID)
+                          </AppText>
+                          <AppText variant="labelMedium" color={Colors.primary[500]} weight="bold" style={{marginTop: 6}}>
+                            Upload Photo
+                          </AppText>
+                        </View>
+                      )}
+                    </TouchableOpacity>
+                    {errors.governmentId ? (
+                      <AppText variant="caption" color={Colors.error} style={{marginTop: 4}}>
+                        {errors.governmentId}
+                      </AppText>
+                    ) : null}
+                  </View>
+                )}
+
+                {is14To17 && (
+                  <View style={{marginTop: verticalScale(16), backgroundColor: Colors.primary[50], padding: 14, borderRadius: 12, borderWidth: 1, borderColor: Colors.primary[100]}}>
+                    <AppText variant="labelMedium" color={Colors.primary[900]} style={{marginBottom: 4}}>
+                      Parent / Guardian Consent Required
+                    </AppText>
+                    <AppText variant="bodySmall" color={Colors.neutral[600]} style={{marginBottom: 12}}>
+                      Since you are under 18, we require both your parent's email address and phone number to send the activation code.
+                    </AppText>
+
                     <Input
                       label="Parent/Guardian Email Address"
                       placeholder="Enter parent's email address"
@@ -618,9 +708,22 @@ const is14To17 = age !== null && age >= 14 && age < 18 ;  // Info tooltip visibi
                       autoCapitalize="none"
                       error={errors.parentEmail}
                     />
-                    <AppText variant="bodySmall" color={Colors.neutral[500]} style={{marginTop: 4, paddingHorizontal: 4}}>
-                      Since you are under 18, we require a parent's email to approve your account.
-                    </AppText>
+
+                    <View style={{marginTop: verticalScale(12)}}>
+                      <Input
+                        label="Parent/Guardian Phone Number"
+                        placeholder="(201) 555-0123"
+                        leftIcon={<PhonePrefixPrefix />}
+                        value={parentPhone}
+                        onChangeText={(text) => {
+                          setParentPhone(text);
+                          if (errors.parentPhone) setErrors({...errors, parentPhone: ''});
+                        }}
+                        keyboardType="phone-pad"
+                        maxLength={10}
+                        error={errors.parentPhone}
+                      />
+                    </View>
                   </View>
                 )}
               </View>
@@ -670,9 +773,18 @@ const is14To17 = age !== null && age >= 14 && age < 18 ;  // Info tooltip visibi
         visible={showParentVerificationModal}
         transparent
         animationType="fade"
+        onRequestClose={() => setShowParentVerificationModal(false)}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setShowParentVerificationModal(false)}
+        >
+          <TouchableOpacity
+            style={styles.modalContent}
+            activeOpacity={1}
+            onPress={(e) => e.stopPropagation?.()}
+          >
             <View style={styles.modalIconContainer}>
               <MailIcon size={32} />
             </View>
@@ -686,8 +798,8 @@ const is14To17 = age !== null && age >= 14 && age < 18 ;  // Info tooltip visibi
               loading={isSendingParentVerification}
               style={{width: '100%'}}
             />
-          </View>
-        </View>
+          </TouchableOpacity>
+        </TouchableOpacity>
       </Modal>
     </SafeAreaView>
   );
@@ -841,5 +953,40 @@ const styles = StyleSheet.create({
   continueButton: {
     borderRadius: BorderRadius.xl,
     height: verticalScale(52),
+  },
+  idUploadBox: {
+    borderWidth: 1.5,
+    borderColor: Colors.neutral[300],
+    borderStyle: 'dashed',
+    borderRadius: BorderRadius.md,
+    backgroundColor: Colors.primary[50],
+    padding: moderateScale(16),
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: verticalScale(110),
+  },
+  idUploadPlaceholder: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  idPreviewContainer: {
+    width: '100%',
+    height: verticalScale(140),
+    borderRadius: BorderRadius.md,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  idImagePreview: {
+    width: '100%',
+    height: '100%',
+  },
+  changeIdBadge: {
+    position: 'absolute',
+    bottom: 8,
+    right: 8,
+    backgroundColor: Colors.primary[600],
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: BorderRadius.md,
   },
 });

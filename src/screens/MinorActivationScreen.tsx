@@ -82,12 +82,21 @@ export const MinorActivationScreen: React.FC = () => {
     }
   };
 
-  const handleResend = () => {
-    Toast.show({
-      type: 'info',
-      text1: 'Email Resent',
-      text2: 'We have resent the activation email to your parent.',
-    });
+  const handleResend = async () => {
+    try {
+      await authApi.sendParentVerification();
+      Toast.show({
+        type: 'success',
+        text1: 'Code Resent',
+        text2: 'We have resent the activation code to your parent email & phone.',
+      });
+    } catch (error: any) {
+      Toast.show({
+        type: 'error',
+        text1: 'Resend Failed',
+        text2: error?.data?.errors?.[0] || error?.message || 'Failed to resend code',
+      });
+    }
   };
 
   return (
@@ -106,14 +115,14 @@ export const MinorActivationScreen: React.FC = () => {
               <LockIcon size={moderateScale(48)} />
             </View>
             <AppText variant="h2" center color={Colors.primary[900]} style={styles.title}>
-              Account Dormant
+              Parent Verification Required
             </AppText>
             <AppText
               variant="bodyMedium"
               center
               color={Colors.neutral[500]}
               style={styles.subtitle}>
-              Since you are under 18, we have sent an email to your parent or guardian. Please ask them to review the Terms & Conditions and provide the activation code.
+              Since you are under 18, parental consent is required. We have sent a 6-digit verification code to your parent's email and phone number.
             </AppText>
           </View>
 
@@ -145,7 +154,7 @@ export const MinorActivationScreen: React.FC = () => {
             />
             
             <Button
-              title="Resend Email"
+              title="Resend Code"
               variant="outline"
               color="primary"
               size="lg"

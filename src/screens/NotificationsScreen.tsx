@@ -10,9 +10,9 @@ import {
 } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { Colors } from '../theme/colors';
-import { Typography } from '../theme/typography';
+import { Typography, FontFamily } from '../theme/typography';
 import { AppText } from '../components/AppText';
-import { horizontalScale, verticalScale, moderateScale } from '../utils/responsive';
+import { horizontalScale, verticalScale, moderateScale, fontScale } from '../utils/responsive';
 import { notificationsApi, AppNotification } from '../api/notifications';
 import { authApi } from '../api/auth';
 import Toast from 'react-native-toast-message';
@@ -105,14 +105,16 @@ export default function NotificationsScreen() {
   };
 
   const renderItem = ({ item }: { item: AppNotification }) => {
-    const isUnread = !item.read;
+    const isUnread = item.is_read === false || (item.is_read === undefined && !(item as any).read);
     const date = new Date(item.created_at);
     
     // Very simple relative time formatting
     const now = new Date();
     const diffHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
     let timeText = '';
-    if (diffHours < 1) {
+    if (isNaN(date.getTime())) {
+      timeText = 'Recently';
+    } else if (diffHours < 1) {
       timeText = 'Just now';
     } else if (diffHours < 24) {
       timeText = `${diffHours}h ago`;
@@ -125,21 +127,33 @@ export default function NotificationsScreen() {
       <TouchableOpacity
         style={[styles.notificationCard, isUnread && styles.unreadCard]}
         onPress={() => isUnread && handleMarkAsRead(item.id)}
+        activeOpacity={isUnread ? 0.7 : 1}
         disabled={!isUnread}
       >
-        {/* <View style={styles.iconContainer}>
-          <Bell color={isUnread ? Colors.primary[500] : Colors.neutral[400]} size={24} />
+        <View style={styles.iconContainer}>
+          <View style={[styles.bellBg, isUnread ? styles.unreadBellBg : styles.readBellBg]}>
+            <Bell color={isUnread ? Colors.primary[500] : Colors.neutral[400]} size={20} />
+          </View>
           {isUnread && <View style={styles.unreadDotBadge} />}
-        </View> */}
+        </View>
         <View style={styles.contentContainer}>
-          <AppText variant="labelLarge" style={styles.title}>
-            {item.title}
-          </AppText>
-          <AppText variant="bodyMedium" style={styles.message}>
+          <View style={styles.titleRow}>
+            <AppText variant="labelLarge" style={[styles.title, isUnread && styles.unreadTitle]}>
+              {item.title}
+            </AppText>
+            {isUnread && (
+              <View style={styles.newBadge}>
+                <AppText variant="caption" style={styles.newBadgeText}>
+                  NEW
+                </AppText>
+              </View>
+            )}
+          </View>
+          <AppText variant="bodyMedium" style={[styles.message, isUnread ? styles.unreadMessage : styles.readMessage]}>
             {item.message || (item as any).body || (item as any).content}
           </AppText>
           <View style={styles.footerRow}>
-            <Clock color={Colors.neutral[400]} size={14} />
+            <Clock color={isUnread ? Colors.primary[400] : Colors.neutral[400]} size={14} />
             <AppText variant="caption" style={styles.timeText}>
               {timeText}
             </AppText>
@@ -159,14 +173,13 @@ export default function NotificationsScreen() {
         </TouchableOpacity>
         <AppText variant="h5" color={Colors.neutral[0]} style={{textAlign: 'center'}}>Notifications</AppText>
         
-        {/* {notifications.some(n => !n.is_read) ? (
+        {notifications.some(n => n.is_read === false || (n.is_read === undefined && !(n as any).read)) ? (
           <TouchableOpacity onPress={handleMarkAllAsRead} style={styles.markAllBtn}>
-            <CheckCircle color={Colors.primary[500]} size={22} />
+            <CheckCircle color={Colors.neutral[0]} size={22} />
           </TouchableOpacity>
         ) : (
           <View style={{ width: 32 }} />
-        )} */}
-        <View style={{ width: 32 }} />
+        )}
       </View>
 
       {loading ? (
@@ -236,20 +249,40 @@ const styles = StyleSheet.create({
     marginBottom: verticalScale(12),
     borderWidth: 1,
     borderColor: Colors.neutral[200],
+    alignItems: 'flex-start',
+    shadowColor: Colors.neutral[900],
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.03,
+    shadowRadius: 6,
+    elevation: 1,
   },
   unreadCard: {
-    borderColor: Colors.primary[200],
+    borderColor: Colors.primary[300],
     backgroundColor: '#F5F3FF', // Very light purple tint
+    borderWidth: 1.5,
   },
   iconContainer: {
-    marginRight: horizontalScale(16),
+    marginRight: horizontalScale(12),
+    position: 'relative',
     alignItems: 'center',
-    justifyContent: 'flex-start',
-    paddingTop: verticalScale(2),
+    justifyContent: 'center',
+  },
+  bellBg: {
+    width: moderateScale(42),
+    height: moderateScale(42),
+    borderRadius: moderateScale(21),
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  unreadBellBg: {
+    backgroundColor: Colors.primary[50],
+  },
+  readBellBg: {
+    backgroundColor: Colors.neutral[100],
   },
   unreadDotBadge: {
     position: 'absolute',
-    top: 0,
+    top: -2,
     right: -2,
     width: moderateScale(10),
     height: moderateScale(10),
@@ -261,16 +294,40 @@ const styles = StyleSheet.create({
   contentContainer: {
     flex: 1,
   },
-  title: {
-    color: Colors.neutral[900],
+  titleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: verticalScale(4),
   },
+  title: {
+    color: Colors.neutral[600],
+    flex: 1,
+  },
+  unreadTitle: {
+    color: Colors.neutral[900],
+    fontWeight: '700',
+  },
+  newBadge: {
+    backgroundColor: Colors.error,
+    paddingHorizontal: horizontalScale(6),
+    paddingVertical: verticalScale(2),
+    borderRadius: moderateScale(8),
+    marginLeft: horizontalScale(8),
+  },
+  newBadgeText: {
+    color: Colors.neutral[0],
+    fontSize: fontScale(9),
+    fontWeight: '700',
+  },
   message: {
-    color: Colors.neutral[500],
     marginBottom: verticalScale(8),
     lineHeight: 20,
   },
-  readText: {
+  unreadMessage: {
+    color: Colors.neutral[800],
+  },
+  readMessage: {
     color: Colors.neutral[500],
   },
   footerRow: {

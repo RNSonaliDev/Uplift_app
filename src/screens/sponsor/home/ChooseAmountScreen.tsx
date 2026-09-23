@@ -14,7 +14,7 @@ import { useStripe } from '@stripe/stripe-react-native';
 import { Colors } from '../../../theme/colors';
 import { AppText } from '../../../components/AppText';
 import { Button } from '../../../components/Button';
-import { ChevronLeft, Heart, ChevronDown, X } from 'lucide-react-native';
+import { ChevronLeft, Heart, ChevronDown, X, ShieldCheck } from 'lucide-react-native';
 import { horizontalScale, verticalScale, moderateScale, fontScale } from '../../../utils/responsive';
 import { FontFamily } from '../../../theme/typography';
 
@@ -56,10 +56,11 @@ export default function ChooseAmountScreen() {
       });
       
       let newDonationId = null;
-      if (res.donation?.id) {
-        newDonationId = res.donation.id;
-      } else if (res.id) {
-        newDonationId = res.id as number;
+      const resAny = res as any;
+      if (resAny.donation?.id) {
+        newDonationId = resAny.donation.id;
+      } else if (resAny.id) {
+        newDonationId = resAny.id as number;
       }
       
       const clientSecret = res.client_secret;
@@ -107,9 +108,16 @@ export default function ChooseAmountScreen() {
       </View>
 
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-        {/* <AppText variant="bodyMedium" color={Colors.neutral[600]} style={styles.subtitle}>
-          Your support helps us make a real difference.
-        </AppText> */}
+        {/* Non-Profit Information Banner */}
+        <View style={styles.infoBanner}>
+          <ShieldCheck color={Colors.primary[500]} size={22} style={{ marginRight: 10, marginTop: 2 }} />
+          <AppText variant="caption" color={Colors.neutral[700]} style={styles.infoBannerText}>
+            Donations are processed by iUpliftU Foundation, Inc., a 501(c)(3) nonprofit. Tax-deductible to the extent permitted by law.{'\n\n'}
+            <AppText variant="caption" weight="semiBold" color={Colors.primary[700]}>
+              95% of your contribution goes directly to the community fund. A 5% platform fee keeps the platform running.
+            </AppText>
+          </AppText>
+        </View>
 
         {/* Recipient Type Selection */}
         <AppText variant="h5" color={Colors.neutral[900]} style={{marginBottom: 8}}>
@@ -177,6 +185,13 @@ export default function ChooseAmountScreen() {
               onFocus={() => setSelectedAmount('custom')}
             />
           </View>
+        </View>
+
+        {/* Legal Disclaimer Footer */}
+        <View style={styles.legalFooter}>
+          <AppText variant="caption" color={Colors.neutral[500]} center style={styles.legalFooterText}>
+            iUpliftU Foundation, Inc. · 501(c)(3) · EIN: [FOUNDATION EIN] · No goods or services provided in exchange for this contribution.
+          </AppText>
         </View>
       </ScrollView>
 
@@ -357,5 +372,28 @@ const styles = StyleSheet.create({
     paddingHorizontal: horizontalScale(24),
     paddingTop: verticalScale(16),
     paddingBottom: verticalScale(32),
-  }
+  },
+  infoBanner: {
+    flexDirection: 'row',
+    backgroundColor: Colors.primary[50],
+    borderWidth: 1,
+    borderColor: Colors.primary[200],
+    borderRadius: 14,
+    padding: moderateScale(14),
+    marginBottom: verticalScale(20),
+    alignItems: 'flex-start',
+  },
+  infoBannerText: {
+    flex: 1,
+    lineHeight: fontScale(18),
+  },
+  legalFooter: {
+    marginTop: verticalScale(20),
+    marginBottom: verticalScale(12),
+    paddingHorizontal: horizontalScale(4),
+  },
+  legalFooterText: {
+    lineHeight: fontScale(16),
+    fontSize: fontScale(11),
+  },
 });

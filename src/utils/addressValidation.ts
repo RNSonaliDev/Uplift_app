@@ -66,7 +66,7 @@ export const validateAddressType = (types: string[] = []): ValidationResult => {
       isBusinessAddress: false,
       addressType: 'residential',
       confidence: 'high',
-      message: 'This appears to be a residential address. For your safety, we recommend meeting at a public business address if possible.',
+      message: 'For your safety, please use the business address',
     };
   }
 
@@ -89,7 +89,6 @@ export const validateBusinessAddressWithAPI = async (address: string, apiKey: st
         },
         body: JSON.stringify({
           address: {
-            // regionCode: 'US',
             addressLines: [address],
           },
         }),
@@ -111,23 +110,30 @@ export const validateBusinessAddressWithAPI = async (address: string, apiKey: st
         isBusinessAddress: false,
         addressType: 'residential',
         confidence: 'high',
-        message: 'This appears to be a residential address. For your safety, we recommend meeting at a public business address if possible.',
+        message: 'For your safety, please use the business address',
       };
     } else if (isBusiness) {
-      // return {
-      //   isBusinessAddress: true,
-      //   addressType: 'business',
-      //   confidence: 'high',
-      //   message: '',
-      // };
+      return {
+        isBusinessAddress: true,
+        addressType: 'business',
+        confidence: 'high',
+        message: 'The selected address has been verified as a business address.',
+      };
     }
+
+    return {
+      isBusinessAddress: 'unknown',
+      addressType: 'unknown',
+      confidence: 'low',
+      message: 'Unable to verify address type. For your safety, please use the business address.',
+    };
   } catch (error) {
     console.log('Address Validation Error:', error);
     return {
       isBusinessAddress: 'unknown',
       addressType: 'unknown',
       confidence: 'low',
-      message: 'Unable to confidently verify the property type. Please ensure this is a public business address.',
+      message: 'Unable to confidently verify property type. For your safety, please use the business address.',
     };
   }
 };

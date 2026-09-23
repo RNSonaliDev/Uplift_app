@@ -21,15 +21,13 @@ export default function RequestSubmittedScreen() {
   const { referenceNumber } = route.params || {};
 
   const handleViewRequests = () => {
-    // Reset current stack to Dashboard
+    // Reset current stack and navigate directly to MyRequests tab
     navigation.dispatch(
       CommonActions.reset({
         index: 0,
-        routes: [{ name: 'BeneficiaryTabs', params: { screen: 'BeneficiaryDashboard' } }],
+        routes: [{ name: 'BeneficiaryTabs', params: { screen: 'MyRequests' } }],
       })
     );
-    // Navigate to Requests Tab
-    navigation.navigate('MyRequests');
   };
 
   const handleGoToDashboard = () => {

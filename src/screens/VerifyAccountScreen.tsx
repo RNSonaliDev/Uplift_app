@@ -587,9 +587,18 @@ export const VerifyAccountScreen: React.FC = () => {
         visible={showParentVerificationModal}
         transparent
         animationType="fade"
+        onRequestClose={() => setShowParentVerificationModal(false)}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setShowParentVerificationModal(false)}
+        >
+          <TouchableOpacity
+            style={styles.modalContent}
+            activeOpacity={1}
+            onPress={(e) => e.stopPropagation?.()}
+          >
             <View style={styles.modalIconContainer}>
               <MailIcon size={32} />
             </View>
@@ -603,8 +612,8 @@ export const VerifyAccountScreen: React.FC = () => {
               loading={isSendingParentVerification}
               style={{width: '100%'}}
             />
-          </View>
-        </View>
+          </TouchableOpacity>
+        </TouchableOpacity>
       </Modal>
     </SafeAreaView>
   );
