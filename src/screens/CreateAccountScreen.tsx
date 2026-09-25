@@ -236,7 +236,7 @@ export const CreateAccountScreen: React.FC = () => {
     try {
       setIsAppleLoading(true);
       const result = await socialAuthService.signInWithApple();
-
+      console.log("@@@@@@@@result", result);
       const response = await authApi.socialLogin({
         provider: result.provider,
         id_token: result.idToken,

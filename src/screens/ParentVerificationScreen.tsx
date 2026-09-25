@@ -59,7 +59,10 @@ const EditIcon: React.FC<{size?: number; color?: string}> = ({
   </Svg>
 );
 
-const MailIcon: React.FC<{size?: number}> = ({size = 24}) => (
+const MailIcon: React.FC<{size?: number; color?: string}> = ({
+  size = 24,
+  color = Colors.primary[500],
+}) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Rect
       x="3"
@@ -67,12 +70,12 @@ const MailIcon: React.FC<{size?: number}> = ({size = 24}) => (
       width="18"
       height="14"
       rx="2"
-      stroke={Colors.primary[500]}
+      stroke={color}
       strokeWidth="1.5"
     />
     <Path
       d="M3 7L12 13L21 7"
-      stroke={Colors.primary[500]}
+      stroke={color}
       strokeWidth="1.5"
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -80,7 +83,10 @@ const MailIcon: React.FC<{size?: number}> = ({size = 24}) => (
   </Svg>
 );
 
-const PhoneIcon: React.FC<{size?: number}> = ({size = 24}) => (
+const PhoneIcon: React.FC<{size?: number; color?: string}> = ({
+  size = 24,
+  color = Colors.primary[500],
+}) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Rect
       x="7"
@@ -88,14 +94,29 @@ const PhoneIcon: React.FC<{size?: number}> = ({size = 24}) => (
       width="10"
       height="20"
       rx="2"
-      stroke={Colors.primary[500]}
+      stroke={color}
       strokeWidth="1.5"
     />
     <Path
       d="M11 18H13"
-      stroke={Colors.primary[500]}
+      stroke={color}
       strokeWidth="1.5"
       strokeLinecap="round"
+    />
+  </Svg>
+);
+
+const RightArrowIcon: React.FC<{size?: number; color?: string}> = ({
+  size = 20,
+  color = Colors.neutral[0],
+}) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path
+      d="M5 12H19M19 12L12 5M19 12L12 19"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
     />
   </Svg>
 );
@@ -202,18 +223,18 @@ const otpStyles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    gap: moderateScale(10),
+    gap: moderateScale(8),
   },
   input: {
     flex: 1,
     aspectRatio: 1,
-    maxWidth: moderateScale(52),
-    maxHeight: moderateScale(52),
+    maxWidth: moderateScale(44),
+    maxHeight: moderateScale(44),
     borderWidth: 1.5,
     borderColor: Colors.neutral[300],
     borderRadius: BorderRadius.md,
     textAlign: 'center',
-    fontSize: fontScale(22),
+    fontSize: fontScale(18),
     fontFamily: FontFamily.semiBold,
     color: Colors.primary[500],
     backgroundColor: Colors.neutral[0],
@@ -294,6 +315,15 @@ type RootStackParamList = {
 type NavigationProps = NativeStackNavigationProp<RootStackParamList>;
 type ParentVerificationRouteProp = RouteProp<RootStackParamList, 'ParentVerification'>;
 
+const formatPhoneNumber = (phone?: string) => {
+  if (!phone) return 'Not provided';
+  const trimmed = phone.trim();
+  if (trimmed.startsWith('+')) return trimmed;
+  const digits = trimmed.replace(/\D/g, '');
+  if (!digits) return phone;
+  return `+1 ${digits}`;
+};
+
 export const ParentVerificationScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProps>();
   const route = useRoute<ParentVerificationRouteProp>();
@@ -307,55 +337,98 @@ export const ParentVerificationScreen: React.FC = () => {
 
   const [emailOtp, setEmailOtp] = useState<string[]>(Array(OTP_LENGTH).fill(''));
   const [phoneOtp, setPhoneOtp] = useState<string[]>(Array(OTP_LENGTH).fill(''));
-  const [timer, setTimer] = useState(RESEND_TIMER_SECONDS);
-  const [canResend, setCanResend] = useState(false);
+
+  const [emailTimer, setEmailTimer] = useState(RESEND_TIMER_SECONDS);
+  const [canResendEmail, setCanResendEmail] = useState(false);
+  const [isResendingEmail, setIsResendingEmail] = useState(false);
+
+  const [phoneTimer, setPhoneTimer] = useState(RESEND_TIMER_SECONDS);
+  const [canResendPhone, setCanResendPhone] = useState(false);
+  const [isResendingPhone, setIsResendingPhone] = useState(false);
+
   const [isVerifying, setIsVerifying] = useState(false);
-  const [isResending, setIsResending] = useState(false);
 
   useEffect(() => {
-    if (timer <= 0) {
-      setCanResend(true);
+    if (emailTimer <= 0) {
+      setCanResendEmail(true);
       return;
     }
-
     const interval = setInterval(() => {
-      setTimer(prev => prev - 1);
+      setEmailTimer(prev => prev - 1);
     }, 1000);
-
     return () => clearInterval(interval);
-  }, [timer]);
+  }, [emailTimer]);
 
-  const handleResend = useCallback(async () => {
-    if (!canResend || isResending) {
+  useEffect(() => {
+    if (phoneTimer <= 0) {
+      setCanResendPhone(true);
       return;
     }
-    
+    const interval = setInterval(() => {
+      setPhoneTimer(prev => prev - 1);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [phoneTimer]);
+
+  const handleResendEmail = useCallback(async () => {
+    if (!canResendEmail || isResendingEmail) {
+      return;
+    }
+
     try {
-      setIsResending(true);
+      setIsResendingEmail(true);
       await authApi.sendParentVerification({
         parent_email: parentEmail || undefined,
-        parent_phone: parentPhone ? `+1${parentPhone.replace(/\D/g, '')}` : undefined,
       });
 
-      setTimer(RESEND_TIMER_SECONDS);
-      setCanResend(false);
+      setEmailTimer(RESEND_TIMER_SECONDS);
+      setCanResendEmail(false);
       setEmailOtp(Array(OTP_LENGTH).fill(''));
-      setPhoneOtp(Array(OTP_LENGTH).fill(''));
       Toast.show({
         type: 'success',
         text1: 'Success',
-        text2: 'Verification codes resent to parent email & phone',
+        text2: 'Verification code resent to parent email',
       });
     } catch (error: any) {
       Toast.show({
         type: 'error',
         text1: 'Error',
-        text2: error?.data?.errors?.[0] || error?.message || 'Failed to resend codes',
+        text2: error?.data?.errors?.[0] || error?.message || 'Failed to resend email code',
       });
     } finally {
-      setIsResending(false);
+      setIsResendingEmail(false);
     }
-  }, [canResend, isResending, parentEmail, parentPhone]);
+  }, [canResendEmail, isResendingEmail, parentEmail]);
+
+  const handleResendPhone = useCallback(async () => {
+    if (!canResendPhone || isResendingPhone) {
+      return;
+    }
+
+    try {
+      setIsResendingPhone(true);
+      await authApi.sendParentVerification({
+        parent_phone: parentPhone ? `+1${parentPhone.replace(/\D/g, '')}` : undefined,
+      });
+
+      setPhoneTimer(RESEND_TIMER_SECONDS);
+      setCanResendPhone(false);
+      setPhoneOtp(Array(OTP_LENGTH).fill(''));
+      Toast.show({
+        type: 'success',
+        text1: 'Success',
+        text2: 'Verification code resent to parent phone',
+      });
+    } catch (error: any) {
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: error?.data?.errors?.[0] || error?.message || 'Failed to resend phone code',
+      });
+    } finally {
+      setIsResendingPhone(false);
+    }
+  }, [canResendPhone, isResendingPhone, parentPhone]);
 
   const handleSaveContact = async () => {
     if (!editEmail.trim()) {
@@ -378,8 +451,10 @@ export const ParentVerificationScreen: React.FC = () => {
       setParentEmail(editEmail);
       setParentPhone(editPhone);
       setIsEditModalOpen(false);
-      setTimer(RESEND_TIMER_SECONDS);
-      setCanResend(false);
+      setEmailTimer(RESEND_TIMER_SECONDS);
+      setCanResendEmail(false);
+      setPhoneTimer(RESEND_TIMER_SECONDS);
+      setCanResendPhone(false);
       setEmailOtp(Array(OTP_LENGTH).fill(''));
       setPhoneOtp(Array(OTP_LENGTH).fill(''));
 
@@ -416,54 +491,53 @@ export const ParentVerificationScreen: React.FC = () => {
       setIsVerifying(true);
       const emailCode = emailOtp.join('');
       const phoneCode = phoneOtp.join('');
-      
+
       const response = await authApi.verifyParentVerification({
         parent_verification: {
           code: emailCode,
           email_code: emailCode,
           phone_code: phoneCode,
-        } as any
+        } as any,
       });
-      console.log("@@@@responseresponseresponseresponse ========================", response.registration_step)
-        if (response.access_token) {
-          await persistAuthToken(response.access_token);
-        }
 
-        const pendingRoles = response?.pending_roles || [];
-        
-        if (pendingRoles.length > 0) {
-          const nextRoles = [...pendingRoles];
-          const nextRole = nextRoles.shift();
-          const routeParams = {
-            pendingRoles: nextRoles,
-            selectedRoles: response?.selected_roles || pendingRoles,
-            collectedRolesData: [],
-          };
-          
-          if (nextRole === 'volunteer') {
-            navigation.reset({ index: 0, routes: [{ name: 'VolunteerSetup' as any, params: routeParams }] });
-          } else if (nextRole === 'organization') {
-            navigation.reset({ index: 0, routes: [{ name: 'OrganizationSetup' as any, params: routeParams }] });
-          } else if (nextRole === 'sponsor') {
-            navigation.reset({ index: 0, routes: [{ name: 'SponsorSetup' as any, params: routeParams }] });
-          } else if (nextRole === 'beneficiary') {
-            navigation.reset({ index: 0, routes: [{ name: 'BeneficiarySetup' as any, params: routeParams }] });
-          }
-        } else if (response?.registration_step === 'role_setup') {
-          navigation.reset({ index: 0, routes: [{ name: 'SelectRoles' as any }] });
-        } else if (response?.default_role) {
-            if (response.default_role === 'volunteer') {
-              navigation.reset({ index: 0, routes: [{ name: 'VolunteerFlow' as any }] });
-            } else if (response.default_role === 'sponsor') {
-              navigation.reset({ index: 0, routes: [{ name: 'SponsorFlow' as any }] });
-            } else if (response.default_role === 'organization') {
-              navigation.reset({ index: 0, routes: [{ name: 'OrganizationFlow' as any }] });
-            } else if (response.default_role === 'beneficiary') {
-              navigation.reset({ index: 0, routes: [{ name: 'BeneficiaryFlow' as any }] });
-            } else {
-              navigation.reset({ index: 0, routes: [{ name: 'Welcome' }] });
-            }
-        
+      if (response?.access_token) {
+        await persistAuthToken(response.access_token);
+      }
+
+      const pendingRoles = response?.pending_roles || [];
+
+      if (pendingRoles.length > 0) {
+        const nextRoles = [...pendingRoles];
+        const nextRole = nextRoles.shift();
+        const routeParams = {
+          pendingRoles: nextRoles,
+          selectedRoles: response?.selected_roles || pendingRoles,
+          collectedRolesData: [],
+        };
+
+        if (nextRole === 'volunteer') {
+          navigation.reset({ index: 0, routes: [{ name: 'VolunteerSetup' as any, params: routeParams }] });
+        } else if (nextRole === 'organization') {
+          navigation.reset({ index: 0, routes: [{ name: 'OrganizationSetup' as any, params: routeParams }] });
+        } else if (nextRole === 'sponsor') {
+          navigation.reset({ index: 0, routes: [{ name: 'SponsorSetup' as any, params: routeParams }] });
+        } else if (nextRole === 'beneficiary') {
+          navigation.reset({ index: 0, routes: [{ name: 'BeneficiarySetup' as any, params: routeParams }] });
+        }
+      } else if (response?.registration_step === 'role_setup') {
+        navigation.reset({ index: 0, routes: [{ name: 'SelectRoles' as any }] });
+      } else if (response?.default_role) {
+        if (response.default_role === 'volunteer') {
+          navigation.reset({ index: 0, routes: [{ name: 'VolunteerFlow' as any }] });
+        } else if (response.default_role === 'sponsor') {
+          navigation.reset({ index: 0, routes: [{ name: 'SponsorFlow' as any }] });
+        } else if (response.default_role === 'organization') {
+          navigation.reset({ index: 0, routes: [{ name: 'OrganizationFlow' as any }] });
+        } else if (response.default_role === 'beneficiary') {
+          navigation.reset({ index: 0, routes: [{ name: 'BeneficiaryFlow' as any }] });
+        } else {
+          navigation.reset({ index: 0, routes: [{ name: 'Welcome' }] });
+        }
       } else {
         navigation.reset({ index: 0, routes: [{ name: 'Welcome' }] });
       }
@@ -495,10 +569,6 @@ export const ParentVerificationScreen: React.FC = () => {
             <BackArrowIcon size={moderateScale(24)} />
           </TouchableOpacity>
 
-          <View style={styles.logoSection}>
-            <UpliftLogo size={moderateScale(0.9, 0.3)} />
-          </View>
-
           <AppText variant="h2" center color={Colors.primary[900]} style={styles.title}>
             Parent Verification
           </AppText>
@@ -509,90 +579,132 @@ export const ParentVerificationScreen: React.FC = () => {
             style={styles.subtitle}>
             Please enter both verification codes sent to your parent's email and phone.
           </AppText>
+      
 
-          <View style={{backgroundColor: Colors.primary[50], padding: 12, borderRadius: 10, marginTop: 12, alignItems: 'center', borderWidth: 1, borderColor: Colors.primary[100]}}>
-            <AppText variant="caption" color={Colors.primary[800]} center style={{lineHeight: 18}}>
-              ℹ️ Volunteers aged 14–17 require email acknowledgement and phone verification. Government ID is not required for this age group.
-            </AppText>
-          </View>
-
-          <View style={styles.contactSection}>
-            <ContactInfoRow
-              icon={<MailIcon size={moderateScale(22)} />}
-              label="Parent Email"
-              value={parentEmail || 'Not provided'}
-              onChangePress={() => {
-                setEditEmail(parentEmail);
-                setEditPhone(parentPhone);
-                setIsEditModalOpen(true);
-              }}
-            />
-            {parentPhone ? (
-              <View style={{marginTop: verticalScale(8)}}>
-                <ContactInfoRow
-                  icon={<PhoneIcon size={moderateScale(22)} />}
-                  label="Parent Phone"
-                  value={parentPhone}
-                  onChangePress={() => {
-                    setEditEmail(parentEmail);
-                    setEditPhone(parentPhone);
-                    setIsEditModalOpen(true);
-                  }}
-                />
+          {/* Section 1: Verify Parent Email */}
+          <View style={styles.sectionWrapper}>
+            <View style={styles.cardHeader}>
+              <View style={[styles.badge, styles.badgeEmail]}>
+                <AppText style={styles.badgeText}>1</AppText>
               </View>
-            ) : null}
-          </View>
-
-          {/* Email Acknowledgement Code Section */}
-          <View style={styles.otpSection}>
-            <AppText variant="labelMedium" color={Colors.neutral[800]} style={{marginBottom: 4}}>
-              1. Parent Email Acknowledgement Code
-            </AppText>
-            <AppText variant="caption" color={Colors.neutral[500]} style={{marginBottom: 10}}>
-              Sent to {parentEmail || "parent's email"}
-            </AppText>
-            <OtpInput length={OTP_LENGTH} value={emailOtp} onChange={setEmailOtp} />
-          </View>
-
-          {/* Phone Verification Code Section */}
-          <View style={[styles.otpSection, {marginTop: verticalScale(20)}]}>
-            <AppText variant="labelMedium" color={Colors.neutral[800]} style={{marginBottom: 4}}>
-              2. Parent Phone Verification Code
-            </AppText>
-            <AppText variant="caption" color={Colors.neutral[500]} style={{marginBottom: 10}}>
-              Sent to {parentPhone || "parent's phone"}
-            </AppText>
-            <OtpInput length={OTP_LENGTH} value={phoneOtp} onChange={setPhoneOtp} />
-          </View>
-
-          <View style={styles.resendSection}>
-            <AppText variant="bodySmall" color={Colors.neutral[500]}>
-              Didn't receive the codes?
-            </AppText>
-            {canResend ? (
-              <TouchableOpacity
-                onPress={handleResend}
-                disabled={isResending}
-                style={styles.resendButton}>
-                <AppText
-                  variant="labelSmall"
-                  color={isResending ? Colors.neutral[400] : Colors.primary[500]}>
-                  {isResending ? 'Resending...' : 'Resend Code'}
+              <View style={styles.headerTextContainer}>
+                <AppText variant="h5" color={Colors.neutral[900]} style={styles.cardTitle}>
+                  Verify Parent Email
                 </AppText>
-              </TouchableOpacity>
-            ) : (
-              <AppText
-                variant="bodySmall"
-                color={Colors.neutral[500]}
-                style={styles.resendTimer}>
-                Resend code in{' '}
-                <AppText
-                  variant="labelSmall"
-                  color={Colors.primary[500]}>
-                  {formatTime(timer)}
+                <AppText variant="caption" color={Colors.neutral[500]}>
+                  We've sent a 6-digit code to your parent's email.
                 </AppText>
+              </View>
+            </View>
+
+            {/* Email Contact Box (NO edit icon) */}
+            <View style={styles.infoBoxEmail}>
+              <View style={styles.iconSquareEmail}>
+                <MailIcon size={moderateScale(18)} color={Colors.primary[500]} />
+              </View>
+              <View style={styles.infoTextContainer}>
+                <AppText variant="caption" color={Colors.neutral[500]}>
+                  Parent Email
+                </AppText>
+                <AppText variant="labelMedium" color={Colors.neutral[900]} numberOfLines={1} style={styles.infoValueText}>
+                  {parentEmail || 'Not provided'}
+                </AppText>
+              </View>
+            </View>
+
+            {/* Email OTP Input */}
+            <View style={{marginTop: verticalScale(10)}}>
+              <OtpInput length={OTP_LENGTH} value={emailOtp} onChange={setEmailOtp} />
+            </View>
+
+            {/* Resend Link Row */}
+            <View style={styles.inlineResendCenter}>
+              <AppText variant="bodySmall" color={Colors.neutral[500]}>
+                Didn't receive the email code?{' '}
               </AppText>
-            )}
+              {canResendEmail ? (
+                <TouchableOpacity
+                  onPress={handleResendEmail}
+                  disabled={isResendingEmail}
+                  hitSlop={{top: 8, bottom: 8, left: 8, right: 8}}>
+                  <AppText
+                    variant="labelSmall"
+                    color={isResendingEmail ? Colors.neutral[400] : Colors.primary[500]}>
+                    {isResendingEmail ? 'Resending...' : 'Resend Code'}
+                  </AppText>
+                </TouchableOpacity>
+              ) : (
+                <AppText variant="bodySmall" color={Colors.neutral[500]}>
+                  Resend code in{' '}
+                  <AppText variant="labelSmall" color={Colors.primary[500]}>
+                    {formatTime(emailTimer)}
+                  </AppText>
+                </AppText>
+              )}
+            </View>
+          </View>
+
+          {/* Section 2: Verify Parent Phone */}
+          <View style={styles.sectionWrapper}>
+            <View style={styles.cardHeader}>
+              <View style={[styles.badge, styles.badgePhone]}>
+                <AppText style={styles.badgeText}>2</AppText>
+              </View>
+              <View style={styles.headerTextContainer}>
+                <AppText variant="h5" color={Colors.neutral[900]} style={styles.cardTitle}>
+                  Verify Parent Phone
+                </AppText>
+                <AppText variant="caption" color={Colors.neutral[500]}>
+                  We've sent a 6-digit code to your parent's phone.
+                </AppText>
+              </View>
+            </View>
+
+            {/* Phone Contact Box (NO edit icon) */}
+            <View style={styles.infoBoxPhone}>
+              <View style={styles.iconSquarePhone}>
+                <PhoneIcon size={moderateScale(18)} color="#10B981" />
+              </View>
+              <View style={styles.infoTextContainer}>
+                <AppText variant="caption" color={Colors.neutral[500]}>
+                  Parent Phone
+                </AppText>
+                <AppText variant="labelMedium" color={Colors.neutral[900]} numberOfLines={1} style={styles.infoValueText}>
+                  {formatPhoneNumber(parentPhone)}
+                </AppText>
+              </View>
+            </View>
+
+            {/* Phone OTP Input */}
+            <View style={{marginTop: verticalScale(10)}}>
+              <OtpInput length={OTP_LENGTH} value={phoneOtp} onChange={setPhoneOtp} />
+            </View>
+
+            {/* Resend Link Row */}
+            <View style={styles.inlineResendCenter}>
+              <AppText variant="bodySmall" color={Colors.neutral[500]}>
+                Didn't receive the phone code?{' '}
+              </AppText>
+              {canResendPhone ? (
+                <TouchableOpacity
+                  onPress={handleResendPhone}
+                  disabled={isResendingPhone}
+                  hitSlop={{top: 8, bottom: 8, left: 8, right: 8}}>
+                  <AppText
+                    variant="labelSmall"
+                    color={isResendingPhone ? Colors.neutral[400] : Colors.primary[500]}>
+                    {isResendingPhone ? 'Resending...' : 'Resend Code'}
+                  </AppText>
+                </TouchableOpacity>
+              ) : (
+                <AppText variant="bodySmall" color={Colors.neutral[500]}>
+                  Resend code in{' '}
+                  <AppText variant="labelSmall" color={Colors.primary[500]}>
+                    {formatTime(phoneTimer)}
+                  </AppText>
+                </AppText>
+              )}
+            </View>
           </View>
 
           <View style={styles.spacer} />
@@ -722,29 +834,115 @@ const styles = StyleSheet.create({
   },
   backButton: {
     alignSelf: 'flex-start',
-    marginTop: verticalScale(8),
+    marginTop: verticalScale(4),
     padding: moderateScale(4),
   },
-  logoSection: {
-    alignItems: 'center',
-    // marginTop: verticalScale(12),
-  },
   title: {
-    marginTop: verticalScale(16),
+    marginTop: verticalScale(4),
   },
   subtitle: {
-    marginTop: verticalScale(8),
+    marginTop: verticalScale(4),
+  },
+  sectionWrapper: {
+    marginTop: verticalScale(14),
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: verticalScale(8),
+  },
+  badge: {
+    width: moderateScale(24),
+    height: moderateScale(24),
+    borderRadius: moderateScale(12),
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: moderateScale(10),
+  },
+  badgeEmail: {
+    backgroundColor: Colors.primary[500],
+  },
+  badgePhone: {
+    backgroundColor: '#10B981',
+  },
+  badgeText: {
+    color: Colors.neutral[0],
+    fontFamily: FontFamily.bold,
+    fontSize: fontScale(12),
+  },
+  headerTextContainer: {
+    flex: 1,
+  },
+  cardTitle: {
+    fontFamily: FontFamily.bold,
+    fontSize: fontScale(15),
+    marginBottom: 1,
+  },
+  infoBoxEmail: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F7F5FF',
+    borderRadius: BorderRadius.md,
+    paddingVertical: verticalScale(8),
+    paddingHorizontal: horizontalScale(10),
+  },
+  iconSquareEmail: {
+    width: moderateScale(34),
+    height: moderateScale(34),
+    borderRadius: BorderRadius.sm,
+    backgroundColor: '#ECE8FF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: moderateScale(10),
+  },
+  infoBoxPhone: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#ECFDF5',
+    borderRadius: BorderRadius.md,
+    paddingVertical: verticalScale(8),
+    paddingHorizontal: horizontalScale(10),
+  },
+  iconSquarePhone: {
+    width: moderateScale(34),
+    height: moderateScale(34),
+    borderRadius: BorderRadius.sm,
+    backgroundColor: '#D1FAE5',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: moderateScale(10),
+  },
+  infoTextContainer: {
+    flex: 1,
+  },
+  infoValueText: {
+    fontFamily: FontFamily.semiBold,
   },
   contactSection: {
-    marginTop: verticalScale(24),
+    marginTop: verticalScale(14),
   },
   otpSection: {
-    marginTop: verticalScale(24),
+    marginTop: verticalScale(14),
     paddingHorizontal: horizontalScale(4),
+  },
+  verifiedBadgeContainer: {
+    backgroundColor: Colors.secondary[50],
+    paddingVertical: verticalScale(10),
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1,
+    borderColor: Colors.secondary[200],
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  inlineResendCenter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: verticalScale(8),
   },
   resendSection: {
     alignItems: 'center',
-    marginTop: verticalScale(24),
+    marginTop: verticalScale(16),
   },
   resendButton: {
     marginTop: verticalScale(4),
@@ -755,17 +953,17 @@ const styles = StyleSheet.create({
   },
   spacer: {
     flex: 1,
-    minHeight: verticalScale(32),
+    minHeight: verticalScale(12),
   },
   verifyButton: {
     borderRadius: BorderRadius.xl,
-    height: verticalScale(52),
+    height: verticalScale(48),
   },
   securityNote: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: verticalScale(16),
+    marginTop: verticalScale(10),
   },
   securityText: {
     marginLeft: moderateScale(6),

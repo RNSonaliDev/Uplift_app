@@ -124,11 +124,15 @@ export default function PaymentSuccessfulScreen() {
       <View style={styles.footer}>
         <Button 
           title="View My Contributions" 
+          size="lg"
+          fullWidth
           onPress={handleViewContributions}
           style={styles.primaryBtn}
         />
         <Button 
           title="Back to Dashboard" 
+          size="lg"
+          fullWidth
           onPress={handleBackToDashboard}
           variant="outline"
         />

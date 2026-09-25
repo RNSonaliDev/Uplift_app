@@ -306,7 +306,7 @@ const styles = StyleSheet.create({
   },
   unreadTitle: {
     color: Colors.neutral[900],
-    fontWeight: '700',
+    // fontWeight: '700',
   },
   newBadge: {
     backgroundColor: Colors.error,

@@ -789,8 +789,10 @@ export const CreateProfileScreen: React.FC = () => {
               <MailIcon size={32} />
             </View>
             <AppText variant="h4" center style={{marginBottom: 8}}>Parent Verification</AppText>
-            <AppText variant="bodyMedium" color={Colors.neutral[600]} center style={{marginBottom: 24}}>
-              A verification code will be sent to your parent's email{parentEmail ? `:\n${parentEmail}` : '.'}
+            <AppText variant="bodyMedium" color={Colors.neutral[600]} center style={{marginBottom: 24, lineHeight: 22}}>
+              Verification codes will be sent to your parent's email and phone:
+              {parentEmail ? `\n${parentEmail}` : ''}
+              {parentPhone ? `\n${parentPhone.startsWith('+') ? parentPhone : `+1 ${parentPhone}`}` : ''}
             </AppText>
             <Button
               title="Continue"

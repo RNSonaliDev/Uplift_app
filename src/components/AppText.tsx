@@ -1,5 +1,5 @@
 import React from 'react';
-import {Text as RNText, TextProps, TextStyle, StyleSheet} from 'react-native';
+import {Text as RNText, TextProps, TextStyle, StyleSheet, Platform} from 'react-native';
 import {Colors} from '../theme/colors';
 import {Typography, FontFamily} from '../theme/typography';
 
@@ -53,6 +53,41 @@ const weightToItalicFamily: Record<FontWeight, string> = {
   black: FontFamily.blackItalic,
 };
 
+const emojiRegex = /(\p{Extended_Pictographic}+)/u;
+
+const formatChildWithEmoji = (child: React.ReactNode): React.ReactNode => {
+  if (typeof child !== 'string') {
+    return child;
+  }
+
+  if (!/\p{Extended_Pictographic}/u.test(child)) {
+    return child;
+  }
+
+  const parts = child.split(emojiRegex);
+  return parts.map((part, index) => {
+    if (/\p{Extended_Pictographic}/u.test(part)) {
+      return (
+        <RNText key={index} style={styles.emojiSpan}>
+          {part}
+        </RNText>
+      );
+    }
+    return part;
+  });
+};
+
+const formatChildren = (children: React.ReactNode): React.ReactNode => {
+  if (Array.isArray(children)) {
+    return children.map((child, i) => (
+      <React.Fragment key={i}>
+        {formatChildWithEmoji(child)}
+      </React.Fragment>
+    ));
+  }
+  return formatChildWithEmoji(children);
+};
+
 export const AppText: React.FC<AppTextProps> = ({
   variant = 'bodyMedium',
   color = Colors.neutral[900],
@@ -93,7 +128,13 @@ export const AppText: React.FC<AppTextProps> = ({
 
   return (
     <RNText style={[resolvedStyle, style]} {...rest}>
-      {children}
+      {formatChildren(children)}
     </RNText>
   );
 };
+
+const styles = StyleSheet.create({
+  emojiSpan: {
+    fontFamily: Platform.OS === 'ios' ? 'System' : undefined,
+  },
+});

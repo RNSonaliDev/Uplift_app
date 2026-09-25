@@ -624,19 +624,29 @@ export const VolunteerSetupScreen: React.FC = () => {
             </View>
 
             <View style={[styles.phoneInputWrapper, {marginBottom: Spacing.lg, zIndex: 9}]}>
-              <View style={styles.labelRow}>
-                <AppText variant="labelMedium" color={Colors.neutral[700]} style={{marginBottom: Spacing.xs}}>
-                   Address <AppText color={Colors.error}>*</AppText>
-                </AppText>
-                <TouchableOpacity 
-                  style={{marginLeft: 6, marginBottom: Spacing.xs}}
-                  onPress={() => {
-                    setShowAddressInfo(!showAddressInfo);
-                    setShowPhoneInfo(false);
-                  }}
-                >
-                  <InfoCircleIcon size={18} color={Colors.primary[500]} />
-                </TouchableOpacity>
+              <View style={[styles.labelRow, {justifyContent: 'space-between', alignItems: 'center'}]}>
+                <View style={{flexDirection: 'row', alignItems: 'center'}}>
+                  <AppText variant="labelMedium" color={Colors.neutral[700]} style={{marginBottom: Spacing.xs}}>
+                     Address <AppText color={Colors.error}>*</AppText>
+                  </AppText>
+                  <TouchableOpacity 
+                    style={{marginLeft: 6, marginBottom: Spacing.xs}}
+                    onPress={() => {
+                      setShowAddressInfo(!showAddressInfo);
+                      setShowPhoneInfo(false);
+                    }}
+                  >
+                    <InfoCircleIcon size={18} color={Colors.primary[500]} />
+                  </TouchableOpacity>
+                </View>
+
+                {(latitude && longitude) ? (
+                  <TouchableOpacity onPress={() => setIsMapModalVisible(true)} style={{marginBottom: Spacing.xs}}>
+                    <AppText variant="bodySmall" color={Colors.primary[500]} style={{textDecorationLine: 'underline'}}>
+                      Show on map
+                    </AppText>
+                  </TouchableOpacity>
+                ) : null}
               </View>
 
               {/* Floating Tooltip */}
@@ -745,14 +755,6 @@ export const VolunteerSetupScreen: React.FC = () => {
                   {errors.address}
                 </AppText>
               )}
-
-              {(latitude && longitude) ? (
-                <TouchableOpacity onPress={() => setIsMapModalVisible(true)} style={{ marginTop: Spacing.sm, marginBottom: 16, alignSelf: 'flex-end' }}>
-                  <AppText variant="bodyMedium" color={Colors.primary[500]} style={{ textDecorationLine: 'underline' }}>
-                    Show on map
-                  </AppText>
-                </TouchableOpacity>
-              ) : null}
             </View>
 
             <Input

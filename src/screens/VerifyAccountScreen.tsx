@@ -314,7 +314,8 @@ export const VerifyAccountScreen: React.FC = () => {
   const [isResending, setIsResending] = useState(false);
   const [showParentVerificationModal, setShowParentVerificationModal] = useState(false);
   const [isSendingParentVerification, setIsSendingParentVerification] = useState(false);
-  const [parentEmail, setParentEmail] = useState<string | null>(null);
+  const [parentEmail, setParentEmail] = useState<string | null>((route.params as any)?.parentEmail || null);
+  const [parentPhone, setParentPhone] = useState<string | null>((route.params as any)?.parentPhone || null);
 
   useEffect(() => {
     if (timer <= 0) {
@@ -378,9 +379,9 @@ export const VerifyAccountScreen: React.FC = () => {
       Toast.show({
         type: 'success',
         text1: 'Success',
-        text2: 'Verification code sent to parent email',
+        text2: 'Verification code sent to parent email & phone',
       });
-      navigation.navigate('ParentVerification' as any, { parentEmail: parentEmail || '' });
+      navigation.navigate('ParentVerification' as any, { parentEmail: parentEmail || '', parentPhone: parentPhone || '' });
     } catch (error: any) {
       Toast.show({
         type: 'error',
@@ -417,6 +418,9 @@ export const VerifyAccountScreen: React.FC = () => {
         if (response.user?.registration_step === 'parent_verification') {
           if (response.user.parent_email) {
             setParentEmail(response.user.parent_email);
+          }
+          if ((response.user as any)?.parent_phone) {
+            setParentPhone((response.user as any).parent_phone);
           }
           setShowParentVerificationModal(true);
         } else if (pendingRoles.length > 0) {
@@ -603,8 +607,10 @@ export const VerifyAccountScreen: React.FC = () => {
               <MailIcon size={32} />
             </View>
             <AppText variant="h4" center style={{marginBottom: 8}}>Parent Verification</AppText>
-            <AppText variant="bodyMedium" color={Colors.neutral[600]} center style={{marginBottom: 24}}>
-              A verification code will be sent to your parent's email{parentEmail ? `:\n${parentEmail}` : '.'}
+            <AppText variant="bodyMedium" color={Colors.neutral[600]} center style={{marginBottom: 24, lineHeight: 22}}>
+              Verification codes will be sent to your parent's email and phone:
+              {parentEmail ? `\n${parentEmail}` : ''}
+              {parentPhone ? `\n${parentPhone.startsWith('+') ? parentPhone : `+1 ${parentPhone}`}` : ''}
             </AppText>
             <Button
               title="Continue"

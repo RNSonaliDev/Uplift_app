@@ -199,6 +199,8 @@ export default function ChooseAmountScreen() {
       <View style={styles.footer}>
         <Button 
           title={loading ? 'Loading...' : 'Continue'} 
+          size="lg"
+          fullWidth
           onPress={handleContinue}
           disabled={(selectedAmount === 'custom' && (!customAmount || isNaN(parseFloat(customAmount)) || parseFloat(customAmount) <= 0)) || !recipientType || loading}
         />

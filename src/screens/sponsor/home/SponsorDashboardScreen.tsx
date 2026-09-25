@@ -137,6 +137,8 @@ export default function SponsorDashboardScreen() {
         <View style={styles.sectionContainer}>
           <Button 
             title="Make a Contribution" 
+            size="lg"
+            fullWidth
             onPress={() => navigation.navigate('ChooseAmount')}
             style={styles.actionBtn}
           />
