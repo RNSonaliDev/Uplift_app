@@ -4,12 +4,17 @@ import { VerifyOtpResponse } from '../api/auth';
 
 export const handlePostAuthNavigation = async (
   response: VerifyOtpResponse,
-  navigation: any
+  navigation: any,
+  result?: any,
 ) => {
-  const token = response.access_token || response.token;
+  const token = response.access_token || response.token || response.verification_token;
+  console.log("@@@@@@@@@@@@response", response)
+  console.log("@@@@@@@@@@@@result", result.user)
   if (token) {
     await persistAuthToken(token);
   }
+
+  const registrationStep = response.user?.registration_step || (response as any).registration_step;
 
   if (response.user_exists && response.user) {
     const user = response.user;
@@ -18,6 +23,16 @@ export const handlePostAuthNavigation = async (
 
     if (user.registration_step === 'parent_verification') {
       navigation.navigate('ParentVerification', { parentEmail: user.parent_email || '' });
+      return;
+    }
+
+    if (user.registration_step === 'basic_profile') {
+      navigation.navigate('CreateProfile', {
+        verificationToken: response.verification_token || token || '',
+        email: result?.user?.email,
+        firstName: result?.user?.firstName || '',
+        lastName: result?.user?.lastName || '',
+      });
       return;
     }
 
@@ -79,10 +94,12 @@ export const handlePostAuthNavigation = async (
     }
 
     navigation.reset({ index: 0, routes: [{ name: 'SelectRoles' }] });
-  } else if (response.verification_token) {
+  } else if (registrationStep === 'basic_profile' || response.verification_token) {
     navigation.navigate('CreateProfile', {
-      verificationToken: response.verification_token,
-      emailOrPhone: response.user?.email || '',
+      verificationToken: response.verification_token || token || '',
+      email: result.user?.email || response.user?.phone || (response as any)?.email || '',
+      firstName: result.user?.firstName || (response as any)?.first_name || '',
+      lastName: result.user?.lastName || (response as any)?.last_name || '',
     });
   } else {
     navigation.reset({ index: 0, routes: [{ name: 'SelectRoles' }] });

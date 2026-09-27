@@ -222,6 +222,14 @@ export const SponsorSetupScreen: React.FC = () => {
           const digits = profile.phone.replace('+1', '');
           setPhoneNumber(digits);
         }
+        const sponsorProfile = profile.roles?.find((r: any) => r.role === 'sponsor')?.profile || profile.profiles?.sponsor;
+        if (sponsorProfile) {
+          if (sponsorProfile.anonymous !== undefined) {
+            setAnonymity(sponsorProfile.anonymous ? 'hide' : 'show');
+          } else if (sponsorProfile.anonymity) {
+            setAnonymity(sponsorProfile.anonymity === 'hide' ? 'hide' : 'show');
+          }
+        }
       } catch (error) {
         // Handle error or ignore
       }

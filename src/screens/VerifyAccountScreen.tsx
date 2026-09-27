@@ -423,6 +423,15 @@ export const VerifyAccountScreen: React.FC = () => {
             setParentPhone((response.user as any).parent_phone);
           }
           setShowParentVerificationModal(true);
+        } else if (response.user?.registration_step === 'basic_profile') {
+          navigation.navigate('CreateProfile', {
+            verificationToken: response.verification_token || response.access_token || response.token || '',
+            emailOrPhone: contactValue,
+            firstName: response.user?.first_name || '',
+            lastName: response.user?.last_name || '',
+            dob: route.params?.dob,
+            parentEmail: route.params?.parentEmail,
+          });
         } else if (pendingRoles.length > 0) {
           const nextRoles = [...pendingRoles];
           const nextRole = nextRoles.shift();

@@ -206,11 +206,11 @@ export const CreateAccountScreen: React.FC = () => {
     try {
       setIsGoogleLoading(true);
       const result = await socialAuthService.signInWithGoogle();
-
+      console.log("@@@@@@@@google", result)
       const response = await authApi.socialLogin({
         provider: result.provider,
         id_token: result.idToken,
-        user: {
+        "social_login": {
           email: result.user.email,
           first_name: result.user.firstName,
           last_name: result.user.lastName,
@@ -241,7 +241,7 @@ export const CreateAccountScreen: React.FC = () => {
         provider: result.provider,
         id_token: result.idToken,
         authorization_code: result.authorizationCode,
-        user: {
+        "social_login": {
           email: result.user.email,
           first_name: result.user.firstName,
           last_name: result.user.lastName,

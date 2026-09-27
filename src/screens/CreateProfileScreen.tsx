@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import {
   View,
   StyleSheet,
@@ -25,7 +25,7 @@ import {UpliftLogo} from '../components/UpliftLogo';
 import {button_user} from '../assets/images';
 import {authApi} from '../api';
 import {Colors} from '../theme/colors';
-import {persistAuthToken} from '../api/client';
+import {persistAuthToken, getFullImageUrl} from '../api/client';
 import {BorderRadius, Spacing} from '../theme/spacing';
 import {Shadows} from '../theme/common';
 import {
@@ -41,7 +41,7 @@ type RootStackParamList = {
   Welcome: undefined;
   CreateAccount: undefined;
   VerifyAccount: {emailOrPhone: string, dob?: string, parentEmail?: string};
-  CreateProfile: { verificationToken: string, emailOrPhone: string, dob?: string, parentEmail?: string };
+  CreateProfile: { verificationToken?: string, emailOrPhone?: string, firstName?: string, lastName?: string, dob?: string, parentEmail?: string };
   SelectRoles: undefined;
 };
 
@@ -244,12 +244,12 @@ export const CreateProfileScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProps>();
   const route = useRoute<RouteProp<RootStackParamList, 'CreateProfile'>>();
   const verificationToken = route.params?.verificationToken;
-  const emailOrPhone = route.params?.emailOrPhone || '';
-  
+  const emailOrPhone = route.params?.email || route.params?.emailOrPhone;
+  console.log("@@@ routeroute==============", route.params)
   const isEmail = emailOrPhone.includes('@');
 
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
+  const [firstName, setFirstName] = useState(route.params?.firstName || '');
+  const [lastName, setLastName] = useState(route.params?.lastName || '');
   const [email, setEmail] = useState(isEmail ? emailOrPhone : '');
   const [phoneNumber, setPhoneNumber] = useState(!isEmail ? emailOrPhone.replace('+1', '') : '');
   const [dob, setDob] = useState<Date | null>(route.params?.dob ? new Date(route.params.dob) : null);

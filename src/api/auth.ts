@@ -145,8 +145,8 @@ export const authApi = {
   saveRoleProfile: (payload: RoleProfilePayload) => {
     return api.post<RoleProfileResponse>('/role_profile', payload);
   },
-  getProfile: () => {
-    return api.get<UserProfileResponse>('/profile');
+  getProfile: (options?: any) => {
+    return api.get<UserProfileResponse>('/profile', options);
   },
   updateProfile: (payload: any) => {
     return api.patch<UserProfileResponse>('/role_profile', payload);
@@ -180,6 +180,6 @@ export const authApi = {
     return api.delete<{message: string}>('/profile');
   },
   socialLogin: (payload: SocialLoginPayload) => {
-    return api.post<VerifyOtpResponse>('/auth/social', payload);
+    return api.post<VerifyOtpResponse>('/auth/social_login', payload);
   },
 };

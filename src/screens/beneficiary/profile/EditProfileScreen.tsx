@@ -194,7 +194,7 @@ export default function EditProfileScreen() {
       console.log('Reverse geocoding error:', error);
     }
   };
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<Record<string, any>>({
     base_first_name: '',
     base_last_name: '',
     first_name: '',
@@ -207,6 +207,15 @@ export default function EditProfileScreen() {
     dob: '',
     service_radius: '',
     hours_goal_per_week: '',
+    address: '',
+    anonymity: 'hide',
+    organization_type: '',
+    organization_name: '',
+    contact_name: '',
+    contact_email: '',
+    contact_phone: '',
+    latitude: '',
+    longitude: '',
   });
 
   const getDisplayDob = (dobStr: string) => {
@@ -224,6 +233,13 @@ export default function EditProfileScreen() {
         const data = await authApi.getProfile();
         const roleProfile = data.roles?.find((r: any) => r.role === currentRole)?.profile || data.active_profile || {};
         
+        let anonymityValue = 'hide';
+        if (roleProfile.anonymous !== undefined) {
+          anonymityValue = roleProfile.anonymous ? 'hide' : 'show';
+        } else if (roleProfile.anonymity) {
+          anonymityValue = roleProfile.anonymity;
+        }
+
         setFormData({
           base_first_name: data.first_name || '',
           base_last_name: data.last_name || '',
@@ -233,12 +249,12 @@ export default function EditProfileScreen() {
           email: data.email || '',
           email_verified: data.email_verified || false,
           phone_verified: data.phone_verified || false,
-          zip_code: data.zip_code || roleProfile.zip_code || '',
+          zip_code: (data as any).zip_code || roleProfile.zip_code || '',
           dob: data.date_of_birth || '',
           service_radius: roleProfile.service_radius ? String(roleProfile.service_radius) : '',
           hours_goal_per_week: roleProfile.hours_goal_per_week ? String(roleProfile.hours_goal_per_week) : '',
           address: roleProfile.address || '',
-          anonymity: roleProfile.anonymity || 'hide',
+          anonymity: anonymityValue,
           organization_type: roleProfile.organization_type || '',
           organization_name: roleProfile.organization_name || '',
           contact_name: roleProfile.contact_name || '',
@@ -277,12 +293,18 @@ export default function EditProfileScreen() {
   const handleSave = async () => {
     try {
       setSaving(true);
-      const { latitude, longitude, base_first_name, base_last_name, ...restProfile } = formData;
+      const { latitude, longitude, base_first_name, base_last_name, anonymity, ...restProfile } = formData;
       const profilePayload: any = {
         ...restProfile,
         service_radius: Number(formData.service_radius) || 0,
         hours_goal_per_week: Number(formData.hours_goal_per_week) || null,
       };
+
+      if (currentRole === 'sponsor') {
+        profilePayload.anonymous = anonymity === 'hide';
+      } else {
+        profilePayload.anonymity = anonymity;
+      }
       
       if (latitude) profilePayload.latitude = Number(latitude);
       if (longitude) profilePayload.longitude = Number(longitude);

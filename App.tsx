@@ -44,7 +44,7 @@ type RootStackParamList = {
   Login: undefined;
   CreateAccount: undefined;
   VerifyAccount: { emailOrPhone: string, dob?: string, parentEmail?: string };
-  CreateProfile: { verificationToken: string, emailOrPhone: string, dob?: string, parentEmail?: string };
+  CreateProfile: { verificationToken?: string, emailOrPhone?: string, firstName?: string, lastName?: string, dob?: string, parentEmail?: string };
   SelectRoles: undefined;
   OrganizationSetup: undefined;
   SponsorSetup: undefined;
