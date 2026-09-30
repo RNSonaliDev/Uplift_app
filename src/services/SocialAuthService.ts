@@ -21,11 +21,12 @@ export interface SocialAuthResult {
 }
 
 export const DEFAULT_GOOGLE_WEB_CLIENT_ID = '49775382219-5ppt7qivr96i0su6v54neaqnjhq69jlq.apps.googleusercontent.com';
+export const DEFAULT_GOOGLE_IOS_CLIENT_ID = '49775382219-ia43pma3ngtr7ubj864pn5aajprqgmd1.apps.googleusercontent.com';
 
 class SocialAuthService {
   private isGoogleConfigured = false;
 
-  public configureGoogle(webClientId: string = DEFAULT_GOOGLE_WEB_CLIENT_ID, iosClientId?: string) {
+  public configureGoogle(webClientId: string = DEFAULT_GOOGLE_WEB_CLIENT_ID, iosClientId: string = DEFAULT_GOOGLE_IOS_CLIENT_ID) {
     if (this.isGoogleConfigured) return;
     
     GoogleSignin.configure({

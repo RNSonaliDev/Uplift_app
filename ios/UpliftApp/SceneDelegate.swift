@@ -1,0 +1,32 @@
+import UIKit
+import React
+import React_RCTAppDelegate
+
+class SceneDelegate: UIResponder, UIWindowSceneDelegate {
+  var window: UIWindow?
+
+  func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
+    guard let windowScene = (scene as? UIWindowScene) else { return }
+    let window = UIWindow(windowScene: windowScene)
+    
+    if let appDelegate = UIApplication.shared.delegate as? AppDelegate,
+       let factory = appDelegate.reactNativeFactory {
+       
+      // Create launchOptions from connectionOptions if needed, but nil is usually fine for SceneDelegate initial launch
+      factory.startReactNative(
+        withModuleName: "UpliftApp",
+        in: window,
+        launchOptions: nil
+      )
+    }
+    
+    self.window = window
+    window.makeKeyAndVisible()
+  }
+
+  func sceneDidDisconnect(_ scene: UIScene) {}
+  func sceneDidBecomeActive(_ scene: UIScene) {}
+  func sceneWillResignActive(_ scene: UIScene) {}
+  func sceneWillEnterForeground(_ scene: UIScene) {}
+  func sceneDidEnterBackground(_ scene: UIScene) {}
+}
