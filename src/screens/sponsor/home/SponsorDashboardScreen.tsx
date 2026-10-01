@@ -149,7 +149,7 @@ export default function SponsorDashboardScreen() {
           <View style={styles.sectionHeader}>
             <AppText variant="h5">Recent Contributions</AppText>
             <TouchableOpacity onPress={() => navigation.navigate('ContributionsTab')}>
-              <AppText variant="bodyMedium" color={Colors.primary[500]}>View All</AppText>
+              <AppText variant="bodyMedium" color={Colors.primary[500]} style={{fontSize: 16}}>View All</AppText>
             </TouchableOpacity>
           </View>
 

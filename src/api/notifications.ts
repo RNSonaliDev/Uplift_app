@@ -52,7 +52,7 @@ export const notificationsApi = {
   },
   
   getNotifications: (role?: string) => {
-    const url = role ? `/notifications?role=${encodeURIComponent(role)}` : '/notifications';
+    const url = '/notifications';
     return api.get<AppNotification[]>(url);
   },
   

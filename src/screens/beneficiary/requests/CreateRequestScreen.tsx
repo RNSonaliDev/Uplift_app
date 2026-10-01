@@ -22,7 +22,7 @@ import {Typography, FontFamily} from '../../../theme/typography';
 import {AppText} from '../../../components/AppText';
 import {Input} from '../../../components/Input';
 import {Button} from '../../../components/Button';
-import DatePicker from 'react-native-date-picker';
+import { DatePickerModal } from '../../../components/DatePickerModal';
 import {api, getFullImageUrl} from '../../../api/client';
 import {authApi, CategoryResponse} from '../../../api/auth';
 import {ChevronLeft, ShoppingCart, MapPin, Navigation, X, Info} from 'lucide-react-native';
@@ -743,7 +743,7 @@ export default function CreateRequestScreen() {
           />
 
           <TouchableOpacity onPress={() => setIsDatePickerOpen(true)} activeOpacity={0.7}>
-            <View pointerEvents="none">
+            <View pointerEvents="box-only">
               <Input
                 label="Preferred Date"
                 placeholder="MM/DD/YYYY"
@@ -917,8 +917,7 @@ export default function CreateRequestScreen() {
         />
       </View>
 
-      <DatePicker
-        modal
+      <DatePickerModal
         open={isDatePickerOpen}
         date={date}
         minimumDate={new Date()}

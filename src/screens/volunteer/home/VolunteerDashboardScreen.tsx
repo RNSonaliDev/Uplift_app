@@ -53,7 +53,7 @@ export default function VolunteerDashboardScreen() {
       const [profData, reqData, statsData, notifData] = await Promise.all([
         authApi.getProfile(),
         api.get<any[]>('/help_requests/browse'),
-        api.get<any>('/dashboard/stats?role=volunteer'),
+        api.get<any>('/dashboard/stats'),
         api.get<any>('/notifications')
       ]);
       setProfile(profData);

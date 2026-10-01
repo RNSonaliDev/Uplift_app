@@ -40,7 +40,7 @@ export const OrganizationRequestsScreen = () => {
   const fetchRequests = async () => {
     try {
       setLoading(true);
-      const data = await api.get<any[]>('/help_requests?scope=organization');
+      const data = await api.get<any[]>('/help_requests');
       setRequests(data);
     } catch (error) {
       console.error('Failed to fetch requests', error);
@@ -122,7 +122,7 @@ export const OrganizationRequestsScreen = () => {
         </ScrollView>
         <TouchableOpacity 
           style={styles.fab}
-          onPress={() => navigation.navigate('HomeTab', { screen: 'SelectCategory' })}
+          onPress={() => navigation.navigate('SelectCategory')}
           activeOpacity={0.8}
         >
           <Plus color="#FFF" size={24} />

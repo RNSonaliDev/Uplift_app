@@ -19,7 +19,7 @@ import { ChevronLeft, ChevronDown, Calendar as CalendarIcon, Clock, CheckSquare,
 import MapView, { Marker, Circle as MapCircle } from 'react-native-maps';
 import { GooglePlacesAutocomplete, GooglePlacesAutocompleteRef } from 'react-native-google-places-autocomplete';
 import Geolocation from '@react-native-community/geolocation';
-import DatePicker from 'react-native-date-picker';
+import { DatePickerModal } from '../../../components/DatePickerModal';
 import { validateBusinessAddressWithAPI, ValidationResult } from '../../../utils/addressValidation';
 
 import { Colors } from '../../../theme/colors';
@@ -648,8 +648,7 @@ export const RequestDetailsScreen = () => {
 
       </KeyboardAwareScrollView>
 
-      <DatePicker
-        modal
+      <DatePickerModal
         open={isStartDatePickerOpen}
         date={startDate}
         mode="date"
@@ -662,8 +661,7 @@ export const RequestDetailsScreen = () => {
           setIsStartDatePickerOpen(false);
         }}
       />
-      <DatePicker
-        modal
+      <DatePickerModal
         open={isStartTimePickerOpen}
         date={startTime}
         mode="time"
@@ -678,8 +676,7 @@ export const RequestDetailsScreen = () => {
           setIsStartTimePickerOpen(false);
         }}
       />
-      <DatePicker
-        modal
+      <DatePickerModal
         open={isEndDatePickerOpen}
         date={endDate}
         mode="date"
@@ -692,8 +689,7 @@ export const RequestDetailsScreen = () => {
           setIsEndDatePickerOpen(false);
         }}
       />
-      <DatePicker
-        modal
+      <DatePickerModal
         open={isEndTimePickerOpen}
         date={endTime}
         mode="time"

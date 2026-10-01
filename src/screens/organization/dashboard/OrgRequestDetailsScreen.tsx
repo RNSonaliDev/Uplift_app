@@ -324,7 +324,7 @@ export const OrgRequestDetailsScreen = () => {
                     <TouchableOpacity 
                       onPress={() => navigation.navigate('AllVolunteers', { request, requestId })}
                     >
-                      <AppText variant="labelMedium" color={Colors.primary[500]}>View All</AppText>
+                      <AppText variant="labelMedium" color={Colors.primary[500]} style={{fontSize: 16}}>View All</AppText>
                     </TouchableOpacity>
                   )}
                 </View>

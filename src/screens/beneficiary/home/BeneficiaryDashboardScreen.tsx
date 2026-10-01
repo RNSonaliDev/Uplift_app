@@ -57,9 +57,9 @@ export default function BeneficiaryDashboardScreen() {
       const [catData, profData, reqData, notifData, statsData] = await Promise.all([
         authApi.getCategories(),
         authApi.getProfile(),
-        api.get<any[]>('/help_requests?scope=beneficiary'),
+        api.get<any[]>('/help_requests'),
         api.get<any>('/notifications').catch(() => null),
-        api.get<any>('/dashboard/stats?role=beneficiary').catch(() => null)
+        api.get<any>('/dashboard/stats').catch(() => null)
       ]);
       const beneficiaryCategories = catData.filter(c => c.category_type === 'beneficiary');
       setCategories(beneficiaryCategories);
@@ -144,7 +144,7 @@ export default function BeneficiaryDashboardScreen() {
           <View style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 8, marginBottom: 16}}>
             <Text style={[styles.sectionTitle, {marginTop: 0, marginBottom: 0}]}>Upcoming Request</Text>
             <TouchableOpacity onPress={() => navigation.navigate('MyRequests')}>
-              <Text style={{color: Colors.primary[500], fontFamily: FontFamily.medium}}>View All</Text>
+              <Text style={{color: Colors.primary[500], fontFamily: FontFamily.medium, fontSize: 16}}>View All</Text>
             </TouchableOpacity>
           </View>
           {loading ? (

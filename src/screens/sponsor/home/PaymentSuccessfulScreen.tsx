@@ -84,7 +84,6 @@ export default function PaymentSuccessfulScreen() {
         {/* Custom Thank You Confirmation Card */}
         <View style={styles.thankYouCard}>
           <AppText variant="bodyMedium" color={Colors.neutral[800]} style={styles.thankYouText}>
-            Thank you, {firstName}. 💙{'\n\n'}
             Your contribution of ${numAmount.toFixed(2)} has been added to the iUpliftU Community Fund. ${netAmount} will be distributed to {allocationPreference} in the next allocation cycle. A tax receipt has been sent to {email}. Please keep it for your records. Because of you, someone in your community gets the help they need today.
           </AppText>
         </View>

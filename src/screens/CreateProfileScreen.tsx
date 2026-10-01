@@ -9,6 +9,7 @@ import {
   Image,
   TouchableWithoutFeedback,
   Modal,
+  Keyboard,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
@@ -16,7 +17,7 @@ import {useNavigation, useRoute, RouteProp} from '@react-navigation/native';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import Svg, {Path, Circle, Rect, Polyline} from 'react-native-svg';
 import { launchImageLibrary } from 'react-native-image-picker';
-import DatePicker from 'react-native-date-picker';
+import { DatePickerModal } from '../components/DatePickerModal';
 
 import {AppText} from '../components/AppText';
 import {Button} from '../components/Button';
@@ -485,10 +486,9 @@ export const CreateProfileScreen: React.FC = () => {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled">
           
-          <TouchableWithoutFeedback onPress={() => {
+          <View style={{flex: 1}} onTouchStart={() => {
             if (showPhoneInfo) setShowPhoneInfo(false);
           }}>
-            <View style={{flex: 1}}>
               {/* Header with Back Button */}
               <TouchableOpacity
                 style={styles.backButton}
@@ -627,18 +627,25 @@ export const CreateProfileScreen: React.FC = () => {
                 </View>
 
                 {/* Date of Birth Input */}
-                <TouchableOpacity onPress={() => setIsDatePickerOpen(true)} activeOpacity={0.7} style={{marginTop: verticalScale(16)}}>
-                  <View pointerEvents="none">
-                    <Input
-                      label="Date of Birth"
-                      placeholder="MM/DD/YYYY"
-                      leftIcon={<CalendarIcon size={moderateScale(22)} />}
-                      value={dob ? `${String(dob.getMonth() + 1).padStart(2, '0')}/${String(dob.getDate()).padStart(2, '0')}/${dob.getFullYear()}` : ''}
-                      editable={false}
-                      error={errors.dob}
-                    />
-                  </View>
-                </TouchableOpacity>
+                <View style={{marginTop: verticalScale(16), position: 'relative'}}>
+                  <Input
+                    label="Date of Birth"
+                    placeholder="MM/DD/YYYY"
+                    leftIcon={<CalendarIcon size={moderateScale(22)} />}
+                    value={dob ? `${String(dob.getMonth() + 1).padStart(2, '0')}/${String(dob.getDate()).padStart(2, '0')}/${dob.getFullYear()}` : ''}
+                    editable={false}
+                    error={errors.dob}
+                  />
+                  <TouchableOpacity 
+                    onPress={() => {
+                      Keyboard.dismiss();
+                      setTimeout(() => {
+                        setIsDatePickerOpen(true);
+                      }, 100);
+                    }} 
+                    style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 10, elevation: 10, }} 
+                  />
+                </View>
 
                 {/* Government ID Photo (Required for Ages 18+) */}
                 {is18Plus && (
@@ -742,14 +749,12 @@ export const CreateProfileScreen: React.FC = () => {
                 style={styles.continueButton}
               />
             </View>
-          </TouchableWithoutFeedback>
         </ScrollView>
       </KeyboardAvoidingView>
 
-      <DatePicker
-        modal
+      <DatePickerModal
         open={isDatePickerOpen}
-        date={dob || new Date(new Date().setFullYear(new Date().getFullYear() - 14))}
+        date={dob || new Date(new Date().getFullYear() - 14, new Date().getMonth(), new Date().getDate())}
         mode="date"
         maximumDate={new Date()}
         onConfirm={(date) => {

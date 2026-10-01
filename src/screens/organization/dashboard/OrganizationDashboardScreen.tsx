@@ -44,8 +44,8 @@ export const OrganizationDashboardScreen = () => {
     try {
       if (!isRefresh) setLoading(true);
       const [requestsData, statsData, profData, notifData] = await Promise.all([
-        api.get<any[]>('/help_requests?scope=organization'),
-        api.get<any>('/dashboard/stats?role=organization'),
+        api.get<any[]>('/help_requests'),
+        api.get<any>('/dashboard/stats'),
         authApi.getProfile(),
         api.get<any>('/notifications')
       ]);
@@ -344,6 +344,7 @@ const styles = StyleSheet.create({
   viewAllText: {
     ...Typography.labelMedium,
     color: Colors.primary[500],
+    fontSize: 16,
   },
   requestList: {
     gap: 12,

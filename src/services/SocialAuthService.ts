@@ -7,6 +7,7 @@ import {
 import appleAuth, {
   AppleRequestResponse,
 } from '@invertase/react-native-apple-authentication';
+import { jwtDecode } from 'jwt-decode';
 
 export interface SocialAuthResult {
   provider: 'google' | 'apple';
@@ -114,15 +115,25 @@ class SocialAuthService {
         throw new Error('Apple Sign In failed - no identity token received.');
       }
 
-      const firstName = fullName?.givenName || undefined;
-      const lastName = fullName?.familyName || undefined;
+      let userEmail = email;
+      if (!userEmail) {
+        try {
+          const decoded: any = jwtDecode(identityToken);
+          userEmail = decoded?.email;
+        } catch (e) {
+          console.warn('Failed to decode Apple identity token', e);
+        }
+      }
+
+      const firstName = fullName?.givenName || '';
+      const lastName = fullName?.familyName || '';
 
       return {
         provider: 'apple',
         idToken: identityToken,
         authorizationCode: authorizationCode || undefined,
         user: {
-          email: email || undefined,
+          email: userEmail || undefined,
           firstName,
           lastName,
         },

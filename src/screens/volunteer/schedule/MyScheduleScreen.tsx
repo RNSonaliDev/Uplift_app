@@ -42,7 +42,7 @@ export default function MyScheduleScreen() {
   const fetchSchedule = async () => {
     try {
       setLoading(true);
-      const data = await api.get<any[]>('/help_requests?scope=volunteer');
+      const data = await api.get<any[]>('/help_requests');
       setRequests(data || []);
     } catch (error) {
       console.error('Failed to fetch schedule', error);

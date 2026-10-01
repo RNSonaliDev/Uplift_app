@@ -12,11 +12,12 @@ import {
   Dimensions,
   Pressable,
   Modal,
+  Image,
 } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import Toast from 'react-native-toast-message';
 import {useNavigation, useRoute} from '@react-navigation/native';
-import DatePicker from 'react-native-date-picker';
+import { DatePickerModal } from '../../../components/DatePickerModal';
 import { GooglePlacesAutocomplete } from 'react-native-google-places-autocomplete';
 import {Colors} from '../../../theme/colors';
 import {AppText} from '../../../components/AppText';
@@ -25,6 +26,7 @@ import {Button} from '../../../components/Button';
 import {ChevronLeft, Calendar, MapPin, Clock, Info, Navigation, BadgeCheck, Phone, ChevronDown, Check, X} from 'lucide-react-native';
 import {Spacing} from '../../../theme/spacing';
 import {authApi} from '../../../api/auth';
+import {getFullImageUrl} from '../../../api/client';
 import Svg, { Circle } from 'react-native-svg';
 import MapView, { Marker, Circle as MapCircle } from 'react-native-maps';
 
@@ -239,7 +241,7 @@ export default function EditProfileScreen() {
         } else if (roleProfile.anonymity) {
           anonymityValue = roleProfile.anonymity;
         }
-
+      console.log('roleProfile', JSON.stringify(roleProfile));
         setFormData({
           base_first_name: data.first_name || '',
           base_last_name: data.last_name || '',
@@ -251,6 +253,7 @@ export default function EditProfileScreen() {
           phone_verified: data.phone_verified || false,
           zip_code: (data as any).zip_code || roleProfile.zip_code || '',
           dob: data.date_of_birth || '',
+          government_id: roleProfile?.identity_verification?.government_id_url || roleProfile?.identity_verification?.government_id_url || '',
           service_radius: roleProfile.service_radius ? String(roleProfile.service_radius) : '',
           hours_goal_per_week: roleProfile.hours_goal_per_week ? String(roleProfile.hours_goal_per_week) : '',
           address: roleProfile.address || '',
@@ -445,6 +448,25 @@ export default function EditProfileScreen() {
             leftIcon={<Calendar color={Colors.neutral[400]} size={20} />}
             disabled={true}
           />
+
+          {formData.dob && (new Date().getTime() - new Date(formData.dob).getTime()) / (1000 * 60 * 60 * 24 * 365.25) >= 18 && (
+            <View style={{marginTop: 8, marginBottom: 8}}>
+              <View style={{flexDirection: 'row', alignItems: 'center', marginBottom: 6}}>
+                <AppText variant="labelMedium" color={Colors.neutral[700]}>
+                  Government ID Photo
+                </AppText>
+              </View>
+              {formData.government_id ? (
+                <View style={styles.idPreviewContainer}>
+                  <Image source={{ uri: getFullImageUrl(formData.government_id) || formData.government_id }} style={styles.idImagePreview} resizeMode="cover" />
+                </View>
+              ) : (
+                <View style={[styles.idUploadBox, { opacity: 0.6 }]}>
+                  <AppText variant="bodySmall" color={Colors.neutral[600]}>No Government ID on file</AppText>
+                </View>
+              )}
+            </View>
+          )}
 
           <AppText variant="labelLarge" color={Colors.neutral[900]} weight="bold" style={{ marginTop: 12, marginBottom: 12 }}>
             {currentRole.charAt(0).toUpperCase() + currentRole.slice(1)} Details
@@ -775,8 +797,7 @@ export default function EditProfileScreen() {
         </View>
       </Modal>
 
-      <DatePicker
-        modal
+      <DatePickerModal
         open={isDatePickerOpen}
         date={date}
         mode="date"
@@ -998,5 +1019,29 @@ const styles = StyleSheet.create({
     padding: 16,
     borderBottomWidth: 1,
     borderBottomColor: Colors.neutral[200],
+  },
+  idUploadBox: {
+    borderWidth: 1.5,
+    borderColor: Colors.neutral[300],
+    borderStyle: 'dashed',
+    borderRadius: 8,
+    backgroundColor: Colors.primary[50],
+    padding: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 110,
+  },
+  idPreviewContainer: {
+    width: '100%',
+    height: 140,
+    borderRadius: 8,
+    overflow: 'hidden',
+    position: 'relative',
+    borderWidth: 1,
+    borderColor: Colors.neutral[200],
+  },
+  idImagePreview: {
+    width: '100%',
+    height: '100%',
   },
 });
