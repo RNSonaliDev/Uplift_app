@@ -80,6 +80,7 @@ export const validateAddressType = (types: string[] = []): ValidationResult => {
 
 export const validateBusinessAddressWithAPI = async (address: string, apiKey: string): Promise<ValidationResult> => {
   try {
+    console.log("!!! =======", address)
     const response = await fetch(
       `https://addressvalidation.googleapis.com/v1:validateAddress?key=${apiKey}`,
       {
@@ -121,19 +122,19 @@ export const validateBusinessAddressWithAPI = async (address: string, apiKey: st
       };
     }
 
-    return {
-      isBusinessAddress: 'unknown',
-      addressType: 'unknown',
-      confidence: 'low',
-      message: 'Unable to verify address type. For your safety, please use the business address.',
-    };
+    // return {
+    //   isBusinessAddress: 'unknown',
+    //   addressType: 'unknown',
+    //   confidence: 'low',
+    //   message: 'Unable to verify address type. For your safety, please use the business address.',
+    // };
   } catch (error) {
     console.log('Address Validation Error:', error);
-    return {
-      isBusinessAddress: 'unknown',
-      addressType: 'unknown',
-      confidence: 'low',
-      message: 'Unable to confidently verify property type. For your safety, please use the business address.',
-    };
+    // return {
+    //   isBusinessAddress: 'unknown',
+    //   addressType: 'unknown',
+    //   confidence: 'low',
+    //   message: 'Unable to confidently verify property type. For your safety, please use the business address.',
+    // };
   }
 };

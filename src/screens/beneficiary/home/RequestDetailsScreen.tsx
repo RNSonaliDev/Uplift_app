@@ -94,7 +94,7 @@ export default function RequestDetailsScreen() {
         <View style={styles.securityNote}>
           <Info color={Colors.info} size={24} />
           <Text style={styles.securityText}>
-            For your safety, never share personal information or belongings like your SSN or bank details with anyone.
+            For your safety, never share belongings or personal information like you SSN or bank details with anyone.
           </Text>
         </View>
 

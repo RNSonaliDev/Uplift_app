@@ -196,6 +196,28 @@ export default function EditProfileScreen() {
       console.log('Reverse geocoding error:', error);
     }
   };
+
+  const handleOpenMap = async () => {
+    if ((!formData.latitude || !formData.longitude) && formData.address) {
+      try {
+        const response = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(formData.address)}&key=${GOOGLE_MAPS_API_KEY}`);
+        const data = await response.json();
+        if (data.results && data.results.length > 0) {
+          const loc = data.results[0].geometry.location;
+          handleChange('latitude', loc.lat.toString());
+          handleChange('longitude', loc.lng.toString());
+          setRegion(prev => ({
+            ...prev,
+            latitude: loc.lat,
+            longitude: loc.lng,
+          }));
+        }
+      } catch (error) {
+        console.log('Geocoding error on open map:', error);
+      }
+    }
+    setIsMapModalVisible(true);
+  };
   const [formData, setFormData] = useState<Record<string, any>>({
     base_first_name: '',
     base_last_name: '',
@@ -497,6 +519,7 @@ export default function EditProfileScreen() {
                 value={formData.zip_code}
                 onChangeText={v => handleChange('zip_code', v)}
                 keyboardType="number-pad"
+                leftIcon={<MapPin color={Colors.neutral[400]} size={20} />}
               />
             </>
           )}
@@ -510,11 +533,92 @@ export default function EditProfileScreen() {
                 keyboardType="number-pad"
                 leftIcon={<MapPin color={Colors.neutral[400]} size={20} />}
               />
-              <Input
-                label="Address"
-                value={formData.address}
-                onChangeText={v => handleChange('address', v)}
-              />
+              <View style={{marginBottom: 16}}>
+                <View style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8}}>
+                  <AppText variant="labelMedium" color={Colors.neutral[700]}>
+                    Address
+                  </AppText>
+                  {(formData.address || (formData.latitude && formData.longitude)) ? (
+                    <TouchableOpacity onPress={handleOpenMap}>
+                      <AppText variant="bodyMedium" color={Colors.primary[500]} style={{ textDecorationLine: 'underline' }}>
+                        Show on map
+                      </AppText>
+                    </TouchableOpacity>
+                  ) : null}
+                </View>
+                <GooglePlacesAutocomplete
+                  placeholder="Enter address"
+                  fetchDetails={true}
+                  onPress={(data, details = null) => {
+                    if (details) {
+                      handleChange('address', data.description);
+                      if (details.geometry) {
+                        handleChange('latitude', details.geometry.location.lat.toString());
+                        handleChange('longitude', details.geometry.location.lng.toString());
+                        setRegion({
+                          ...region,
+                          latitude: details.geometry.location.lat,
+                          longitude: details.geometry.location.lng,
+                        });
+                      }
+                    }
+                  }}
+                  query={{
+                    key: GOOGLE_MAPS_API_KEY,
+                    language: 'en',
+                  }}
+                  styles={{
+                    container: { flex: 0 },
+                    textInputContainer: {
+                      backgroundColor: Colors.neutral[0],
+                      borderRadius: 12,
+                      borderWidth: 1,
+                      borderColor: Colors.neutral[300],
+                      height: 52,
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      paddingHorizontal: 12,
+                    },
+                    textInput: {
+                      color: Colors.neutral[900],
+                      fontSize: 16,
+                      height: 50,
+                      flex: 1,
+                      backgroundColor: 'transparent',
+                    },
+                    listView: {
+                      backgroundColor: Colors.neutral[0],
+                      borderWidth: 1,
+                      borderColor: Colors.neutral[200],
+                      borderRadius: 8,
+                      marginTop: 4,
+                    },
+                  }}
+                  textInputProps={{
+                    placeholderTextColor: Colors.neutral[400],
+                    value: formData.address || '',
+                    onChangeText: (text) => {
+                      handleChange('address', text);
+                    }
+                  }}
+                  renderLeftButton={() => (
+                    <View style={{ marginRight: 8 }}>
+                      <MapPin color={Colors.neutral[400]} size={20} />
+                    </View>
+                  )}
+                  renderRightButton={() => (
+                    <TouchableOpacity style={{ padding: 4 }} onPress={() => {
+                      Toast.show({
+                        type: 'info',
+                        text1: 'Coming Soon',
+                        text2: 'Location feature will be available soon.',
+                      });
+                    }}>
+                      <Navigation color={Colors.primary[500]} size={20} />
+                    </TouchableOpacity>
+                  )}
+                />
+              </View>
               <Input
                 label=" Volunteering hours goal per week (Optional)"
                 value={formData.hours_goal_per_week}
@@ -648,8 +752,8 @@ export default function EditProfileScreen() {
                   <AppText variant="labelMedium" color={Colors.neutral[700]}>
                     Address
                   </AppText>
-                  {(formData.latitude && formData.longitude) ? (
-                    <TouchableOpacity onPress={() => setIsMapModalVisible(true)}>
+                  {(formData.address || (formData.latitude && formData.longitude)) ? (
+                    <TouchableOpacity onPress={handleOpenMap}>
                       <AppText variant="bodyMedium" color={Colors.primary[500]} style={{ textDecorationLine: 'underline' }}>
                         Show on map
                       </AppText>

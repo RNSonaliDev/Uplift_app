@@ -34,7 +34,7 @@ export default function PaymentSuccessfulScreen() {
   }, []);
 
   const numAmount = typeof amount === 'number' ? amount : parseFloat(amount) || 0;
-  const netAmount = (numAmount * 0.95).toFixed(2);
+  const netAmount = (numAmount * 0.80).toFixed(2);
   const firstName = profile?.profiles?.sponsor?.first_name || profile?.first_name || 'Supporter';
   const email = profile?.profiles?.sponsor?.email || profile?.email || 'your email';
 
@@ -84,7 +84,10 @@ export default function PaymentSuccessfulScreen() {
         {/* Custom Thank You Confirmation Card */}
         <View style={styles.thankYouCard}>
           <AppText variant="bodyMedium" color={Colors.neutral[800]} style={styles.thankYouText}>
-            Your contribution of ${numAmount.toFixed(2)} has been added to the iUpliftU Community Fund. ${netAmount} will be distributed to {allocationPreference} in the next allocation cycle. A tax receipt has been sent to {email}. Please keep it for your records. Because of you, someone in your community gets the help they need today.
+            Your contribution of ${numAmount.toFixed(2)} has been added to the iUpliftU Community Fund. ${netAmount} will be distributed to {allocationPreference} in the next allocation cycle. Because of you, someone in your community gets the help they need today.{'\n\n'}
+            <AppText variant="caption" color={Colors.neutral[600]}>
+              This is a record of your community support contribution to iUpliftU LLC. This payment is not a charitable donation and is not tax-deductible.
+            </AppText>
           </AppText>
         </View>
 

@@ -258,7 +258,7 @@ export default function BeneficiaryRequestDetailsScreen() {
           <View style={styles.securityNote}>
             <Info color={Colors.primary[500]} size={24} />
             <AppText variant="caption" color={Colors.primary[500]} style={styles.securityText}>
-              For your safety, never share personal information or belongings like your SSN or bank details with anyone.
+              For your safety, never share belongings or personal information like you SSN or bank details with anyone.
             </AppText>
           </View>
         )}

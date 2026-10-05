@@ -130,24 +130,12 @@ export default function NotificationsScreen() {
         activeOpacity={isUnread ? 0.7 : 1}
         disabled={!isUnread}
       >
-        <View style={styles.iconContainer}>
-          <View style={[styles.bellBg, isUnread ? styles.unreadBellBg : styles.readBellBg]}>
-            <Bell color={isUnread ? Colors.primary[500] : Colors.neutral[400]} size={20} />
-          </View>
-          {isUnread && <View style={styles.unreadDotBadge} />}
-        </View>
         <View style={styles.contentContainer}>
           <View style={styles.titleRow}>
-            <AppText variant="labelLarge" style={[styles.title, isUnread && styles.unreadTitle]}>
+            {isUnread && <View style={styles.dotIndicator} />}
+            <AppText variant="bodyMedium" style={[styles.title, isUnread && styles.unreadTitle]}>
               {item.title}
             </AppText>
-            {isUnread && (
-              <View style={styles.newBadge}>
-                <AppText variant="caption" style={styles.newBadgeText}>
-                  NEW
-                </AppText>
-              </View>
-            )}
           </View>
           <AppText variant="bodyMedium" style={[styles.message, isUnread ? styles.unreadMessage : styles.readMessage]}>
             {item.message || (item as any).body || (item as any).content}
@@ -163,6 +151,8 @@ export default function NotificationsScreen() {
     );
   };
 
+  const hasUnread = notifications.some(n => n.is_read === false || (n.is_read === undefined && !(n as any).read));
+
   return (
     <>
       <SafeAreaView style={{ flex: 0, backgroundColor: Colors.primary[500] }} />
@@ -172,15 +162,18 @@ export default function NotificationsScreen() {
           <ChevronLeft color={Colors.neutral[0]} size={28} />
         </TouchableOpacity>
         <AppText variant="h5" color={Colors.neutral[0]} style={{textAlign: 'center'}}>Notifications</AppText>
-        
-        {notifications.some(n => n.is_read === false || (n.is_read === undefined && !(n as any).read)) ? (
-          <TouchableOpacity onPress={handleMarkAllAsRead} style={styles.markAllBtn}>
-            <CheckCircle color={Colors.neutral[0]} size={22} />
-          </TouchableOpacity>
-        ) : (
-          <View style={{ width: 32 }} />
-        )}
+        <View style={{ width: 28 }} />
       </View>
+
+      {hasUnread && (
+        <View style={styles.subHeaderRow}>
+          <TouchableOpacity onPress={handleMarkAllAsRead} style={styles.markAllTextBtn}>
+            <AppText variant="bodyMedium" color={Colors.primary[600]} weight="semiBold">
+              Mark all as read
+            </AppText>
+          </TouchableOpacity>
+        </View>
+      )}
 
       {loading ? (
         <View style={styles.centerContainer}>
@@ -234,8 +227,16 @@ const styles = StyleSheet.create({
   headerTitle: {
     color: Colors.neutral[0],
   },
-  markAllBtn: {
-    padding: moderateScale(4),
+  subHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    paddingHorizontal: horizontalScale(16),
+    paddingTop: verticalScale(12),
+    paddingBottom: verticalScale(2),
+  },
+  markAllTextBtn: {
+    paddingVertical: verticalScale(4),
+    paddingHorizontal: horizontalScale(4),
   },
   listContainer: {
     flexGrow: 1,
@@ -247,8 +248,6 @@ const styles = StyleSheet.create({
     borderRadius: moderateScale(16),
     padding: moderateScale(16),
     marginBottom: verticalScale(12),
-    borderWidth: 1,
-    borderColor: Colors.neutral[200],
     alignItems: 'flex-start',
     shadowColor: Colors.neutral[900],
     shadowOffset: { width: 0, height: 2 },
@@ -257,46 +256,20 @@ const styles = StyleSheet.create({
     elevation: 1,
   },
   unreadCard: {
-    borderColor: Colors.primary[300],
-    backgroundColor: '#F5F3FF', // Very light purple tint
-    borderWidth: 1.5,
+    backgroundColor: '#ECE7FE', // Darker purple tint for unread
   },
-  iconContainer: {
-    marginRight: horizontalScale(12),
-    position: 'relative',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  bellBg: {
-    width: moderateScale(42),
-    height: moderateScale(42),
-    borderRadius: moderateScale(21),
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  unreadBellBg: {
-    backgroundColor: Colors.primary[50],
-  },
-  readBellBg: {
-    backgroundColor: Colors.neutral[100],
-  },
-  unreadDotBadge: {
-    position: 'absolute',
-    top: -2,
-    right: -2,
-    width: moderateScale(10),
-    height: moderateScale(10),
-    borderRadius: moderateScale(5),
-    backgroundColor: Colors.error,
-    borderWidth: 2,
-    borderColor: Colors.neutral[0],
+  dotIndicator: {
+    width: moderateScale(8),
+    height: moderateScale(8),
+    borderRadius: moderateScale(4),
+    backgroundColor: Colors.primary[500],
+    marginRight: horizontalScale(8),
   },
   contentContainer: {
     flex: 1,
   },
   titleRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: verticalScale(4),
   },
@@ -307,18 +280,6 @@ const styles = StyleSheet.create({
   unreadTitle: {
     color: Colors.neutral[900],
     // fontWeight: '700',
-  },
-  newBadge: {
-    backgroundColor: Colors.error,
-    paddingHorizontal: horizontalScale(6),
-    paddingVertical: verticalScale(2),
-    borderRadius: moderateScale(8),
-    marginLeft: horizontalScale(8),
-  },
-  newBadgeText: {
-    color: Colors.neutral[0],
-    fontSize: fontScale(9),
-    fontWeight: '700',
   },
   message: {
     marginBottom: verticalScale(8),

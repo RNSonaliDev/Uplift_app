@@ -108,14 +108,11 @@ export default function ChooseAmountScreen() {
       </View>
 
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-        {/* Non-Profit Information Banner */}
+        {/* Information Banner */}
         <View style={styles.infoBanner}>
           <ShieldCheck color={Colors.primary[500]} size={22} style={{ marginRight: 10, marginTop: 2 }} />
-          <AppText variant="caption" color={Colors.neutral[700]} style={styles.infoBannerText}>
-            Donations are processed by iUpliftU Foundation, Inc., a 501(c)(3) nonprofit. Tax-deductible to the extent permitted by law.{'\n\n'}
-            <AppText variant="caption" weight="semiBold" color={Colors.primary[700]}>
-              95% of your contribution goes directly to the community fund. A 5% platform fee keeps the platform running.
-            </AppText>
+          <AppText variant="bodySmall" color={Colors.neutral[700]} style={styles.infoBannerText}>
+            When you support your community through iUpliftU, 80% goes directly to beneficiaries and youth volunteers and 20% keeps the platform running so the help never stops
           </AppText>
         </View>
 
@@ -187,12 +184,7 @@ export default function ChooseAmountScreen() {
           </View>
         </View>
 
-        {/* Legal Disclaimer Footer */}
-        <View style={styles.legalFooter}>
-          <AppText variant="caption" color={Colors.neutral[500]} center style={styles.legalFooterText}>
-            iUpliftU Foundation, Inc. · 501(c)(3) · EIN: [FOUNDATION EIN] · No goods or services provided in exchange for this contribution.
-          </AppText>
-        </View>
+
       </ScrollView>
 
       {/* Footer */}
