@@ -10,7 +10,8 @@ import {
 } from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import {Colors} from '../../../theme/colors';
-import {Typography} from '../../../theme/typography';
+import {Typography, FontFamily} from '../../../theme/typography';
+import {horizontalScale, verticalScale, moderateScale, fontScale} from '../../../utils/responsive';
 import {
   ChevronLeft,
   ShoppingCart,
@@ -262,16 +263,17 @@ const styles = StyleSheet.create({
   securityNote: {
     flexDirection: 'row',
     backgroundColor: Colors.primary[50],
-    padding: 16,
-    borderRadius: 8,
+    padding: moderateScale(16),
+    borderRadius: moderateScale(14),
     alignItems: 'flex-start',
-    marginBottom: 24,
+    marginBottom: verticalScale(24),
   },
   securityText: {
     flex: 1,
-    marginLeft: 12,
-    lineHeight: 20,
-    ...Typography.caption,
+    marginLeft: horizontalScale(12),
+    fontSize: fontScale(13.5),
+    lineHeight: fontScale(19),
+    fontFamily: FontFamily.regular,
     color: Colors.info,
   },
 });

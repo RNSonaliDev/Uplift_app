@@ -13,7 +13,7 @@ import {
 import {useNavigation} from '@react-navigation/native';
 import {Colors} from '../../../theme/colors';
 import {Typography, FontFamily} from '../../../theme/typography';
-import {horizontalScale, verticalScale, moderateScale} from '../../../utils/responsive';
+import {horizontalScale, verticalScale, moderateScale, fontScale} from '../../../utils/responsive';
 import {
   ChevronLeft,
   ShoppingCart,
@@ -111,7 +111,9 @@ export default function RequestHelpScreen() {
 const HelpCategoryCard = ({icon, title, onPress}: {icon: React.ReactNode, title: string, onPress: () => void}) => (
   <TouchableOpacity style={styles.card} onPress={onPress}>
     <View style={styles.iconContainer}>{icon}</View>
-    <Text style={styles.cardTitle} numberOfLines={2} textAlign="center">{title}</Text>
+    <Text style={styles.cardTitle} numberOfLines={2}>
+      {title}
+    </Text>
   </TouchableOpacity>
 );
 
@@ -163,9 +165,11 @@ const styles = StyleSheet.create({
   },
   card: {
     width: CARD_WIDTH,
+    height: verticalScale(135),
     backgroundColor: Colors.neutral[0],
     borderRadius: moderateScale(16),
-    padding: moderateScale(24),
+    paddingHorizontal: horizontalScale(10),
+    paddingVertical: verticalScale(12),
     marginBottom: verticalScale(16),
     alignItems: 'center',
     justifyContent: 'center',
@@ -176,17 +180,17 @@ const styles = StyleSheet.create({
     elevation: 3,
     borderWidth: 1,
     borderColor: Colors.neutral[100],
-    minHeight: verticalScale(140),
   },
   iconContainer: {
-    marginBottom: verticalScale(16),
+    marginBottom: verticalScale(10),
     alignItems: 'center',
     justifyContent: 'center',
   },
   cardTitle: {
-    ...Typography.labelMedium,
-    color: Colors.neutral[900],
+    fontSize: fontScale(14),
+    lineHeight: fontScale(18),
     fontFamily: FontFamily.semiBold,
+    color: Colors.neutral[900],
     textAlign: 'center',
   },
 });

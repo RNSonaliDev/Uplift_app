@@ -196,16 +196,10 @@ const DashboardCard: React.FC<DashboardCardProps> = ({ role, onPress, disabled, 
         <View style={[styles.iconContainer, isCurrent && styles.iconContainerCurrent]}>
           {getIcon()}
         </View>
-        {isCurrent ? (
+        {isCurrent && (
           <View style={styles.currentBadge}>
             <AppText variant="caption" style={styles.currentBadgeText}>
               Current Role
-            </AppText>
-          </View>
-        ) : (
-          <View style={styles.availableBadge}>
-            <AppText variant="caption" style={styles.availableBadgeText}>
-              Available
             </AppText>
           </View>
         )}

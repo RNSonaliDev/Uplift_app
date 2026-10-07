@@ -1,6 +1,7 @@
 import React, {useState} from 'react';
 import {
   View,
+  Text,
   StyleSheet,
   SafeAreaView,
   TouchableOpacity,
@@ -11,11 +12,13 @@ import {useNavigation, useRoute} from '@react-navigation/native';
 import {Colors} from '../../../theme/colors';
 import {AppText} from '../../../components/AppText';
 import {Button} from '../../../components/Button';
-import {ChevronLeft, ClipboardList, Calendar, Clock, MapPin, FileText, AlignLeft} from 'lucide-react-native';
+import {FontFamily} from '../../../theme/typography';
+import {ChevronLeft, ClipboardList, Calendar, Clock, MapPin, FileText, AlignLeft, Info} from 'lucide-react-native';
 import {
   horizontalScale,
   verticalScale,
   moderateScale,
+  fontScale,
 } from '../../../utils/responsive';
 import {api} from '../../../api/client';
 import {formatDate} from '../../../utils/dateFormatter';
@@ -154,6 +157,14 @@ export default function PreviewRequestScreen() {
             formData?.description || 'N/A'
           )}
         </View>
+
+        {/* Security Note */}
+        <View style={styles.securityNote}>
+          <Info color={Colors.info} size={24} style={{ marginTop: 2 }} />
+          <Text style={styles.securityText}>
+            For your safety, never share belongings or personal information like you SSN or bank details with anyone.
+          </Text>
+        </View>
       </ScrollView>
 
       <View style={styles.footer}>
@@ -251,5 +262,22 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.neutral[0],
     borderTopWidth: 1,
     borderTopColor: Colors.neutral[100],
+  },
+  securityNote: {
+    flexDirection: 'row',
+    backgroundColor: Colors.primary[50],
+    padding: moderateScale(16),
+    borderRadius: moderateScale(14),
+    alignItems: 'flex-start',
+    marginTop: verticalScale(16),
+    marginBottom: verticalScale(16),
+  },
+  securityText: {
+    flex: 1,
+    marginLeft: horizontalScale(12),
+    fontSize: fontScale(13.5),
+    lineHeight: fontScale(19),
+    fontFamily: FontFamily.regular,
+    color: Colors.info,
   },
 });
