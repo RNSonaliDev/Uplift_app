@@ -16,6 +16,7 @@ import { Colors } from '../../../theme/colors';
 import { Typography, FontFamily } from '../../../theme/typography';
 import { AppText } from '../../../components/AppText';
 import { Button } from '../../../components/Button';
+import { HtmlContentView } from '../../../components/HtmlContentView';
 import {
   ChevronLeft,
   Megaphone,
@@ -391,9 +392,9 @@ export const PromotionDetailsScreen = () => {
                   <FileText color={Colors.neutral[600]} size={20} />
                   <AppText variant="bodyMedium" color={Colors.neutral[900]} style={{ marginLeft: 8, fontFamily: FontFamily.medium }}>Terms and Conditions</AppText>
                 </View>
-                <AppText variant="bodyMedium" color={Colors.neutral[600]} style={{ marginLeft: 28, marginTop: 4, lineHeight: 22 }}>
-                  {terms}
-                </AppText>
+                <View style={{ marginLeft: 28, marginTop: 4 }}>
+                  <HtmlContentView htmlContent={terms} />
+                </View>
               </View>
             ) : null}
 

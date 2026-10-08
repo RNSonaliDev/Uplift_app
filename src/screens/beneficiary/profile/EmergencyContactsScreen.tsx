@@ -465,7 +465,10 @@ export default function EmergencyContactsScreen() {
           }}
           activeOpacity={0.8}
         >
-          <Plus color={Colors.neutral[0]} size={24} />
+          <Plus color={Colors.neutral[0]} size={20} />
+          <AppText variant="buttonMedium" color={Colors.neutral[0]} style={{ marginLeft: 6 }}>
+            Add Contact
+          </AppText>
         </TouchableOpacity>
         )}
       </SafeAreaView>
@@ -567,12 +570,13 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 24,
     right: 24,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    height: 52,
+    paddingHorizontal: 20,
+    borderRadius: 26,
     backgroundColor: Colors.primary[500],
-    justifyContent: 'center',
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     shadowColor: Colors.neutral[900],
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.15,

@@ -131,7 +131,10 @@ export const OrganizationRequestsScreen = () => {
           onPress={() => navigation.navigate('SelectCategory')}
           activeOpacity={0.8}
         >
-          <Plus color="#FFF" size={24} />
+          <Plus color="#FFF" size={20} />
+          <AppText variant="buttonMedium" color="#FFF" style={{ marginLeft: 6 }}>
+            Create Request
+          </AppText>
         </TouchableOpacity>
       </View>
       </SafeAreaView>
@@ -328,11 +331,12 @@ const styles = StyleSheet.create({
     bottom: 24,
     right: 24,
     backgroundColor: Colors.primary[500],
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    justifyContent: 'center',
+    height: 52,
+    paddingHorizontal: 20,
+    borderRadius: 26,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     shadowColor: Colors.primary[500],
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,

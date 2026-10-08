@@ -10,7 +10,7 @@ import { Menu, Bell, Plus, Lock, Calendar, Pill, ChevronRight, MapPin, Users, Cl
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Colors } from '../../../theme/colors';
-import { Typography, FontFamily } from '../../../theme/typography';
+import { Typography, FontFamily, FontSize } from '../../../theme/typography';
 import { horizontalScale, verticalScale, moderateScale } from '../../../utils/responsive';
 
 // Mock Data
@@ -132,8 +132,8 @@ export const OrganizationDashboardScreen = () => {
             style={styles.raiseRequestButton}
             onPress={() => navigation.navigate('SelectCategory')}
           >
-            <Plus color={Colors.neutral[0]} size={20} style={{ marginRight: 8 }} />
-            <Text style={styles.raiseRequestButtonText}>Create an opportunity</Text>
+            {/* <Plus color={Colors.neutral[0]} size={20} style={{ marginRight: 8 }} /> */}
+            <Text style={styles.raiseRequestButtonText}>Create a volunteering opportunity</Text>
           </TouchableOpacity>
         </View>
 
@@ -339,6 +339,7 @@ const styles = StyleSheet.create({
   raiseRequestButtonText: {
     ...Typography.buttonLarge,
     color: Colors.neutral[0],
+    fontSize: FontSize.md
   },
   sectionHeader: {
     flexDirection: 'row',

@@ -120,7 +120,10 @@ export default function ContactSupportScreen() {
         onPress={() => navigation.navigate('CreateSupportRequest')}
         activeOpacity={0.8}
       >
-        <Plus color={Colors.neutral[0]} size={24} />
+        <Plus color={Colors.neutral[0]} size={20} />
+        <AppText variant="buttonMedium" color={Colors.neutral[0]} style={{ marginLeft: 6 }}>
+          Create Request
+        </AppText>
       </TouchableOpacity>
     </SafeAreaView>
   );
@@ -234,12 +237,13 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: verticalScale(24),
     right: horizontalScale(24),
-    width: moderateScale(56),
-    height: moderateScale(56),
-    borderRadius: moderateScale(28),
+    height: moderateScale(52),
+    paddingHorizontal: horizontalScale(20),
+    borderRadius: moderateScale(26),
     backgroundColor: Colors.primary[500],
-    justifyContent: 'center',
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     shadowColor: Colors.neutral[900],
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.15,

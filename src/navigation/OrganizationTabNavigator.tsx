@@ -78,20 +78,7 @@ export function OrganizationTabNavigator() {
           },
         })}
       />
-      <Tab.Screen
-        name="PromotionsTab"
-        component={PromotionsListingScreen}
-        options={{
-          tabBarLabel: 'Promotions',
-          tabBarIcon: ({color}) => <Megaphone color={color} size={22} />,
-        }}
-        listeners={({navigation}) => ({
-          tabPress: (e) => {
-            e.preventDefault();
-            navigation.navigate('PromotionsTab');
-          },
-        })}
-      />
+
       <Tab.Screen
         name="JobsTab"
         component={JobsListingScreen}
@@ -103,6 +90,20 @@ export function OrganizationTabNavigator() {
           tabPress: (e) => {
             e.preventDefault();
             navigation.navigate('JobsTab');
+          },
+        })}
+      />
+            <Tab.Screen
+        name="PromotionsTab"
+        component={PromotionsListingScreen}
+        options={{
+          tabBarLabel: 'Promotions',
+          tabBarIcon: ({color}) => <Megaphone color={color} size={22} />,
+        }}
+        listeners={({navigation}) => ({
+          tabPress: (e) => {
+            e.preventDefault();
+            navigation.navigate('PromotionsTab');
           },
         })}
       />

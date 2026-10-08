@@ -72,19 +72,25 @@ export const BrowsePromotionsScreen = () => {
   const [promotions, setPromotions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Search & Filter States (ONLY Promotion Type and Product Category)
+  // Search & Filter States
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTypeId, setSelectedTypeId] = useState<number | null>(null);
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
+  const [zipCodeQuery, setZipCodeQuery] = useState('');
+  const [selectedLocationMode, setSelectedLocationMode] = useState<'all' | 'online' | 'offline'>('all');
 
   // Temporary Filter States for Filter Modal
   const [tempTypeId, setTempTypeId] = useState<number | null>(null);
   const [tempCategoryId, setTempCategoryId] = useState<number | null>(null);
+  const [tempZipCode, setTempZipCode] = useState('');
+  const [tempLocationMode, setTempLocationMode] = useState<'all' | 'online' | 'offline'>('all');
 
   // Visibility states
   const [isFilterModalVisible, setIsFilterModalVisible] = useState(false);
   const [typeModalVisible, setTypeModalVisible] = useState(false);
   const [categoryModalVisible, setCategoryModalVisible] = useState(false);
+  const [zipModalVisible, setZipModalVisible] = useState(false);
+  const [locationModalVisible, setLocationModalVisible] = useState(false);
   const [filtersVisible, setFiltersVisible] = useState(false);
 
   // Metadata dropdown options
@@ -129,6 +135,9 @@ export const BrowsePromotionsScreen = () => {
       if (selectedCategoryId) {
         params.product_category_id = selectedCategoryId;
       }
+      if (zipCodeQuery.trim()) {
+        params.zip_code = zipCodeQuery.trim();
+      }
 
       const queryString = new URLSearchParams(params).toString();
       const endpoint = `/promotions/browse${queryString ? `?${queryString}` : ''}`;
@@ -146,7 +155,7 @@ export const BrowsePromotionsScreen = () => {
     } finally {
       setLoading(false);
     }
-  }, [searchQuery, selectedTypeId, selectedCategoryId]);
+  }, [searchQuery, selectedTypeId, selectedCategoryId, zipCodeQuery]);
 
   useFocusEffect(
     useCallback(() => {
@@ -162,12 +171,16 @@ export const BrowsePromotionsScreen = () => {
   const openFilterModal = () => {
     setTempTypeId(selectedTypeId);
     setTempCategoryId(selectedCategoryId);
+    setTempZipCode(zipCodeQuery);
+    setTempLocationMode(selectedLocationMode);
     setIsFilterModalVisible(true);
   };
 
   const applyFilters = () => {
     setSelectedTypeId(tempTypeId);
     setSelectedCategoryId(tempCategoryId);
+    setZipCodeQuery(tempZipCode);
+    setSelectedLocationMode(tempLocationMode);
     setIsFilterModalVisible(false);
   };
 
@@ -175,12 +188,16 @@ export const BrowsePromotionsScreen = () => {
     setSearchQuery('');
     setSelectedTypeId(null);
     setSelectedCategoryId(null);
+    setZipCodeQuery('');
+    setSelectedLocationMode('all');
     setTempTypeId(null);
     setTempCategoryId(null);
+    setTempZipCode('');
+    setTempLocationMode('all');
     setIsFilterModalVisible(false);
   };
 
-  const activeFilterCount = (selectedTypeId ? 1 : 0) + (selectedCategoryId ? 1 : 0);
+  const activeFilterCount = (selectedTypeId ? 1 : 0) + (selectedCategoryId ? 1 : 0) + (zipCodeQuery.trim() ? 1 : 0) + (selectedLocationMode !== 'all' ? 1 : 0);
   const hasActiveFilters = activeFilterCount > 0;
 
   const formatDateVal = (dateVal: any) => {
@@ -188,6 +205,21 @@ export const BrowsePromotionsScreen = () => {
     if (typeof dateVal === 'string') return formatDate(dateVal);
     if (dateVal instanceof Date) return formatDate(dateVal.toISOString());
     return String(dateVal);
+  };
+
+  const getPromoLocationCategory = (item: any): 'local' | 'both' | 'online' => {
+    const locType = (item.location_type || '').toLowerCase();
+    const addr = (item.store_address || item.address || '').trim();
+    const url = (item.online_url || item.url || '').trim();
+    const locText = (item.locationText || '').toLowerCase();
+
+    if (locType === 'both' || (addr && url) || locText.includes('& online')) {
+      return 'both';
+    }
+    if (locType === 'online' || (url && !addr) || locText.startsWith('online')) {
+      return 'online';
+    }
+    return 'local';
   };
 
   const filteredPromotions = promotions.filter((item) => {
@@ -215,7 +247,42 @@ export const BrowsePromotionsScreen = () => {
       if (catId && catId !== selectedCategoryId) return false;
     }
 
+    // Location Mode Filter (Online / In-Store / All)
+    if (selectedLocationMode === 'online') {
+      const cat = getPromoLocationCategory(item);
+      if (cat !== 'online' && cat !== 'both') return false;
+    } else if (selectedLocationMode === 'offline') {
+      const cat = getPromoLocationCategory(item);
+      if (cat !== 'local' && cat !== 'both') return false;
+    }
+
+    // Zip Code Filter logic: "online should show anyways"
+    if (zipCodeQuery.trim()) {
+      const category = getPromoLocationCategory(item);
+      if (category === 'local') {
+        const z = zipCodeQuery.trim().toLowerCase();
+        const addr = (item.store_address || item.address || item.locationText || '').toLowerCase();
+        const zip = (item.zip_code || item.zip || item.postal_code || '').toLowerCase();
+        if (!addr.includes(z) && !zip.includes(z)) {
+          return false;
+        }
+      }
+    }
+
     return true;
+  });
+
+  // Sort logic: Local show first, followed by local/online and then online
+  const sortedPromotions = [...filteredPromotions].sort((a, b) => {
+    const getRank = (item: any) => {
+      const category = getPromoLocationCategory(item);
+      if (category === 'local') return 1;
+      if (category === 'both') return 2;
+      if (category === 'online') return 3;
+      return 4;
+    };
+
+    return getRank(a) - getRank(b);
   });
 
   const selectedTypeName = promotionTypes.find((t) => t.id === selectedTypeId)?.name;
@@ -400,6 +467,23 @@ export const BrowsePromotionsScreen = () => {
           {filtersVisible && (
             <View style={styles.filtersRow}>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filtersScroll}>
+                {/* Location Option Filter Chip */}
+                <TouchableOpacity style={styles.filterChip} onPress={() => setLocationModalVisible(true)}>
+                  <AppText variant="labelSmall" color={selectedLocationMode !== 'all' ? Colors.primary[600] : Colors.neutral[600]}>
+                    {selectedLocationMode === 'online' ? 'Online' : selectedLocationMode === 'offline' ? 'In-Store' : 'Location: All'}
+                  </AppText>
+                  <ChevronDown color={selectedLocationMode !== 'all' ? Colors.primary[600] : Colors.neutral[400]} size={14} style={{ marginLeft: 4 }} />
+                </TouchableOpacity>
+
+                {/* Zip Code Filter Chip */}
+                <TouchableOpacity style={styles.filterChip} onPress={() => { setTempZipCode(zipCodeQuery); setZipModalVisible(true); }}>
+                  <MapPin color={zipCodeQuery.trim() ? Colors.primary[600] : Colors.neutral[400]} size={14} style={{ marginRight: 4 }} />
+                  <AppText variant="labelSmall" color={zipCodeQuery.trim() ? Colors.primary[600] : Colors.neutral[600]}>
+                    {zipCodeQuery.trim() ? `Zip: ${zipCodeQuery.trim()}` : 'Zip Code'}
+                  </AppText>
+                  <ChevronDown color={zipCodeQuery.trim() ? Colors.primary[600] : Colors.neutral[400]} size={14} style={{ marginLeft: 4 }} />
+                </TouchableOpacity>
+
                 {/* Promotion Type Dropdown Filter */}
                 <TouchableOpacity style={styles.filterChip} onPress={() => setTypeModalVisible(true)}>
                   <AppText variant="labelSmall" color={selectedTypeId ? Colors.primary[600] : Colors.neutral[600]}>
@@ -434,6 +518,20 @@ export const BrowsePromotionsScreen = () => {
               showsHorizontalScrollIndicator={false}
               style={styles.chipsScrollView}
               contentContainerStyle={styles.chipsContainer}>
+              {selectedLocationMode !== 'all' ? (
+                <TouchableOpacity style={styles.chip} onPress={() => setSelectedLocationMode('all')}>
+                  <Text style={styles.chipText}>Location: {selectedLocationMode === 'online' ? 'Online' : 'In-Store'}</Text>
+                  <X size={13} color={Colors.primary[700]} style={{ marginLeft: 4 }} />
+                </TouchableOpacity>
+              ) : null}
+
+              {zipCodeQuery.trim() ? (
+                <TouchableOpacity style={styles.chip} onPress={() => setZipCodeQuery('')}>
+                  <Text style={styles.chipText}>Zip: {zipCodeQuery.trim()}</Text>
+                  <X size={13} color={Colors.primary[700]} style={{ marginLeft: 4 }} />
+                </TouchableOpacity>
+              ) : null}
+
               {selectedTypeName ? (
                 <TouchableOpacity style={styles.chip} onPress={() => setSelectedTypeId(null)}>
                   <Text style={styles.chipText}>Type: {selectedTypeName}</Text>
@@ -463,7 +561,7 @@ export const BrowsePromotionsScreen = () => {
           refreshControl={
             <RefreshControl refreshing={loading} onRefresh={fetchPromotions} colors={[Colors.primary[500]]} />
           }>
-          {filteredPromotions.length === 0 && !loading ? (
+          {sortedPromotions.length === 0 && !loading ? (
             <View style={styles.emptyState}>
               <Megaphone color={Colors.neutral[300]} size={48} />
               <AppText variant="bodyMedium" color={Colors.neutral[600]} style={{ marginTop: 16, fontFamily: FontFamily.medium }}>
@@ -479,10 +577,79 @@ export const BrowsePromotionsScreen = () => {
               )}
             </View>
           ) : (
-            filteredPromotions.map((item) => renderPromoCard(item))
+            sortedPromotions.map((item) => renderPromoCard(item))
           )}
         </ScrollView>
       </View>
+
+      {/* Zip Code Quick Modal */}
+      <Modal visible={zipModalVisible} animationType="fade" transparent onRequestClose={() => setZipModalVisible(false)}>
+        <TouchableWithoutFeedback onPress={() => setZipModalVisible(false)}>
+          <View style={styles.dropdownModalOverlay}>
+            <TouchableWithoutFeedback>
+              <View style={[styles.dropdownModalContent, { padding: 20 }]}>
+                <View style={styles.dropdownModalHeader}>
+                  <AppText variant="h6" color={Colors.neutral[900]}>Enter Zip Code</AppText>
+                  <TouchableOpacity onPress={() => setZipModalVisible(false)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                    <X color={Colors.neutral[600]} size={22} />
+                  </TouchableOpacity>
+                </View>
+                <View style={styles.zipInputWrapper}>
+                  <MapPin size={18} color={Colors.neutral[400]} style={{ marginRight: 8 }} />
+                  <TextInput
+                    style={styles.zipTextInput}
+                    placeholder="e.g. 95112"
+                    placeholderTextColor={Colors.neutral[400]}
+                    value={tempZipCode}
+                    onChangeText={setTempZipCode}
+                    keyboardType="numeric"
+                    autoFocus
+                  />
+                  {tempZipCode ? (
+                    <TouchableOpacity onPress={() => setTempZipCode('')} style={{ padding: 4 }}>
+                      <X size={16} color={Colors.neutral[400]} />
+                    </TouchableOpacity>
+                  ) : null}
+                </View>
+                <View style={{ flexDirection: 'row', gap: 12 }}>
+                  {zipCodeQuery.trim() ? (
+                    <TouchableOpacity
+                      style={[styles.resetButton, { flex: 1, marginTop: 0, justifyContent: 'center' }]}
+                      onPress={() => { setZipCodeQuery(''); setTempZipCode(''); setZipModalVisible(false); }}>
+                      <Text style={styles.resetButtonText}>Clear</Text>
+                    </TouchableOpacity>
+                  ) : null}
+                  <View style={{ flex: 1 }}>
+                    <Button
+                      title="Apply"
+                      onPress={() => { setZipCodeQuery(tempZipCode); setZipModalVisible(false); }}
+                      size="md"
+                      fullWidth
+                    />
+                  </View>
+                </View>
+              </View>
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
+
+      {/* Location Option Dropdown Modal */}
+      {renderDropdownModal(
+        locationModalVisible,
+        () => setLocationModalVisible(false),
+        'Select Location Option',
+        [
+          { id: 'all', name: 'All Locations' },
+          { id: 'offline', name: 'In-Store / Offline' },
+          { id: 'online', name: 'Online' },
+        ],
+        selectedLocationMode as any,
+        (item) => {
+          setSelectedLocationMode(item.id);
+          setLocationModalVisible(false);
+        }
+      )}
 
       {/* Promotion Type Dropdown Modal */}
       {renderDropdownModal(
@@ -510,7 +677,7 @@ export const BrowsePromotionsScreen = () => {
         }
       )}
 
-      {/* Filter Modal (ONLY Promotion Type and Product Category) */}
+      {/* Filter Modal */}
       <Modal
         visible={isFilterModalVisible}
         animationType="slide"
@@ -530,6 +697,53 @@ export const BrowsePromotionsScreen = () => {
             </View>
 
             <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
+              {/* Location Mode Selector */}
+              <View style={styles.filterGroup}>
+                <Text style={styles.filterLabel}>Location Option</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipSelectorRow}>
+                  {[
+                    { id: 'all', label: 'All Locations' },
+                    { id: 'offline', label: 'In-Store / Offline' },
+                    { id: 'online', label: 'Online' },
+                  ].map((opt) => {
+                    const isSelected = tempLocationMode === opt.id;
+                    return (
+                      <TouchableOpacity
+                        key={opt.id}
+                        style={[
+                          styles.selectorChip,
+                          isSelected && styles.selectorChipSelected,
+                        ]}
+                        onPress={() => setTempLocationMode(opt.id as any)}>
+                        <Text style={[styles.selectorChipText, isSelected && styles.selectorChipTextSelected]}>
+                          {opt.label}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </ScrollView>
+              </View>
+              {/* Zip Code Selector */}
+              <View style={styles.filterGroup}>
+                <Text style={styles.filterLabel}>Zip Code</Text>
+                <View style={[styles.zipInputWrapper, { marginVertical: 0, marginTop: 4 }]}>
+                  <MapPin size={18} color={Colors.neutral[400]} style={{ marginRight: 8 }} />
+                  <TextInput
+                    style={styles.zipTextInput}
+                    placeholder="Enter Zip Code (e.g. 95112)"
+                    placeholderTextColor={Colors.neutral[400]}
+                    value={tempZipCode}
+                    onChangeText={setTempZipCode}
+                    keyboardType="numeric"
+                  />
+                  {tempZipCode ? (
+                    <TouchableOpacity onPress={() => setTempZipCode('')} style={{ padding: 4 }}>
+                      <X size={16} color={Colors.neutral[400]} />
+                    </TouchableOpacity>
+                  ) : null}
+                </View>
+              </View>
+
               {/* Promotion Type Selector */}
               <View style={styles.filterGroup}>
                 <Text style={styles.filterLabel}>Promotion Type</Text>
@@ -982,5 +1196,23 @@ const styles = StyleSheet.create({
     fontFamily: FontFamily.medium,
     fontSize: fontScale(13.5),
     color: Colors.neutral[600],
+  },
+  zipInputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.neutral[50],
+    borderWidth: 1.5,
+    borderColor: Colors.neutral[300],
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    height: 48,
+    marginVertical: 18,
+  },
+  zipTextInput: {
+    flex: 1,
+    fontFamily: FontFamily.medium,
+    fontSize: fontScale(15),
+    color: Colors.neutral[900],
+    paddingVertical: 0,
   },
 });

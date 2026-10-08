@@ -123,7 +123,10 @@ export default function ContributionsListScreen() {
         onPress={() => navigation.navigate('ChooseAmount')}
         activeOpacity={0.8}
       >
-        <Plus color="#FFF" size={24} />
+        <Plus color="#FFF" size={20} />
+        <AppText variant="buttonMedium" color="#FFF" style={{ marginLeft: 6 }}>
+          Contributions
+        </AppText>
       </TouchableOpacity>
     </SafeAreaView>
   );
@@ -138,17 +141,18 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 24,
     right: 24,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: Colors.primary[600],
-    justifyContent: 'center',
+    height: 52,
+    paddingHorizontal: 20,
+    borderRadius: 26,
+    backgroundColor: Colors.primary[500],
+    flexDirection: 'row',
     alignItems: 'center',
-    elevation: 4,
-    shadowColor: Colors.neutral[900],
+    justifyContent: 'center',
+    shadowColor: Colors.primary[500],
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
-    shadowRadius: 6,
+    shadowRadius: 8,
+    elevation: 6,
   },
   header: {
     flexDirection: 'row',

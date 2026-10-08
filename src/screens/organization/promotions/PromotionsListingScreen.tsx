@@ -354,7 +354,10 @@ export const PromotionsListingScreen = () => {
           style={styles.fab}
           onPress={() => navigation.navigate('CreatePromotion')}
           activeOpacity={0.85}>
-          <Plus color={Colors.neutral[0]} size={28} />
+          <Plus color={Colors.neutral[0]} size={20} />
+          <AppText variant="buttonMedium" color={Colors.neutral[0]} style={{ marginLeft: 6 }}>
+            Create Promo
+          </AppText>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -503,7 +506,7 @@ const styles = StyleSheet.create({
   categoryText: {
     fontFamily: FontFamily.regular,
     fontSize: fontScale(12),
-    color: Colors.neutral[700],
+    color: Colors.neutral[500],
   },
   metaRow: {
     flexDirection: 'row',
@@ -526,11 +529,11 @@ const styles = StyleSheet.create({
     bottom: verticalScale(24),
     right: horizontalScale(20),
     backgroundColor: Colors.primary[500],
-    width: moderateScale(56),
-    height: moderateScale(56),
-    borderRadius: moderateScale(28),
-    justifyContent: 'center',
+    flexDirection: 'row',
     alignItems: 'center',
+    paddingHorizontal: horizontalScale(16),
+    paddingVertical: verticalScale(12),
+    borderRadius: moderateScale(28),
     shadowColor: Colors.primary[500],
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.35,

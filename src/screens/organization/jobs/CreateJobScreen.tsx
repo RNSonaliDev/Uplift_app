@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, TextInput, TouchableOpacity, ScrollView, Modal, FlatList, TouchableWithoutFeedback, Alert } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, TextInput, TouchableOpacity, ScrollView, Modal, FlatList, TouchableWithoutFeedback } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { Colors } from '../../../theme/colors';
 import { Typography, FontFamily } from '../../../theme/typography';
@@ -53,50 +53,7 @@ export const CreateJobScreen = () => {
   const [activeModal, setActiveModal] = useState<'department' | 'jobType' | 'workSetting' | 'compensation' | null>(null);
 
   const handleBack = () => {
-    Alert.alert(
-      'Save as Draft?',
-      'Would you like to save your changes as a draft before leaving?',
-      [
-        {
-          text: 'Discard',
-          style: 'destructive',
-          onPress: () => navigation.goBack()
-        },
-        {
-          text: 'Save as Draft',
-          onPress: async () => {
-            const payload = {
-              job_post: {
-                title,
-                description,
-                department_id: department,
-                job_type: jobType,
-                work_setting: workSetting,
-                compensation,
-                company_url: companyUrl,
-                job_url: jobUrl,
-              }
-            };
-
-            try {
-              setLoading(true);
-              if (isEditing) {
-                await api.patch(`/job_posts/${editJob.id}`, payload);
-              } else {
-                await api.post('/job_posts', payload);
-              }
-              Toast.show({ type: 'success', text1: 'Success', text2: 'Saved successfully!' });
-              navigation.goBack();
-            } catch (error: any) {
-              Toast.show({ type: 'error', text1: 'Error', text2: error?.message || 'Failed to save.' });
-            } finally {
-              setLoading(false);
-            }
-          }
-        },
-        { text: 'Cancel', style: 'cancel' }
-      ]
-    );
+    navigation.goBack();
   };
 
   const [departments, setDepartments] = useState<any[]>([]);

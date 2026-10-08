@@ -20,6 +20,7 @@ import { Colors } from '../../../theme/colors';
 import { Typography, FontFamily } from '../../../theme/typography';
 import { AppText } from '../../../components/AppText';
 import { Button } from '../../../components/Button';
+import { HtmlContentView } from '../../../components/HtmlContentView';
 import { DatePickerModal } from '../../../components/DatePickerModal';
 import {
   Megaphone,
@@ -181,6 +182,7 @@ export const CreatePromotionScreen = () => {
   const [promoCode, setPromoCode] = useState('UPLIFT');
   const [quantityAvailable, setQuantityAvailable] = useState('');
   const [termsConditions, setTermsConditions] = useState('');
+  const [showHtmlPreview, setShowHtmlPreview] = useState(false);
   const [description, setDescription] = useState('');
 
   // Modals / Dropdowns
@@ -466,7 +468,7 @@ export const CreatePromotionScreen = () => {
               </Text>
               <TextInput
                 style={[styles.input, fieldErrors.title ? styles.inputError : null]}
-                placeholder="e.g. 20% Off Weekend Healthy Meals"
+                placeholder="XYZ LLC"
                 placeholderTextColor={Colors.neutral[400]}
                 value={title}
                 onChangeText={(text) => {
@@ -659,9 +661,8 @@ export const CreatePromotionScreen = () => {
                         paddingHorizontal: 12,
                       },
                       textInput: {
+                        ...Typography.bodyMedium,
                         color: Colors.neutral[900],
-                        fontSize: fontScale(14),
-                        fontFamily: FontFamily.regular,
                         height: 50,
                         marginLeft: 8,
                         flex: 1,
@@ -745,17 +746,73 @@ export const CreatePromotionScreen = () => {
               <Text style={styles.helperText}>Leave blank for unlimited</Text>
 
               {/* Terms and Conditions */}
-              <Text style={styles.label}>Terms and Conditions</Text>
-              <TextInput
-                style={[styles.input, styles.multilineInput]}
-                placeholder="e.g. One per customer. Cannot be combined with other offers. Valid until expiration date."
-                placeholderTextColor={Colors.neutral[400]}
-                multiline
-                numberOfLines={3}
-                textAlignVertical="top"
-                value={termsConditions}
-                onChangeText={setTermsConditions}
-              />
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 12, marginBottom: 4 }}>
+                <Text style={[styles.label, { marginBottom: 0 }]}>Terms and Conditions (HTML)</Text>
+                <TouchableOpacity 
+                  onPress={() => setShowHtmlPreview(!showHtmlPreview)}
+                  style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.primary[50], paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 }}
+                >
+                  <Eye size={14} color={Colors.primary[600]} style={{ marginRight: 4 }} />
+                  <AppText variant="caption" color={Colors.primary[600]} style={{ fontFamily: FontFamily.medium }}>
+                    {showHtmlPreview ? 'Edit' : 'Preview'}
+                  </AppText>
+                </TouchableOpacity>
+              </View>
+
+              {/* HTML Formatting Helper Toolbar */}
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 8 }} contentContainerStyle={{ paddingVertical: 2 }}>
+                <TouchableOpacity 
+                  style={styles.htmlTagBtn} 
+                  onPress={() => setTermsConditions(prev => prev + '<b>bold text</b>')}
+                >
+                  <AppText variant="caption" color={Colors.neutral[800]} style={{ fontFamily: FontFamily.bold }}>B</AppText>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={styles.htmlTagBtn} 
+                  onPress={() => setTermsConditions(prev => prev + '<i>italic text</i>')}
+                >
+                  <AppText variant="caption" color={Colors.neutral[800]} style={{ fontFamily: FontFamily.italic }}>I</AppText>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={styles.htmlTagBtn} 
+                  onPress={() => setTermsConditions(prev => prev + '<ul>\n  <li>Item 1</li>\n  <li>Item 2</li>\n</ul>')}
+                >
+                  <AppText variant="caption" color={Colors.neutral[800]}>• List</AppText>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={styles.htmlTagBtn} 
+                  onPress={() => setTermsConditions(prev => prev + '<p>Paragraph text</p>')}
+                >
+                  <AppText variant="caption" color={Colors.neutral[800]}>&lt;p&gt;</AppText>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={styles.htmlTagBtn} 
+                  onPress={() => setTermsConditions(prev => prev + '<br/>')}
+                >
+                  <AppText variant="caption" color={Colors.neutral[800]}>Break</AppText>
+                </TouchableOpacity>
+              </ScrollView>
+
+              {showHtmlPreview ? (
+                <View style={[styles.input, { minHeight: 90, backgroundColor: Colors.neutral[50], padding: 12 }]}>
+                  {termsConditions.trim() ? (
+                    <HtmlContentView htmlContent={termsConditions} />
+                  ) : (
+                    <AppText variant="bodySmall" color={Colors.neutral[400]}>No terms entered to preview.</AppText>
+                  )}
+                </View>
+              ) : (
+                <TextInput
+                  style={[styles.input, styles.multilineInput]}
+                  placeholder="e.g. <b>One per customer.</b><br/>Valid until expiration date."
+                  placeholderTextColor={Colors.neutral[400]}
+                  multiline
+                  numberOfLines={4}
+                  textAlignVertical="top"
+                  value={termsConditions}
+                  onChangeText={setTermsConditions}
+                />
+              )}
 
         </ScrollView>
 
@@ -960,33 +1017,30 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   label: {
-    fontFamily: FontFamily.medium,
-    fontSize: fontScale(13.5),
+    ...Typography.labelMedium,
     color: Colors.neutral[700],
     marginBottom: verticalScale(6),
     marginTop: verticalScale(14),
   },
   subLabel: {
-    fontFamily: FontFamily.medium,
-    fontSize: fontScale(12.5),
+    ...Typography.labelMedium,
+    fontSize: fontScale(14),
     color: Colors.neutral[700],
     marginBottom: verticalScale(4),
   },
   helperText: {
-    fontFamily: FontFamily.regular,
-    fontSize: fontScale(11.5),
+    ...Typography.bodySmall,
     color: Colors.neutral[500],
     marginTop: verticalScale(4),
   },
   input: {
+    ...Typography.bodyMedium,
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: Colors.neutral[200],
     borderRadius: moderateScale(8),
     paddingHorizontal: horizontalScale(14),
     paddingVertical: verticalScale(12),
-    fontFamily: FontFamily.regular,
-    fontSize: fontScale(14),
     color: Colors.neutral[900],
   },
   inputError: {
@@ -995,8 +1049,7 @@ const styles = StyleSheet.create({
   },
   fieldErrorText: {
     color: Colors.error,
-    fontSize: fontScale(12),
-    fontFamily: FontFamily.regular,
+    ...Typography.bodySmall,
     marginTop: verticalScale(4),
     marginLeft: horizontalScale(4),
   },
@@ -1015,8 +1068,7 @@ const styles = StyleSheet.create({
     paddingVertical: verticalScale(12),
   },
   dropdownText: {
-    fontFamily: FontFamily.regular,
-    fontSize: fontScale(14),
+    ...Typography.bodyMedium,
     color: Colors.neutral[900],
   },
   dropdownList: {
@@ -1034,8 +1086,7 @@ const styles = StyleSheet.create({
     borderBottomColor: Colors.neutral[100],
   },
   dropdownOptionText: {
-    fontFamily: FontFamily.regular,
-    fontSize: fontScale(14),
+    ...Typography.bodyMedium,
     color: Colors.neutral[700],
   },
   rowInputs: {
@@ -1053,8 +1104,7 @@ const styles = StyleSheet.create({
     paddingVertical: verticalScale(12),
   },
   datePickerText: {
-    fontFamily: FontFamily.regular,
-    fontSize: fontScale(13.5),
+    ...Typography.bodyMedium,
     color: Colors.neutral[900],
   },
   pillRow: {
@@ -1080,8 +1130,8 @@ const styles = StyleSheet.create({
     borderColor: Colors.primary[500],
   },
   pillText: {
-    fontFamily: FontFamily.medium,
-    fontSize: fontScale(12.5),
+    ...Typography.labelMedium,
+    fontSize: fontScale(13.5),
     color: Colors.neutral[700],
     marginLeft: 6,
   },
@@ -1203,5 +1253,14 @@ const styles = StyleSheet.create({
     fontSize: fontScale(12),
     color: Colors.neutral[600],
     marginLeft: 6,
+  },
+  htmlTagBtn: {
+    backgroundColor: Colors.neutral[100],
+    borderWidth: 1,
+    borderColor: Colors.neutral[300],
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 6,
+    marginRight: 6,
   },
 });

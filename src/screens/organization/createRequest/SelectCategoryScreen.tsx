@@ -15,6 +15,7 @@ import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   ChevronLeft,
+  ChevronRight,
   Search,
   ShoppingBag,
   Pill,
@@ -115,18 +116,19 @@ export const SelectCategoryScreen = () => {
                   onPress={() => handleSelectCategory(category)}
                   activeOpacity={0.7}
                 >
-                  {category.logo_url ? (
-                    <View style={[styles.iconContainer, { overflow: 'hidden' }]}>
-                      <Image source={{ uri: getFullImageUrl(category.logo_url) || '' }} style={{ width: '100%', height: '100%' }} resizeMode="contain" />
-                    </View>
-                  ) : (
-                    <View style={styles.iconContainer}>
-                      <IconComponent color={Colors.primary[600]} size={32} />
-                    </View>
-                  )}
-                  <View style={styles.textContainer}>
-                    <Text style={styles.title} numberOfLines={2}>{category.title}</Text>
+                  <View style={styles.categoryLeft}>
+                    {category.logo_url ? (
+                      <View style={styles.iconContainer}>
+                        <Image source={{ uri: getFullImageUrl(category.logo_url) || '' }} style={{ width: 24, height: 24 }} resizeMode="contain" />
+                      </View>
+                    ) : (
+                      <View style={styles.iconContainer}>
+                        <IconComponent color={Colors.primary[600]} size={24} />
+                      </View>
+                    )}
+                    <Text style={styles.title}>{category.title}</Text>
                   </View>
+                  <ChevronRight color={Colors.neutral[400]} size={20} />
                 </TouchableOpacity>
               );
             })}
@@ -185,7 +187,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingHorizontal: 16,
     height: 48,
-    marginBottom: 24,
+    marginBottom: 20,
   },
   searchIcon: {
     marginRight: 12,
@@ -197,42 +199,46 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   listContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    gap: 16,
+    flexDirection: 'column',
   },
   categoryCard: {
-    width: '47%',
-    flexDirection: 'column',
+    width: '100%',
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'space-between',
     backgroundColor: Colors.neutral[0],
     borderWidth: 1,
-    borderColor: Colors.neutral[100],
+    borderColor: Colors.neutral[200],
     borderRadius: 16,
-    paddingVertical: 24,
+    paddingVertical: 14,
     paddingHorizontal: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
+    marginBottom: 12,
+    shadowColor: Colors.neutral[900],
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.04,
-    shadowRadius: 12,
+    shadowRadius: 8,
     elevation: 2,
-    minHeight: 140,
+  },
+  categoryLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    marginRight: 12,
   },
   iconContainer: {
-    width: 48,
-    height: 48,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: Colors.primary[50],
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 16,
-  },
-  textContainer: {
-    alignItems: 'center',
+    marginRight: 16,
   },
   title: {
     ...Typography.labelMedium,
     color: Colors.neutral[900],
-    textAlign: 'center',
+    fontFamily: FontFamily.medium,
+    fontSize: 16,
+    flex: 1,
   },
 });
