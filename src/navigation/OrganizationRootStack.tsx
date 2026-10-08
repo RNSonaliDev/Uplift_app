@@ -14,6 +14,12 @@ import {AllVolunteersScreen} from '../screens/organization/dashboard/AllVoluntee
 import ChatScreen from '../screens/chat/ChatScreen';
 import RateHelperScreen from '../screens/beneficiary/requests/RateHelperScreen';
 
+// Organization Promotions
+import {PromotionsListingScreen} from '../screens/organization/promotions/PromotionsListingScreen';
+import {CreatePromotionScreen} from '../screens/organization/promotions/CreatePromotionScreen';
+import {PromotionPreviewScreen} from '../screens/organization/promotions/PromotionPreviewScreen';
+import {PromotionDetailsScreen} from '../screens/organization/promotions/PromotionDetailsScreen';
+
 // Organization Jobs
 import {CreateJobScreen} from '../screens/organization/jobs/CreateJobScreen';
 import {JobPreviewScreen} from '../screens/organization/jobs/JobPreviewScreen';
@@ -51,6 +57,12 @@ export function OrganizationRootStack() {
       <Stack.Screen name="CreateJob" component={CreateJobScreen} />
       <Stack.Screen name="JobPreview" component={JobPreviewScreen} />
       <Stack.Screen name="JobDetails" component={JobDetailsScreen} />
+
+      {/* Promotions Stack Screens */}
+      <Stack.Screen name="PromotionsListing" component={PromotionsListingScreen} />
+      <Stack.Screen name="CreatePromotion" component={CreatePromotionScreen} />
+      <Stack.Screen name="PromotionPreview" component={PromotionPreviewScreen} />
+      <Stack.Screen name="PromotionDetails" component={PromotionDetailsScreen} />
 
       {/* Profile Stack Screens */}
       <Stack.Screen name="EditProfile" component={EditProfileScreen} />

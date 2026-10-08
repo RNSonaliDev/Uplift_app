@@ -7,9 +7,10 @@ import {
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { Colors } from '../../../theme/colors';
+import { FontFamily } from '../../../theme/typography';
 import { AppText } from '../../../components/AppText';
 import { Button } from '../../../components/Button';
-import { Check } from 'lucide-react-native';
+import { Check, Info } from 'lucide-react-native';
 import { horizontalScale, verticalScale, moderateScale, fontScale } from '../../../utils/responsive';
 import { formatDate, formatTime12Hour } from '../../../utils/dateFormatter';
 import { authApi } from '../../../api/auth';
@@ -77,22 +78,9 @@ export default function PaymentSuccessfulScreen() {
         <AppText variant="h3" color={Colors.neutral[900]} style={styles.title} center>
           Payment Successful!
         </AppText>
-        <AppText variant="bodyLarge" color={Colors.neutral[600]} style={styles.subtitle} center>
-          Thank you for your generous support.
-        </AppText>
 
         {/* Custom Thank You Confirmation Card */}
-        <View style={styles.thankYouCard}>
-          <AppText variant="bodyMedium" color={Colors.neutral[800]} style={styles.thankYouText}>
-            Your contribution of ${numAmount.toFixed(2)} has been added to the iUpliftU Community Fund. ${netAmount} will be distributed to {allocationPreference} in the next allocation cycle. Because of you, someone in your community gets the help they need today.{'\n\n'}
-            <AppText variant="caption" color={Colors.neutral[600]}>
-              This is a record of your community support contribution to iUpliftU LLC. This payment is not a charitable donation and is not tax-deductible.
-            </AppText>
-          </AppText>
-        </View>
-
-        {/* Receipt Details */}
-        <View style={styles.receiptContainer}>
+                <View style={styles.receiptContainer}>
           <View style={styles.receiptRow}>
             <AppText variant="bodyMedium" color={Colors.neutral[600]}>Amount Paid</AppText>
             <AppText variant="h5" color={Colors.neutral[900]}>${numAmount.toFixed(2)}</AppText>
@@ -120,19 +108,22 @@ export default function PaymentSuccessfulScreen() {
           </View>
         </View>
 
+        <View style={styles.thankYouCard}>
+          <Info color={Colors.primary[500]} size={20} style={{ marginRight: horizontalScale(10), marginTop: verticalScale(2) }} />
+          <AppText variant="bodySmall" color={Colors.neutral[700]} style={styles.infoText}>
+            This is a record of your community support contribution to iUpliftU LLC. This payment is not a charitable donation and is not tax-deductible.
+          </AppText>
+        </View>
+
+        {/* Receipt Details */}
+
+
       </ScrollView>
 
       {/* Footer */}
       <View style={styles.footer}>
         <Button 
-          title="View My Contributions" 
-          size="lg"
-          fullWidth
-          onPress={handleViewContributions}
-          style={styles.primaryBtn}
-        />
-        <Button 
-          title="Back to Dashboard" 
+          title="Back to Home" 
           size="lg"
           fullWidth
           onPress={handleBackToDashboard}
@@ -194,15 +185,21 @@ const styles = StyleSheet.create({
   },
   thankYouCard: {
     width: '100%',
+    flexDirection: 'row',
+    alignItems: 'flex-start',
     backgroundColor: Colors.primary[50],
     borderWidth: 1,
     borderColor: Colors.primary[200],
-    borderRadius: 16,
-    padding: moderateScale(18),
-    marginBottom: verticalScale(24),
+    borderRadius: moderateScale(14),
+    padding: moderateScale(16),
+    marginTop: verticalScale(20),
   },
-  thankYouText: {
-    lineHeight: fontScale(22),
+  infoText: {
+    flex: 1,
+    fontFamily: FontFamily.regular,
+    fontSize: fontScale(13.5),
+    lineHeight: fontScale(19.5),
+    color: Colors.neutral[700],
   },
   receiptContainer: {
     width: '100%',

@@ -2,11 +2,12 @@ import React from 'react';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import {Colors} from '../theme/colors';
 import {Typography, FontFamily} from '../theme/typography';
-import {Home, List, MessageSquare, User} from 'lucide-react-native';
+import {Home, List, MessageSquare, User, Megaphone} from 'lucide-react-native';
 
 import BeneficiaryDashboardScreen from '../screens/beneficiary/home/BeneficiaryDashboardScreen';
 import MyRequestsScreen from '../screens/beneficiary/requests/MyRequestsScreen';
 import MyProfileScreen from '../screens/beneficiary/profile/MyProfileScreen';
+import {BrowsePromotionsScreen} from '../screens/promotions/BrowsePromotionsScreen';
 
 const Tab = createBottomTabNavigator();
 
@@ -18,7 +19,6 @@ export function BeneficiaryTabNavigator() {
   return (
     <Tab.Navigator
       screenOptions={{
-        unmountOnBlur: true,
         headerShown: false,
         tabBarActiveTintColor: Colors.primary[500],
         tabBarInactiveTintColor: Colors.neutral[900],
@@ -31,7 +31,7 @@ export function BeneficiaryTabNavigator() {
           paddingTop: 8,
         },
         tabBarLabelStyle: {
-          // ...Typography.caption,
+          fontSize: 10,
         },
       }}>
       <Tab.Screen
@@ -59,6 +59,20 @@ export function BeneficiaryTabNavigator() {
           tabPress: (e) => {
             e.preventDefault();
             navigation.navigate('MyRequests');
+          },
+        })}
+      />
+      <Tab.Screen
+        name="PromotionsTab"
+        component={BrowsePromotionsScreen}
+        options={{
+          tabBarLabel: 'Promotions',
+          tabBarIcon: ({color, size}) => <Megaphone color={color} size={24} />,
+        }}
+        listeners={({navigation}) => ({
+          tabPress: (e) => {
+            e.preventDefault();
+            navigation.navigate('PromotionsTab');
           },
         })}
       />

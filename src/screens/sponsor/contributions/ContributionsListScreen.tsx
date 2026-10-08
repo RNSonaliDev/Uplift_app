@@ -9,7 +9,7 @@ import {
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { Colors } from '../../../theme/colors';
 import { AppText } from '../../../components/AppText';
-import { ChevronLeft } from 'lucide-react-native';
+import { ChevronLeft, Plus } from 'lucide-react-native';
 import { horizontalScale, verticalScale, moderateScale, fontScale } from '../../../utils/responsive';
 import ContributionCard from '../../../components/ContributionCard';
 // Force reload
@@ -36,15 +36,20 @@ export default function ContributionsListScreen() {
   const [contributions, setContributions] = useState<Donation[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const isFirstMount = React.useRef(true);
+
   const fetchContributions = React.useCallback(async () => {
     try {
-      setLoading(true);
+      if (isFirstMount.current) {
+        setLoading(true);
+      }
       const data = await donationsApi.getDonations();
       setContributions(data || []);
     } catch (error) {
       console.error('Failed to fetch contributions', error);
     } finally {
       setLoading(false);
+      isFirstMount.current = false;
     }
   }, []);
 
@@ -112,6 +117,14 @@ export default function ContributionsListScreen() {
         </ScrollView>
 
       </View>
+
+      <TouchableOpacity 
+        style={styles.fab}
+        onPress={() => navigation.navigate('ChooseAmount')}
+        activeOpacity={0.8}
+      >
+        <Plus color="#FFF" size={24} />
+      </TouchableOpacity>
     </SafeAreaView>
   );
 }
@@ -120,6 +133,22 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: Colors.primary[500],
+  },
+  fab: {
+    position: 'absolute',
+    bottom: 24,
+    right: 24,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: Colors.primary[600],
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 4,
+    shadowColor: Colors.neutral[900],
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
   },
   header: {
     flexDirection: 'row',

@@ -66,7 +66,7 @@ export const Colors = {
   },
 
   // Semantic
-  success: '#22C55E',
+  success: '#166e36ff',
   error: '#EF4444',
   warning: '#F59E0B',
   info: '#6D5DF6',

@@ -13,16 +13,37 @@ export const JobPreviewScreen = () => {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const job = route.params?.job;
+  const payloadParam = route.params?.payload;
+  const isEditing = route.params?.isEditing;
+  const editJobId = route.params?.editJobId;
   const [publishing, setPublishing] = useState(false);
 
   const handlePublish = async () => {
+    const payload = payloadParam || {
+      job_post: {
+        title: job?.title,
+        description: job?.description,
+        department_id: typeof job?.department === 'object' && job?.department !== null ? job?.department?.id : job?.department,
+        job_type: job?.job_type,
+        work_setting: job?.work_setting,
+        compensation: job?.compensation,
+        company_url: job?.company_url,
+        job_url: job?.job_url,
+      }
+    };
+
     try {
       setPublishing(true);
-      await api.post(`/job_posts/${job.id}/publish`);
-      Toast.show({ type: 'success', text1: 'Success', text2: 'Job published successfully!' });
+      if (isEditing && editJobId) {
+        await api.patch(`/job_posts/${editJobId}`, payload);
+        Toast.show({ type: 'success', text1: 'Success', text2: 'Job updated successfully!' });
+      } else {
+        await api.post<any>('/job_posts', payload);
+        Toast.show({ type: 'success', text1: 'Success', text2: 'Job published successfully!' });
+      }
       navigation.navigate('OrganizationTabs', { screen: 'JobsTab' });
     } catch (error: any) {
-      Toast.show({ type: 'error', text1: 'Error', text2: error?.message || 'Failed to publish job.' });
+      Toast.show({ type: 'error', text1: 'Error', text2: error?.data?.errors?.[0] || error?.message || 'Failed to publish job.' });
     } finally {
       setPublishing(false);
     }

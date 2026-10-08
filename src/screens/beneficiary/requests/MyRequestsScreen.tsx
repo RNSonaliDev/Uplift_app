@@ -32,16 +32,11 @@ export default function MyRequestsScreen() {
   const [activeTab, setActiveTab] = useState<'Active' | 'History'>('Active');
   const [requests, setRequests] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const isFirstMount = React.useRef(true);
 
-  useFocusEffect(
-    React.useCallback(() => {
-      fetchRequests();
-    }, [])
-  );
-
-  const fetchRequests = async () => {
+  const fetchRequests = async (isInitial = false) => {
     try {
-      setLoading(true);
+      if (isInitial) setLoading(true);
       const data = await api.get<any[]>('/help_requests');
       setRequests(data);
     } catch (error) {
@@ -50,6 +45,17 @@ export default function MyRequestsScreen() {
       setLoading(false);
     }
   };
+
+  useFocusEffect(
+    React.useCallback(() => {
+      if (isFirstMount.current) {
+        fetchRequests(true);
+        isFirstMount.current = false;
+      } else {
+        fetchRequests(false);
+      }
+    }, [])
+  );
 
   const activeRequests = requests.filter(r => r.status === 'pending' || r.status === 'accepted' || r.status === 'assigned' || r.status === 'on_the_way' || r.status === 'in_progress');
   const historyRequests = requests.filter(r => r.status === 'completed' || r.status === 'cancelled');

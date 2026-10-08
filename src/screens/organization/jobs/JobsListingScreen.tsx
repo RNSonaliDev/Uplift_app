@@ -13,10 +13,11 @@ export const JobsListingScreen = () => {
   const [jobs, setJobs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'active' | 'closed'>('active');
+  const isFirstMount = React.useRef(true);
 
-  const fetchJobs = useCallback(async () => {
+  const fetchJobs = useCallback(async (isInitial = false) => {
     try {
-      setLoading(true);
+      if (isInitial) setLoading(true);
       const data = await api.get<any[]>('/job_posts?scope=organization');
       setJobs(data);
     } catch (error) {
@@ -28,7 +29,12 @@ export const JobsListingScreen = () => {
 
   useFocusEffect(
     useCallback(() => {
-      fetchJobs();
+      if (isFirstMount.current) {
+        fetchJobs(true);
+        isFirstMount.current = false;
+      } else {
+        fetchJobs(false);
+      }
     }, [fetchJobs])
   );
 

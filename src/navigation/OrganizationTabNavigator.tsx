@@ -2,21 +2,17 @@ import React from 'react';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import {View, Text, StyleSheet} from 'react-native';
 import {Colors} from '../theme/colors';
-import {Home, List, Users, Briefcase, User} from 'lucide-react-native';
+import {Home, List, Calendar, Briefcase, User, Megaphone} from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import {OrganizationRequestsScreen} from '../screens/organization/dashboard/OrganizationRequestsScreen';
 import {OrganizationDashboardScreen} from '../screens/organization/dashboard/OrganizationDashboardScreen';
 import {JobsListingScreen} from '../screens/organization/jobs/JobsListingScreen';
+import {PromotionsListingScreen} from '../screens/organization/promotions/PromotionsListingScreen';
+import VolunteerScheduleStack from './VolunteerScheduleStack';
 import MyProfileScreen from '../screens/beneficiary/profile/MyProfileScreen';
 
 const Tab = createBottomTabNavigator();
-
-const ComingSoonScreen = () => (
-  <View style={styles.container}>
-    <Text style={styles.text}>Coming Soon</Text>
-  </View>
-);
 
 export function OrganizationTabNavigator() {
   const insets = useSafeAreaInsets();
@@ -25,9 +21,12 @@ export function OrganizationTabNavigator() {
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
-        unmountOnBlur: true,
+        unmountOnBlur: false,
         tabBarActiveTintColor: Colors.primary[500],
         tabBarInactiveTintColor: Colors.neutral[900],
+        tabBarLabelStyle: {
+          fontSize: 10,
+        },
         tabBarStyle: {
           borderTopWidth: 1,
           borderTopColor: Colors.neutral[200],
@@ -42,7 +41,7 @@ export function OrganizationTabNavigator() {
         component={OrganizationDashboardScreen}
         options={{
           tabBarLabel: 'Dashboard',
-          tabBarIcon: ({color}) => <Home color={color} size={24} />,
+          tabBarIcon: ({color}) => <Home color={color} size={22} />,
         }}
         listeners={({navigation}) => ({
           tabPress: (e) => {
@@ -56,7 +55,7 @@ export function OrganizationTabNavigator() {
         component={OrganizationRequestsScreen}
         options={{
           tabBarLabel: 'Requests',
-          tabBarIcon: ({color}) => <List color={color} size={24} />,
+          tabBarIcon: ({color}) => <List color={color} size={22} />,
         }}
         listeners={({navigation}) => ({
           tabPress: (e) => {
@@ -66,11 +65,39 @@ export function OrganizationTabNavigator() {
         })}
       />
       <Tab.Screen
+        name="ScheduleTab"
+        component={VolunteerScheduleStack}
+        options={{
+          tabBarLabel: 'Schedule',
+          tabBarIcon: ({color}) => <Calendar color={color} size={22} />,
+        }}
+        listeners={({navigation}) => ({
+          tabPress: (e) => {
+            e.preventDefault();
+            navigation.navigate('ScheduleTab', { screen: 'MySchedule' });
+          },
+        })}
+      />
+      <Tab.Screen
+        name="PromotionsTab"
+        component={PromotionsListingScreen}
+        options={{
+          tabBarLabel: 'Promotions',
+          tabBarIcon: ({color}) => <Megaphone color={color} size={22} />,
+        }}
+        listeners={({navigation}) => ({
+          tabPress: (e) => {
+            e.preventDefault();
+            navigation.navigate('PromotionsTab');
+          },
+        })}
+      />
+      <Tab.Screen
         name="JobsTab"
         component={JobsListingScreen}
         options={{
           tabBarLabel: 'Jobs',
-          tabBarIcon: ({color}) => <Briefcase color={color} size={24} />,
+          tabBarIcon: ({color}) => <Briefcase color={color} size={22} />,
         }}
         listeners={({navigation}) => ({
           tabPress: (e) => {
@@ -84,7 +111,7 @@ export function OrganizationTabNavigator() {
         component={MyProfileScreen}
         options={{
           tabBarLabel: 'Profile',
-          tabBarIcon: ({color}) => <User color={color} size={24} />,
+          tabBarIcon: ({color}) => <User color={color} size={22} />,
         }}
         listeners={({navigation}) => ({
           tabPress: (e) => {

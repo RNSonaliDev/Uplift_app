@@ -168,7 +168,7 @@ export default function NotificationsScreen() {
       {hasUnread && (
         <View style={styles.subHeaderRow}>
           <TouchableOpacity onPress={handleMarkAllAsRead} style={styles.markAllTextBtn}>
-            <AppText variant="bodyMedium" color={Colors.primary[600]} weight="semiBold">
+            <AppText variant="bodySmall" color={Colors.primary[600]} weight="semiBold" style={{ fontSize: fontScale(13) }}>
               Mark all as read
             </AppText>
           </TouchableOpacity>
@@ -274,12 +274,15 @@ const styles = StyleSheet.create({
     marginBottom: verticalScale(4),
   },
   title: {
-    color: Colors.neutral[600],
+    color: Colors.neutral[800],
     flex: 1,
+    fontFamily: FontFamily.medium,
   },
+
   unreadTitle: {
     color: Colors.neutral[900],
     // fontWeight: '700',
+    fontFamily: FontFamily.medium,
   },
   message: {
     marginBottom: verticalScale(8),
@@ -289,7 +292,7 @@ const styles = StyleSheet.create({
     color: Colors.neutral[800],
   },
   readMessage: {
-    color: Colors.neutral[500],
+    color: Colors.neutral[800],
   },
   footerRow: {
     flexDirection: 'row',

@@ -187,7 +187,7 @@ export default function MyProfileScreen() {
   
   const displayName = activeRole === 'organization' 
     ? (roleProfile?.organization_name || profile?.first_name || 'Organization')
-    : `${roleProfile?.first_name || profile?.first_name || ''} ${roleProfile?.last_name || profile?.last_name || ''}`.trim() || 'User';
+    : `${roleProfile?.first_name || profile?.first_name || ''}`;
 
   let initials = 'U';
   if (activeRole === 'organization') {

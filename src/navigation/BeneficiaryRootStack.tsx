@@ -21,12 +21,17 @@ import ContactSupportScreen from '../screens/beneficiary/profile/ContactSupportS
 import ContactSupportDetailsScreen from '../screens/beneficiary/profile/ContactSupportDetailsScreen';
 import CreateSupportRequestScreen from '../screens/beneficiary/profile/CreateSupportRequestScreen';
 
+import {PromotionDetailsScreen} from '../screens/organization/promotions/PromotionDetailsScreen';
+
 const Stack = createNativeStackNavigator();
 
 export function BeneficiaryRootStack() {
   return (
     <Stack.Navigator screenOptions={{headerShown: false}}>
       <Stack.Screen name="BeneficiaryTabs" component={BeneficiaryTabNavigator} />
+      
+      {/* Promotion Screens */}
+      <Stack.Screen name="PromotionDetails" component={PromotionDetailsScreen} />
       
       {/* Home Stack Screens */}
       <Stack.Screen name="RequestHelp" component={RequestHelpScreen} />

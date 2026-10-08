@@ -32,6 +32,8 @@ export default function MyScheduleScreen() {
   const [loading, setLoading] = useState(true);
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
 
+  const isFirstMount = React.useRef(true);
+
   useFocusEffect(
     useCallback(() => {
       fetchSchedule();
@@ -41,13 +43,16 @@ export default function MyScheduleScreen() {
 
   const fetchSchedule = async () => {
     try {
-      setLoading(true);
+      if (isFirstMount.current) {
+        setLoading(true);
+      }
       const data = await api.get<any[]>('/help_requests');
       setRequests(data || []);
     } catch (error) {
       console.error('Failed to fetch schedule', error);
     } finally {
       setLoading(false);
+      isFirstMount.current = false;
     }
   };
 

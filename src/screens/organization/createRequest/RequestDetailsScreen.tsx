@@ -154,6 +154,8 @@ export const RequestDetailsScreen = () => {
 
   const GOOGLE_MAPS_API_KEY = 'AIzaSyAfVdKkV8tvaV4yQnLLtCKZ91qbuRWFBR0';
   const googlePlacesRef = useRef<GooglePlacesAutocompleteRef>(null);
+  const scrollViewRef = useRef<any>(null);
+  const scrollYRef = useRef<number>(0);
 
   const handleCurrentLocation = () => {
     Geolocation.getCurrentPosition(
@@ -317,12 +319,19 @@ export const RequestDetailsScreen = () => {
       </View>
 
       <KeyboardAwareScrollView 
+        ref={scrollViewRef}
         style={styles.flex1} 
         contentContainerStyle={styles.scrollContent} 
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
         enableOnAndroid={true}
         extraScrollHeight={100}
+        resetScrollToPreviousPosition={false}
+        onScroll={(e) => {
+          scrollYRef.current = e.nativeEvent.contentOffset.y;
+        }}
+        scrollEventThrottle={16}
+        {...({ enableResetScrollToPreviousPosition: false } as any)}
       >
           
           {/* Category */}
@@ -347,9 +356,13 @@ export const RequestDetailsScreen = () => {
                     key={item.id}
                     style={styles.modalOption}
                     onPress={() => {
+                      const currentY = scrollYRef.current;
                       setSelectedCategoryId(item.id);
                       setSelectedCategoryTitle(item.title);
                       setIsCategoryModalOpen(false);
+                      setTimeout(() => {
+                        scrollViewRef.current?.scrollToPosition?.(0, currentY, false);
+                      }, 10);
                     }}
                   >
                     <Text style={[styles.modalOptionText, selectedCategoryId === item.id && { color: Colors.primary[600], fontFamily: FontFamily.semiBold }]}>
@@ -527,6 +540,7 @@ export const RequestDetailsScreen = () => {
             placeholder="Enter address"
             fetchDetails={true}
             onPress={async (data, details = null) => {
+              const currentScrollY = scrollYRef.current;
               if (addressError) setAddressError('');
               if (details) {
                 console.log("Selected Address Details: ", details);
@@ -543,6 +557,12 @@ export const RequestDetailsScreen = () => {
                   longitude: details.geometry.location.lng,
                 });
               }
+              setTimeout(() => {
+                scrollViewRef.current?.scrollToPosition?.(0, currentScrollY, false);
+              }, 50);
+              setTimeout(() => {
+                scrollViewRef.current?.scrollToPosition?.(0, currentScrollY, false);
+              }, 300);
             }}
             query={{
               key: GOOGLE_MAPS_API_KEY,

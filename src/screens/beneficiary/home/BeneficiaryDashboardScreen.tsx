@@ -51,9 +51,13 @@ export default function BeneficiaryDashboardScreen() {
 
   const [stats, setStats] = useState<any>(null);
 
+  const isFirstMount = React.useRef(true);
+
   const fetchData = useCallback(async () => {
     try {
-      setLoading(true);
+      if (isFirstMount.current) {
+        setLoading(true);
+      }
       const [catData, profData, reqData, notifData, statsData] = await Promise.all([
         authApi.getCategories(),
         authApi.getProfile(),
@@ -74,6 +78,7 @@ export default function BeneficiaryDashboardScreen() {
       console.error('Failed to fetch data', error);
     } finally {
       setLoading(false);
+      isFirstMount.current = false;
     }
   }, []);
 

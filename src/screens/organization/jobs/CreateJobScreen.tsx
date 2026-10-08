@@ -113,7 +113,7 @@ export const CreateJobScreen = () => {
     fetchDepartments();
   }, []);
 
-  const handlePreview = async () => {
+  const handlePreview = () => {
     const newFieldErrors: { [key: string]: string } = {};
     
     if (!title.trim()) newFieldErrors.title = 'Job Title is required';
@@ -130,6 +130,8 @@ export const CreateJobScreen = () => {
       return;
     }
 
+    const selectedDept = departments.find(d => d.id === department);
+
     const payload = {
       job_post: {
         title,
@@ -143,25 +145,27 @@ export const CreateJobScreen = () => {
       }
     };
 
-    try {
-      setLoading(true);
-      let data;
-      if (isEditing) {
-        data = await api.patch<any>(`/job_posts/${editJob.id}`, payload);
-      } else {
-        data = await api.post<any>('/job_posts', payload);
-      }
-      navigation.navigate('JobPreview', { 
-        job: data
-      });
-    } catch (error: any) {
-      Toast.show({ type: 'error', text1: 'Error', text2: error?.data?.errors?.[0] || 'Something went wrong' });
-    } finally {
-      setLoading(false);
-    }
+    const jobPreviewObj = {
+      id: editJob?.id,
+      title,
+      description,
+      department: selectedDept || department,
+      job_type: jobType,
+      work_setting: workSetting,
+      compensation,
+      company_url: companyUrl,
+      job_url: jobUrl,
+    };
+
+    navigation.navigate('JobPreview', { 
+      job: jobPreviewObj,
+      payload,
+      isEditing,
+      editJobId: editJob?.id,
+    });
   };
 
-  const renderDropdown = (label: string, field: string, value: string | null, options: any[]) => {
+  const renderDropdown = (label: string, field: string, value: string | number | null, options: any[]) => {
     const isModalOpen = activeModal === field;
     const error = fieldErrors[field];
     return (

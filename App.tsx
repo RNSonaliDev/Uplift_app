@@ -27,7 +27,7 @@ import {SuccessScreen} from './src/screens/SuccessScreen';
 import {DashboardRoleSelectionScreen} from './src/screens/DashboardRoleSelectionScreen';
 import {Colors} from './src/theme/colors';
 import {BeneficiaryRootStack} from './src/navigation/BeneficiaryRootStack';
-import {VolunteerTabNavigator} from './src/navigation/VolunteerTabNavigator';
+import {VolunteerRootStack} from './src/navigation/VolunteerRootStack';
 import {OrganizationRootStack} from './src/navigation/OrganizationRootStack';
 import {SponsorTabNavigator} from './src/navigation/SponsorTabNavigator';
 import {DummyTabNavigator} from './src/navigation/DummyTabNavigator';
@@ -177,7 +177,7 @@ function App() {
               <Stack.Screen name="Success" component={SuccessScreen} />
               <Stack.Screen name="DashboardRoleSelection" component={DashboardRoleSelectionScreen} />
               <Stack.Screen name="BeneficiaryFlow" component={BeneficiaryRootStack} />
-              <Stack.Screen name="VolunteerFlow" component={VolunteerTabNavigator} />
+              <Stack.Screen name="VolunteerFlow" component={VolunteerRootStack} />
               <Stack.Screen name="OrganizationFlow" component={OrganizationRootStack} />
               <Stack.Screen name="SponsorFlow" component={SponsorTabNavigator} />
               <Stack.Screen name="LegalContent" component={LegalContentScreen} />

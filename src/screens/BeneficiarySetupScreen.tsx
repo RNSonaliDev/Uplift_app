@@ -412,11 +412,12 @@ export const BeneficiarySetupScreen: React.FC = () => {
               leftIcon={<LocationPinIcon />}
               value={zipCode}
               onChangeText={(text) => {
-                setZipCode(text);
+                const numeric = text.replace(/[^0-9]/g, '').slice(0, 5);
+                setZipCode(numeric);
                 if (errors.zipCode) setErrors({...errors, zipCode: ''});
               }}
               keyboardType="number-pad"
-              maxLength={6}
+              maxLength={5}
               error={errors.zipCode}
             />
 

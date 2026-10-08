@@ -55,11 +55,15 @@ export default function BrowseRequestsScreen() {
     }
   }, [route.params?.activeTab]);
 
+  const isFirstMount = React.useRef(true);
+
   useFocusEffect(
     useCallback(() => {
       const fetchData = async () => {
         try {
-          setLoading(true);
+          if (isFirstMount.current) {
+            setLoading(true);
+          }
           const [catData, orgCatData, reqData] = await Promise.all([
             authApi.getCategories(),
             authApi.getOrganizationCategories(),
@@ -72,6 +76,7 @@ export default function BrowseRequestsScreen() {
           console.error('Failed to fetch data', error);
         } finally {
           setLoading(false);
+          isFirstMount.current = false;
         }
       };
       fetchData();

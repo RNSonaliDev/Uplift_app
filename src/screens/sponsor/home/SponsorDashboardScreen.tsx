@@ -12,7 +12,8 @@ import {Colors} from '../../../theme/colors';
 import {AppText} from '../../../components/AppText';
 import {Button} from '../../../components/Button';
 import {
-  Bell
+  Bell,
+  Plus,
 } from 'lucide-react-native';
 import {authApi, UserProfileResponse} from '../../../api/auth';
 import {donationsApi, Donation, DashboardStats} from '../../../api/donations';
@@ -137,6 +138,7 @@ export default function SponsorDashboardScreen() {
         <View style={styles.sectionContainer}>
           <Button 
             title="Make a Contribution" 
+            leftIcon={<Plus color="#FFF" size={20} style={{marginRight: 6}} />}
             size="lg"
             fullWidth
             onPress={() => navigation.navigate('ChooseAmount')}

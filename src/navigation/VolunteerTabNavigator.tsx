@@ -3,13 +3,14 @@ import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import {View, Text} from 'react-native';
 import {Colors} from '../theme/colors';
 import {Typography, FontFamily} from '../theme/typography';
-import {Home, Search, Calendar, Briefcase, User} from 'lucide-react-native';
+import {Home, Search, Calendar, Briefcase, User, Megaphone} from 'lucide-react-native';
 
 import VolunteerHomeStack from './VolunteerHomeStack';
 import VolunteerRequestsStack from './VolunteerRequestsStack';
 import VolunteerScheduleStack from './VolunteerScheduleStack';
 import VolunteerJobsStack from './VolunteerJobsStack';
 import BeneficiaryProfileStack from './BeneficiaryProfileStack';
+import {BrowsePromotionsScreen} from '../screens/promotions/BrowsePromotionsScreen';
 
 const Tab = createBottomTabNavigator();
 
@@ -33,7 +34,7 @@ export function VolunteerTabNavigator() {
           'RequestDetails', 'RequestAccepted', 'ParentTaskVerification', 'StartRequest', 
           'CompleteRequest', 'RateExperience', 'VolunteerJobDetails', 'EditProfile',
           'Settings', 'LegalContent', 'EmergencyContacts', 'ContactSupport', 'ContactSupportDetails', 'CreateSupportRequest',
-          'ChatScreen'
+          'ChatScreen', 'PromotionDetails'
         ];
         const isHidden = hiddenRoutes.includes(routeName);
 
@@ -94,6 +95,20 @@ export function VolunteerTabNavigator() {
           tabPress: (e) => {
             e.preventDefault();
             navigation.navigate('ScheduleTab', { screen: 'MySchedule' });
+          },
+        })}
+      />
+      <Tab.Screen
+        name="PromotionsTab"
+        component={BrowsePromotionsScreen}
+        options={{
+          tabBarLabel: 'Promotions',
+          tabBarIcon: ({color}) => <Megaphone color={color} size={24} />,
+        }}
+        listeners={({navigation}) => ({
+          tabPress: (e) => {
+            e.preventDefault();
+            navigation.navigate('PromotionsTab');
           },
         })}
       />

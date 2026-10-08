@@ -311,11 +311,55 @@ export default function EditProfileScreen() {
     fetchProfile();
   }, [currentRole]);
 
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
   const handleChange = (key: string, value: string) => {
     setFormData(prev => ({...prev, [key]: value}));
+    if (errors[key]) setErrors(prev => ({...prev, [key]: ''}));
   };
 
   const handleSave = async () => {
+    const newErrors: Record<string, string> = {};
+
+    if (currentRole !== 'organization') {
+      if (!formData.first_name || !formData.first_name.trim()) {
+        newErrors.first_name = 'First name is required';
+      }
+      if (!formData.last_name || !formData.last_name.trim()) {
+        newErrors.last_name = 'Last name is required';
+      }
+    } else {
+      if (!formData.organization_name || !formData.organization_name.trim()) {
+        newErrors.organization_name = 'Organization name is required';
+      }
+      if (!formData.contact_name || !formData.contact_name.trim()) {
+        newErrors.contact_name = 'Contact name is required';
+      }
+      if (!formData.contact_email || !formData.contact_email.trim()) {
+        newErrors.contact_email = 'Contact email is required';
+      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.contact_email)) {
+        newErrors.contact_email = 'Please enter a valid email address';
+      }
+      if (!formData.contact_phone || !formData.contact_phone.trim()) {
+        newErrors.contact_phone = 'Contact phone is required';
+      }
+    }
+
+    if (formData.zip_code && formData.zip_code.replace(/\D/g, '').length !== 5) {
+      newErrors.zip_code = 'ZIP code must be 5 digits';
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      const firstError = Object.values(newErrors)[0];
+      Toast.show({
+        type: 'error',
+        text1: 'Validation Error',
+        text2: firstError,
+      });
+      return;
+    }
+
     try {
       setSaving(true);
       const { latitude, longitude, base_first_name, base_last_name, anonymity, ...restProfile } = formData;
@@ -501,12 +545,14 @@ export default function EditProfileScreen() {
                 value={formData.first_name}
                 onChangeText={v => handleChange('first_name', v)}
                 disabled={false}
+                error={errors.first_name}
               />
               <Input
                 label="Last Name"
                 value={formData.last_name}
                 onChangeText={v => handleChange('last_name', v)}
                 disabled={false}
+                error={errors.last_name}
               />
             </>
           )}
@@ -517,8 +563,10 @@ export default function EditProfileScreen() {
               <Input
                 label="ZIP Code"
                 value={formData.zip_code}
-                onChangeText={v => handleChange('zip_code', v)}
+                onChangeText={v => handleChange('zip_code', v.replace(/[^0-9]/g, '').slice(0, 5))}
                 keyboardType="number-pad"
+                maxLength={5}
+                error={errors.zip_code}
                 leftIcon={<MapPin color={Colors.neutral[400]} size={20} />}
               />
             </>
@@ -529,8 +577,10 @@ export default function EditProfileScreen() {
               <Input
                 label="ZIP Code"
                 value={formData.zip_code}
-                onChangeText={v => handleChange('zip_code', v)}
+                onChangeText={v => handleChange('zip_code', v.replace(/[^0-9]/g, '').slice(0, 5))}
                 keyboardType="number-pad"
+                maxLength={5}
+                error={errors.zip_code}
                 leftIcon={<MapPin color={Colors.neutral[400]} size={20} />}
               />
               <View style={{marginBottom: 16}}>
@@ -746,6 +796,7 @@ export default function EditProfileScreen() {
                 label="Organization Name"
                 value={formData.organization_name}
                 onChangeText={v => handleChange('organization_name', v)}
+                error={errors.organization_name}
               />
               <View style={{marginBottom: 16}}>
                 <View style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8}}>
@@ -838,12 +889,14 @@ export default function EditProfileScreen() {
                 label="Contact Name"
                 value={formData.contact_name}
                 onChangeText={v => handleChange('contact_name', v)}
+                error={errors.contact_name}
               />
               <Input
                 label="Contact Email"
                 value={formData.contact_email}
                 onChangeText={v => handleChange('contact_email', v)}
                 keyboardType="email-address"
+                error={errors.contact_email}
               />
               <Input
                 label="Contact Phone"
@@ -851,6 +904,7 @@ export default function EditProfileScreen() {
                 onChangeText={v => handleChange('contact_phone', v)}
                 keyboardType="phone-pad"
                 leftIcon={<PhonePrefixPrefix />}
+                error={errors.contact_phone}
               />
             </>
           )}

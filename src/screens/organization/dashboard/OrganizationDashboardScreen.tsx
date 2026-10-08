@@ -33,30 +33,39 @@ export const OrganizationDashboardScreen = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [unreadNotificationsCount, setUnreadNotificationsCount] = useState(0);
+  const isFirstMount = React.useRef(true);
 
   useFocusEffect(
     useCallback(() => {
-      fetchData();
+      if (isFirstMount.current) {
+        fetchData(true);
+        isFirstMount.current = false;
+      } else {
+        fetchData(false);
+      }
     }, [])
   );
 
-  const fetchData = async (isRefresh = false) => {
+  const fetchData = async (showLoading = false) => {
     try {
-      if (!isRefresh) setLoading(true);
+      if (showLoading) setLoading(true);
       const [requestsData, statsData, profData, notifData] = await Promise.all([
-        api.get<any[]>('/help_requests'),
+        api.get<any[]>('/help_requests?status=pending,accepted,on_the_way,in_progress'),
         api.get<any>('/dashboard/stats'),
         authApi.getProfile(),
         api.get<any>('/notifications')
       ]);
-      setRequests(requestsData);
+      const activeRequests = (requestsData || []).filter(
+        (r: any) => r.status !== 'cancelled'
+      );
+      setRequests(activeRequests);
       setStats(statsData);
       setProfile(profData);
       setUnreadNotificationsCount(notifData?.unread_count || 0);
     } catch (error) {
       console.error('Failed to fetch dashboard data', error);
     } finally {
-      if (!isRefresh) setLoading(false);
+      if (showLoading) setLoading(false);
     }
   };
 

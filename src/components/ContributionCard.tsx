@@ -13,6 +13,21 @@ interface ContributionCardProps {
   style?: any;
 }
 
+const RECIPIENT_OPTIONS = [
+  { id: 'volunteer', label: 'Reward the volunteers' },
+  { id: 'beneficiary', label: 'Support the beneficiaries' },
+  { id: 'split', label: 'Split equally' },
+  { id: 'none', label: 'Whoever needs it most' },
+];
+
+const getRecipientLabel = (type?: string | null): string => {
+  if (!type) return 'Whoever needs it most';
+  const key = type.toLowerCase();
+  const found = RECIPIENT_OPTIONS.find((r) => r.id === key);
+  if (found) return found.label;
+  return type.charAt(0).toUpperCase() + type.slice(1).replace(/_/g, ' ');
+};
+
 export default function ContributionCard({ item, onPress, style }: ContributionCardProps) {
   const normalizedStatus = (item.status || 'Completed').toLowerCase();
   const isSuccess = normalizedStatus === 'completed' || normalizedStatus === 'success';
@@ -23,19 +38,6 @@ export default function ContributionCard({ item, onPress, style }: ContributionC
 
   return (
     <TouchableOpacity style={[styles.card, style]} activeOpacity={1}>
-      {/* <View style={styles.iconContainer}>
-        <Calendar color={Colors.primary[500]} size={24} />
-        <View style={styles.statusBadgeIcon}>
-          {isSuccess ? (
-            <CheckCircle2 color={statusTextColor} size={14} fill={Colors.neutral[0]} />
-          ) : isPending ? (
-            <Clock color={statusTextColor} size={14} fill={Colors.neutral[0]} />
-          ) : (
-            <XCircle color={statusTextColor} size={14} fill={Colors.neutral[0]} />
-          )}
-        </View>
-      </View> */}
-      
       <View style={styles.cardInfo}>
         <AppText variant="bodyLarge" weight="semiBold" color={Colors.neutral[900]} numberOfLines={1}>
           {item.reference_number || `#${item.id}`}
@@ -44,7 +46,7 @@ export default function ContributionCard({ item, onPress, style }: ContributionC
           {item.created_at ? formatDate(item.created_at) : 'N/A'}
         </AppText>
         <AppText variant="caption" weight="semiBold" color={Colors.primary[500]} style={{marginTop: verticalScale(2)}}>
-          {item.recipient_type ? item.recipient_type.charAt(0).toUpperCase() + item.recipient_type.slice(1).replace('_', ' ') : 'General'}
+          {getRecipientLabel(item.recipient_type)}
         </AppText>
       </View>
       
@@ -55,7 +57,7 @@ export default function ContributionCard({ item, onPress, style }: ContributionC
         <View style={[styles.statusBadge, { backgroundColor: statusBgColor }]}>
           <AppText 
             variant="caption" 
-            weight="semiBold"
+            // weight="semiBold"
             color={statusTextColor}
           >
             {(item.status || 'Completed').charAt(0).toUpperCase() + (item.status || 'Completed').slice(1).toLowerCase()}

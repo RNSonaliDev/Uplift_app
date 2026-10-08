@@ -73,9 +73,11 @@ export const BrowseJobsScreen = () => {
 
   const selectedOrderLabel = ORDER_OPTIONS.find(o => o.value === orderBy)?.label || 'Newest';
 
-  const fetchJobs = useCallback(async () => {
+  const isFirstMount = React.useRef(true);
+
+  const fetchJobs = useCallback(async (isInitial = false) => {
     try {
-      setLoading(true);
+      if (isInitial) setLoading(true);
       let url = '/job_posts/browse';
       const params: string[] = [];
       if (searchQuery.trim()) {
@@ -110,7 +112,12 @@ export const BrowseJobsScreen = () => {
 
   useFocusEffect(
     useCallback(() => {
-      fetchJobs();
+      if (isFirstMount.current) {
+        fetchJobs(true);
+        isFirstMount.current = false;
+      } else {
+        fetchJobs(false);
+      }
     }, [fetchJobs])
   );
 

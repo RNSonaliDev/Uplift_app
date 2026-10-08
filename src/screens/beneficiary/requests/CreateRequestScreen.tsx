@@ -442,6 +442,8 @@ export default function CreateRequestScreen() {
   const GOOGLE_MAPS_API_KEY = 'AIzaSyAfVdKkV8tvaV4yQnLLtCKZ91qbuRWFBR0'; // TODO: Provide your Google Maps API Key here
 
   const googlePlacesRef = useRef<GooglePlacesAutocompleteRef>(null);
+  const scrollViewRef = useRef<any>(null);
+  const scrollYRef = useRef<number>(0);
 
   const handleCurrentLocation = () => {
     Geolocation.getCurrentPosition(
@@ -695,11 +697,18 @@ export default function CreateRequestScreen() {
       </View>
 
       <KeyboardAwareScrollView
+        ref={scrollViewRef}
         style={{flex: 1, backgroundColor: Colors.neutral[50]}}
         contentContainerStyle={styles.content} 
         keyboardShouldPersistTaps="handled"
         enableOnAndroid={true}
         extraScrollHeight={100}
+        resetScrollToPreviousPosition={false}
+        onScroll={(e) => {
+          scrollYRef.current = e.nativeEvent.contentOffset.y;
+        }}
+        scrollEventThrottle={16}
+        {...({ enableResetScrollToPreviousPosition: false } as any)}
       >
           <AppText variant="bodyMedium" color={Colors.neutral[500]} style={styles.subtitle}>
             Fill out the details below to request assistance from a Volunteer.
@@ -810,6 +819,7 @@ export default function CreateRequestScreen() {
               placeholder="e.g. 123 Main St, Beverly Hills, CA"
               fetchDetails={true}
               onPress={async (data, details = null) => {
+                const currentScrollY = scrollYRef.current;
                 if (details) {
                   console.log("Selected Address Details: ", details);
                   const validationData = await validateBusinessAddressWithAPI(data.description, GOOGLE_MAPS_API_KEY);
@@ -824,6 +834,12 @@ export default function CreateRequestScreen() {
                     longitude: details.geometry.location.lng,
                   });
                 }
+                setTimeout(() => {
+                  scrollViewRef.current?.scrollToPosition?.(0, currentScrollY, false);
+                }, 50);
+                setTimeout(() => {
+                  scrollViewRef.current?.scrollToPosition?.(0, currentScrollY, false);
+                }, 300);
               }}
               query={{
                 key: GOOGLE_MAPS_API_KEY,
