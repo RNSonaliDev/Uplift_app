@@ -1,4 +1,4 @@
-import { Platform } from 'react-native';
+import { Platform, Alert } from 'react-native';
 import {
   GoogleSignin,
   statusCodes,
@@ -109,7 +109,10 @@ class SocialAuthService {
         requestedScopes: [appleAuth.Scope.EMAIL, appleAuth.Scope.FULL_NAME],
       });
 
-      const { identityToken, authorizationCode, fullName, email } = appleAuthRequestResponse;
+      console.log('@@@@@@@@ appleAuthRequestResponse', appleAuthRequestResponse);
+      // Alert.alert('Apple Auth Response', JSON.stringify(appleAuthRequestResponse, null, 2));
+
+      const { identityToken, authorizationCode, fullName, email, user: appleUserId } = appleAuthRequestResponse;
 
       if (!identityToken) {
         throw new Error('Apple Sign In failed - no identity token received.');
@@ -119,14 +122,21 @@ class SocialAuthService {
       if (!userEmail) {
         try {
           const decoded: any = jwtDecode(identityToken);
+          console.log('@@@@@@@@ decoded JWT identityToken:', decoded);
           userEmail = decoded?.email;
         } catch (e) {
           console.warn('Failed to decode Apple identity token', e);
         }
       }
 
-      const firstName = fullName?.givenName || '';
-      const lastName = fullName?.familyName || '';
+      console.log('@@@@@@@@ final userEmail sent to API:', userEmail);
+      // Alert.alert(
+      //   'Apple Login Info',
+      //   `Direct Email: ${email || 'null (Apple default)'}\n\nDecoded Email from identityToken: ${userEmail || 'NOT FOUND'}`
+      // );
+
+      let firstName = fullName?.givenName || '';
+      let lastName = fullName?.familyName || '';
 
       return {
         provider: 'apple',

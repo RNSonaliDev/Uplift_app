@@ -9,7 +9,6 @@ export const handlePostAuthNavigation = async (
 ) => {
   const token = response.access_token || response.token || response.verification_token;
   console.log("@@@@@@@@@@@@response", response)
-  console.log("@@@@@@@@@@@@result", result.user)
   if (token) {
     await persistAuthToken(token);
   }
@@ -29,9 +28,9 @@ export const handlePostAuthNavigation = async (
     if (user.registration_step === 'basic_profile') {
       navigation.navigate('CreateProfile', {
         verificationToken: response.verification_token || token || '',
-        email: result?.user?.email,
-        firstName: result?.user?.firstName || '',
-        lastName: result?.user?.lastName || '',
+        email: user?.email,
+        firstName: user?.first_name || '',
+        lastName: user.last_name || '',
       });
       return;
     }
@@ -95,11 +94,13 @@ export const handlePostAuthNavigation = async (
 
     navigation.reset({ index: 0, routes: [{ name: 'SelectRoles' }] });
   } else if (registrationStep === 'basic_profile' || response.verification_token) {
+        console.log("@@@ routeroute resultresultresult==============", result)
+
     navigation.navigate('CreateProfile', {
       verificationToken: response.verification_token || token || '',
       email: result.user?.email || response.user?.phone || (response as any)?.email || '',
-      firstName: result.user?.firstName || (response as any)?.first_name || '',
-      lastName: result.user?.lastName || (response as any)?.last_name || '',
+      firstName: result.user?.first_name || (response as any)?.first_name || '',
+      lastName: result.user?.last_name || (response as any)?.last_name || '',
     });
   } else {
     navigation.reset({ index: 0, routes: [{ name: 'SelectRoles' }] });

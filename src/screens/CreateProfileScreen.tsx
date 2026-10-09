@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   StyleSheet,
@@ -13,22 +13,22 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
-import {useNavigation, useRoute, RouteProp} from '@react-navigation/native';
-import {NativeStackNavigationProp} from '@react-navigation/native-stack';
-import Svg, {Path, Circle, Rect, Polyline} from 'react-native-svg';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import Svg, { Path, Circle, Rect, Polyline } from 'react-native-svg';
 import { launchImageLibrary } from 'react-native-image-picker';
 import { DatePickerModal } from '../components/DatePickerModal';
 
-import {AppText} from '../components/AppText';
-import {Button} from '../components/Button';
-import {Input} from '../components/Input';
-import {UpliftLogo} from '../components/UpliftLogo';
-import {button_user} from '../assets/images';
-import {authApi} from '../api';
-import {Colors} from '../theme/colors';
-import {persistAuthToken, getFullImageUrl} from '../api/client';
-import {BorderRadius, Spacing} from '../theme/spacing';
-import {Shadows} from '../theme/common';
+import { AppText } from '../components/AppText';
+import { Button } from '../components/Button';
+import { Input } from '../components/Input';
+import { UpliftLogo } from '../components/UpliftLogo';
+import { button_user } from '../assets/images';
+import { authApi } from '../api';
+import { Colors } from '../theme/colors';
+import { persistAuthToken, getFullImageUrl } from '../api/client';
+import { BorderRadius, Spacing } from '../theme/spacing';
+import { Shadows } from '../theme/common';
 import {
   moderateScale,
   fontScale,
@@ -41,7 +41,7 @@ import {
 type RootStackParamList = {
   Welcome: undefined;
   CreateAccount: undefined;
-  VerifyAccount: {emailOrPhone: string, dob?: string, parentEmail?: string};
+  VerifyAccount: { emailOrPhone: string, dob?: string, parentEmail?: string };
   CreateProfile: { verificationToken?: string, emailOrPhone?: string, firstName?: string, lastName?: string, dob?: string, parentEmail?: string };
   SelectRoles: undefined;
 };
@@ -49,7 +49,7 @@ type RootStackParamList = {
 type NavigationProps = NativeStackNavigationProp<RootStackParamList>;
 
 // ── Icon Components ──────────────────────────────────────
-const BackArrowIcon: React.FC<{size?: number; color?: string}> = ({
+const BackArrowIcon: React.FC<{ size?: number; color?: string }> = ({
   size = 24,
   color = Colors.primary[900],
 }) => (
@@ -58,7 +58,7 @@ const BackArrowIcon: React.FC<{size?: number; color?: string}> = ({
   </Svg>
 );
 
-const UserOutlineIcon: React.FC<{size?: number; color?: string}> = ({
+const UserOutlineIcon: React.FC<{ size?: number; color?: string }> = ({
   size = 22,
   color = Colors.primary[500],
 }) => (
@@ -82,7 +82,7 @@ const UserOutlineIcon: React.FC<{size?: number; color?: string}> = ({
   </Svg>
 );
 
-const PhoneOutlineIcon: React.FC<{size?: number; color?: string}> = ({
+const PhoneOutlineIcon: React.FC<{ size?: number; color?: string }> = ({
   size = 20,
   color = Colors.primary[500],
 }) => (
@@ -97,7 +97,7 @@ const PhoneOutlineIcon: React.FC<{size?: number; color?: string}> = ({
   </Svg>
 );
 
-const ChevronDownIcon: React.FC<{size?: number; color?: string}> = ({
+const ChevronDownIcon: React.FC<{ size?: number; color?: string }> = ({
   size = 16,
   color = Colors.neutral[600],
 }) => (
@@ -112,7 +112,7 @@ const ChevronDownIcon: React.FC<{size?: number; color?: string}> = ({
   </Svg>
 );
 
-const LocationPinIcon: React.FC<{size?: number; color?: string}> = ({
+const LocationPinIcon: React.FC<{ size?: number; color?: string }> = ({
   size = 22,
   color = Colors.primary[500],
 }) => (
@@ -136,7 +136,7 @@ const LocationPinIcon: React.FC<{size?: number; color?: string}> = ({
   </Svg>
 );
 
-const CameraIcon: React.FC<{size?: number; color?: string}> = ({
+const CameraIcon: React.FC<{ size?: number; color?: string }> = ({
   size = 28,
   color = Colors.primary[500],
 }) => (
@@ -160,7 +160,7 @@ const CameraIcon: React.FC<{size?: number; color?: string}> = ({
   </Svg>
 );
 
-const InfoCircleIcon: React.FC<{size?: number; color?: string}> = ({
+const InfoCircleIcon: React.FC<{ size?: number; color?: string }> = ({
   size = 18,
   color = Colors.primary[500],
 }) => (
@@ -176,7 +176,7 @@ const InfoCircleIcon: React.FC<{size?: number; color?: string}> = ({
   </Svg>
 );
 
-const MailOutlineIcon: React.FC<{size?: number; color?: string}> = ({
+const MailOutlineIcon: React.FC<{ size?: number; color?: string }> = ({
   size = 22,
   color = Colors.primary[500],
 }) => (
@@ -200,14 +200,39 @@ const MailOutlineIcon: React.FC<{size?: number; color?: string}> = ({
   </Svg>
 );
 
-const CalendarIcon: React.FC<{size?: number}> = ({size = 24}) => (
+const EyeIcon: React.FC<{ size?: number; color?: string }> = ({
+  size = 18,
+  color = Colors.primary[500],
+}) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path
+      d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <Circle cx="12" cy="12" r="3" stroke={color} strokeWidth="2" />
+  </Svg>
+);
+
+const CloseIcon: React.FC<{ size?: number; color?: string }> = ({
+  size = 20,
+  color = Colors.neutral[700],
+}) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path d="M18 6L6 18M6 6l12 12" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+  </Svg>
+);
+
+const CalendarIcon: React.FC<{ size?: number }> = ({ size = 24 }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Rect x="3" y="4" width="18" height="18" rx="2" ry="2" stroke={Colors.primary[500]} strokeWidth="1.5" />
     <Path d="M16 2v4M8 2v4M3 10h18" stroke={Colors.primary[500]} strokeWidth="1.5" strokeLinecap="round" />
   </Svg>
 );
 
-const MailIcon: React.FC<{size?: number}> = ({size = 24}) => (
+const MailIcon: React.FC<{ size?: number }> = ({ size = 24 }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Rect
       x="3"
@@ -232,7 +257,7 @@ const MailIcon: React.FC<{size?: number}> = ({size = 24}) => (
 const PhonePrefixPrefix = () => (
   <View style={styles.phonePrefixContainer}>
     <PhoneOutlineIcon size={18} color={Colors.primary[500]} />
-    <AppText variant="bodyMedium" style={{marginLeft: 8, marginRight: 4}}>
+    <AppText variant="bodyMedium" style={{ marginLeft: 8, marginRight: 4 }}>
       +1
     </AppText>
     <ChevronDownIcon />
@@ -262,30 +287,64 @@ export const CreateProfileScreen: React.FC = () => {
   const [contactPhone, setContactPhone] = useState('');
   const [contactAddress, setContactAddress] = useState('');
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
+  const [profilePhotoName, setProfilePhotoName] = useState<string | null>(null);
   const [governmentId, setGovernmentId] = useState<string | null>(null);
+  const [governmentIdName, setGovernmentIdName] = useState<string | null>(null);
+  const [previewImage, setPreviewImage] = useState<{ uri: string; title: string } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errors, setErrors] = useState<{[key: string]: string}>({});
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
+
+  const getFileName = (uri: string | null, fallback: string) => {
+    if (!uri) return fallback;
+    const name = uri.split('/').pop();
+    if (!name) return fallback;
+    return name.length > 22 ? `${name.substring(0, 16)}...${name.split('.').pop() || 'jpg'}` : name;
+  };
 
   const age = dob
-  ? (new Date().getTime() - (dob.getTime() - 24 * 60 * 60 * 1000)) /
+    ? (new Date().getTime() - (dob.getTime() - 24 * 60 * 60 * 1000)) /
     (1000 * 60 * 60 * 24 * 365.25)
-  : null;
+    : null;
   const is14To17 = age !== null && age >= 14 && age < 18;
   const is18Plus = age !== null && age >= 18;
   const [showPhoneInfo, setShowPhoneInfo] = useState(false);
 
   const validate = () => {
-    const newErrors: {[key: string]: string} = {};
-    
-    if (!firstName.trim()) newErrors.firstName = 'First name is required';
-    if (!lastName.trim()) newErrors.lastName = 'Last name is required';
-    
+    const newErrors: { [key: string]: string } = {};
+
+    // Standard name regex (letters, spaces, hyphens, apostrophes)
+    const nameRegex = /^[a-zA-Z\s'-]+$/;
+
+    // First Name Validation
+    const trimmedFirstName = firstName.trim();
+    if (!trimmedFirstName) {
+      newErrors.firstName = 'First name is required';
+    } else if (trimmedFirstName.length < 2) {
+      newErrors.firstName = 'First name must be at least 2 characters';
+    } else if (trimmedFirstName.length > 50) {
+      newErrors.firstName = 'First name cannot exceed 50 characters';
+    } else if (!nameRegex.test(trimmedFirstName)) {
+      newErrors.firstName = 'First name can only contain letters, spaces, hyphens, and apostrophes';
+    }
+
+    // Last Name Validation
+    const trimmedLastName = lastName.trim();
+    if (!trimmedLastName) {
+      newErrors.lastName = 'Last name is required';
+    } else if (trimmedLastName.length < 2) {
+      newErrors.lastName = 'Last name must be at least 2 characters';
+    } else if (trimmedLastName.length > 50) {
+      newErrors.lastName = 'Last name cannot exceed 50 characters';
+    } else if (!nameRegex.test(trimmedLastName)) {
+      newErrors.lastName = 'Last name can only contain letters, spaces, hyphens, and apostrophes';
+    }
+
     if (!email.trim()) {
       newErrors.email = 'Email address is required';
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       newErrors.email = 'Please enter a valid email address';
     }
-    
+
     const phoneDigits = phoneNumber.replace(/\D/g, '');
     if (!phoneNumber.trim()) {
       newErrors.phoneNumber = 'Phone number is required';
@@ -327,10 +386,11 @@ export const CreateProfileScreen: React.FC = () => {
       mediaType: 'photo',
       quality: 0.8,
     });
-    
+
     if (result.assets && result.assets.length > 0) {
       setGovernmentId(result.assets[0].uri || null);
-      if (errors.governmentId) setErrors({...errors, governmentId: ''});
+      setGovernmentIdName(result.assets[0].fileName || null);
+      if (errors.governmentId) setErrors({ ...errors, governmentId: '' });
     }
   };
 
@@ -349,10 +409,18 @@ export const CreateProfileScreen: React.FC = () => {
       });
       navigation.navigate('ParentVerification' as any, { parentEmail, parentPhone });
     } catch (error: any) {
+      const errorMessage =
+        error?.data?.user_message ||
+        error?.data?.data?.user_message ||
+        error?.data?.error ||
+        error?.data?.errors?.[0] ||
+        error?.message ||
+        'Failed to send verification';
+
       Toast.show({
         type: 'error',
         text1: 'Error',
-        text2: error?.data?.errors?.[0] || error?.message || 'Failed to send verification',
+        text2: errorMessage,
       });
     } finally {
       setIsSendingParentVerification(false);
@@ -373,11 +441,11 @@ export const CreateProfileScreen: React.FC = () => {
       formData.append('email', email);
       formData.append('phone', `+1${phoneNumber}`);
       formData.append('country_code', 'US');
-      
+
       if (dob) {
         formData.append('date_of_birth', dob.toISOString().split('T')[0]);
       }
-      
+
       if (is14To17) {
         if (parentEmail) formData.append('parent_email', parentEmail);
         if (parentPhone) formData.append('parent_phone', `+1${parentPhone.replace(/\D/g, '')}`);
@@ -406,16 +474,16 @@ export const CreateProfileScreen: React.FC = () => {
       }
 
       const response = await authApi.register(formData, verificationToken);
-      
+
       console.log('register response', response);
       const token = response?.access_token || response?.token;
       console.log('register token', token);
       if (token) {
         await persistAuthToken(token);
       }
-      
+
       const pendingRoles = response?.user?.pending_roles || [];
-      
+
       if (response?.user?.registration_step === 'parent_verification') {
         setShowParentVerificationModal(true);
       } else if (pendingRoles.length > 0) {
@@ -426,7 +494,7 @@ export const CreateProfileScreen: React.FC = () => {
           selectedRoles: response?.user?.selected_roles || pendingRoles,
           collectedRolesData: [],
         };
-        
+
         if (nextRole === 'volunteer') {
           navigation.reset({ index: 0, routes: [{ name: 'VolunteerSetup' as any, params: routeParams }] });
         } else if (nextRole === 'organization') {
@@ -454,10 +522,18 @@ export const CreateProfileScreen: React.FC = () => {
         navigation.reset({ index: 0, routes: [{ name: 'SelectRoles' as any }] });
       }
     } catch (error: any) {
+      const errorMessage =
+        error?.data?.user_message ||
+        error?.data?.data?.user_message ||
+        error?.data?.error ||
+        error?.data?.errors?.[0] ||
+        error?.message ||
+        'Failed to create profile';
+
       Toast.show({
         type: 'error',
         text1: 'Error',
-        text2: error?.data?.errors?.[0] || error?.message || 'Failed to create profile'
+        text2: errorMessage,
       });
     } finally {
       setIsSubmitting(false);
@@ -469,9 +545,11 @@ export const CreateProfileScreen: React.FC = () => {
       mediaType: 'photo',
       quality: 0.8,
     });
-    
+
     if (result.assets && result.assets.length > 0) {
       setProfilePhoto(result.assets[0].uri || null);
+      setProfilePhotoName(result.assets[0].fileName || null);
+      if (errors.profilePhoto) setErrors({ ...errors, profilePhoto: '' });
     }
   };
 
@@ -485,270 +563,270 @@ export const CreateProfileScreen: React.FC = () => {
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled">
-          
-          <View style={{flex: 1}} onTouchStart={() => {
+
+          <View style={{ flex: 1 }} onTouchStart={() => {
             if (showPhoneInfo) setShowPhoneInfo(false);
           }}>
-              {/* Header with Back Button */}
-              <TouchableOpacity
-                style={styles.backButton}
-                onPress={() => navigation.goBack()}
-                hitSlop={{top: 12, bottom: 12, left: 12, right: 12}}>
-                <BackArrowIcon size={moderateScale(24)} />
-              </TouchableOpacity>
+            {/* Header with Back Button */}
+            <TouchableOpacity
+              style={styles.backButton}
+              onPress={() => navigation.goBack()}
+              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
+              <BackArrowIcon size={moderateScale(24)} />
+            </TouchableOpacity>
 
-              {/* Logo & Title */}
-              <View style={styles.headerSection}>
-                {/* <UpliftLogo size={moderateScale(0.8, 0.3)} /> */}
-                <AppText variant="h2" center color={Colors.primary[900]} style={styles.title}>
-                  Create Your Profile
-                </AppText>
-                <AppText
-                  variant="bodyMedium"
-                  center
-                  color={Colors.neutral[500]}
-                  style={styles.subtitle}>
-                  Tell us a little about yourself. This helps us{'\n'}personalize your experience.
-                </AppText>
-              </View>
+            {/* Logo & Title */}
+            <View style={styles.headerSection}>
+              {/* <UpliftLogo size={moderateScale(0.8, 0.3)} /> */}
+              <AppText variant="h2" center color={Colors.primary[900]} style={styles.title}>
+                Create Your Profile
+              </AppText>
+              <AppText
+                variant="bodyMedium"
+                center
+                color={Colors.neutral[500]}
+                style={styles.subtitle}>
+                Tell us a little about yourself. This helps us{'\n'}personalize your experience.
+              </AppText>
+            </View>
 
-              {/* Profile Photo Section */}
-              <View style={styles.sectionContainer}>
-                <AppText variant="labelLarge" color={Colors.primary[900]} weight="bold" style={styles.sectionLabel}>
-                  Profile Photo
-                </AppText>
-                <View style={styles.photoUploadContainer}>
-                  <TouchableOpacity style={styles.photoCircle} onPress={handleSelectPhoto}>
-                    {profilePhoto ? (
-                      <Image source={{ uri: profilePhoto }} style={styles.photoImage} />
-                    ) : (
-                      <Image source={button_user} style={styles.photoImage} />
-                    )}
-                  </TouchableOpacity>
-                  <View style={styles.photoTextContainer}>
-                    <AppText variant="bodySmall" color={Colors.neutral[700]}>
-                      Add a clear photo of yourself{'\n'}so others can recognize you.
+            {/* Profile Photo Section */}
+            <View style={styles.sectionContainer}>
+              <AppText variant="labelLarge" color={Colors.primary[900]} weight="bold" style={styles.sectionLabel}>
+                Profile Photo
+              </AppText>
+              <View style={styles.photoUploadContainer}>
+                <TouchableOpacity style={styles.photoCircle} onPress={handleSelectPhoto}>
+                  {profilePhoto ? (
+                    <Image source={{ uri: profilePhoto }} style={styles.photoImage} />
+                  ) : (
+                    <Image source={button_user} style={styles.photoImage} />
+                  )}
+                </TouchableOpacity>
+                <View style={styles.photoTextContainer}>
+                  <AppText variant="bodySmall" color={Colors.neutral[700]}>
+                    Add a clear photo of yourself{'\n'}so others can recognize you.
+                  </AppText>
+                  <TouchableOpacity style={{ marginTop: 8 }} onPress={handleSelectPhoto}>
+                    <AppText variant="labelMedium" color={Colors.primary[500]} weight="bold">
+                      {profilePhoto ? 'Change Photo' : 'Add Photo'}
                     </AppText>
-                    <TouchableOpacity style={{marginTop: 8}} onPress={handleSelectPhoto}>
-                      <AppText variant="labelMedium" color={Colors.primary[500]} weight="bold">
-                        {profilePhoto ? 'Change Photo' : 'Add Photo'}
-                      </AppText>
-                    </TouchableOpacity>
-                  </View>
+                  </TouchableOpacity>
                 </View>
               </View>
+            </View>
 
-              {/* Form Fields */}
-              <View style={styles.sectionContainer}>
-                  <View style={styles.nameColumn}>
-                    <Input
-                      label="First name"
-                      placeholder="Enter first name"
-                      leftIcon={<UserOutlineIcon />}
-                      value={firstName}
-                      onChangeText={(text) => {
-                        setFirstName(text);
-                        if (errors.firstName) setErrors({...errors, firstName: ''});
-                      }}
-                      error={errors.firstName}
-                    />
-                  </View>
-                  <View style={styles.nameSpacer} />
-                  <View style={styles.nameColumn}>
-                    <Input
-                      label="Last name"
-                      placeholder="Enter last name"
-                      leftIcon={<UserOutlineIcon />}
-                      value={lastName}
-                      onChangeText={(text) => {
-                        setLastName(text);
-                        if (errors.lastName) setErrors({...errors, lastName: ''});
-                      }}
-                      error={errors.lastName}
-                    />
-                  </View>
+            {/* Form Fields */}
+            <View style={styles.sectionContainer}>
+              <View style={styles.nameColumn}>
+                <Input
+                  label="First name"
+                  placeholder="Enter first name"
+                  leftIcon={<UserOutlineIcon />}
+                  value={firstName}
+                  onChangeText={(text) => {
+                    setFirstName(text);
+                    if (errors.firstName) setErrors({ ...errors, firstName: '' });
+                  }}
+                  error={errors.firstName}
+                />
+              </View>
+              <View style={styles.nameSpacer} />
+              <View style={styles.nameColumn}>
+                <Input
+                  label="Last name"
+                  placeholder="Enter last name"
+                  leftIcon={<UserOutlineIcon />}
+                  value={lastName}
+                  onChangeText={(text) => {
+                    setLastName(text);
+                    if (errors.lastName) setErrors({ ...errors, lastName: '' });
+                  }}
+                  error={errors.lastName}
+                />
+              </View>
+
+              <Input
+                label="Email address"
+                placeholder="Enter your email address"
+                leftIcon={<MailOutlineIcon />}
+                value={email}
+                onChangeText={(text) => {
+                  setEmail(text);
+                  if (errors.email) setErrors({ ...errors, email: '' });
+                }}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                error={errors.email}
+                disabled={isEmail}
+              />
+
+              {/* Phone Number with Tooltip */}
+              <View style={styles.phoneInputWrapper}>
+                <View style={styles.labelRow}>
+                  <AppText variant="labelMedium" color={Colors.neutral[700]} style={{ marginBottom: Spacing.xs }}>
+                    Phone number
+                  </AppText>
+                  <AppText variant="labelMedium" color={Colors.error} style={{ marginLeft: 4, marginBottom: Spacing.xs }}>
+                    *
+                  </AppText>
+                  <TouchableOpacity
+                    style={{ marginLeft: 6, marginBottom: Spacing.xs }}
+                    onPress={() => setShowPhoneInfo(!showPhoneInfo)}
+                  >
+                    <InfoCircleIcon size={18} color={Colors.primary[500]} />
+                  </TouchableOpacity>
+                </View>
 
                 <Input
-                  label="Email address"
-                  placeholder="Enter your email address"
-                  leftIcon={<MailOutlineIcon />}
-                  value={email}
+                  placeholder="(201) 555-0123"
+                  leftIcon={<PhonePrefixPrefix />}
+                  value={phoneNumber}
                   onChangeText={(text) => {
-                    setEmail(text);
-                    if (errors.email) setErrors({...errors, email: ''});
+                    setPhoneNumber(text);
+                    if (errors.phoneNumber) setErrors({ ...errors, phoneNumber: '' });
                   }}
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  error={errors.email}
-                  disabled={isEmail}
+                  keyboardType="phone-pad"
+                  maxLength={10}
+                  error={errors.phoneNumber}
+                  disabled={!isEmail}
                 />
 
-                {/* Phone Number with Tooltip */}
-                <View style={styles.phoneInputWrapper}>
-                  <View style={styles.labelRow}>
-                    <AppText variant="labelMedium" color={Colors.neutral[700]} style={{marginBottom: Spacing.xs}}>
-                      Phone number
+                {/* Floating Tooltip */}
+                {showPhoneInfo && (
+                  <View style={styles.tooltipContainer}>
+                    {/* Left pointing triangle */}
+                    <View style={styles.tooltipTriangle} />
+                    <AppText variant="caption" color={Colors.neutral[800]} style={{ lineHeight: 18 }}>
+                      We use your phone number to verify your identity and enable important safety notifications.
                     </AppText>
-                    <AppText variant="labelMedium" color={Colors.error} style={{marginLeft: 4, marginBottom: Spacing.xs}}>
-                      *
-                    </AppText>
-                    <TouchableOpacity 
-                      style={{marginLeft: 6, marginBottom: Spacing.xs}}
-                      onPress={() => setShowPhoneInfo(!showPhoneInfo)}
-                    >
-                      <InfoCircleIcon size={18} color={Colors.primary[500]} />
-                    </TouchableOpacity>
-                  </View>
-
-                  <Input
-                    placeholder="(201) 555-0123"
-                    leftIcon={<PhonePrefixPrefix />}
-                    value={phoneNumber}
-                    onChangeText={(text) => {
-                      setPhoneNumber(text);
-                      if (errors.phoneNumber) setErrors({...errors, phoneNumber: ''});
-                    }}
-                    keyboardType="phone-pad"
-                    maxLength={10}
-                    error={errors.phoneNumber}
-                    disabled={!isEmail}
-                  />
-
-                  {/* Floating Tooltip */}
-                  {showPhoneInfo && (
-                    <View style={styles.tooltipContainer}>
-                      {/* Left pointing triangle */}
-                      <View style={styles.tooltipTriangle} />
-                      <AppText variant="caption" color={Colors.neutral[800]} style={{lineHeight: 18}}>
-                        We use your phone number to verify your identity and enable important safety notifications.
-                      </AppText>
-                    </View>
-                  )}
-                </View>
-
-                {/* Date of Birth Input */}
-                <View style={{marginTop: verticalScale(16), position: 'relative'}}>
-                  <Input
-                    label="Date of Birth"
-                    placeholder="MM/DD/YYYY"
-                    leftIcon={<CalendarIcon size={moderateScale(22)} />}
-                    value={dob ? `${String(dob.getMonth() + 1).padStart(2, '0')}/${String(dob.getDate()).padStart(2, '0')}/${dob.getFullYear()}` : ''}
-                    editable={false}
-                    error={errors.dob}
-                  />
-                  <TouchableOpacity 
-                    onPress={() => {
-                      Keyboard.dismiss();
-                      setTimeout(() => {
-                        setIsDatePickerOpen(true);
-                      }, 100);
-                    }} 
-                    style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 10, elevation: 10, }} 
-                  />
-                </View>
-
-                {/* Government ID Photo (Required for Ages 18+) */}
-                {is18Plus && (
-                  <View style={{marginTop: verticalScale(16)}}>
-                    <View style={{flexDirection: 'row', alignItems: 'center', marginBottom: 6}}>
-                      <AppText variant="labelMedium" color={Colors.neutral[700]}>
-                        Government ID Photo
-                      </AppText>
-                      <AppText variant="labelMedium" color={Colors.error} style={{marginLeft: 4}}>
-                        *
-                      </AppText>
-                    </View>
-                    <TouchableOpacity
-                      style={[
-                        styles.idUploadBox,
-                        errors.governmentId ? { borderColor: Colors.error } : null
-                      ]}
-                      onPress={handleSelectGovernmentId}
-                      activeOpacity={0.7}
-                    >
-                      {governmentId ? (
-                        <View style={styles.idPreviewContainer}>
-                          <Image source={{ uri: governmentId }} style={styles.idImagePreview} resizeMode="cover" />
-                          <View style={styles.changeIdBadge}>
-                            <AppText variant="labelSmall" color={Colors.neutral[0]} weight="bold">Change ID</AppText>
-                          </View>
-                        </View>
-                      ) : (
-                        <View style={styles.idUploadPlaceholder}>
-                          <CameraIcon size={32} color={Colors.primary[500]} />
-                          <AppText variant="bodySmall" color={Colors.neutral[600]} style={{marginTop: 8, textAlign: 'center'}}>
-                            Upload a clear photo of your Government ID{'\n'}(Driver's License, Passport, State ID)
-                          </AppText>
-                          <AppText variant="labelMedium" color={Colors.primary[500]} weight="bold" style={{marginTop: 6}}>
-                            Upload Photo
-                          </AppText>
-                        </View>
-                      )}
-                    </TouchableOpacity>
-                    {errors.governmentId ? (
-                      <AppText variant="caption" color={Colors.error} style={{marginTop: 4}}>
-                        {errors.governmentId}
-                      </AppText>
-                    ) : null}
-                  </View>
-                )}
-
-                {is14To17 && (
-                  <View style={{marginTop: verticalScale(16), backgroundColor: Colors.primary[50], padding: 14, borderRadius: 12, borderWidth: 1, borderColor: Colors.primary[100]}}>
-                    <AppText variant="labelMedium" color={Colors.primary[900]} style={{marginBottom: 4}}>
-                      Parent / Guardian Consent Required
-                    </AppText>
-                    <AppText variant="bodySmall" color={Colors.neutral[600]} style={{marginBottom: 12}}>
-                      Since you are under 18, we require both your parent's email address and phone number to send the activation code.
-                    </AppText>
-
-                    <Input
-                      label="Parent/Guardian Email Address"
-                      placeholder="Enter parent's email address"
-                      leftIcon={<MailOutlineIcon size={moderateScale(22)} />}
-                      value={parentEmail}
-                      onChangeText={(text) => {
-                        setParentEmail(text);
-                        if (errors.parentEmail) setErrors({...errors, parentEmail: ''});
-                      }}
-                      keyboardType="email-address"
-                      autoCapitalize="none"
-                      error={errors.parentEmail}
-                    />
-
-                    <View style={{marginTop: verticalScale(12)}}>
-                      <Input
-                        label="Parent/Guardian Phone Number"
-                        placeholder="(201) 555-0123"
-                        leftIcon={<PhonePrefixPrefix />}
-                        value={parentPhone}
-                        onChangeText={(text) => {
-                          setParentPhone(text);
-                          if (errors.parentPhone) setErrors({...errors, parentPhone: ''});
-                        }}
-                        keyboardType="phone-pad"
-                        maxLength={10}
-                        error={errors.parentPhone}
-                      />
-                    </View>
                   </View>
                 )}
               </View>
 
-              {/* Spacer */}
-              <View style={styles.spacer} />
+              {/* Date of Birth Input */}
+              <View style={{ marginTop: verticalScale(16), position: 'relative' }}>
+                <Input
+                  label="Date of Birth"
+                  placeholder="MM/DD/YYYY"
+                  leftIcon={<CalendarIcon size={moderateScale(22)} />}
+                  value={dob ? `${String(dob.getMonth() + 1).padStart(2, '0')}/${String(dob.getDate()).padStart(2, '0')}/${dob.getFullYear()}` : ''}
+                  editable={false}
+                  error={errors.dob}
+                />
+                <TouchableOpacity
+                  onPress={() => {
+                    Keyboard.dismiss();
+                    setTimeout(() => {
+                      setIsDatePickerOpen(true);
+                    }, 100);
+                  }}
+                  style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 10, elevation: 10, }}
+                />
+              </View>
 
-              {/* Save & Continue Button */}
-              <Button
-                title="Save & Continue"
-                color="primary"
-                size="lg"
-                fullWidth
-                loading={isSubmitting}
-                onPress={handleCreateProfile}
-                style={styles.continueButton}
-              />
+              {/* Government ID Photo (Required for Ages 18+) */}
+              {is18Plus && (
+                <View style={{ marginTop: verticalScale(16) }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
+                    <AppText variant="labelMedium" color={Colors.neutral[700]}>
+                      Government ID Photo
+                    </AppText>
+                    <AppText variant="labelMedium" color={Colors.error} style={{ marginLeft: 4 }}>
+                      *
+                    </AppText>
+                  </View>
+                  <TouchableOpacity
+                    style={[
+                      styles.idUploadBox,
+                      errors.governmentId ? { borderColor: Colors.error } : null
+                    ]}
+                    onPress={handleSelectGovernmentId}
+                    activeOpacity={0.7}
+                  >
+                    {governmentId ? (
+                      <View style={styles.idPreviewContainer}>
+                        <Image source={{ uri: governmentId }} style={styles.idImagePreview} resizeMode="cover" />
+                        <View style={styles.changeIdBadge}>
+                          <AppText variant="labelSmall" color={Colors.neutral[0]} weight="bold">Change ID</AppText>
+                        </View>
+                      </View>
+                    ) : (
+                      <View style={styles.idUploadPlaceholder}>
+                        <CameraIcon size={32} color={Colors.primary[500]} />
+                        <AppText variant="bodySmall" color={Colors.neutral[600]} style={{ marginTop: 8, textAlign: 'center' }}>
+                          Upload a clear photo of your Government ID{'\n'}(Driver's License, Passport, State ID)
+                        </AppText>
+                        <AppText variant="labelMedium" color={Colors.primary[500]} weight="bold" style={{ marginTop: 6 }}>
+                          Upload Photo
+                        </AppText>
+                      </View>
+                    )}
+                  </TouchableOpacity>
+                  {errors.governmentId ? (
+                    <AppText variant="caption" color={Colors.error} style={{ marginTop: 4 }}>
+                      {errors.governmentId}
+                    </AppText>
+                  ) : null}
+                </View>
+              )}
+
+              {is14To17 && (
+                <View style={{ marginTop: verticalScale(16), backgroundColor: Colors.primary[50], padding: 14, borderRadius: 12, borderWidth: 1, borderColor: Colors.primary[100] }}>
+                  <AppText variant="labelMedium" color={Colors.primary[900]} style={{ marginBottom: 4 }}>
+                    Parent / Guardian Consent Required
+                  </AppText>
+                  <AppText variant="bodySmall" color={Colors.neutral[600]} style={{ marginBottom: 12 }}>
+                    Since you are under 18, we require both your parent's email address and phone number to send the activation code.
+                  </AppText>
+
+                  <Input
+                    label="Parent/Guardian Email Address"
+                    placeholder="Enter parent's email address"
+                    leftIcon={<MailOutlineIcon size={moderateScale(22)} />}
+                    value={parentEmail}
+                    onChangeText={(text) => {
+                      setParentEmail(text);
+                      if (errors.parentEmail) setErrors({ ...errors, parentEmail: '' });
+                    }}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    error={errors.parentEmail}
+                  />
+
+                  <View style={{ marginTop: verticalScale(12) }}>
+                    <Input
+                      label="Parent/Guardian Phone Number"
+                      placeholder="(201) 555-0123"
+                      leftIcon={<PhonePrefixPrefix />}
+                      value={parentPhone}
+                      onChangeText={(text) => {
+                        setParentPhone(text);
+                        if (errors.parentPhone) setErrors({ ...errors, parentPhone: '' });
+                      }}
+                      keyboardType="phone-pad"
+                      maxLength={10}
+                      error={errors.parentPhone}
+                    />
+                  </View>
+                </View>
+              )}
             </View>
+
+            {/* Spacer */}
+            <View style={styles.spacer} />
+
+            {/* Save & Continue Button */}
+            <Button
+              title="Save & Continue"
+              color="primary"
+              size="lg"
+              fullWidth
+              loading={isSubmitting}
+              onPress={handleCreateProfile}
+              style={styles.continueButton}
+            />
+          </View>
         </ScrollView>
       </KeyboardAvoidingView>
 
@@ -760,14 +838,14 @@ export const CreateProfileScreen: React.FC = () => {
         onConfirm={(date) => {
           setIsDatePickerOpen(false);
           setDob(date);
-          
+
           const selectedAge = (new Date().getTime() - (date.getTime() - 24 * 60 * 60 * 1000)) / (1000 * 60 * 60 * 24 * 365.25);
           if (selectedAge < 14) {
-            setErrors({...errors, dob: 'Age Restriction: You are not allowed but hope to see you when you turn 14.'});
+            setErrors({ ...errors, dob: 'Age Restriction: You are not allowed but hope to see you when you turn 14.' });
             return;
           }
 
-          if (errors.dob) setErrors({...errors, dob: ''});
+          if (errors.dob) setErrors({ ...errors, dob: '' });
         }}
         onCancel={() => {
           setIsDatePickerOpen(false);
@@ -793,8 +871,8 @@ export const CreateProfileScreen: React.FC = () => {
             <View style={styles.modalIconContainer}>
               <MailIcon size={32} />
             </View>
-            <AppText variant="h4" center style={{marginBottom: 8}}>Parent Verification</AppText>
-            <AppText variant="bodyMedium" color={Colors.neutral[600]} center style={{marginBottom: 24, lineHeight: 22}}>
+            <AppText variant="h4" center style={{ marginBottom: 8 }}>Parent Verification</AppText>
+            <AppText variant="bodyMedium" color={Colors.neutral[600]} center style={{ marginBottom: 24, lineHeight: 22 }}>
               Verification codes will be sent to your parent's email and phone:
               {parentEmail ? `\n${parentEmail}` : ''}
               {parentPhone ? `\n${parentPhone.startsWith('+') ? parentPhone : `+1 ${parentPhone}`}` : ''}
@@ -803,9 +881,44 @@ export const CreateProfileScreen: React.FC = () => {
               title="Continue"
               onPress={handleSendParentVerification}
               loading={isSendingParentVerification}
-              style={{width: '100%'}}
+              style={{ width: '100%' }}
             />
           </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal>
+
+      {/* Image Preview Modal */}
+      <Modal
+        visible={!!previewImage}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setPreviewImage(null)}
+      >
+        <TouchableOpacity
+          style={styles.previewModalOverlay}
+          activeOpacity={1}
+          onPress={() => setPreviewImage(null)}
+        >
+          <View style={styles.previewModalContent} onStartShouldSetResponder={() => true}>
+            <View style={styles.previewModalHeader}>
+              <AppText variant="h4" color={Colors.primary[900]} weight="bold">
+                {previewImage?.title || 'Image Preview'}
+              </AppText>
+              <TouchableOpacity
+                onPress={() => setPreviewImage(null)}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                <CloseIcon size={22} color={Colors.neutral[700]} />
+              </TouchableOpacity>
+            </View>
+            {previewImage?.uri ? (
+              <Image
+                source={{ uri: previewImage.uri }}
+                style={styles.previewModalImage}
+                resizeMode="contain"
+              />
+            ) : null}
+          </View>
         </TouchableOpacity>
       </Modal>
     </SafeAreaView>
@@ -929,19 +1042,19 @@ const styles = StyleSheet.create({
   tooltipContainer: {
     position: 'absolute',
     top: 32, // Vertically aligned slightly below the label
-    left: 4,
+    left: 0,
+    right: 0,
     backgroundColor: Colors.neutral[0],
     borderRadius: BorderRadius.md,
     padding: Spacing.md,
     ...Shadows.md,
     elevation: 4,
     zIndex: 20,
-    width: 240, // Fixed width for natural wrapping
   },
   tooltipTriangle: {
     position: 'absolute',
     top: -10,
-    left: 104, // Pointing UP, aligned under the icon
+    left: 130, // Pointing UP, aligned under the icon
     width: 0,
     height: 0,
     borderLeftWidth: 10,
@@ -967,10 +1080,11 @@ const styles = StyleSheet.create({
     borderStyle: 'dashed',
     borderRadius: BorderRadius.md,
     backgroundColor: Colors.primary[50],
-    padding: moderateScale(16),
+    paddingVertical: verticalScale(10),
+    paddingHorizontal: horizontalScale(12),
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: verticalScale(110),
+    minHeight: verticalScale(75),
   },
   idUploadPlaceholder: {
     alignItems: 'center',
@@ -978,7 +1092,7 @@ const styles = StyleSheet.create({
   },
   idPreviewContainer: {
     width: '100%',
-    height: verticalScale(140),
+    height: verticalScale(100),
     borderRadius: BorderRadius.md,
     overflow: 'hidden',
     position: 'relative',
@@ -994,6 +1108,78 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primary[600],
     paddingHorizontal: 12,
     paddingVertical: 6,
+    borderRadius: BorderRadius.md,
+  },
+  uploadedFileRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: Colors.primary[50],
+    borderWidth: 1.5,
+    borderColor: Colors.primary[200],
+    borderRadius: BorderRadius.md,
+    paddingVertical: verticalScale(10),
+    paddingHorizontal: horizontalScale(12),
+  },
+  uploadedFileInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    marginRight: 8,
+  },
+  uploadedThumbnail: {
+    width: 38,
+    height: 38,
+    borderRadius: BorderRadius.sm,
+    backgroundColor: Colors.neutral[200],
+  },
+  uploadedFileName: {
+    marginLeft: 10,
+    flex: 1,
+  },
+  uploadedFileActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  viewBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.primary[100],
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: BorderRadius.md,
+    marginRight: 6,
+  },
+  changeBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: BorderRadius.md,
+    backgroundColor: Colors.neutral[100],
+  },
+  previewModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.75)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: horizontalScale(20),
+  },
+  previewModalContent: {
+    width: '100%',
+    maxHeight: '80%',
+    backgroundColor: Colors.neutral[0],
+    borderRadius: BorderRadius.lg,
+    padding: moderateScale(16),
+    ...Shadows.lg,
+  },
+  previewModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: verticalScale(12),
+  },
+  previewModalImage: {
+    width: '100%',
+    height: verticalScale(280),
     borderRadius: BorderRadius.md,
   },
 });

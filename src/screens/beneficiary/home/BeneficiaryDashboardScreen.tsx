@@ -101,10 +101,18 @@ export default function BeneficiaryDashboardScreen() {
       <ScrollView 
         style={styles.container} 
         contentContainerStyle={styles.content}
+        bounces={false}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[Colors.primary[500]]} />
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[Colors.primary[500]]}
+            tintColor={Colors.neutral[0]}
+            progressBackgroundColor={Colors.neutral[0]}
+          />
         }
       >
+        <View style={{ position: 'absolute', top: -1000, left: 0, right: 0, height: 1000, backgroundColor: Colors.primary[500] }} />
         {/* Header Section */}
         <View style={[styles.header, { paddingBottom: verticalScale(60), borderBottomLeftRadius: 24, borderBottomRightRadius: 24 }]}>
           <View style={styles.headerTopRow}>

@@ -88,7 +88,7 @@ export default function SponsorDashboardScreen() {
       <StatusBar backgroundColor={Colors.primary[500]} barStyle="light-content" />
       <ScrollView 
         style={styles.container} 
-        bounces={true} 
+        bounces={false} 
         showsVerticalScrollIndicator={false}
       >
         

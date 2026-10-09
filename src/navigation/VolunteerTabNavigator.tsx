@@ -98,20 +98,7 @@ export function VolunteerTabNavigator() {
           },
         })}
       />
-      <Tab.Screen
-        name="PromotionsTab"
-        component={BrowsePromotionsScreen}
-        options={{
-          tabBarLabel: 'Promotions',
-          tabBarIcon: ({color}) => <Megaphone color={color} size={24} />,
-        }}
-        listeners={({navigation}) => ({
-          tabPress: (e) => {
-            e.preventDefault();
-            navigation.navigate('PromotionsTab');
-          },
-        })}
-      />
+
       <Tab.Screen
         name="JobsTab"
         component={VolunteerJobsStack}
@@ -123,6 +110,20 @@ export function VolunteerTabNavigator() {
           tabPress: (e) => {
             e.preventDefault();
             navigation.navigate('JobsTab', { screen: 'BrowseJobs' });
+          },
+        })}
+      />
+            <Tab.Screen
+        name="PromotionsTab"
+        component={BrowsePromotionsScreen}
+        options={{
+          tabBarLabel: 'Promotions',
+          tabBarIcon: ({color}) => <Megaphone color={color} size={24} />,
+        }}
+        listeners={({navigation}) => ({
+          tabPress: (e) => {
+            e.preventDefault();
+            navigation.navigate('PromotionsTab');
           },
         })}
       />

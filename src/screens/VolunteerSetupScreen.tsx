@@ -1103,6 +1103,7 @@ const styles = StyleSheet.create({
   tooltipContainer: {
     position: 'absolute',
     top: 32, // Vertically aligned slightly below the label
+    left: 0,
     right: 0,
     backgroundColor: Colors.neutral[0],
     borderRadius: BorderRadius.md,
@@ -1110,22 +1111,21 @@ const styles = StyleSheet.create({
     ...Shadows.md,
     elevation: 4,
     zIndex: 20,
-    width: 240, // Fixed width for natural wrapping
   },
   tooltipTriangle: {
     position: 'absolute',
-    top: 18,
-    left: -10, // Pointing left, sticking out of the container
+    top: -10,
+    left: 130, // Pointing UP, aligned under the icon
     width: 0,
     height: 0,
-    borderTopWidth: 10,
-    borderBottomWidth: 10,
+    borderLeftWidth: 10,
     borderRightWidth: 10,
+    borderBottomWidth: 10,
     borderStyle: 'solid',
     backgroundColor: 'transparent',
-    borderTopColor: 'transparent',
-    borderBottomColor: 'transparent',
-    borderRightColor: Colors.neutral[0],
+    borderLeftColor: 'transparent',
+    borderRightColor: 'transparent',
+    borderBottomColor: Colors.neutral[0],
   },
   slidersContainer: {
     marginTop: verticalScale(12),

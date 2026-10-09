@@ -6,6 +6,7 @@ import {
   SafeAreaView,
   TextInput,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   ScrollView,
   StatusBar,
   ActivityIndicator,
@@ -455,12 +456,28 @@ export const CreatePromotionScreen = () => {
         <View style={{ width: 40 }} />
       </View>
 
-      <View style={styles.mainContainer}>
+      <View
+        style={styles.mainContainer}
+        onTouchStart={() => {
+          if (activeDropdown !== null) {
+            setActiveDropdown(null);
+          }
+        }}
+      >
         <ScrollView
           style={styles.container}
           contentContainerStyle={styles.content}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled">
+          <TouchableWithoutFeedback
+            onPress={() => {
+              if (activeDropdown !== null) {
+                setActiveDropdown(null);
+              }
+            }}
+            accessible={false}
+          >
+            <View style={{ flex: 1 }}>
 
               {/* Title / Business Name */}
               <Text style={styles.label}>
@@ -813,7 +830,8 @@ export const CreatePromotionScreen = () => {
                   onChangeText={setTermsConditions}
                 />
               )}
-
+            </View>
+          </TouchableWithoutFeedback>
         </ScrollView>
 
         {/* Footer Action Button */}

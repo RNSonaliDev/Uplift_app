@@ -83,10 +83,18 @@ export const OrganizationDashboardScreen = () => {
         style={styles.container}
         contentContainerStyle={styles.scrollContent} 
         showsVerticalScrollIndicator={false}
+        bounces={false}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[Colors.primary[500]]} />
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[Colors.primary[500]]}
+            tintColor={Colors.neutral[0]}
+            progressBackgroundColor={Colors.neutral[0]}
+          />
         }
       >
+        <View style={{ position: 'absolute', top: -1000, left: 0, right: 0, height: 1000, backgroundColor: Colors.primary[500] }} />
         
         {/* Header */}
         <View style={styles.header}>

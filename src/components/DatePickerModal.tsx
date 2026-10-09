@@ -116,6 +116,8 @@ export const DatePickerModal: React.FC<DatePickerModalProps> = ({
             maximumDate={maximumDate}
             onChange={handleChange}
             style={styles.picker}
+            textColor={Colors.neutral[900]}
+            themeVariant="light"
           />
         </View>
       </View>

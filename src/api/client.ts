@@ -87,8 +87,16 @@ export const apiClient = async <T>(endpoint: string, options: FetchOptions = {})
     console.log(`[API RESPONSE] ${response.status} ${BASE_URL}${endpoint}`, responseData);
 
     if (!response.ok) {
+      const errorMessage =
+        responseData?.data?.user_message ||
+        responseData?.user_message ||
+        responseData?.data?.error ||
+        responseData?.error ||
+        responseData?.message ||
+        'An error occurred';
+
       throw {
-        message: responseData.error || responseData.message || 'An error occurred',
+        message: errorMessage,
         status: response.status,
         data: responseData,
       };
