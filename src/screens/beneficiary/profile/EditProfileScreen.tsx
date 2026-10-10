@@ -23,7 +23,7 @@ import {Colors} from '../../../theme/colors';
 import {AppText} from '../../../components/AppText';
 import {Input} from '../../../components/Input';
 import {Button} from '../../../components/Button';
-import {ChevronLeft, Calendar, MapPin, Clock, Info, Navigation, BadgeCheck, Phone, ChevronDown, Check, X} from 'lucide-react-native';
+import {ChevronLeft, Calendar, MapPin, Clock, Info, Navigation, BadgeCheck, Phone, ChevronDown, Check, X, Eye, FileText} from 'lucide-react-native';
 import {Spacing} from '../../../theme/spacing';
 import {authApi} from '../../../api/auth';
 import {getFullImageUrl} from '../../../api/client';
@@ -168,6 +168,7 @@ export default function EditProfileScreen() {
   const [organizationTypes, setOrganizationTypes] = useState<string[]>([]);
   const [date, setDate] = useState(new Date(2000, 0, 1));
   const [isMapModalVisible, setIsMapModalVisible] = useState(false);
+  const [previewImage, setPreviewImage] = useState<{ uri: string; title: string } | null>(null);
   const [region, setRegion] = useState({
     latitude: 37.78825,
     longitude: -122.4324,
@@ -418,7 +419,8 @@ export default function EditProfileScreen() {
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
         enableOnAndroid={true}
-        extraScrollHeight={100}
+        extraScrollHeight={20}
+        enableResetScrollToCoords={false}
         scrollEnabled={isScrollEnabled}
       >
           <AppText variant="labelLarge" color={Colors.neutral[900]} weight="bold" style={{ marginBottom: 12 }}>Basic Details</AppText>
@@ -523,9 +525,29 @@ export default function EditProfileScreen() {
                 </AppText>
               </View>
               {formData.government_id ? (
-                <View style={styles.idPreviewContainer}>
-                  <Image source={{ uri: getFullImageUrl(formData.government_id) || formData.government_id }} style={styles.idImagePreview} resizeMode="cover" />
-                </View>
+                <TouchableOpacity
+                  style={styles.uploadedFileRow}
+                  activeOpacity={0.8}
+                  onPress={() => setPreviewImage({
+                    uri: getFullImageUrl(formData.government_id) || formData.government_id,
+                    title: 'Government ID Photo'
+                  })}
+                >
+                  <View style={styles.uploadedFileInfo}>
+                    <Image
+                      source={{ uri: getFullImageUrl(formData.government_id) || formData.government_id }}
+                      style={styles.uploadedThumbnail}
+                      resizeMode="cover"
+                    />
+                  
+                  </View>
+                  <View style={styles.viewBadge}>
+                    <Eye color={Colors.primary[600]} size={16} style={{marginRight: 4}} />
+                    <AppText variant="labelSmall" color={Colors.primary[600]} weight="bold">
+                      View Document
+                    </AppText>
+                  </View>
+                </TouchableOpacity>
               ) : (
                 <View style={[styles.idUploadBox, { opacity: 0.6 }]}>
                   <AppText variant="bodySmall" color={Colors.neutral[600]}>No Government ID on file</AppText>
@@ -984,6 +1006,41 @@ export default function EditProfileScreen() {
         }}
       />
       </SafeAreaView>
+
+      {/* Image Preview Modal */}
+      <Modal
+        visible={!!previewImage}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setPreviewImage(null)}
+      >
+        <TouchableOpacity
+          style={styles.previewModalOverlay}
+          activeOpacity={1}
+          onPress={() => setPreviewImage(null)}
+        >
+          <View style={styles.previewModalContent} onStartShouldSetResponder={() => true}>
+            <View style={styles.previewModalHeader}>
+              <AppText variant="h4" color={Colors.primary[900]} weight="bold">
+                {previewImage?.title || 'Document Preview'}
+              </AppText>
+              <TouchableOpacity
+                onPress={() => setPreviewImage(null)}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                <X size={22} color={Colors.neutral[700]} />
+              </TouchableOpacity>
+            </View>
+            {previewImage?.uri ? (
+              <Image
+                source={{ uri: previewImage.uri }}
+                style={styles.previewModalImage}
+                resizeMode="contain"
+              />
+            ) : null}
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </>
   );
 }
@@ -1201,5 +1258,70 @@ const styles = StyleSheet.create({
   idImagePreview: {
     width: '100%',
     height: '100%',
+  },
+  uploadedFileRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: Colors.primary[50],
+    borderWidth: 1.5,
+    borderColor: Colors.primary[200],
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+  },
+  uploadedFileInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    marginRight: 8,
+  },
+  uploadedThumbnail: {
+    width: 42,
+    height: 42,
+    borderRadius: 8,
+    backgroundColor: Colors.neutral[200],
+  },
+  uploadedFileName: {
+    marginLeft: 12,
+    flex: 1,
+  },
+  viewBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.primary[100],
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  previewModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.75)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  previewModalContent: {
+    width: '100%',
+    maxHeight: '80%',
+    backgroundColor: Colors.neutral[0],
+    borderRadius: 16,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 5,
+  },
+  previewModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  previewModalImage: {
+    width: '100%',
+    height: 320,
+    borderRadius: 8,
   },
 });

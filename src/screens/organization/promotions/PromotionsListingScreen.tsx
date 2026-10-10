@@ -223,21 +223,23 @@ export const PromotionsListingScreen = () => {
           {!((item.status || '').toLowerCase() === 'closed' || (item.status || '').toLowerCase() === 'expired') && (
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <TouchableOpacity
-                style={{ padding: 4, marginRight: 8 }}
+                style={{ padding: 6, marginRight: 6 }}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 onPress={(e) => {
                   e.stopPropagation();
                   navigation.navigate('CreatePromotion', { promotionToEdit: item });
                 }}>
-                <Pencil size={16} color={Colors.primary[600]} />
+                <Pencil size={22} color={Colors.primary[600]} />
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={{ padding: 4 }}
+                style={{ padding: 6 }}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 onPress={(e) => {
                   e.stopPropagation();
                   handleDeletePromotion(item);
                 }}>
-                <Trash2 size={16} color={Colors.error} />
+                <Trash2 size={22} color={Colors.error} />
               </TouchableOpacity>
             </View>
           )}
@@ -512,17 +514,21 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: verticalScale(6),
+    flexWrap: 'wrap',
+    rowGap: verticalScale(4),
   },
   metaItem: {
     flexDirection: 'row',
     alignItems: 'center',
     marginRight: horizontalScale(14),
+    flexShrink: 1,
   },
   metaText: {
     fontFamily: FontFamily.regular,
     fontSize: fontScale(12),
     color: Colors.neutral[500],
     marginLeft: 4,
+    flexShrink: 1,
   },
   fab: {
     position: 'absolute',

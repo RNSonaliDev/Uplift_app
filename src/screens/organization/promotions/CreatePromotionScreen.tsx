@@ -13,6 +13,7 @@ import {
   RefreshControl,
   Modal,
 } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { GooglePlacesAutocomplete, GooglePlacesAutocompleteRef } from 'react-native-google-places-autocomplete';
 import MapView, { Marker } from 'react-native-maps';
@@ -464,11 +465,16 @@ export const CreatePromotionScreen = () => {
           }
         }}
       >
-        <ScrollView
+        <KeyboardAwareScrollView
           style={styles.container}
-          contentContainerStyle={styles.content}
+          contentContainerStyle={[styles.content, { paddingBottom: 140 }]}
           showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled">
+          keyboardShouldPersistTaps="handled"
+          extraScrollHeight={140}
+          extraHeight={140}
+          enableOnAndroid={true}
+          enableAutomaticScroll={true}
+          enableResetScrollToCoords={false}>
           <TouchableWithoutFeedback
             onPress={() => {
               if (activeDropdown !== null) {
@@ -480,13 +486,17 @@ export const CreatePromotionScreen = () => {
             <View style={{ flex: 1 }}>
 
               {/* Title / Business Name */}
-              <Text style={styles.label}>
-                Business Name <Text style={{ color: Colors.error }}>*</Text>
-              </Text>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Text style={[styles.label, { marginBottom: 0 }]}>
+                  Business Name <Text style={{ color: Colors.error }}>*</Text>
+                </Text>
+                <Text style={styles.charCount}>{title.length}/20</Text>
+              </View>
               <TextInput
-                style={[styles.input, fieldErrors.title ? styles.inputError : null]}
+                style={[styles.input, fieldErrors.title ? styles.inputError : null, { marginTop: 6 }]}
                 placeholder="XYZ LLC"
                 placeholderTextColor={Colors.neutral[400]}
+                maxLength={20}
                 value={title}
                 onChangeText={(text) => {
                   setTitle(text);
@@ -739,14 +749,18 @@ export const CreatePromotionScreen = () => {
               )}
 
               {/* Promo Code */}
-              <Text style={styles.label}>Promo Code</Text>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Text style={[styles.label, { marginBottom: 0 }]}>Promo Code</Text>
+                <Text style={styles.charCount}>{promoCode.length}/6</Text>
+              </View>
               <TextInput
-                style={styles.input}
+                style={[styles.input, { marginTop: 6 }]}
                 placeholder="UPLIFT"
                 placeholderTextColor={Colors.neutral[400]}
                 autoCapitalize="characters"
+                maxLength={6}
                 value={promoCode}
-                onChangeText={setPromoCode}
+                onChangeText={(text) => setPromoCode(text.toUpperCase().slice(0, 6))}
               />
               <Text style={styles.helperText}>Default is UPLIFT or enter a custom promo code</Text>
 
@@ -832,7 +846,7 @@ export const CreatePromotionScreen = () => {
               )}
             </View>
           </TouchableWithoutFeedback>
-        </ScrollView>
+        </KeyboardAwareScrollView>
 
         {/* Footer Action Button */}
         <View style={styles.footer}>
@@ -1280,5 +1294,9 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 6,
     marginRight: 6,
+  },
+  charCount: {
+    ...Typography.caption,
+    color: Colors.neutral[500],
   },
 });

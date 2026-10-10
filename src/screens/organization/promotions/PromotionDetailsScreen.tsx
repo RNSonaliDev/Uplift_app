@@ -34,6 +34,7 @@ import {
   Info,
 } from 'lucide-react-native';
 import { api } from '../../../api/client';
+import { authApi } from '../../../api/auth';
 import { formatDate } from '../../../utils/dateFormatter';
 import { formatStatus, getStatusColors } from '../../../utils/statusUtils';
 import Toast from 'react-native-toast-message';
@@ -44,6 +45,7 @@ export const PromotionDetailsScreen = () => {
   const { id, promotion: initialData, isPublicView } = route.params || {};
 
   const [promotion, setPromotion] = useState<any>(initialData || null);
+  const [userRole, setUserRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(!initialData);
   const [copied, setCopied] = useState(false);
   const [publishing, setPublishing] = useState(false);
@@ -54,7 +56,18 @@ export const PromotionDetailsScreen = () => {
     if (id) {
       fetchPromotionDetails();
     }
+    fetchUserProfile();
   }, [id]);
+
+  const fetchUserProfile = async () => {
+    try {
+      const res: any = await authApi.getProfile();
+      const role = res?.default_role || res?.user?.default_role || null;
+      setUserRole(role);
+    } catch (err) {
+      console.log('Failed to fetch profile in PromotionDetailsScreen', err);
+    }
+  };
 
   const fetchPromotionDetails = async () => {
     try {
@@ -70,33 +83,6 @@ export const PromotionDetailsScreen = () => {
     }
   };
 
-  const handlePublish = async () => {
-    const targetId = promotion?.id || id;
-    if (!targetId) {
-      Toast.show({ type: 'error', text1: 'Error', text2: 'Invalid promotion ID' });
-      return;
-    }
-
-    try {
-      setPublishing(true);
-      await api.post(`/promotions/${targetId}/publish`);
-      Toast.show({
-        type: 'success',
-        text1: 'Success',
-        text2: 'Promotion published successfully!',
-      });
-      setPromotion((prev: any) => ({ ...prev, status: 'Active' }));
-    } catch (error: any) {
-      console.error('Failed to publish promotion', error);
-      Toast.show({
-        type: 'error',
-        text1: 'Publish Failed',
-        text2: error?.data?.errors?.[0] || error?.message || 'Failed to publish promotion',
-      });
-    } finally {
-      setPublishing(false);
-    }
-  };
 
   const handleClose = async () => {
     const targetId = promotion?.id || id;
@@ -217,6 +203,7 @@ export const PromotionDetailsScreen = () => {
   const description = promotion?.description || '';
 
   const statusStyle = promotion?.status ? getStatusColors(promotion.status) : null;
+  const isVolOrBeni = isPublicView || userRole === 'volunteer' || userRole === 'beneficiary';
 
   return (
     <>
@@ -240,11 +227,14 @@ export const PromotionDetailsScreen = () => {
                 <>
                   <TouchableOpacity
                     onPress={() => navigation.navigate('CreatePromotion', { promotionToEdit: promotion })}
-                    style={{ marginRight: 12 }}>
-                    <Pencil color={Colors.neutral[0]} size={20} />
+                    style={{ marginRight: 14 }}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                    <Pencil color={Colors.neutral[0]} size={22} />
                   </TouchableOpacity>
-                  <TouchableOpacity onPress={handleDelete}>
-                    <Trash2 color={Colors.neutral[0]} size={20} />
+                  <TouchableOpacity 
+                    onPress={handleDelete}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                    <Trash2 color={Colors.neutral[0]} size={22} />
                   </TouchableOpacity>
                 </>
               );
@@ -261,7 +251,7 @@ export const PromotionDetailsScreen = () => {
             contentContainerStyle={styles.content}
             showsVerticalScrollIndicator={false}>
 
-            {promotion?.status ? (
+            {promotion?.status && !isVolOrBeni ? (
               <View style={styles.detailRowItem}>
                 <View style={styles.detailLabelRow}>
                   <Info color={Colors.neutral[600]} size={20} />

@@ -6,9 +6,10 @@ import {
   TouchableOpacity,
   SectionList,
   Image,
+  TextInput,
 } from 'react-native';
 import {useNavigation, useFocusEffect} from '@react-navigation/native';
-import { ShoppingCart, Pill, Soup, Car, Users, MoreHorizontal, Clock, MapPin, FileText, Calendar} from 'lucide-react-native';
+import { ShoppingCart, Pill, Soup, Car, Users, MoreHorizontal, Clock, MapPin, FileText, Calendar, Search, X} from 'lucide-react-native';
 import {AppText} from '../../../components/AppText';
 import {Colors} from '../../../theme/colors';
 import {FontFamily} from '../../../theme/typography';
@@ -27,6 +28,7 @@ type Tab = 'Upcoming' | 'Completed' | 'Cancelled';
 export default function MyScheduleScreen() {
   const navigation = useNavigation<any>();
   const [activeTab, setActiveTab] = useState<Tab>('Upcoming');
+  const [searchQuery, setSearchQuery] = useState('');
   const [requests, setRequests] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
@@ -83,20 +85,37 @@ export default function MyScheduleScreen() {
 
   // Process data for SectionList
   const getSections = () => {
+    const query = searchQuery.trim().toLowerCase();
+
     const filtered = requests.filter(req => {
       const volunteerAssignment = currentUserId ? req.assignments?.find((a: any) => a.volunteer?.id === currentUserId) : undefined;
       const status = volunteerAssignment?.status || req.status;
+
+      let matchesTab = false;
       if (activeTab === 'Upcoming') {
-        return status === 'accepted' || status === 'pending' || status === 'on_the_way' || status === 'in_progress' || status === 'assigned' || status === 'confirmed';
+        matchesTab = status === 'accepted' || status === 'pending' || status === 'on_the_way' || status === 'in_progress' || status === 'assigned' || status === 'confirmed';
+      } else if (activeTab === 'Cancelled') {
+        matchesTab = status === 'cancelled' || status === 'rejected';
+      } else {
+        matchesTab = status === 'completed';
       }
-      if (activeTab === 'Cancelled') {
-        return status === 'cancelled' || status === 'rejected';
-      }
-      return status === 'completed';
+
+      if (!matchesTab) return false;
+      if (!query) return true;
+
+      const categoryTitle = req.category?.title || '';
+      const reqTitle = req.title || '';
+      const address = req.location?.address || req.meeting_location || '';
+      const refNum = (req.reference_number || req.id || '').toString();
+
+      return (
+        categoryTitle.toLowerCase().includes(query) ||
+        reqTitle.toLowerCase().includes(query) ||
+        address.toLowerCase().includes(query) ||
+        refNum.toLowerCase().includes(query)
+      );
     });
 
-    // Fallback mock data if API returns empty, just to demonstrate the UI matching the design.
-    // In a real app, we'd just show an empty state.
     const displayData = filtered.length > 0 ? filtered : [];
 
     const grouped = displayData.reduce((acc: any, req: any) => {
@@ -237,13 +256,32 @@ export default function MyScheduleScreen() {
         ))}
       </View>
 
+      <View style={styles.searchRow}>
+        <View style={styles.searchContainer}>
+          <Search color={Colors.neutral[400]} size={20} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search schedule..."
+            placeholderTextColor={Colors.neutral[400]}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            returnKeyType="search"
+          />
+          {searchQuery.length > 0 && (
+            <TouchableOpacity onPress={() => setSearchQuery('')} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+              <X color={Colors.neutral[400]} size={18} />
+            </TouchableOpacity>
+          )}
+        </View>
+      </View>
+
       <SectionList
         sections={getSections()}
         keyExtractor={(item, index) => item.id?.toString() || index.toString()}
         ListEmptyComponent={() => (
           <View style={styles.emptyContainer}>
             <AppText variant="bodyLarge" color={Colors.neutral[500]} center>
-              No data found
+              {searchQuery.trim() ? `No schedule found for "${searchQuery}"` : 'No data found'}
             </AppText>
           </View>
         )}
@@ -289,9 +327,30 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: moderateScale(4),
     marginHorizontal: horizontalScale(24),
-    marginBottom: verticalScale(24),
-    marginTop: verticalScale(24),
+    marginBottom: verticalScale(14),
+    marginTop: verticalScale(16),
     gap: horizontalScale(4),
+  },
+  searchRow: {
+    paddingHorizontal: horizontalScale(24),
+    marginBottom: verticalScale(16),
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.neutral[0],
+    borderRadius: 12,
+    paddingHorizontal: horizontalScale(16),
+    height: verticalScale(48),
+    borderWidth: 1,
+    borderColor: Colors.neutral[200],
+  },
+  searchInput: {
+    flex: 1,
+    marginLeft: horizontalScale(12),
+    fontSize: 16,
+    color: Colors.neutral[900],
+    paddingVertical: 0,
   },
   segmentButton: {
     flex: 1,

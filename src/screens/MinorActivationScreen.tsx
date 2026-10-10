@@ -7,6 +7,7 @@ import {
   ScrollView,
   Platform,
 } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {AppText} from '../components/AppText';
 import {Button} from '../components/Button';
@@ -102,13 +103,14 @@ export const MinorActivationScreen: React.FC = () => {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={Colors.neutral[0]} />
-      <KeyboardAvoidingView
+      <KeyboardAwareScrollView
         style={styles.flex}
-        behavior={isIOS ? 'padding' : undefined}>
-        <ScrollView
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled">
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        enableOnAndroid={true}
+        extraScrollHeight={20}
+        enableResetScrollToCoords={false}>
           
           <View style={styles.headerSection}>
             <View style={styles.iconWrapper}>
@@ -164,8 +166,7 @@ export const MinorActivationScreen: React.FC = () => {
             />
           </View>
           
-        </ScrollView>
-      </KeyboardAvoidingView>
+        </KeyboardAwareScrollView>
     </SafeAreaView>
   );
 };

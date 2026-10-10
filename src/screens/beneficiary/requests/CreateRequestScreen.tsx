@@ -702,13 +702,12 @@ export default function CreateRequestScreen() {
         contentContainerStyle={styles.content} 
         keyboardShouldPersistTaps="handled"
         enableOnAndroid={true}
-        extraScrollHeight={100}
-        resetScrollToPreviousPosition={false}
+        extraScrollHeight={20}
+        enableResetScrollToCoords={false}
         onScroll={(e) => {
           scrollYRef.current = e.nativeEvent.contentOffset.y;
         }}
         scrollEventThrottle={16}
-        {...({ enableResetScrollToPreviousPosition: false } as any)}
       >
           <AppText variant="bodyMedium" color={Colors.neutral[500]} style={styles.subtitle}>
             Fill out the details below to request assistance from a Volunteer.

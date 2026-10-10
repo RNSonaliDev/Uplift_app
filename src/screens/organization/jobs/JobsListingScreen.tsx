@@ -56,11 +56,11 @@ export const JobsListingScreen = () => {
               <AppText variant="labelLarge" color={Colors.neutral[900]} numberOfLines={1} style={{flex: 1}}>
                 {job.title}
               </AppText>
-              <View style={[styles.statusBadge, { backgroundColor: statusStyle.bg, borderColor: statusStyle.text }]}>
+              {/* <View style={[styles.statusBadge, { backgroundColor: statusStyle.bg, borderColor: statusStyle.text }]}>
                 <AppText variant="labelSmall" color={statusStyle.text}>
                   {formatStatus(job.status)}
                 </AppText>
-              </View>
+              </View> */}
             </View>
 
             {(job.department || job.job_type) && (

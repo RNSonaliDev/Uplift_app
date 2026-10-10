@@ -222,7 +222,7 @@ export default function MyProfileScreen() {
           ) : profile ? (
             <>
               <View style={styles.avatarContainer}>
-                <TouchableOpacity onPress={handleUpdateImage} disabled={isUploadingImage}>
+                <TouchableOpacity onPress={handleUpdateImage} disabled={isUploadingImage} style={styles.avatarWrapper}>
                   {profile.profile_image_url ? (
                     <Image 
                       source={{ uri: getFullImageUrl(profile.profile_image_url) }}
@@ -235,9 +235,15 @@ export default function MyProfileScreen() {
                       </AppText>
                     </View>
                   )}
-                  <View style={styles.editBadge}>
-                    <Camera color={Colors.neutral[0]} size={14} />
-                  </View>
+                  {isUploadingImage ? (
+                    <View style={styles.imageOverlay}>
+                      <ActivityIndicator size="small" color={Colors.neutral[0]} />
+                    </View>
+                  ) : (
+                    <View style={styles.editBadge}>
+                      <Camera color={Colors.neutral[0]} size={14} />
+                    </View>
+                  )}
                 </TouchableOpacity>
               </View>
               
@@ -382,19 +388,27 @@ const styles = StyleSheet.create({
   avatarContainer: {
     marginRight: horizontalScale(16),
   },
+  avatarWrapper: {
+    position: 'relative',
+    width: moderateScale(80),
+    height: moderateScale(80),
+  },
   avatar: {
     width: moderateScale(80),
     height: moderateScale(80),
     borderRadius: moderateScale(40),
-    // borderWidth: moderateScale(3),
-    // borderColor: Colors.neutral[0],
   },
   imageOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.4)',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: moderateScale(80),
+    height: moderateScale(80),
     borderRadius: moderateScale(40),
+    backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'center',
     alignItems: 'center',
+    zIndex: 10,
   },
   editBadge: {
     position: 'absolute',

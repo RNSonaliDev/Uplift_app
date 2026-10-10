@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, TextInput, TouchableOpacity, ScrollView, Modal, FlatList, TouchableWithoutFeedback } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { Colors } from '../../../theme/colors';
 import { Typography, FontFamily } from '../../../theme/typography';
@@ -181,17 +182,29 @@ export const CreateJobScreen = () => {
         </TouchableOpacity>
         <View style={{width: 40}} />
       </View>
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      <KeyboardAwareScrollView
+        contentContainerStyle={[styles.content, { paddingBottom: 100 }]}
+        keyboardShouldPersistTaps="handled"
+        extraScrollHeight={120}
+        extraHeight={120}
+        enableOnAndroid={true}
+        enableAutomaticScroll={true}
+        enableResetScrollToCoords={false}
+      >
         <TouchableWithoutFeedback 
           onPress={() => setActiveModal(null)}
           accessible={false}
         >
           <View style={{ flex: 1 }}>
             
-            <Text style={[styles.label, { marginTop: 8 }]}>Job Title <Text style={{ color: Colors.error }}>*</Text></Text>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Text style={[styles.label, { marginTop: 8, marginBottom: 0 }]}>Job Title <Text style={{ color: Colors.error }}>*</Text></Text>
+              <Text style={styles.charCount}>{title.length}/20</Text>
+            </View>
             <TextInput 
-              style={[styles.input, fieldErrors.title ? styles.inputError : null]} 
+              style={[styles.input, fieldErrors.title ? styles.inputError : null, { marginTop: 6 }]} 
               value={title} 
+              maxLength={20}
               onChangeText={(text) => {
                 setTitle(text);
                 if (fieldErrors.title) setFieldErrors(prev => ({ ...prev, title: '' }));
@@ -201,10 +214,14 @@ export const CreateJobScreen = () => {
             />
             {fieldErrors.title ? <Text style={styles.fieldErrorText}>{fieldErrors.title}</Text> : null}
             
-            <Text style={styles.label}>Description <Text style={{ color: Colors.error }}>*</Text></Text>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: fieldErrors.title ? 0 : 4 }}>
+              <Text style={[styles.label, { marginTop: 0, marginBottom: 0 }]}>Description <Text style={{ color: Colors.error }}>*</Text></Text>
+              <Text style={styles.charCount}>{description.length}/200</Text>
+            </View>
             <TextInput 
-              style={[styles.input, { height: 100, textAlignVertical: 'top' }, fieldErrors.description ? styles.inputError : null]} 
+              style={[styles.input, { height: 100, textAlignVertical: 'top', marginTop: 6 }, fieldErrors.description ? styles.inputError : null]} 
               value={description} 
+              maxLength={200}
               onChangeText={(text) => {
                 setDescription(text);
                 if (fieldErrors.description) setFieldErrors(prev => ({ ...prev, description: '' }));
@@ -248,7 +265,7 @@ export const CreateJobScreen = () => {
 
           </View>
         </TouchableWithoutFeedback>
-      </ScrollView>
+      </KeyboardAwareScrollView>
       <View style={styles.footer}>
         <Button 
           title="Preview Job" 
@@ -316,5 +333,9 @@ const styles = StyleSheet.create({
   modalOptionText: {
     ...Typography.bodyMedium,
     color: Colors.neutral[700],
-  }
+  },
+  charCount: {
+    ...Typography.caption,
+    color: Colors.neutral[500],
+  },
 });

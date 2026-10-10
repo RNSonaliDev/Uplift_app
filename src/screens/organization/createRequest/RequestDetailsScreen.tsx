@@ -325,13 +325,12 @@ export const RequestDetailsScreen = () => {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
         enableOnAndroid={true}
-        extraScrollHeight={100}
-        resetScrollToPreviousPosition={false}
+        extraScrollHeight={20}
+        enableResetScrollToCoords={false}
         onScroll={(e) => {
           scrollYRef.current = e.nativeEvent.contentOffset.y;
         }}
         scrollEventThrottle={16}
-        {...({ enableResetScrollToPreviousPosition: false } as any)}
       >
           
           {/* Category */}

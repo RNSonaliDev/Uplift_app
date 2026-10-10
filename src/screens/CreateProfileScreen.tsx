@@ -10,7 +10,9 @@ import {
   TouchableWithoutFeedback,
   Modal,
   Keyboard,
+  Pressable,
 } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
@@ -339,6 +341,10 @@ export const CreateProfileScreen: React.FC = () => {
       newErrors.lastName = 'Last name can only contain letters, spaces, hyphens, and apostrophes';
     }
 
+    if (!profilePhoto) {
+      newErrors.profilePhoto = 'Profile photo is required';
+    }
+
     if (!email.trim()) {
       newErrors.email = 'Email address is required';
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
@@ -441,9 +447,21 @@ export const CreateProfileScreen: React.FC = () => {
       formData.append('email', email);
       formData.append('phone', `+1${phoneNumber}`);
       formData.append('country_code', 'US');
+      console.log('dob', dob, dob?.toISOString().split('T')[0]);
+      // if (dob) {
+      //   formData.append('date_of_birth', dob.toISOString().split('T')[0]);
+      // }
 
       if (dob) {
-        formData.append('date_of_birth', dob.toISOString().split('T')[0]);
+        const year = dob.getFullYear();
+        const month = String(dob.getMonth() + 1).padStart(2, '0');
+        const day = String(dob.getDate()).padStart(2, '0');
+
+        const formattedDOB = `${year}-${month}-${day}`;
+
+        console.log('DOB:', formattedDOB);
+
+        formData.append('date_of_birth', formattedDOB);
       }
 
       if (is14To17) {
@@ -556,17 +574,18 @@ export const CreateProfileScreen: React.FC = () => {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={Colors.neutral[0]} />
-      <KeyboardAvoidingView
+      <KeyboardAwareScrollView
         style={styles.flex}
-        behavior={isIOS ? 'padding' : undefined}>
-        <ScrollView
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled">
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        enableOnAndroid={true}
+        extraScrollHeight={20}
+        enableResetScrollToCoords={false}>
 
-          <View style={{ flex: 1 }} onTouchStart={() => {
-            if (showPhoneInfo) setShowPhoneInfo(false);
-          }}>
+        <Pressable style={{ flex: 1 }} onPress={() => {
+          if (showPhoneInfo) setShowPhoneInfo(false);
+        }}>
             {/* Header with Back Button */}
             <TouchableOpacity
               style={styles.backButton}
@@ -592,11 +611,21 @@ export const CreateProfileScreen: React.FC = () => {
 
             {/* Profile Photo Section */}
             <View style={styles.sectionContainer}>
-              <AppText variant="labelLarge" color={Colors.primary[900]} weight="bold" style={styles.sectionLabel}>
-                Profile Photo
-              </AppText>
-              <View style={styles.photoUploadContainer}>
-                <TouchableOpacity style={styles.photoCircle} onPress={handleSelectPhoto}>
+              <View style={styles.labelRow}>
+                <AppText variant="labelLarge" color={Colors.primary[900]} weight="bold">
+                  Profile Photo
+                </AppText>
+                <AppText variant="labelLarge" color={Colors.error} weight="bold" style={{ marginLeft: 4 }}>
+                  *
+                </AppText>
+              </View>
+              <View style={[styles.photoUploadContainer, { marginTop: verticalScale(12) }]}>
+                <TouchableOpacity
+                  style={[
+                    styles.photoCircle,
+                    errors.profilePhoto ? { borderColor: Colors.error } : null,
+                  ]}
+                  onPress={handleSelectPhoto}>
                   {profilePhoto ? (
                     <Image source={{ uri: profilePhoto }} style={styles.photoImage} />
                   ) : (
@@ -614,6 +643,11 @@ export const CreateProfileScreen: React.FC = () => {
                   </TouchableOpacity>
                 </View>
               </View>
+              {errors.profilePhoto ? (
+                <AppText variant="caption" color={Colors.error} style={{ marginTop: verticalScale(6) }}>
+                  {errors.profilePhoto}
+                </AppText>
+              ) : null}
             </View>
 
             {/* Form Fields */}
@@ -736,22 +770,56 @@ export const CreateProfileScreen: React.FC = () => {
                       *
                     </AppText>
                   </View>
-                  <TouchableOpacity
-                    style={[
-                      styles.idUploadBox,
-                      errors.governmentId ? { borderColor: Colors.error } : null
-                    ]}
-                    onPress={handleSelectGovernmentId}
-                    activeOpacity={0.7}
-                  >
-                    {governmentId ? (
-                      <View style={styles.idPreviewContainer}>
-                        <Image source={{ uri: governmentId }} style={styles.idImagePreview} resizeMode="cover" />
-                        <View style={styles.changeIdBadge}>
-                          <AppText variant="labelSmall" color={Colors.neutral[0]} weight="bold">Change ID</AppText>
+                  {governmentId ? (
+                    <TouchableOpacity
+                      style={styles.uploadedFileRow}
+                      activeOpacity={0.8}
+                      onPress={() => setPreviewImage({
+                        uri: governmentId,
+                        title: 'Government ID Photo'
+                      })}
+                    >
+                      <View style={styles.uploadedFileInfo}>
+                        <Image
+                          source={{ uri: governmentId }}
+                          style={styles.uploadedThumbnail}
+                          resizeMode="cover"
+                        />
+                        <View style={styles.uploadedFileName}>
+                          <AppText variant="labelMedium" color={Colors.primary[900]} weight="bold" numberOfLines={1}>
+                            Government ID Photo
+                          </AppText>
+                          <AppText variant="caption" color={Colors.neutral[500]}>
+                            Tap to view document
+                          </AppText>
                         </View>
                       </View>
-                    ) : (
+                      <View style={styles.uploadedFileActions}>
+                        <View style={styles.viewBadge}>
+                          <EyeIcon size={16} color={Colors.primary[600]} />
+                          <AppText variant="labelSmall" color={Colors.primary[600]} weight="bold" style={{marginLeft: 4}}>
+                            View Document
+                          </AppText>
+                        </View>
+                        <TouchableOpacity
+                          style={styles.changeBadge}
+                          onPress={handleSelectGovernmentId}
+                        >
+                          <AppText variant="labelSmall" color={Colors.neutral[700]} weight="bold">
+                            Change
+                          </AppText>
+                        </TouchableOpacity>
+                      </View>
+                    </TouchableOpacity>
+                  ) : (
+                    <TouchableOpacity
+                      style={[
+                        styles.idUploadBox,
+                        errors.governmentId ? { borderColor: Colors.error } : null
+                      ]}
+                      onPress={handleSelectGovernmentId}
+                      activeOpacity={0.7}
+                    >
                       <View style={styles.idUploadPlaceholder}>
                         <CameraIcon size={32} color={Colors.primary[500]} />
                         <AppText variant="bodySmall" color={Colors.neutral[600]} style={{ marginTop: 8, textAlign: 'center' }}>
@@ -761,8 +829,8 @@ export const CreateProfileScreen: React.FC = () => {
                           Upload Photo
                         </AppText>
                       </View>
-                    )}
-                  </TouchableOpacity>
+                    </TouchableOpacity>
+                  )}
                   {errors.governmentId ? (
                     <AppText variant="caption" color={Colors.error} style={{ marginTop: 4 }}>
                       {errors.governmentId}
@@ -826,9 +894,8 @@ export const CreateProfileScreen: React.FC = () => {
               onPress={handleCreateProfile}
               style={styles.continueButton}
             />
-          </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
+          </Pressable>
+        </KeyboardAwareScrollView>
 
       <DatePickerModal
         open={isDatePickerOpen}

@@ -490,11 +490,12 @@ export const VolunteerSetupScreen: React.FC = () => {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={Colors.neutral[0]} />
       <KeyboardAwareScrollView
-        style={styles.scrollView}
+        style={styles.flex}
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
-        extraScrollHeight={100}
+        extraScrollHeight={20}
         enableOnAndroid={true}
+        enableResetScrollToCoords={false}
         scrollEnabled={isScrollEnabled}
       >
           

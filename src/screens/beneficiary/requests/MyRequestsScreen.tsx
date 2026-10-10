@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   SafeAreaView,
   Image,
+  TextInput,
 } from 'react-native';
 import {useNavigation, useFocusEffect} from '@react-navigation/native';
 import {api, getFullImageUrl} from '../../../api/client';
@@ -24,12 +25,15 @@ import {
   Plus,
   Calendar,
   MapPin,
-  Clock
+  Clock,
+  Search,
+  X,
 } from 'lucide-react-native';
 
 export default function MyRequestsScreen() {
   const navigation = useNavigation<any>();
   const [activeTab, setActiveTab] = useState<'Active' | 'History'>('Active');
+  const [searchQuery, setSearchQuery] = useState('');
   const [requests, setRequests] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const isFirstMount = React.useRef(true);
@@ -57,8 +61,25 @@ export default function MyRequestsScreen() {
     }, [])
   );
 
-  const activeRequests = requests.filter(r => r.status === 'pending' || r.status === 'accepted' || r.status === 'assigned' || r.status === 'on_the_way' || r.status === 'in_progress');
-  const historyRequests = requests.filter(r => r.status === 'completed' || r.status === 'cancelled');
+  const query = searchQuery.trim().toLowerCase();
+  const filterBySearch = (list: any[]) => {
+    if (!query) return list;
+    return list.filter(r => {
+      const cat = r.category?.title || '';
+      const title = r.title || '';
+      const ref = (r.reference_number || r.id || '').toString();
+      const addr = r.location?.address || r.meeting_location || '';
+      return (
+        cat.toLowerCase().includes(query) ||
+        title.toLowerCase().includes(query) ||
+        ref.toLowerCase().includes(query) ||
+        addr.toLowerCase().includes(query)
+      );
+    });
+  };
+
+  const activeRequests = filterBySearch(requests.filter(r => r.status === 'pending' || r.status === 'accepted' || r.status === 'assigned' || r.status === 'on_the_way' || r.status === 'in_progress'));
+  const historyRequests = filterBySearch(requests.filter(r => r.status === 'completed' || r.status === 'cancelled'));
   const displayRequests = activeTab === 'Active' ? activeRequests : historyRequests;
   return (
     <>
@@ -91,6 +112,25 @@ export default function MyRequestsScreen() {
               History
             </Text>
           </TouchableOpacity>
+        </View>
+
+        <View style={styles.searchRow}>
+          <View style={styles.searchContainer}>
+            <Search color={Colors.neutral[400]} size={20} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search requests..."
+              placeholderTextColor={Colors.neutral[400]}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              returnKeyType="search"
+            />
+            {searchQuery.length > 0 && (
+              <TouchableOpacity onPress={() => setSearchQuery('')} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                <X color={Colors.neutral[400]} size={18} />
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
 
         <ScrollView contentContainerStyle={styles.content}>
@@ -126,7 +166,9 @@ export default function MyRequestsScreen() {
             ))
           ) : (
             <View style={styles.emptyState}>
-              <Text style={styles.emptyStateText}>No requests found.</Text>
+              <Text style={styles.emptyStateText}>
+                {searchQuery.trim() ? `No requests found for "${searchQuery}"` : 'No requests found.'}
+              </Text>
             </View>
           )}
         </ScrollView>
@@ -249,6 +291,28 @@ const styles = StyleSheet.create({
   },
   activeTabText: {
     color: Colors.primary[500],
+  },
+  searchRow: {
+    paddingHorizontal: horizontalScale(24),
+    marginTop: verticalScale(16),
+    marginBottom: verticalScale(4),
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.neutral[0],
+    borderRadius: 12,
+    paddingHorizontal: horizontalScale(16),
+    height: verticalScale(48),
+    borderWidth: 1,
+    borderColor: Colors.neutral[200],
+  },
+  searchInput: {
+    flex: 1,
+    marginLeft: horizontalScale(12),
+    fontSize: 16,
+    color: Colors.neutral[900],
+    paddingVertical: 0,
   },
   content: {
     padding: horizontalScale(24),

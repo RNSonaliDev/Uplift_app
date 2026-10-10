@@ -10,6 +10,7 @@ import {
   Platform,
   KeyboardAvoidingView,
 } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ChevronLeft, Image as ImageIcon } from 'lucide-react-native';
@@ -52,11 +53,14 @@ export const AdditionalInfoScreen = () => {
         <View style={{ width: 40 }} />
       </View>
 
-      <KeyboardAvoidingView 
+      <KeyboardAwareScrollView 
         style={styles.flex1} 
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
-        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        contentContainerStyle={styles.scrollContent} 
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        enableOnAndroid={true}
+        extraScrollHeight={20}
+        enableResetScrollToCoords={false}>
           
           {/* Skills Required */}
           <View style={styles.inputGroup}>
@@ -100,8 +104,7 @@ export const AdditionalInfoScreen = () => {
             </TouchableOpacity>
           </View>
 
-        </ScrollView>
-      </KeyboardAvoidingView>
+        </KeyboardAwareScrollView>
 
       {/* Footer Button */}
       <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 20) }]}>

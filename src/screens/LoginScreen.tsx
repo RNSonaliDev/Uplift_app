@@ -11,6 +11,7 @@ import {
   SafeAreaView,
   ActivityIndicator,
 } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import Svg, {Path, Circle, Rect, G} from 'react-native-svg';
 import {AppText} from '../components/AppText';
 import {Button} from '../components/Button';
@@ -267,13 +268,14 @@ console.log("@@@@@@@@googleresult", result.user)
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={Colors.neutral[0]} />
-      <KeyboardAvoidingView
+      <KeyboardAwareScrollView
         style={styles.flex}
-        behavior={isIOS ? 'padding' : undefined}>
-        <ScrollView
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled">
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        enableOnAndroid={true}
+        extraScrollHeight={20}
+        enableResetScrollToCoords={false}>
           {/* Header with Back Button */}
           <TouchableOpacity
             style={styles.backButton}
@@ -387,8 +389,7 @@ console.log("@@@@@@@@googleresult", result.user)
               </AppText>
             </TouchableOpacity>
           </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
+        </KeyboardAwareScrollView>
     </SafeAreaView>
   );
 };

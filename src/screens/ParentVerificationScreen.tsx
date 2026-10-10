@@ -13,6 +13,7 @@ import {
   Keyboard,
   Platform,
 } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import Svg, {Path, Circle, Rect} from 'react-native-svg';
 import {AppText} from '../components/AppText';
@@ -238,7 +239,6 @@ const otpStyles = StyleSheet.create({
     fontFamily: FontFamily.semiBold,
     color: Colors.primary[500],
     backgroundColor: Colors.neutral[0],
-    padding: 0,
   },
   inputFilled: {
     borderColor: Colors.primary[500],
@@ -555,13 +555,14 @@ export const ParentVerificationScreen: React.FC = () => {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={Colors.neutral[0]} />
-      <KeyboardAvoidingView
+      <KeyboardAwareScrollView
         style={styles.keyboardAvoid}
-        behavior={isIOS ? 'padding' : undefined}>
-        <ScrollView
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled">
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        enableOnAndroid={true}
+        extraScrollHeight={20}
+        enableResetScrollToCoords={false}>
           <TouchableOpacity
             style={styles.backButton}
             onPress={() => navigation.goBack()}
@@ -729,8 +730,7 @@ export const ParentVerificationScreen: React.FC = () => {
               Your information is secure and encrypted.
             </AppText>
           </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
+        </KeyboardAwareScrollView>
 
       {/* Edit Parent Contact Modal */}
       <Modal visible={isEditModalOpen} transparent animationType="slide" onRequestClose={() => setIsEditModalOpen(false)}>
@@ -938,6 +938,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    flexWrap: 'wrap',
     marginTop: verticalScale(8),
   },
   resendSection: {

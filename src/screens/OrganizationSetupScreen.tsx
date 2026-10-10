@@ -425,7 +425,8 @@ export const OrganizationSetupScreen: React.FC = () => {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
         enableOnAndroid={true}
-        extraScrollHeight={100}
+        extraScrollHeight={20}
+        enableResetScrollToCoords={false}
         onScrollBeginDrag={() => setTypeModalVisible(false)}>
           
           <TouchableWithoutFeedback onPress={() => setTypeModalVisible(false)} accessible={false}>
