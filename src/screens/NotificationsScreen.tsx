@@ -28,11 +28,13 @@ export default function NotificationsScreen() {
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [currentRole, setCurrentRole] = useState<string>('beneficiary');
 
   const fetchNotifications = useCallback(async () => {
     try {
       const profile = await authApi.getProfile();
       const role = profile?.default_role || 'beneficiary';
+      setCurrentRole(role);
       const data = await notificationsApi.getNotifications(role);
       let notifs = [];
       if (Array.isArray(data)) {
@@ -104,6 +106,65 @@ export default function NotificationsScreen() {
     }
   };
 
+  const handleNotificationPress = async (item: AppNotification) => {
+    const isUnread = item.is_read === false || (item.is_read === undefined && !(item as any).read);
+    if (isUnread) {
+      handleMarkAsRead(item.id);
+    }
+
+    const refId = item.reference_id || (item as any).notifiable_id || (item as any).help_request_id || (item as any).data?.help_request_id;
+    const titleAndMsg = `${item.title || ''} ${item.message || (item as any).body || ''}`.toLowerCase();
+    const isCancelOrNoShow = titleAndMsg.includes('cancel') || titleAndMsg.includes('show') || titleAndMsg.includes('missed') || titleAndMsg.includes('not started');
+
+    if (currentRole === 'volunteer') {
+      const activeTab = isCancelOrNoShow ? 'History' : 'Active';
+      navigation.navigate('VolunteerFlow', {
+        screen: 'VolunteerTabs',
+        params: {
+          screen: 'ScheduleTab',
+          params: {
+            screen: 'MySchedule',
+            params: { activeTab },
+          },
+        },
+      });
+    } else if (currentRole === 'beneficiary') {
+      if (refId) {
+        navigation.navigate('BeneficiaryFlow', {
+          screen: 'RequestTracking',
+          params: { requestId: refId },
+        });
+      } else {
+        navigation.navigate('BeneficiaryFlow', {
+          screen: 'BeneficiaryTabs',
+          params: {
+            screen: 'MyRequests',
+            params: { activeTab: isCancelOrNoShow ? 'History' : 'Active' },
+          },
+        });
+      }
+    } else if (currentRole === 'organization') {
+      if (refId) {
+        navigation.navigate('OrganizationFlow', {
+          screen: 'OrgRequestDetails',
+          params: { requestId: refId },
+        });
+      } else {
+        navigation.navigate('OrganizationFlow', {
+          screen: 'OrganizationTabs',
+          params: {
+            screen: 'RequestsTab',
+            params: {
+              activeTab: isCancelOrNoShow ? 'History' : 'Active',
+            },
+          },
+        });
+      }
+    } else if (currentRole === 'sponsor') {
+      navigation.navigate('SponsorFlow');
+    }
+  };
+
   const renderItem = ({ item }: { item: AppNotification }) => {
     const isUnread = item.is_read === false || (item.is_read === undefined && !(item as any).read);
     const date = new Date(item.created_at);
@@ -126,9 +187,8 @@ export default function NotificationsScreen() {
     return (
       <TouchableOpacity
         style={[styles.notificationCard, isUnread && styles.unreadCard]}
-        onPress={() => isUnread && handleMarkAsRead(item.id)}
-        activeOpacity={isUnread ? 0.7 : 1}
-        disabled={!isUnread}
+        onPress={() => handleNotificationPress(item)}
+        activeOpacity={0.7}
       >
         <View style={styles.contentContainer}>
           <View style={styles.titleRow}>

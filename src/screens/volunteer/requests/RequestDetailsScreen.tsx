@@ -13,6 +13,7 @@ import {
   Platform,
   TouchableWithoutFeedback,
   Keyboard,
+  Linking,
 } from 'react-native';
 import Toast from 'react-native-toast-message';
 import {useNavigation, useRoute, useFocusEffect} from '@react-navigation/native';
@@ -20,7 +21,7 @@ import {Colors} from '../../../theme/colors';
 import {FontFamily} from '../../../theme/typography';
 import {AppText} from '../../../components/AppText';
 import {formatDate, formatTime12Hour} from '../../../utils/dateFormatter';
-import {getStatusColors, formatStatus} from '../../../utils/statusUtils';
+import {getStatusColors, formatStatus, isCancelledStatus} from '../../../utils/statusUtils';
 import {Button} from '../../../components/Button';
 import {TaskParentConfirmationModal} from '../../../components';
 import {
@@ -33,6 +34,8 @@ import {
   Star,
   Info,
   MessageCircle,
+  AlertCircle,
+  Download,
 } from 'lucide-react-native';
 import {
   horizontalScale,
@@ -40,6 +43,7 @@ import {
   moderateScale,
 } from '../../../utils/responsive';
 import {api, getFullImageUrl} from '../../../api/client';
+import {toastConfig} from '../../../theme';
 
 export default function RequestDetailsScreen() {
   const navigation = useNavigation<any>();
@@ -56,8 +60,10 @@ export default function RequestDetailsScreen() {
 
   const [isOtpModalVisible, setIsOtpModalVisible] = useState(false);
   const [otpCode, setOtpCode] = useState('');
+  const [otpError, setOtpError] = useState<string | null>(null);
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
   const [isFullScreenImageVisible, setIsFullScreenImageVisible] = useState(false);
+  const [isDownloadingCertificate, setIsDownloadingCertificate] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -88,7 +94,8 @@ export default function RequestDetailsScreen() {
           console.log('profileData', profileData);
           if (profileData?.teen_requires_parent_consent) {
              setRequiresParentAccept(true);
-             setParentEmail((profileData as any)?.parent_email || '');
+             const pEmail = (profileData as any)?.parent_email || (profileData as any)?.user?.parent_email || (profileData as any)?.profiles?.volunteer?.parent_email || '';
+             setParentEmail(pEmail);
           }
         } catch (e) {
           console.error('Failed to fetch profile', e);
@@ -99,18 +106,51 @@ export default function RequestDetailsScreen() {
     }, [request.id])
   );
 
-  const isOrgRequest = request.request_type === 'organization';
+  const isOrgRequest = request.request_type === 'organization' || !!request.organization?.id || !!request.organization?.organization_name;
 
-  const volunteerAssignment = request.assignments?.find((a: any) => a.volunteer?.id === currentUserId);
-  const reqStatus = volunteerAssignment?.status || request.status;
+  const volunteerAssignment =
+    request.my_assignment ||
+    request.assignments?.find(
+      (a: any) =>
+        a.volunteer?.id === currentUserId ||
+        a.volunteer_id === currentUserId ||
+        a.id === currentUserId
+    );
+  const isCancelled = isCancelledStatus(request.status) || isCancelledStatus(volunteerAssignment?.status);
+  const reqStatus = isCancelled 
+    ? (isCancelledStatus(volunteerAssignment?.status) ? volunteerAssignment?.status : request.status)
+    : (volunteerAssignment?.status || request.status);
 
-  const showAcceptBtn = !forceAction && (!reqStatus || reqStatus.toLowerCase() === 'pending');
-  const showStartBtn = forceAction === 'start' || reqStatus?.toLowerCase() === 'accepted';
-  const showStartWithOtpBtn = forceAction === 'start_with_otp' || reqStatus?.toLowerCase() === 'on_the_way';
-  const showCompleteBtn = forceAction === 'complete' || reqStatus?.toLowerCase() === 'in_progress';
+  const isCompleted =
+    !isCancelled &&
+    (reqStatus?.toLowerCase() === 'completed' ||
+      request.status?.toLowerCase() === 'completed' ||
+      volunteerAssignment?.status?.toLowerCase() === 'completed' ||
+      request.my_assignment?.status?.toLowerCase() === 'completed');
+
+  const certificateUrl =
+    request.my_assignment?.certificate_url ||
+    volunteerAssignment?.certificate_url ||
+    (request as any).certificate_url ||
+    request.assignments?.find((a: any) => a.certificate_url)?.certificate_url;
+
+  const isPendingParentVerification =
+    !isCancelled && (
+      forceAction === 'parent_verification' ||
+      reqStatus?.toLowerCase() === 'pending_parent_verification' ||
+      reqStatus?.toLowerCase() === 'pending_parent_approval' ||
+      reqStatus?.toLowerCase() === 'pending_verification' ||
+      (requiresParentAccept && !!volunteerAssignment && reqStatus?.toLowerCase() === 'pending')
+    );
+
+  const showAcceptBtn = !isCancelled && !isPendingParentVerification && !forceAction && (!reqStatus || (!volunteerAssignment && reqStatus.toLowerCase() === 'pending'));
+  const showStartBtn = !isOrgRequest && !isCancelled && !isPendingParentVerification && (forceAction === 'start' || reqStatus?.toLowerCase() === 'accepted');
+  const showStartWithOtpBtn = !isOrgRequest && !isCancelled && !isPendingParentVerification && (forceAction === 'start_with_otp' || reqStatus?.toLowerCase() === 'on_the_way');
+  const showCompleteBtn = !isOrgRequest && !isCancelled && !isPendingParentVerification && (forceAction === 'complete' || reqStatus?.toLowerCase() === 'in_progress');
+  const showOrgCancelBtn = isOrgRequest && !isCancelled && !isPendingParentVerification && (reqStatus?.toLowerCase() === 'accepted' || reqStatus?.toLowerCase() === 'on_the_way');
   
   const hasRated = request.ratings?.some((r: any) => r.rater_id === currentUserId);
-  const showRateBtn = forceAction === 'rate' || (reqStatus?.toLowerCase() === 'completed' && !hasRated);
+  const showRateBtn = !isCancelled && !isPendingParentVerification && (forceAction === 'rate' || (reqStatus?.toLowerCase() === 'completed' && !hasRated));
 
   const handleAcceptClick = async () => {
     if (!request.id) return;
@@ -179,11 +219,14 @@ export default function RequestDetailsScreen() {
   };
 
   const handleStartWithOtp = async () => {
+    setOtpError(null);
     if (otpCode.length !== 6) {
+      const msg = 'Please enter a valid 6-digit start code.';
+      setOtpError(msg);
       Toast.show({
         type: 'error',
         text1: 'Invalid Code',
-        text2: 'Please enter a valid 6-digit start code.'
+        text2: msg,
       });
       return;
     }
@@ -196,16 +239,28 @@ export default function RequestDetailsScreen() {
         type: 'success',
         text1: 'Success',
         text2: 'Task started successfully!',
+        position: 'bottom',
+        bottomOffset: Platform.OS === 'ios' ? 40 : 20,
         onHide: () => {
           setIsOtpModalVisible(false);
           navigation.goBack();
         }
       });
     } catch (error: any) {
+      const errorMsg =
+        error?.data?.error ||
+        error?.data?.user_message ||
+        (Array.isArray(error?.data?.errors) ? error?.data?.errors[0] : error?.data?.errors) ||
+        error?.message ||
+        'Failed to start request.';
+      setOtpError(errorMsg);
+      Keyboard.dismiss();
       Toast.show({
         type: 'error',
         text1: 'Error',
-        text2: error?.data?.errors?.[0] || error?.message || 'Failed to start request.'
+        text2: errorMsg,
+        position: 'bottom',
+        bottomOffset: Platform.OS === 'ios' ? 40 : 20,
       });
     } finally {
       setIsStarting(false);
@@ -231,6 +286,25 @@ export default function RequestDetailsScreen() {
           text2: error?.data?.errors?.[0] || error?.message || 'Failed to complete request.'
         });
       } finally {
+      }
+    };
+
+    const handleDownloadCertificate = async () => {
+      if (!certificateUrl) {
+        Alert.alert('Notice', 'Certificate is not available yet.');
+        return;
+      }
+      try {
+        setIsDownloadingCertificate(true);
+        const targetUrl = certificateUrl.startsWith('http')
+          ? certificateUrl
+          : (getFullImageUrl(certificateUrl) as string);
+        await Linking.openURL(targetUrl);
+      } catch (error) {
+        console.error('Error opening certificate URL:', error);
+        Alert.alert('Error', 'Unable to open certificate download link.');
+      } finally {
+        setIsDownloadingCertificate(false);
       }
     };
 
@@ -309,7 +383,7 @@ export default function RequestDetailsScreen() {
               </AppText>
             </View>
 
-            {reqStatus?.toLowerCase() !== 'in_progress' && reqStatus?.toLowerCase() !== 'completed' && (
+            {!isCancelled && !isCancelledStatus(reqStatus) && !isCancelledStatus(request.status) && reqStatus?.toLowerCase() !== 'in_progress' && reqStatus?.toLowerCase() !== 'completed' && reqStatus?.toLowerCase() !== 'cancelled' && request.status?.toLowerCase() !== 'cancelled' && (
               <TouchableOpacity 
                 style={styles.messageIconContainer}
                 onPress={() => {
@@ -454,16 +528,98 @@ export default function RequestDetailsScreen() {
               </AppText>
             </View>
           ) : null}
+
+          {/* Certificate */}
+          {isCompleted && certificateUrl ? (
+            <View style={styles.detailRowItem}>
+              <View style={styles.detailLabelRow}>
+                <FileText color={Colors.neutral[600]} size={20} />
+                <AppText variant="bodyMedium" color={Colors.neutral[900]} style={{marginLeft: 8, fontFamily: FontFamily.medium}}>Certificate</AppText>
+              </View>
+              <TouchableOpacity 
+                onPress={handleDownloadCertificate}
+                activeOpacity={0.7}
+                style={{
+                  flexDirection: 'row', 
+                  alignItems: 'center', 
+                  backgroundColor: Colors.primary[50], 
+                  paddingHorizontal: 12, 
+                  paddingVertical: 6, 
+                  borderRadius: 16
+                }}
+              >
+                <Download color={Colors.primary[600]} size={16} />
+                <AppText variant="labelMedium" color={Colors.primary[600]} style={{marginLeft: 6, fontFamily: FontFamily.medium}}>
+                  Download
+                </AppText>
+              </TouchableOpacity>
+            </View>
+          ) : null}
         </View>
 
         {/* Security Note */}
         <View style={styles.securityNote}>
           <Info color={Colors.primary[500]} size={24} />
           <AppText variant="caption" color={Colors.primary[500]} style={styles.securityText}>
-            For your safety, never share belongings or personal information like you SSN or bank details with anyone.
+            For your safety, never share your belongings or personal information like your SSN or bank details with anyone.
           </AppText>
         </View>
+
+        {isCancelled && (
+          <View style={[styles.parentNoticeBanner, { backgroundColor: '#FEE2E2', borderColor: '#FECACA' }]}>
+            <Info color={Colors.error} size={20} />
+            <View style={{flex: 1, marginLeft: 10}}>
+              <AppText variant="labelMedium" color={Colors.error}>
+                Request Cancelled
+              </AppText>
+              <AppText variant="caption" color={Colors.neutral[700]} style={{marginTop: 2}}>
+                {request.cancel_reason
+                  ? `Reason: ${request.cancel_reason}`
+                  : formatStatus(reqStatus) === 'No Show'
+                  ? 'This request was marked as No Show and is cancelled.'
+                  : formatStatus(reqStatus) === 'Not Started'
+                  ? 'This request was not started in time and has been cancelled.'
+                  : 'This request has been cancelled and is no longer active.'}
+              </AppText>
+            </View>
+          </View>
+        )}
+
+        {isPendingParentVerification && (
+          <View style={styles.parentNoticeBanner}>
+            <Info color={Colors.accent[700]} size={20} />
+            <View style={{flex: 1, marginLeft: 10}}>
+              <AppText variant="labelMedium" color={Colors.accent[900]}>
+                Parent Approval Required
+              </AppText>
+              <AppText variant="caption" color={Colors.neutral[700]} style={{marginTop: 2}}>
+                A verification code was sent to your parent's email. Enter the code to complete accepting this request, or cancel to return it to available requests.
+              </AppText>
+            </View>
+          </View>
+        )}
       </ScrollView>
+
+      {isPendingParentVerification && (
+        <View style={[styles.actionContainer, { flexDirection: 'row', alignItems: 'center' }]}>
+          <TouchableOpacity 
+            style={[styles.cancelTextBtn, { marginTop: 0, marginRight: 16 }]} 
+            onPress={handleCancelRequest}
+          >
+            <AppText variant="buttonMedium" style={{ color: Colors.error }}>Cancel Request</AppText>
+          </TouchableOpacity>
+          <View style={{ flex: 1 }}>
+            <Button 
+              title="Enter Parent Code" 
+              onPress={() => {
+                navigation.navigate('ParentTaskVerification', { request, parentEmail });
+              }} 
+              style={styles.acceptBtn} 
+              fullWidth
+            />
+          </View>
+        </View>
+      )}
 
       {showAcceptBtn && (
         <View style={styles.actionContainer}>
@@ -510,7 +666,10 @@ export default function RequestDetailsScreen() {
           <View style={{ flex: 1 }}>
             <Button 
               title="Start Request" 
-              onPress={() => setIsOtpModalVisible(true)} 
+              onPress={() => {
+                setOtpError(null);
+                setIsOtpModalVisible(true);
+              }} 
               style={styles.acceptBtn} 
               fullWidth
             />
@@ -530,16 +689,47 @@ export default function RequestDetailsScreen() {
         </View>
       )}
 
+      {showOrgCancelBtn && (
+        <View style={styles.actionContainer}>
+          <TouchableOpacity 
+            style={[styles.cancelTextBtn, { marginTop: 0 }]} 
+            onPress={handleCancelRequest}
+          >
+            <AppText variant="buttonMedium" style={{ color: Colors.error }}>Cancel Request</AppText>
+          </TouchableOpacity>
+        </View>
+      )}
 
 
-      {showRateBtn && !request.ratings?.some((r: any) => r.rater_id === currentUserId) && (
+
+      {isCompleted && certificateUrl ? (
         <View style={styles.actionContainer}>
           <Button 
-            title="Rate Experience" 
-            onPress={() => navigation.navigate('RateExperience', { request })} 
+            title="Download Certificate" 
+            leftIcon={<Download color={Colors.neutral[0]} size={20} />}
+            onPress={handleDownloadCertificate} 
+            loading={isDownloadingCertificate}
             style={styles.acceptBtn} 
           />
+          {showRateBtn && !request.ratings?.some((r: any) => r.rater_id === currentUserId) && (
+            <Button 
+              title="Rate Experience" 
+              variant="outline"
+              onPress={() => navigation.navigate('RateExperience', { request })} 
+              style={[styles.acceptBtn, { marginTop: 12 }]} 
+            />
+          )}
         </View>
+      ) : (
+        showRateBtn && !request.ratings?.some((r: any) => r.rater_id === currentUserId) && (
+          <View style={styles.actionContainer}>
+            <Button 
+              title="Rate Experience" 
+              onPress={() => navigation.navigate('RateExperience', { request })} 
+              style={styles.acceptBtn} 
+            />
+          </View>
+        )
       )}
 
       <TaskParentConfirmationModal 
@@ -552,24 +742,49 @@ export default function RequestDetailsScreen() {
         visible={isOtpModalVisible}
         transparent
         animationType="slide"
-        onRequestClose={() => setIsOtpModalVisible(false)}
+        onRequestClose={() => {
+          setOtpError(null);
+          setIsOtpModalVisible(false);
+        }}
       >
         <KeyboardAvoidingView 
           style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' }}
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         >
-          <TouchableWithoutFeedback onPress={() => setIsOtpModalVisible(false)}>
+          <TouchableWithoutFeedback onPress={() => {
+            setOtpError(null);
+            setIsOtpModalVisible(false);
+          }}>
             <View style={{ flex: 1 }} />
           </TouchableWithoutFeedback>
           <View style={{ backgroundColor: Colors.neutral[0], padding: 24, borderTopLeftRadius: 24, borderTopRightRadius: 24 }}>
             <AppText variant="h5" color={Colors.neutral[900]} center style={{ marginBottom: 12 }}>Enter Start Code</AppText>
-            <AppText variant="bodyMedium" color={Colors.neutral[600]} center style={{ marginBottom: 24 }}>
+            <AppText variant="bodyMedium" color={Colors.neutral[600]} center style={{ marginBottom: 20 }}>
               Please enter the 6-digit start code provided by the {request.request_type === 'organization' ? 'organization' : 'beneficiary'} to begin this request.
             </AppText>
+
+            {otpError ? (
+              <View style={styles.modalErrorContainer}>
+                <AlertCircle color="#DC2626" size={18} style={{ marginRight: 8 }} />
+                <AppText 
+                  variant="bodySmall" 
+                  style={styles.modalErrorText}
+                >
+                  {otpError}
+                </AppText>
+              </View>
+            ) : null}
+
             <TextInput
-              style={styles.otpInput}
+              style={[
+                styles.otpInput, 
+                otpError ? { borderColor: '#F87171', backgroundColor: '#FEF2F2' + '30' } : null
+              ]}
               value={otpCode}
-              onChangeText={(text) => setOtpCode(text.replace(/[^0-9]/g, '').slice(0, 6))}
+              onChangeText={(text) => {
+                if (otpError) setOtpError(null);
+                setOtpCode(text.replace(/[^0-9]/g, '').slice(0, 6));
+              }}
               keyboardType="number-pad"
               placeholder="000000"
               placeholderTextColor={Colors.neutral[300]}
@@ -585,6 +800,7 @@ export default function RequestDetailsScreen() {
             />
           </View>
         </KeyboardAvoidingView>
+        <Toast position="bottom" bottomOffset={Platform.OS === 'ios' ? 40 : 20} config={toastConfig} />
       </Modal>
 
       <Modal
@@ -712,6 +928,25 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.primary[100],
   },
+  modalErrorContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FEF2F2',
+    borderWidth: 1,
+    borderColor: '#FECACA',
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    marginBottom: 16,
+    width: '100%',
+  },
+  modalErrorText: {
+    color: '#DC2626',
+    fontFamily: FontFamily.medium,
+    flex: 1,
+    fontSize: 13,
+    lineHeight: 18,
+  },
   otpInput: {
     backgroundColor: Colors.neutral[0],
     borderWidth: 1,
@@ -772,5 +1007,15 @@ const styles = StyleSheet.create({
     right: horizontalScale(20),
     padding: moderateScale(10),
     zIndex: 1,
+  },
+  parentNoticeBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.accent[50],
+    borderWidth: 1,
+    borderColor: Colors.accent[200],
+    borderRadius: 12,
+    padding: moderateScale(14),
+    marginBottom: verticalScale(16),
   },
 });

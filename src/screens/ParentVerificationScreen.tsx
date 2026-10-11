@@ -271,11 +271,7 @@ const ContactInfoRow: React.FC<ContactInfoRowProps> = ({
         {value}
       </AppText>
     </View>
-    {onChangePress && (
-      <TouchableOpacity onPress={onChangePress} hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}>
-        <EditIcon size={moderateScale(20)} color={Colors.primary[500]} />
-      </TouchableOpacity>
-    )}
+    {/* Edit button hidden */}
   </View>
 );
 
@@ -525,7 +521,7 @@ export const ParentVerificationScreen: React.FC = () => {
           navigation.reset({ index: 0, routes: [{ name: 'BeneficiarySetup' as any, params: routeParams }] });
         }
       } else if (response?.registration_step === 'role_setup') {
-        navigation.reset({ index: 0, routes: [{ name: 'SelectRoles' as any }] });
+        navigation.reset({ index: 0, routes: [{ name: 'SelectRoles' as any, params: { date_of_birth: response?.user?.date_of_birth || (response as any)?.date_of_birth } }] });
       } else if (response?.default_role) {
         if (response.default_role === 'volunteer') {
           navigation.reset({ index: 0, routes: [{ name: 'VolunteerFlow' as any }] });

@@ -17,6 +17,7 @@ import { Colors } from '../../../theme/colors';
 import { Typography, FontFamily } from '../../../theme/typography';
 import { CategoryIcon } from '../../../components/CategoryIcon';
 import { Button } from '../../../components/Button';
+import { formatStatus, getStatusColors, isCancelledStatus } from '../../../utils/statusUtils';
 import {
   ChevronLeft,
   CheckCircle2,
@@ -26,6 +27,7 @@ import {
   User,
   MessageCircle,
   Clock,
+  Phone,
 } from 'lucide-react-native';
 import { formatDate, formatTime12Hour, formatDateTime } from '../../../utils/dateFormatter';
 import { AppText } from '../../../components';
@@ -159,14 +161,18 @@ export const OrgRequestTrackingScreen = () => {
                           </Text>
                         </View>
                       )}
-                      {trackStatus && (
-                        <View style={{flexDirection: 'row', alignItems: 'center', marginTop: 4, gap: 6}}>
-                          <View style={{width: 8, height: 8, borderRadius: 4, backgroundColor: trackStatus === 'completed' ? Colors.success : trackStatus === 'in_progress' ? Colors.primary[500] : trackStatus === 'on_the_way' ? Colors.warning : Colors.neutral[500]}} />
-                          <Text style={{...Typography.caption, color: Colors.neutral[600], textTransform: 'capitalize'}}>
-                            {trackStatus.replace('_', ' ')}
-                          </Text>
-                        </View>
-                      )}
+                      {trackStatus && (() => {
+                        const statusColors = getStatusColors(trackStatus);
+                        const statusLabel = formatStatus(trackStatus);
+                        return (
+                          <View style={{flexDirection: 'row', alignItems: 'center', marginTop: 4, gap: 6}}>
+                            <View style={{width: 8, height: 8, borderRadius: 4, backgroundColor: statusColors.text}} />
+                            <Text style={{...Typography.caption, color: statusColors.text, fontFamily: FontFamily.medium}}>
+                              {statusLabel}
+                            </Text>
+                          </View>
+                        );
+                      })()}
                     </View>
                   </View>
                 ) : (
@@ -221,11 +227,19 @@ export const OrgRequestTrackingScreen = () => {
         )}
 
 
-          {requestDetail.status === 'cancelled' ? (
+          {isCancelledStatus(requestDetail.status) ? (
             <View style={[styles.timelineContainer, { paddingVertical: 24, paddingHorizontal: 16, backgroundColor: Colors.error + '10', borderRadius: 12, alignItems: 'center', marginTop: 16 }]}>
-              <Text style={{ ...Typography.h5, color: Colors.error, marginBottom: 8 }}>Request Cancelled</Text>
+              <Text style={{ ...Typography.h5, color: Colors.error, marginBottom: 8 }}>
+                {requestDetail.status?.toLowerCase().includes('no_show')
+                  ? 'Volunteer Did Not Show'
+                  : requestDetail.status?.toLowerCase().includes('not_started')
+                  ? 'Job Not Started'
+                  : 'Request Cancelled'}
+              </Text>
               <Text style={{ ...Typography.bodyMedium, color: Colors.neutral[600], textAlign: 'center' }}>
-                This request was cancelled and is no longer active.
+                {requestDetail.cancel_reason
+                  ? `Reason: ${requestDetail.cancel_reason}`
+                  : 'This request was cancelled and is no longer active.'}
               </Text>
             </View>
           ) : (

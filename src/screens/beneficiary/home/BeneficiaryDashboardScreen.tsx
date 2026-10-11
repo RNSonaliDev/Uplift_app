@@ -41,7 +41,7 @@ import {
 
 export default function BeneficiaryDashboardScreen() {
   const navigation = useNavigation<any>();
-  const [upcomingRequest, setUpcomingRequest] = useState<any>(null);
+  const [activeAndPendingRequests, setActiveAndPendingRequests] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [categories, setCategories] = useState<CategoryResponse[]>([]);
   const [profile, setProfile] = useState<UserProfileResponse | null>(null);
@@ -72,8 +72,18 @@ export default function BeneficiaryDashboardScreen() {
       
       
       setUnreadNotifications(notifData?.unread_count > 0);
-      const active = reqData.find(r => r.status === 'pending' || r.status === 'accepted' || r.status === 'assigned' || r.status === 'on_the_way');
-      setUpcomingRequest(active || null);
+      const activeAccepted = (reqData || []).filter(
+        (r: any) =>
+          r.status === 'accepted' ||
+          r.status === 'assigned' ||
+          r.status === 'on_the_way' ||
+          r.status === 'in_progress' ||
+          r.status === 'confirmed'
+      );
+      const activePending = (reqData || []).filter(
+        (r: any) => r.status === 'pending'
+      );
+      setActiveAndPendingRequests([...activeAccepted, ...activePending]);
     } catch (error) {
       console.error('Failed to fetch data', error);
     } finally {
@@ -98,9 +108,13 @@ export default function BeneficiaryDashboardScreen() {
     <>
       <SafeAreaView style={{ flex: 0, backgroundColor: Colors.primary[500] }} />
       <SafeAreaView style={styles.safeArea}>
+      <View style={{ flex: 1 }}>
       <ScrollView 
         style={styles.container} 
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[
+          styles.content,
+          activeAndPendingRequests.length > 0 ? { paddingBottom: verticalScale(90) } : null,
+        ]}
         bounces={false}
         refreshControl={
           <RefreshControl
@@ -153,126 +167,138 @@ export default function BeneficiaryDashboardScreen() {
         </View>
 
         <View style={[styles.mainContent, { borderTopLeftRadius: 0, borderTopRightRadius: 0, paddingTop: verticalScale(32) }]}>
-          {/* Upcoming Request */}
-          <View style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 8, marginBottom: 16}}>
-            <Text style={[styles.sectionTitle, {marginTop: 0, marginBottom: 0}]}>Upcoming Request</Text>
-            <TouchableOpacity onPress={() => navigation.navigate('MyRequests')}>
-              <Text style={{color: Colors.primary[500], fontFamily: FontFamily.medium, fontSize: 16}}>View All</Text>
-            </TouchableOpacity>
-          </View>
-          {loading ? (
-            <View style={[styles.card, {alignItems: 'center', justifyContent: 'center', paddingVertical: 40}]}>
-              <Text style={{color: Colors.neutral[500]}}>Loading...</Text>
-            </View>
-          ) : upcomingRequest ? (
-            <TouchableOpacity 
-              style={styles.card}
-              onPress={() => navigation.navigate('BeneficiaryRequestDetails', { requestId: upcomingRequest.id })}
-              activeOpacity={0.7}
-            >
-              <View style={styles.cardHeader}>
-                <View style={styles.iconContainer}>
-                  {upcomingRequest.category?.logo_url ? (
-                    <Image 
-                      source={{ uri: getFullImageUrl(upcomingRequest.category.logo_url) as string }}
-                      style={{ width: 24, height: 24 }}
-                      resizeMode="contain"
-                    />
-                  ) : (
-                    <CategoryIcon title={upcomingRequest.category?.title} color={Colors.primary[500]} size={24} />
-                  )}
-                </View>
-                <View style={styles.cardTitleContainer}>
-                  <Text style={[styles.cardTitle, { marginBottom: 4 }]}>{upcomingRequest.category?.title || 'Help Request'}</Text>
-                </View>
-                {upcomingRequest.status && (
-                  <View style={[styles.statusBadge, { backgroundColor: getStatusColors(upcomingRequest.status).bg, alignSelf: 'flex-start' }]}>
-                    <Text style={[styles.statusBadgeText, { color: getStatusColors(upcomingRequest.status).text }]}>
-                      {formatStatus(upcomingRequest.status)}
-                    </Text>
-                  </View>
-                )}
+          {/* Active and Pending Requests */}
+          {activeAndPendingRequests.length > 0 && (
+            <>
+              <View style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 8, marginBottom: 16}}>
+                <Text style={[styles.sectionTitle, {marginTop: 0, marginBottom: 0}]}>Accepted & Pending Requests</Text>
               </View>
+              {loading ? (
+                <View style={[styles.card, {alignItems: 'center', justifyContent: 'center', paddingVertical: 40}]}>
+                  <Text style={{color: Colors.neutral[500]}}>Loading...</Text>
+                </View>
+              ) : (
+                activeAndPendingRequests.map((request: any) => (
+                  <TouchableOpacity 
+                    key={request.id}
+                    style={[styles.card, { marginBottom: verticalScale(16) }]}
+                    onPress={() => navigation.navigate('BeneficiaryRequestDetails', { requestId: request.id })}
+                    activeOpacity={0.7}
+                  >
+                    <View style={styles.cardHeader}>
+                      <View style={styles.iconContainer}>
+                        {request.category?.logo_url ? (
+                          <Image 
+                            source={{ uri: getFullImageUrl(request.category.logo_url) as string }}
+                            style={{ width: 24, height: 24 }}
+                            resizeMode="contain"
+                          />
+                        ) : (
+                          <CategoryIcon title={request.category?.title} color={Colors.primary[500]} size={24} />
+                        )}
+                      </View>
+                      <View style={styles.cardTitleContainer}>
+                        <Text style={styles.cardTitle} numberOfLines={2}>{request.category?.title || 'Help Request'}</Text>
+                      </View>
+                    </View>
 
-              <View style={{ marginBottom: 16 }}>
-                {upcomingRequest.title ? (
-                  <Text style={{ ...Typography.bodyMedium, color: Colors.neutral[800], marginBottom: 4, fontFamily: FontFamily.medium }}>
-                    {upcomingRequest.title}
-                  </Text>
-                ) : null}
-                <Text style={{ ...Typography.caption, color: Colors.neutral[600], marginBottom: 12 }}>
-                  #{upcomingRequest.reference_number || upcomingRequest.id}
-                </Text>
-                <View style={styles.row}>
-                  <Calendar color={Colors.neutral[500]} size={14} />
-                  <Text style={styles.cardSubtitle}> {formatDate(upcomingRequest.preferred_date)}</Text>
-                </View>
-                {(upcomingRequest.preferred_start_time || upcomingRequest.preferred_end_time || upcomingRequest.hours_required) ? (
-                  <View style={[styles.row, { alignItems: 'flex-start', marginTop: 4 }]}>
-                    <Clock color={Colors.neutral[500]} size={14} />
-                    <Text style={styles.cardSubtitle}>
-                      {upcomingRequest.preferred_start_time ? ` ${formatTime12Hour(upcomingRequest.preferred_start_time)}${upcomingRequest.preferred_end_time ? ` - ${formatTime12Hour(upcomingRequest.preferred_end_time)}` : ''}` : ''}
-                      {upcomingRequest.preferred_start_time && upcomingRequest.hours_required ? ' ' : ''}
-                      {upcomingRequest.hours_required ? `(${upcomingRequest.hours_required} hours)` : ''}
-                    </Text>
-                  </View>
-                ) : null}
-                <View style={[styles.row, { alignItems: 'flex-start', marginTop: 4 }]}>
-                  <View style={{ marginTop: 2 }}>
-                    <MapPin color={Colors.neutral[500]} size={14} />
-                  </View>
-                  <Text style={[styles.cardSubtitle, { flex: 1, marginLeft: 6 }]} numberOfLines={1}>{upcomingRequest.location?.address || upcomingRequest.meeting_location || 'Location TBD'}</Text>
-                </View>
-              </View>
-            </TouchableOpacity>
-          ) : (
-            <View style={[styles.card, {alignItems: 'center'}]}>
-              <Text style={{color: Colors.neutral[500], marginBottom: 16}}>No upcoming requests.</Text>
-              <TouchableOpacity 
-                style={[styles.requestHelpBtn, {width: '100%'}]}
-                onPress={() => navigation.navigate('RequestHelp')}
-              >
-                <Plus color={Colors.neutral[0]} size={20} />
-                <Text style={styles.requestHelpText}> Request Help</Text>
-              </TouchableOpacity>
-            </View>
+                    <View style={{ marginBottom: 4 }}>
+                      {request.title ? (
+                        <Text style={{ ...Typography.bodyMedium, color: Colors.neutral[800], marginBottom: 4, fontFamily: FontFamily.medium }}>
+                          {request.title}
+                        </Text>
+                      ) : null}
+                      <Text style={{ ...Typography.caption, color: Colors.neutral[600], marginBottom: 8 }}>
+                        #{request.reference_number || request.id}
+                      </Text>
+                      <View style={styles.row}>
+                        <Calendar color={Colors.neutral[500]} size={14} />
+                        <Text style={styles.cardSubtitle}> {formatDate(request.preferred_date)}</Text>
+                      </View>
+                      {(request.preferred_start_time || request.preferred_end_time || request.hours_required) ? (
+                        <View style={[styles.row, { alignItems: 'flex-start', marginTop: 4 }]}>
+                          <Clock color={Colors.neutral[500]} size={14} />
+                          <Text style={styles.cardSubtitle}>
+                            {request.preferred_start_time ? ` ${formatTime12Hour(request.preferred_start_time)}${request.preferred_end_time ? ` - ${formatTime12Hour(request.preferred_end_time)}` : ''}` : ''}
+                            {request.preferred_start_time && request.hours_required ? ' ' : ''}
+                            {request.hours_required ? `(${request.hours_required} hours)` : ''}
+                          </Text>
+                        </View>
+                      ) : null}
+                      <View style={[styles.row, { alignItems: 'flex-start', marginTop: 4 }]}>
+                        <View style={{ marginTop: 2 }}>
+                          <MapPin color={Colors.neutral[500]} size={14} />
+                        </View>
+                        <Text style={[styles.cardSubtitle, { flex: 1, marginLeft: 6 }]} numberOfLines={1}>{request.location?.address || request.meeting_location || 'Location TBD'}</Text>
+                      </View>
+                    </View>
+
+                    {request.status && (
+                      <View style={styles.cardBottomRow}>
+                        <View />
+                        <View style={[styles.statusBadge, { backgroundColor: getStatusColors(request.status).bg }]}>
+                          <Text style={[styles.statusBadgeText, { color: getStatusColors(request.status).text }]}>
+                            {formatStatus(request.status)}
+                          </Text>
+                        </View>
+                      </View>
+                    )}
+                  </TouchableOpacity>
+                ))
+              )}
+            </>
           )}
 
-          {/* Quick Actions */}
-          {/* <Text style={styles.sectionTitle}>Quick Actions</Text> */}
-       
-
-          {/* Need Help with? */}
-          <Text style={styles.sectionTitle}>Need help? Create a request</Text>
-          {categories.length > 0 ? (
-            categories.map((category) => {
-              return (
-                <HelpCategoryItem 
-                  key={category.id}
-                  icon={
-                    category.logo_url ? (
-                      <Image 
-                        source={{ uri: getFullImageUrl(category.logo_url) as string }}
-                        style={{ width: 24, height: 24 }}
-                        resizeMode="contain"
-                      />
-                    ) : (
-                      <CategoryIcon title={category.title} color={Colors.primary[500]} size={24} />
-                    )
-                  }
-                  title={category.title}
-                  onPress={() => navigation.navigate('CreateRequest', {
-                    category_id: category.id.toString(), fromDashboard: true
-                  })}
-                />
-              );
-            })
-          ) : (
-            <Text style={{color: Colors.neutral[500]}}>Loading categories...</Text>
+          {/* Need help? Create a request (Shown when both active and pending are complete) */}
+          {activeAndPendingRequests.length === 0 && (
+            <>
+              <Text style={styles.sectionTitle}>Need help? Create a request</Text>
+              {categories.length > 0 ? (
+                categories.map((category) => {
+                  return (
+                    <HelpCategoryItem 
+                      key={category.id}
+                      icon={
+                        category.logo_url ? (
+                          <Image 
+                            source={{ uri: getFullImageUrl(category.logo_url) as string }}
+                            style={{ width: 24, height: 24 }}
+                            resizeMode="contain"
+                          />
+                        ) : (
+                          <CategoryIcon title={category.title} color={Colors.primary[500]} size={24} />
+                        )
+                      }
+                      title={category.title}
+                      onPress={() => navigation.navigate('CreateRequest', {
+                        category_id: category.id.toString(), fromDashboard: true
+                      })}
+                    />
+                  );
+                })
+              ) : (
+                <Text style={{color: Colors.neutral[500]}}>Loading categories...</Text>
+              )}
+            </>
           )}
         </View>
       </ScrollView>
-    </SafeAreaView>
+
+      {/* Floating '+ Create Request' button in blue (Same as other screen) */}
+      {activeAndPendingRequests.length > 0 && (
+        <TouchableOpacity 
+          style={styles.fab} 
+          onPress={() => navigation.navigate('RequestHelp')}
+          activeOpacity={0.8}
+        >
+          <Plus color={Colors.neutral[0]} size={20} />
+          <AppText variant="buttonMedium" color={Colors.neutral[0]} style={{ marginLeft: 6 }}>
+            New Request
+          </AppText>
+        </TouchableOpacity>
+      )}
+      </View>
+      </SafeAreaView>
     </>
   );
 }
@@ -376,7 +402,8 @@ const styles = StyleSheet.create({
   },
   cardHeader: {
     flexDirection: 'row',
-    marginBottom: verticalScale(20),
+    alignItems: 'center',
+    marginBottom: verticalScale(16),
   },
   iconContainer: {
     width: moderateScale(48),
@@ -426,13 +453,19 @@ const styles = StyleSheet.create({
   },
   cardTitleContainer: {
     flex: 1,
+    justifyContent: 'center',
   },
   cardTitle: {
-    ...Typography.labelLarge,
+    ...Typography.bodyLarge,
     fontFamily: 'Inter-SemiBold',
     fontWeight: '600',
     color: Colors.neutral[900],
-    marginBottom: verticalScale(4),
+  },
+  cardBottomRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: verticalScale(6),
   },
   row: {
     flexDirection: 'row',
@@ -450,10 +483,10 @@ const styles = StyleSheet.create({
     marginLeft: horizontalScale(18),
   },
   statusBadge: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: horizontalScale(12),
+    paddingHorizontal: horizontalScale(10),
     paddingVertical: verticalScale(4),
     borderRadius: moderateScale(12),
+    flexShrink: 0,
   },
   statusBadgeText: {
     ...Typography.labelSmall,
@@ -532,5 +565,23 @@ const styles = StyleSheet.create({
   helpCategoryTitle: {
     ...Typography.labelMedium,
     color: Colors.neutral[900],
+  },
+  fab: {
+    position: 'absolute',
+    bottom: verticalScale(24),
+    right: horizontalScale(24),
+    height: moderateScale(52),
+    paddingHorizontal: horizontalScale(20),
+    borderRadius: moderateScale(26),
+    backgroundColor: Colors.primary[500],
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: Colors.neutral[900],
+    shadowOffset: {width: 0, height: verticalScale(4)},
+    shadowOpacity: 0.15,
+    shadowRadius: moderateScale(12),
+    elevation: 5,
+    zIndex: 999,
   },
 });

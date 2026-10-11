@@ -26,7 +26,7 @@ import {
   Tag,
   Copy,
   Eye,
-  Hash,
+  Package,
   FileText,
   Sparkles,
   Pencil,
@@ -339,7 +339,7 @@ export const PromotionDetailsScreen = () => {
 
             <View style={styles.detailRowItem}>
               <View style={styles.detailLabelRow}>
-                <Hash color={Colors.neutral[600]} size={20} />
+                <Package color={Colors.neutral[600]} size={20} />
                 <AppText variant="bodyMedium" color={Colors.neutral[900]} style={{ marginLeft: 8, fontFamily: FontFamily.medium }}>Quantity Available</AppText>
               </View>
               <View style={{ flex: 1, alignItems: 'flex-end' }}>

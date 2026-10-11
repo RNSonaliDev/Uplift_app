@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   StyleSheet,
@@ -10,13 +10,20 @@ import {
   Alert,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { useStripe } from '@stripe/stripe-react-native';
 import { Colors } from '../../../theme/colors';
 import { AppText } from '../../../components/AppText';
 import { Button } from '../../../components/Button';
 import { ChevronLeft, Heart, ChevronDown, X, ShieldCheck } from 'lucide-react-native';
 import { horizontalScale, verticalScale, moderateScale, fontScale } from '../../../utils/responsive';
 import { FontFamily } from '../../../theme/typography';
+import {
+  StripeConfig,
+  DEFAULT_STRIPE_CONFIG,
+  getStripeConfig,
+  saveStripeConfig,
+  calculateStripeFee,
+} from '../../../api/stripe';
+import { authApi } from '../../../api/auth';
 
 const predefinedAmounts = [25, 50, 100, 250];
 
@@ -33,65 +40,45 @@ export default function ChooseAmountScreen() {
   const [customAmount, setCustomAmount] = useState<string>('100');
   const [recipientType, setRecipientType] = useState<string>('');
   const [isRecipientModalVisible, setIsRecipientModalVisible] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const { initPaymentSheet, presentPaymentSheet } = useStripe();
+  const [stripeConfig, setStripeConfig] = useState<StripeConfig>(DEFAULT_STRIPE_CONFIG);
 
-  const handleContinue = async () => {
-    const finalAmount = selectedAmount === 'custom' ? parseFloat(customAmount) : selectedAmount;
-    if (!finalAmount || isNaN(finalAmount) || finalAmount <= 0) {
+  useEffect(() => {
+    const loadConfig = async () => {
+      try {
+        const cached = await getStripeConfig();
+        if (cached) setStripeConfig(cached);
+        const profileRes = await authApi.getProfile() as any;
+        const remoteConfig =
+          profileRes?.sponsor?.stripe_config ||
+          profileRes?.active_profile?.stripe_config ||
+          profileRes?.profiles?.sponsor?.stripe_config ||
+          profileRes?.stripe_config;
+        if (remoteConfig) {
+          const saved = await saveStripeConfig(remoteConfig);
+          if (saved) setStripeConfig(saved);
+        }
+      } catch (e) {
+        // ignore
+      }
+    };
+    loadConfig();
+  }, []);
+
+  const finalAmount = selectedAmount === 'custom' ? parseFloat(customAmount) : selectedAmount;
+  const validAmount = (!finalAmount || isNaN(finalAmount) || finalAmount <= 0) ? 0 : finalAmount;
+  const feeInfo = calculateStripeFee(validAmount, stripeConfig);
+
+  const handleContinue = () => {
+    if (validAmount <= 0) {
       return;
     }
     if (!recipientType) {
       return;
     }
-    
-    setLoading(true);
-    try {
-      const { donationsApi } = await import('../../../api/donations');
-      const res = await donationsApi.createDonation({
-        donation: {
-          amount: finalAmount,
-          recipient_type: recipientType,
-        }
-      });
-      
-      let newDonationId = null;
-      const resAny = res as any;
-      if (resAny.donation?.id) {
-        newDonationId = resAny.donation.id;
-      } else if (resAny.id) {
-        newDonationId = resAny.id as number;
-      }
-      
-      const clientSecret = res.client_secret;
-      const { error: initError } = await initPaymentSheet({
-        merchantDisplayName: 'Uplift',
-        paymentIntentClientSecret: clientSecret,
-        allowsDelayedPaymentMethods: true,
-      });
-      
-      if (initError) {
-        Alert.alert(`Error code: ${initError.code}`, initError.message);
-        setLoading(false);
-        return;
-      }
-      
-      const { error: presentError } = await presentPaymentSheet();
-      
-      if (presentError) {
-        if (presentError.code !== 'Canceled') {
-          Alert.alert(`Error`, presentError.message);
-        }
-      } else {
-        // Payment was successful!
-        navigation.navigate('ProcessingPayment', { amount: finalAmount, recipientType, donationId: newDonationId });
-      }
-    } catch (e) {
-      console.error(e);
-      Alert.alert('Error', 'Could not process payment.');
-    } finally {
-      setLoading(false);
-    }
+    navigation.navigate('PaymentDetails', {
+      amount: validAmount,
+      recipientType,
+    });
   };
 
   return (
@@ -184,18 +171,44 @@ export default function ChooseAmountScreen() {
           </View>
         </View>
 
+        {/* Fee & Total Calculation Preview */}
+        {validAmount > 0 && (
+          <View style={styles.calcPreviewCard}>
+            <View style={styles.calcRow}>
+              <AppText variant="caption" color={Colors.neutral[600]}>Contribution Amount:</AppText>
+              <AppText variant="caption" weight="semiBold" color={Colors.neutral[900]}>${validAmount.toFixed(2)}</AppText>
+            </View>
+            <View style={[styles.calcRow, { marginTop: verticalScale(6) }]}>
+              <AppText variant="caption" color={Colors.neutral[600]}>
+                Processing Fee ({stripeConfig.processing_fee_percent}% + ${stripeConfig.fixed_charge.toFixed(2)}):
+              </AppText>
+              <AppText variant="caption" weight="semiBold" color={Colors.neutral[900]}>+${feeInfo.fee.toFixed(2)}</AppText>
+            </View>
+            <View style={styles.calcDivider} />
+            <View style={styles.calcRow}>
+              <AppText variant="bodySmall" weight="semiBold" color={Colors.neutral[900]}>Estimated Total:</AppText>
+              <AppText variant="bodySmall" weight="semiBold" color={Colors.primary[600]}>${feeInfo.total.toFixed(2)}</AppText>
+            </View>
+          </View>
+        )}
 
       </ScrollView>
 
       {/* Footer */}
       <View style={styles.footer}>
         <Button 
-          title={loading ? 'Loading...' : 'Continue'} 
+          title={validAmount > 0 ? `Continue to Payment · $${feeInfo.total.toFixed(2)}` : 'Continue to Payment'} 
           size="lg"
           fullWidth
           onPress={handleContinue}
-          disabled={(selectedAmount === 'custom' && (!customAmount || isNaN(parseFloat(customAmount)) || parseFloat(customAmount) <= 0)) || !recipientType || loading}
+          disabled={validAmount <= 0 || !recipientType}
         />
+        <View style={styles.stripeBadgeRow}>
+          <ShieldCheck color={Colors.neutral[500]} size={16} />
+          <AppText variant="caption" color={Colors.neutral[500]} style={styles.stripeBadgeText}>
+            Powered by Stripe · Secure 256-bit encryption
+          </AppText>
+        </View>
       </View>
 
       <Modal visible={isRecipientModalVisible} transparent animationType="fade">
@@ -389,5 +402,34 @@ const styles = StyleSheet.create({
   legalFooterText: {
     lineHeight: fontScale(16),
     fontSize: fontScale(11),
+  },
+  stripeBadgeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: verticalScale(12),
+  },
+  stripeBadgeText: {
+    marginLeft: horizontalScale(6),
+    fontFamily: FontFamily.medium,
+  },
+  calcPreviewCard: {
+    backgroundColor: Colors.neutral[0],
+    borderRadius: 14,
+    padding: moderateScale(14),
+    borderWidth: 1,
+    borderColor: Colors.neutral[200],
+    marginTop: verticalScale(4),
+    marginBottom: verticalScale(16),
+  },
+  calcRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  calcDivider: {
+    height: 1,
+    backgroundColor: Colors.neutral[200],
+    marginVertical: verticalScale(8),
   },
 });

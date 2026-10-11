@@ -12,6 +12,8 @@ import {
   Modal,
   Keyboard,
   Platform,
+  Alert,
+  BackHandler,
 } from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import Svg, {Path, Circle, Rect} from 'react-native-svg';
@@ -248,9 +250,7 @@ const ContactInfoRow: React.FC<ContactInfoRowProps> = ({
         {value}
       </AppText>
     </View>
-    <TouchableOpacity onPress={onChangePress} hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}>
-      <EditIcon size={moderateScale(20)} color={Colors.primary[500]} />
-    </TouchableOpacity>
+    {/* Edit button hidden */}
   </View>
 );
 
@@ -268,7 +268,6 @@ const contactStyles = StyleSheet.create({
   },
   textContainer: {
     flex: 1,
-    marginRight: moderateScale(12),
   },
 });
 
@@ -291,7 +290,7 @@ type NavigationProps = NativeStackNavigationProp<RootStackParamList>;
 type ParentVerificationRouteProp = RouteProp<RootStackParamList, 'ParentVerification'>;
 
 export const ParentTaskVerificationScreen: React.FC = () => {
-  const navigation = useNavigation<NavigationProps>();
+  const navigation = useNavigation<any>();
   const route = useRoute<any>();
   
   const parentEmail = route.params?.parentEmail || '';
@@ -307,6 +306,72 @@ export const ParentTaskVerificationScreen: React.FC = () => {
   const [canResend, setCanResend] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
   const [isResending, setIsResending] = useState(false);
+  const [isCancelling, setIsCancelling] = useState(false);
+
+  const handleBackOrCancel = () => {
+    if (!request?.id) {
+      navigation.goBack();
+      return;
+    }
+
+    Alert.alert(
+      'Leave Verification?',
+      'You have not completed parent verification. Would you like to cancel accepting this request so it returns to Available Requests, or keep it pending in My Schedule?',
+      [
+        {
+          text: 'Stay Here',
+          style: 'cancel',
+        },
+        {
+          text: 'Keep Pending',
+          onPress: () => {
+            Toast.show({
+              type: 'info',
+              text1: 'Pending Verification',
+              text2: 'You can complete parent verification later from My Schedule.',
+            });
+            navigation.goBack();
+          },
+        },
+        {
+          text: 'Cancel Request',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              setIsCancelling(true);
+              await api.post(`/help_requests/${request.id}/withdraw`);
+              Toast.show({
+                type: 'success',
+                text1: 'Request Cancelled',
+                text2: 'The request has been returned to available requests.',
+              });
+              navigation.goBack();
+            } catch (err: any) {
+              Toast.show({
+                type: 'error',
+                text1: 'Error',
+                text2: err?.data?.errors?.[0] || err?.message || 'Failed to cancel request.',
+              });
+              navigation.goBack();
+            } finally {
+              setIsCancelling(false);
+            }
+          },
+        },
+      ],
+      { cancelable: true },
+    );
+  };
+
+  useEffect(() => {
+    const onBackPress = () => {
+      handleBackOrCancel();
+      return true;
+    };
+
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+    return () => backHandler.remove();
+  }, [request?.id]);
 
   useEffect(() => {
     if (timer <= 0) {
@@ -389,7 +454,7 @@ export const ParentTaskVerificationScreen: React.FC = () => {
           keyboardShouldPersistTaps="handled">
           <TouchableOpacity
             style={styles.backButton}
-            onPress={() => navigation.goBack()}
+            onPress={handleBackOrCancel}
             hitSlop={{top: 12, bottom: 12, left: 12, right: 12}}>
             <BackArrowIcon size={moderateScale(24)} />
           </TouchableOpacity>
@@ -414,7 +479,6 @@ export const ParentTaskVerificationScreen: React.FC = () => {
               icon={<MailIcon size={moderateScale(22)} />}
               label="Parent Email"
               value={parentEmail}
-              onChangePress={() => navigation.goBack()}
             />
           </View>
 
@@ -464,11 +528,24 @@ export const ParentTaskVerificationScreen: React.FC = () => {
             color="primary"
             size="lg"
             fullWidth
-            disabled={!isOtpComplete || isVerifying}
+            disabled={!isOtpComplete || isVerifying || isCancelling}
             loading={isVerifying}
             onPress={handleVerify}
             style={styles.verifyButton}
           />
+
+          <TouchableOpacity
+            style={styles.cancelButton}
+            onPress={handleBackOrCancel}
+            disabled={isCancelling || isVerifying}
+            activeOpacity={0.7}>
+            <AppText
+              variant="buttonMedium"
+              color={Colors.error}
+              style={{textAlign: 'center'}}>
+              {isCancelling ? 'Cancelling...' : 'Cancel Request'}
+            </AppText>
+          </TouchableOpacity>
 
           <View style={styles.securityNote}>
             <LockIcon size={moderateScale(16)}  />
@@ -570,5 +647,11 @@ const styles = StyleSheet.create({
   },
   securityText: {
     marginLeft: moderateScale(6),
+  },
+  cancelButton: {
+    marginTop: verticalScale(14),
+    paddingVertical: verticalScale(10),
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

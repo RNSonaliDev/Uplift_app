@@ -1,14 +1,53 @@
 import { Colors } from '../theme/colors';
 
+export const isCancelledStatus = (status: string | undefined | null): boolean => {
+  if (!status) return false;
+  const s = status.toLowerCase().trim();
+  return (
+    s.includes('cancel') ||
+    s.includes('no_show') ||
+    s.includes('noshow') ||
+    s.includes('did_not_show') ||
+    s.includes('not_started') ||
+    s.includes('missed') ||
+    s.includes('expired') ||
+    s.includes('reject') ||
+    s.includes('unfulfill') ||
+    s.includes('abandon') ||
+    s.includes('timeout') ||
+    s.includes('withdrawn') ||
+    s.includes('closed') ||
+    s.includes('fail')
+  );
+};
+
 export const formatStatus = (status: string) => {
   if (!status) return 'New';
-  if (status.toLowerCase() === 'in_progress') return 'In Progress';
-  if (status.toLowerCase() === 'on_the_way') return 'On the Way';
+  const s = status.toLowerCase();
+  if (s === 'in_progress') return 'In Progress';
+  if (s === 'on_the_way') return 'On the Way';
+  if (s.includes('parent') || s.includes('verification')) return 'Pending Parent Approval';
+  if (s.includes('no_show') || s.includes('noshow') || s.includes('did_not_show')) return 'No Show';
+  if (s.includes('not_started')) return 'Not Started';
+  if (s.includes('missed')) return 'Missed';
+  if (s.includes('expired')) return 'Expired';
+  if (s.includes('unfulfill')) return 'Unfulfilled';
+  if (s.includes('abandon')) return 'Abandoned';
+  if (s.includes('reject')) return 'Rejected';
+  if (s.includes('cancel')) return 'Cancelled';
   return status.charAt(0).toUpperCase() + status.slice(1).replace(/_/g, ' ');
 };
 
 export const getStatusColors = (status: string) => {
   const s = status?.toLowerCase() || '';
+
+  if (s.includes('parent') || s.includes('verification')) {
+    return { bg: Colors.accent[50], text: Colors.accent[700] };
+  }
+
+  if (isCancelledStatus(s)) {
+    return { bg: '#FEF2F2', text: Colors.error }; // Red
+  }
 
   switch (s) {
     case 'completed':

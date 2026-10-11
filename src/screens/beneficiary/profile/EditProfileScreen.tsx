@@ -608,7 +608,7 @@ export default function EditProfileScreen() {
               <View style={{marginBottom: 16}}>
                 <View style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8}}>
                   <AppText variant="labelMedium" color={Colors.neutral[700]}>
-                    Address
+                    Starting address
                   </AppText>
                   {(formData.address || (formData.latitude && formData.longitude)) ? (
                     <TouchableOpacity onPress={handleOpenMap}>

@@ -6,3 +6,4 @@ export {Input} from './Input';
 export {Divider} from './Divider';
 export * from './Popup';
 export * from './TaskParentConfirmationModal';
+export * from './ImagePickerModal';

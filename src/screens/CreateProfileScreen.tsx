@@ -20,6 +20,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Svg, { Path, Circle, Rect, Polyline } from 'react-native-svg';
 import { launchImageLibrary } from 'react-native-image-picker';
 import { DatePickerModal } from '../components/DatePickerModal';
+import { ImagePickerModal, SelectedImage } from '../components/ImagePickerModal';
 
 import { AppText } from '../components/AppText';
 import { Button } from '../components/Button';
@@ -227,6 +228,38 @@ const CloseIcon: React.FC<{ size?: number; color?: string }> = ({
   </Svg>
 );
 
+const CheckCircleIcon: React.FC<{ size?: number; color?: string }> = ({
+  size = 14,
+  color = Colors.secondary[600],
+}) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Circle cx="12" cy="12" r="10" stroke={color} strokeWidth="2" fill={Colors.secondary[50]} />
+    <Path d="M8 12L11 15L16 9" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+  </Svg>
+);
+
+const EditPhotoIcon: React.FC<{ size?: number; color?: string }> = ({
+  size = 15,
+  color = Colors.neutral[700],
+}) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path
+      d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <Path
+      d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </Svg>
+);
+
 const CalendarIcon: React.FC<{ size?: number }> = ({ size = 24 }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Rect x="3" y="4" width="18" height="18" rx="2" ry="2" stroke={Colors.primary[500]} strokeWidth="1.5" />
@@ -292,6 +325,8 @@ export const CreateProfileScreen: React.FC = () => {
   const [profilePhotoName, setProfilePhotoName] = useState<string | null>(null);
   const [governmentId, setGovernmentId] = useState<string | null>(null);
   const [governmentIdName, setGovernmentIdName] = useState<string | null>(null);
+  const [showGovernmentIdModal, setShowGovernmentIdModal] = useState(false);
+  const [showProfilePhotoModal, setShowProfilePhotoModal] = useState(false);
   const [previewImage, setPreviewImage] = useState<{ uri: string; title: string } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
@@ -387,17 +422,14 @@ export const CreateProfileScreen: React.FC = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSelectGovernmentId = async () => {
-    const result = await launchImageLibrary({
-      mediaType: 'photo',
-      quality: 0.8,
-    });
+  const handleSelectGovernmentId = () => {
+    setShowGovernmentIdModal(true);
+  };
 
-    if (result.assets && result.assets.length > 0) {
-      setGovernmentId(result.assets[0].uri || null);
-      setGovernmentIdName(result.assets[0].fileName || null);
-      if (errors.governmentId) setErrors({ ...errors, governmentId: '' });
-    }
+  const handleGovernmentIdSelected = (image: SelectedImage) => {
+    setGovernmentId(image.uri);
+    setGovernmentIdName(image.fileName || 'government_id.jpg');
+    if (errors.governmentId) setErrors({ ...errors, governmentId: '' });
   };
 
   const handleSendParentVerification = async () => {
@@ -523,7 +555,7 @@ export const CreateProfileScreen: React.FC = () => {
           navigation.reset({ index: 0, routes: [{ name: 'BeneficiarySetup' as any, params: routeParams }] });
         }
       } else if (response?.user?.registration_step === 'role_setup') {
-        navigation.reset({ index: 0, routes: [{ name: 'SelectRoles' as any }] });
+        navigation.reset({ index: 0, routes: [{ name: 'SelectRoles' as any, params: { date_of_birth: response?.user?.date_of_birth || dob?.toISOString() } }] });
       } else if (response?.user?.default_role) {
         if (response.user.default_role === 'volunteer') {
           navigation.reset({ index: 0, routes: [{ name: 'VolunteerFlow' as any }] });
@@ -558,17 +590,14 @@ export const CreateProfileScreen: React.FC = () => {
     }
   };
 
-  const handleSelectPhoto = async () => {
-    const result = await launchImageLibrary({
-      mediaType: 'photo',
-      quality: 0.8,
-    });
+  const handleSelectPhoto = () => {
+    setShowProfilePhotoModal(true);
+  };
 
-    if (result.assets && result.assets.length > 0) {
-      setProfilePhoto(result.assets[0].uri || null);
-      setProfilePhotoName(result.assets[0].fileName || null);
-      if (errors.profilePhoto) setErrors({ ...errors, profilePhoto: '' });
-    }
+  const handleProfilePhotoSelected = (image: SelectedImage) => {
+    setProfilePhoto(image.uri);
+    setProfilePhotoName(image.fileName || 'profile_photo.jpg');
+    if (errors.profilePhoto) setErrors({ ...errors, profilePhoto: '' });
   };
 
   return (
@@ -771,46 +800,71 @@ export const CreateProfileScreen: React.FC = () => {
                     </AppText>
                   </View>
                   {governmentId ? (
-                    <TouchableOpacity
-                      style={styles.uploadedFileRow}
-                      activeOpacity={0.8}
-                      onPress={() => setPreviewImage({
-                        uri: governmentId,
-                        title: 'Government ID Photo'
-                      })}
-                    >
-                      <View style={styles.uploadedFileInfo}>
-                        <Image
-                          source={{ uri: governmentId }}
-                          style={styles.uploadedThumbnail}
-                          resizeMode="cover"
-                        />
+                    <View style={styles.uploadedFileCard}>
+                      <TouchableOpacity
+                        style={styles.uploadedFileHeader}
+                        activeOpacity={0.75}
+                        onPress={() => setPreviewImage({
+                          uri: governmentId,
+                          title: 'Government ID Photo',
+                        })}
+                      >
+                        <View style={styles.thumbnailWrapper}>
+                          <Image
+                            source={{ uri: governmentId }}
+                            style={styles.uploadedThumbnail}
+                            resizeMode="cover"
+                          />
+                        </View>
                         <View style={styles.uploadedFileName}>
-                          <AppText variant="labelMedium" color={Colors.primary[900]} weight="bold" numberOfLines={1}>
-                            Government ID Photo
-                          </AppText>
-                          <AppText variant="caption" color={Colors.neutral[500]}>
-                            Tap to view document
+                          <View style={styles.uploadedTitleRow}>
+                            <AppText variant="labelMedium" color={Colors.neutral[900]} weight="bold" numberOfLines={1}>
+                              Government ID
+                            </AppText>
+                            <View style={styles.attachedBadge}>
+                              <CheckCircleIcon size={12} color={Colors.secondary[600]} />
+                              <AppText variant="caption" color={Colors.secondary[700]} weight="bold" style={{ marginLeft: 3 }}>
+                                Uploaded
+                              </AppText>
+                            </View>
+                          </View>
+                          <AppText variant="caption" color={Colors.neutral[500]} numberOfLines={1} style={{ marginTop: 2 }}>
+                            {getFileName(governmentId, 'government_id.jpg')} 
                           </AppText>
                         </View>
-                      </View>
+                      </TouchableOpacity>
+
+                      <View style={styles.cardDivider} />
+
                       <View style={styles.uploadedFileActions}>
-                        <View style={styles.viewBadge}>
-                          <EyeIcon size={16} color={Colors.primary[600]} />
-                          <AppText variant="labelSmall" color={Colors.primary[600]} weight="bold" style={{marginLeft: 4}}>
+                        <TouchableOpacity
+                          style={styles.viewDocButton}
+                          activeOpacity={0.7}
+                          onPress={() => setPreviewImage({
+                            uri: governmentId,
+                            title: 'Government ID Photo',
+                          })}
+                        >
+                          <EyeIcon size={15} color={Colors.primary[600]} />
+                          <AppText variant="labelSmall" color={Colors.primary[600]} weight="bold" style={{ marginLeft: 6 }}>
                             View Document
                           </AppText>
-                        </View>
+                        </TouchableOpacity>
+
+                        <View style={styles.verticalActionDivider} />
+
                         <TouchableOpacity
-                          style={styles.changeBadge}
+                          style={styles.changeDocButton}
+                          activeOpacity={0.7}
                           onPress={handleSelectGovernmentId}
                         >
-                          <AppText variant="labelSmall" color={Colors.neutral[700]} weight="bold">
-                            Change
+                          <EditPhotoIcon size={14} color={Colors.neutral[700]} />
+                          <AppText variant="labelSmall" color={Colors.neutral[700]} weight="bold" style={{ marginLeft: 6 }}>
+                            Change Photo
                           </AppText>
                         </TouchableOpacity>
                       </View>
-                    </TouchableOpacity>
+                    </View>
                   ) : (
                     <TouchableOpacity
                       style={[
@@ -821,13 +875,20 @@ export const CreateProfileScreen: React.FC = () => {
                       activeOpacity={0.7}
                     >
                       <View style={styles.idUploadPlaceholder}>
-                        <CameraIcon size={32} color={Colors.primary[500]} />
-                        <AppText variant="bodySmall" color={Colors.neutral[600]} style={{ marginTop: 8, textAlign: 'center' }}>
-                          Upload a clear photo of your Government ID{'\n'}(Driver's License, Passport, State ID)
+                        <View style={styles.idUploadIconCircle}>
+                          <CameraIcon size={24} color={Colors.primary[500]} />
+                        </View>
+                        <AppText variant="labelMedium" color={Colors.primary[900]} weight="bold" style={{ marginTop: 8 }}>
+                          Upload Government ID
                         </AppText>
-                        <AppText variant="labelMedium" color={Colors.primary[500]} weight="bold" style={{ marginTop: 6 }}>
-                          Upload Photo
+                        <AppText variant="caption" color={Colors.neutral[500]} style={{ marginTop: 2, textAlign: 'center' }}>
+                          Driver's License, Passport, or State ID
                         </AppText>
+                        <View style={styles.uploadCtaPill}>
+                          <AppText variant="caption" color={Colors.primary[600]} weight="bold">
+                            Take Photo or Upload
+                          </AppText>
+                        </View>
                       </View>
                     </TouchableOpacity>
                   )}
@@ -988,6 +1049,25 @@ export const CreateProfileScreen: React.FC = () => {
           </View>
         </TouchableOpacity>
       </Modal>
+      {/* Government ID Image Picker Modal (Camera & Gallery) */}
+      <ImagePickerModal
+        visible={showGovernmentIdModal}
+        onClose={() => setShowGovernmentIdModal(false)}
+        onImageSelected={handleGovernmentIdSelected}
+        title="Government ID Photo"
+        subtitle="Take a photo of your ID (Driver's License, Passport, State ID) or select from gallery"
+        cameraType="back"
+      />
+
+      {/* Profile Photo Image Picker Modal (Camera & Gallery) */}
+      <ImagePickerModal
+        visible={showProfilePhotoModal}
+        onClose={() => setShowProfilePhotoModal(false)}
+        onImageSelected={handleProfilePhotoSelected}
+        title="Profile Photo"
+        subtitle="Take a selfie or choose an existing photo from gallery"
+        cameraType="front"
+      />
     </SafeAreaView>
   );
 };
@@ -1143,19 +1223,34 @@ const styles = StyleSheet.create({
   },
   idUploadBox: {
     borderWidth: 1.5,
-    borderColor: Colors.neutral[300],
+    borderColor: Colors.primary[200],
     borderStyle: 'dashed',
-    borderRadius: BorderRadius.md,
+    borderRadius: BorderRadius.xl,
     backgroundColor: Colors.primary[50],
-    paddingVertical: verticalScale(10),
-    paddingHorizontal: horizontalScale(12),
+    paddingVertical: verticalScale(16),
+    paddingHorizontal: horizontalScale(16),
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: verticalScale(75),
   },
   idUploadPlaceholder: {
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  idUploadIconCircle: {
+    width: moderateScale(48),
+    height: moderateScale(48),
+    borderRadius: BorderRadius.full,
+    backgroundColor: Colors.neutral[0],
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...Shadows.sm,
+  },
+  uploadCtaPill: {
+    marginTop: verticalScale(8),
+    backgroundColor: Colors.primary[100],
+    paddingHorizontal: horizontalScale(12),
+    paddingVertical: verticalScale(4),
+    borderRadius: BorderRadius.full,
   },
   idPreviewContainer: {
     width: '100%',
@@ -1177,51 +1272,84 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: BorderRadius.md,
   },
-  uploadedFileRow: {
+  uploadedFileCard: {
+    backgroundColor: Colors.neutral[0],
+    borderWidth: 1.5,
+    borderColor: Colors.primary[200],
+    borderRadius: BorderRadius.xl,
+    paddingTop: verticalScale(12),
+    paddingBottom: verticalScale(8),
+    paddingHorizontal: horizontalScale(14),
+    ...Shadows.sm,
+  },
+  uploadedFileHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  thumbnailWrapper: {
+    width: moderateScale(48),
+    height: moderateScale(48),
+    borderRadius: BorderRadius.lg,
+    overflow: 'hidden',
+    backgroundColor: Colors.neutral[100],
+    borderWidth: 1,
+    borderColor: Colors.primary[100],
+  },
+  uploadedThumbnail: {
+    width: '100%',
+    height: '100%',
+  },
+  uploadedFileName: {
+    marginLeft: horizontalScale(12),
+    flex: 1,
+    justifyContent: 'center',
+  },
+  uploadedTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: Colors.primary[50],
-    borderWidth: 1.5,
-    borderColor: Colors.primary[200],
-    borderRadius: BorderRadius.md,
-    paddingVertical: verticalScale(10),
-    paddingHorizontal: horizontalScale(12),
   },
-  uploadedFileInfo: {
+  attachedBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    flex: 1,
-    marginRight: 8,
+    backgroundColor: Colors.secondary[50],
+    paddingHorizontal: horizontalScale(8),
+    paddingVertical: verticalScale(2),
+    borderRadius: BorderRadius.full,
+    borderWidth: 1,
+    borderColor: Colors.secondary[200],
   },
-  uploadedThumbnail: {
-    width: 38,
-    height: 38,
-    borderRadius: BorderRadius.sm,
-    backgroundColor: Colors.neutral[200],
-  },
-  uploadedFileName: {
-    marginLeft: 10,
-    flex: 1,
+  cardDivider: {
+    height: 1,
+    backgroundColor: Colors.neutral[100],
+    marginTop: verticalScale(10),
+    marginBottom: verticalScale(4),
   },
   uploadedFileActions: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
   },
-  viewBadge: {
+  viewDocButton: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.primary[100],
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+    justifyContent: 'center',
+    paddingVertical: verticalScale(8),
     borderRadius: BorderRadius.md,
-    marginRight: 6,
   },
-  changeBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+  verticalActionDivider: {
+    width: 1,
+    height: verticalScale(16),
+    backgroundColor: Colors.neutral[200],
+  },
+  changeDocButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: verticalScale(8),
     borderRadius: BorderRadius.md,
-    backgroundColor: Colors.neutral[100],
   },
   previewModalOverlay: {
     flex: 1,

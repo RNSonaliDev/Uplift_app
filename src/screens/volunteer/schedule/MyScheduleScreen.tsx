@@ -8,7 +8,7 @@ import {
   Image,
   TextInput,
 } from 'react-native';
-import {useNavigation, useFocusEffect} from '@react-navigation/native';
+import {useNavigation, useFocusEffect, useRoute} from '@react-navigation/native';
 import { ShoppingCart, Pill, Soup, Car, Users, MoreHorizontal, Clock, MapPin, FileText, Calendar, Search, X} from 'lucide-react-native';
 import {AppText} from '../../../components/AppText';
 import {Colors} from '../../../theme/colors';
@@ -20,18 +20,27 @@ import {
   moderateScale,
 } from '../../../utils/responsive';
 import {formatDate, formatTime12Hour} from '../../../utils/dateFormatter';
-import {formatStatus, getStatusColors} from '../../../utils/statusUtils';
+import {formatStatus, getStatusColors, isCancelledStatus} from '../../../utils/statusUtils';
 import {CategoryIcon} from '../../../components/CategoryIcon';
 
-type Tab = 'Upcoming' | 'Completed' | 'Cancelled';
+type Tab = 'Active' | 'History';
 
 export default function MyScheduleScreen() {
   const navigation = useNavigation<any>();
-  const [activeTab, setActiveTab] = useState<Tab>('Upcoming');
+  const route = useRoute<any>();
+  const initialTab: Tab = route.params?.activeTab === 'History' || route.params?.activeTab === 'Cancelled' || route.params?.activeTab === 'Completed' ? 'History' : 'Active';
+  const [activeTab, setActiveTab] = useState<Tab>(initialTab);
   const [searchQuery, setSearchQuery] = useState('');
   const [requests, setRequests] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
+
+  React.useEffect(() => {
+    if (route.params?.activeTab) {
+      const t = route.params.activeTab;
+      setActiveTab(t === 'History' || t === 'Cancelled' || t === 'Completed' ? 'History' : 'Active');
+    }
+  }, [route.params?.activeTab]);
 
   const isFirstMount = React.useRef(true);
 
@@ -89,15 +98,33 @@ export default function MyScheduleScreen() {
 
     const filtered = requests.filter(req => {
       const volunteerAssignment = currentUserId ? req.assignments?.find((a: any) => a.volunteer?.id === currentUserId) : undefined;
-      const status = volunteerAssignment?.status || req.status;
+      const reqStatusStr = req.status?.toLowerCase() || '';
+      const assignStatusStr = volunteerAssignment?.status?.toLowerCase() || '';
+
+      const isCancelled = isCancelledStatus(reqStatusStr) || isCancelledStatus(assignStatusStr);
+      const isCompleted = reqStatusStr === 'completed' || assignStatusStr === 'completed';
 
       let matchesTab = false;
-      if (activeTab === 'Upcoming') {
-        matchesTab = status === 'accepted' || status === 'pending' || status === 'on_the_way' || status === 'in_progress' || status === 'assigned' || status === 'confirmed';
-      } else if (activeTab === 'Cancelled') {
-        matchesTab = status === 'cancelled' || status === 'rejected';
+      if (activeTab === 'History') {
+        matchesTab = isCancelled || isCompleted;
       } else {
-        matchesTab = status === 'completed';
+        matchesTab = !isCancelled && !isCompleted && (
+          assignStatusStr === 'accepted' ||
+          assignStatusStr === 'pending' ||
+          assignStatusStr === 'on_the_way' ||
+          assignStatusStr === 'in_progress' ||
+          assignStatusStr === 'assigned' ||
+          assignStatusStr === 'confirmed' ||
+          assignStatusStr.includes('parent') ||
+          assignStatusStr.includes('verification') ||
+          reqStatusStr === 'accepted' ||
+          reqStatusStr === 'pending' ||
+          reqStatusStr === 'on_the_way' ||
+          reqStatusStr === 'in_progress' ||
+          reqStatusStr === 'assigned' ||
+          reqStatusStr === 'confirmed' ||
+          !reqStatusStr
+        );
       }
 
       if (!matchesTab) return false;
@@ -134,7 +161,18 @@ export default function MyScheduleScreen() {
 
   const renderCard = ({item}: {item: any}) => {
     const volunteerAssignment = currentUserId ? item.assignments?.find((a: any) => a.volunteer?.id === currentUserId) : undefined;
-    const status = volunteerAssignment?.status || item.status;
+    const reqStatusStr = item.status?.toLowerCase() || '';
+    const assignStatusStr = volunteerAssignment?.status?.toLowerCase() || '';
+
+    let status = item.status;
+    if (isCancelledStatus(assignStatusStr)) {
+      status = volunteerAssignment?.status;
+    } else if (isCancelledStatus(reqStatusStr)) {
+      status = item.status;
+    } else {
+      status = volunteerAssignment?.status || item.status;
+    }
+
     const displayStatus = formatStatus(status);
     const statusColors = getStatusColors(status);
 
@@ -142,17 +180,20 @@ export default function MyScheduleScreen() {
       <TouchableOpacity 
         style={styles.card}
         onPress={() => {
-          if (activeTab === 'Upcoming') {
-            const volunteerAssignment = currentUserId ? item.assignments?.find((a: any) => a.volunteer?.id === currentUserId) : undefined;
-            const status = volunteerAssignment?.status || item.status;
-            let forceAction = 'start';
-            if (status === 'on_the_way') forceAction = 'start_with_otp';
-            else if (status === 'in_progress') forceAction = 'complete';
+          if (activeTab === 'Active') {
+            const s = status?.toLowerCase() || '';
+            const isOrg = item.request_type === 'organization' || !!item.organization;
+            let forceAction: string | undefined = undefined;
+            if (!isOrg) {
+              if (s === 'on_the_way') forceAction = 'start_with_otp';
+              else if (s === 'in_progress') forceAction = 'complete';
+              else if (s === 'accepted') forceAction = 'start';
+            }
+            if (s.includes('parent') || s.includes('verification')) forceAction = 'parent_verification';
             navigation.navigate('RequestDetails', { request: item, forceAction });
-          } else if (activeTab === 'Completed') {
-            navigation.navigate('RequestDetails', { request: item, forceAction: 'rate' });
-          } else if (activeTab === 'Cancelled') {
-            navigation.navigate('RequestDetails', { request: item, forceAction: 'none' });
+          } else {
+            const isCancelled = isCancelledStatus(status);
+            navigation.navigate('RequestDetails', { request: item, forceAction: isCancelled ? 'none' : 'rate' });
           }
         }}
         activeOpacity={0.7}
@@ -169,25 +210,25 @@ export default function MyScheduleScreen() {
               <CategoryIcon title={item.category?.title} color={Colors.primary[500]} size={20} />
             )}
           </View>
-          <View style={{flex: 1}}>
-            <AppText variant="labelLarge" weight="semiBold" color={Colors.neutral[900]} style={{marginBottom: 4}}>
+          <View style={styles.cardTitleContainer}>
+            <AppText 
+              variant="bodyLarge" 
+              weight="semiBold" 
+              color={Colors.neutral[900]} 
+              numberOfLines={2}
+            >
               {item.category?.title || 'Help Request'}
-            </AppText>
-          </View>
-          <View style={[styles.newBadge, { backgroundColor: statusColors.bg }]}>
-            <AppText variant="labelMedium" color={statusColors.text}>
-              {displayStatus}
             </AppText>
           </View>
         </View>
         
         <View style={styles.cardDetails}>
           {item.title ? (
-            <AppText variant="bodyMedium" color={Colors.neutral[800]} style={{marginBottom: 4, fontFamily: FontFamily.medium}}>
+            <AppText variant="bodyMedium" color={Colors.neutral[800]} style={{marginBottom: 2, fontFamily: FontFamily.medium}}>
               {item.title}
             </AppText>
           ) : null}
-          <AppText variant="caption" color={Colors.neutral[600]} style={{marginBottom: 12}}>
+          <AppText variant="caption" color={Colors.neutral[600]}>
             #{item.reference_number || item.id}
           </AppText>
           <View style={styles.detailRow}>
@@ -197,7 +238,7 @@ export default function MyScheduleScreen() {
             </AppText>
           </View>
           {(item.preferred_start_time || item.start_time || item.preferred_time || item.hours_required) ? (
-            <View style={[styles.detailRow, { marginTop: 4 }]}>
+            <View style={styles.detailRow}>
               <Clock color={Colors.neutral[500]} size={14} />
               <AppText variant="caption" color={Colors.neutral[800]} style={styles.detailText}>
                 {(item.preferred_start_time || item.start_time) ? `${formatTime12Hour(item.preferred_start_time || item.start_time)}${(item.preferred_end_time || item.end_time) ? ` - ${formatTime12Hour(item.preferred_end_time || item.end_time)}` : ''}` : (item.preferred_time || 'Time TBD')}
@@ -212,14 +253,21 @@ export default function MyScheduleScreen() {
               {item.location?.address || item.meeting_location || 'Location TBD'}
             </AppText>
           </View>
-          {item.distance != null && (
-            <View style={[styles.detailRow, { marginTop: 4 }]}>
-              <MapPin color={Colors.primary[600]} size={14} />
-              <AppText variant="caption" color={Colors.primary[600]} style={[styles.detailText, {fontFamily: FontFamily.medium}]}>
-                {(parseFloat(item.distance) * 0.621371).toFixed(1)} miles
+          <View style={styles.cardBottomRow}>
+            {item.distance != null && !isNaN(parseFloat(item.distance)) ? (
+              <View style={styles.distanceRow}>
+                <MapPin color={Colors.neutral[500]} size={14} />
+                <AppText variant="caption" color={Colors.neutral[800]} style={styles.distanceText}>
+                  {(parseFloat(item.distance) * 0.621371).toFixed(1)} miles
+                </AppText>
+              </View>
+            ) : <View />}
+            <View style={[styles.newBadge, { backgroundColor: statusColors.bg }]}>
+              <AppText variant="caption" weight="semiBold" color={statusColors.text}>
+                {displayStatus}
               </AppText>
             </View>
-          )}
+          </View>
         </View>
       </TouchableOpacity>
     );
@@ -237,23 +285,27 @@ export default function MyScheduleScreen() {
         <View style={styles.backButtonPlaceholder} />
       </View>
 
-      <View style={styles.segmentContainer}>
-        {(['Upcoming', 'Completed', 'Cancelled'] as Tab[]).map((tab) => (
-          <TouchableOpacity
-            key={tab}
-            style={[styles.segmentButton, activeTab === tab && styles.segmentActive]}
-            onPress={() => setActiveTab(tab)}
-            activeOpacity={0.8}
-          >
-            <AppText 
-              variant="bodyMedium" 
-              color={activeTab === tab ? Colors.neutral[0] : Colors.neutral[700]}
-              style={{fontWeight: '400'}}
+      <View style={styles.tabContainer}>
+        {(['Active', 'History'] as Tab[]).map((tab) => {
+          const isActive = activeTab === tab;
+          return (
+            <TouchableOpacity
+              key={tab}
+              style={[styles.tab, isActive && styles.activeTab]}
+              onPress={() => setActiveTab(tab)}
+              activeOpacity={0.7}
             >
-              {tab}
-            </AppText>
-          </TouchableOpacity>
-        ))}
+              <AppText 
+                variant="labelLarge" 
+                color={isActive ? Colors.primary[500] : Colors.neutral[500]}
+                numberOfLines={1}
+              >
+                {tab}
+              </AppText>
+              {isActive && <View style={styles.activeTabIndicator} />}
+            </TouchableOpacity>
+          );
+        })}
       </View>
 
       <View style={styles.searchRow}>
@@ -281,7 +333,11 @@ export default function MyScheduleScreen() {
         ListEmptyComponent={() => (
           <View style={styles.emptyContainer}>
             <AppText variant="bodyLarge" color={Colors.neutral[500]} center>
-              {searchQuery.trim() ? `No schedule found for "${searchQuery}"` : 'No data found'}
+              {searchQuery.trim() 
+                ? `No schedule found for "${searchQuery}"` 
+                : activeTab === 'Active'
+                ? 'No active requests in your schedule.'
+                : 'No request history found.'}
             </AppText>
           </View>
         )}
@@ -321,15 +377,28 @@ const styles = StyleSheet.create({
     flex: 1,
     textAlign: 'center',
   },
-  segmentContainer: {
+  tabContainer: {
     flexDirection: 'row',
-    backgroundColor: Colors.neutral[100],
-    borderRadius: 12,
-    padding: moderateScale(4),
-    marginHorizontal: horizontalScale(24),
-    marginBottom: verticalScale(14),
-    marginTop: verticalScale(16),
-    gap: horizontalScale(4),
+    backgroundColor: Colors.neutral[0],
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.neutral[200],
+    marginBottom: verticalScale(16),
+  },
+  tab: {
+    flex: 1,
+    paddingVertical: verticalScale(12),
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  activeTab: {},
+  activeTabIndicator: {
+    position: 'absolute',
+    bottom: -1,
+    left: 0,
+    right: 0,
+    height: 2,
+    backgroundColor: Colors.primary[500],
   },
   searchRow: {
     paddingHorizontal: horizontalScale(24),
@@ -351,21 +420,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: Colors.neutral[900],
     paddingVertical: 0,
-  },
-  segmentButton: {
-    flex: 1,
-    paddingHorizontal: horizontalScale(8),
-    paddingVertical: verticalScale(10),
-    alignItems: 'center',
-    borderRadius: 8,
-  },
-  segmentActive: {
-    backgroundColor: Colors.primary[500],
-    shadowColor: Colors.neutral[900],
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
   },
   listContent: {
     paddingHorizontal: horizontalScale(24),
@@ -397,9 +451,13 @@ const styles = StyleSheet.create({
   },
   cardHeader: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: verticalScale(16),
+    marginBottom: verticalScale(14),
+  },
+  cardTitleContainer: {
+    flex: 1,
+    justifyContent: 'center',
   },
   requestIconContainer: {
     width: moderateScale(40),
@@ -420,6 +478,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: horizontalScale(10),
     paddingVertical: verticalScale(4),
     borderRadius: 12,
+    flexShrink: 0,
+  },
+  cardBottomRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: verticalScale(4),
   },
   cardDetails: {
     gap: verticalScale(8),
@@ -431,6 +496,13 @@ const styles = StyleSheet.create({
   detailText: {
     marginLeft: horizontalScale(8),
     flex: 1,
+  },
+  distanceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  distanceText: {
+    marginLeft: horizontalScale(6),
   },
   distanceBadge: {
     flexDirection: 'row',

@@ -15,7 +15,7 @@ import {Colors} from '../../../theme/colors';
 import {FontFamily} from '../../../theme/typography';
 import {AppText} from '../../../components/AppText';
 import {formatDate, formatTime12Hour} from '../../../utils/dateFormatter';
-import {getStatusColors, formatStatus} from '../../../utils/statusUtils';
+import {getStatusColors, formatStatus, isCancelledStatus} from '../../../utils/statusUtils';
 import {Button} from '../../../components/Button';
 import {
   ChevronLeft,
@@ -297,11 +297,17 @@ export const OrgRequestDetailsScreen = () => {
         </View>
 
         {/* Cancel Note */}
-        {(request.status || '').toLowerCase() === 'cancelled' && request.cancel_reason &&  (
+        {isCancelledStatus(request.status) && (
           <View style={{ flexDirection: 'row', backgroundColor: '#FEE2E2', padding: 16, borderRadius: 8, alignItems: 'flex-start', marginBottom: 24, marginTop: 16 }}>
             <Info color={Colors.error} size={24} />
             <AppText variant="caption" color={Colors.error} style={{ flex: 1, marginLeft: 12, lineHeight: 20 }}>
-              {request.cancel_reason ? `Reason for cancellation: ${request.cancel_reason}` : 'Cancelled'}
+              {request.cancel_reason 
+                ? `Reason for cancellation: ${request.cancel_reason}` 
+                : formatStatus(request.status) === 'No Show'
+                ? 'Volunteer did not show up. This request has been cancelled.'
+                : formatStatus(request.status) === 'Not Started'
+                ? 'This job was not started and has been cancelled.'
+                : 'This request was cancelled and is no longer active.'}
             </AppText>
           </View>
         )}
@@ -381,7 +387,7 @@ export const OrgRequestDetailsScreen = () => {
                             <MapPin color={Colors.primary[500]} size={20} />
                           </TouchableOpacity>
                         )}
-                        {volStatus.toLowerCase() !== 'in_progress' && volStatus.toLowerCase() !== 'completed' && (
+                        {!isCancelledStatus(volStatus) && !isCancelledStatus(request.status) && volStatus.toLowerCase() !== 'in_progress' && volStatus.toLowerCase() !== 'completed' && volStatus.toLowerCase() !== 'cancelled' && (request.status || '').toLowerCase() !== 'cancelled' && (
                           <TouchableOpacity 
                             style={styles.msgBtn}
                             onPress={() => {
@@ -439,7 +445,7 @@ export const OrgRequestDetailsScreen = () => {
 
       </ScrollView>
 
-      {['cancelled', 'completed'].indexOf((request.status || '').toLowerCase()) === -1 && (
+      {!isCancelledStatus(request.status) && (request.status || '').toLowerCase() !== 'completed' && (
         <View style={styles.actionContainer}>
           <Button 
             title="Cancel Request" 

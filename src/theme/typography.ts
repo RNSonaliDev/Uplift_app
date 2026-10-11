@@ -1,4 +1,4 @@
-import {TextStyle} from 'react-native';
+import {TextStyle, Platform} from 'react-native';
 import {fontScale, verticalScale} from '../utils/responsive';
 
 /**
@@ -18,8 +18,8 @@ export const FontFamily = {
   mediumItalic: 'Poppins-MediumItalic',
   semiBold: 'Poppins-SemiBold',
   semiBoldItalic: 'Poppins-SemiBoldItalic',
-  bold: 'Poppins-Bold',
-  boldItalic: 'Poppins-BoldItalic',
+  bold: Platform.OS === 'ios' ? 'Poppins-SemiBold' : 'Poppins-Bold',
+  boldItalic: Platform.OS === 'ios' ? 'Poppins-SemiBoldItalic' : 'Poppins-BoldItalic',
   extraBold: 'Poppins-ExtraBold',
   extraBoldItalic: 'Poppins-ExtraBoldItalic',
   black: 'Poppins-Black',

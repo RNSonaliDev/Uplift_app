@@ -54,7 +54,11 @@ export default function PreviewRequestScreen() {
         routes: [
           {
             name: 'RequestSubmitted',
-            params: { referenceNumber: response?.reference_number },
+            params: { 
+              referenceNumber: response?.reference_number,
+              startCode: response?.start_code,
+              requestId: response?.id,
+            },
           }
         ],
       });
@@ -162,7 +166,7 @@ export default function PreviewRequestScreen() {
         <View style={styles.securityNote}>
           <Info color={Colors.info} size={24} style={{ marginTop: 2 }} />
           <Text style={styles.securityText}>
-            For your safety, never share belongings or personal information like you SSN or bank details with anyone.
+            For your safety, never share your belongings or personal information like your SSN or bank details with anyone.
           </Text>
         </View>
       </ScrollView>

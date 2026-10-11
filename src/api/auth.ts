@@ -1,4 +1,5 @@
 import { api } from './client';
+import { saveStripeConfig } from './stripe';
 
 export interface CategoryResponse {
   id: number;
@@ -145,8 +146,22 @@ export const authApi = {
   saveRoleProfile: (payload: RoleProfilePayload) => {
     return api.post<RoleProfileResponse>('/role_profile', payload);
   },
-  getProfile: (options?: any) => {
-    return api.get<UserProfileResponse>('/profile', options);
+  getProfile: async (options?: any) => {
+    const res = await api.get<UserProfileResponse>('/profile', options);
+    try {
+      const resAny = res as any;
+      const stripeConfig =
+        resAny?.sponsor?.stripe_config ||
+        resAny?.active_profile?.stripe_config ||
+        resAny?.profiles?.sponsor?.stripe_config ||
+        resAny?.stripe_config;
+      if (stripeConfig) {
+        await saveStripeConfig(stripeConfig);
+      }
+    } catch (e) {
+      // ignore
+    }
+    return res;
   },
   updateProfile: (payload: any) => {
     return api.patch<UserProfileResponse>('/role_profile', payload);
@@ -157,8 +172,22 @@ export const authApi = {
   getOrganizationCategories: () => {
     return api.get<CategoryResponse[]>('/categories?category_type=organization');
   },
-  setDefaultRole: (payload: { default_role: string }) => {
-    return api.patch<{message: string}>('/profile/default_role', payload);
+  setDefaultRole: async (payload: { default_role: string }) => {
+    const res = await api.patch<any>('/profile/default_role', payload);
+    try {
+      const resAny = res as any;
+      const stripeConfig =
+        resAny?.sponsor?.stripe_config ||
+        resAny?.active_profile?.stripe_config ||
+        resAny?.profiles?.sponsor?.stripe_config ||
+        resAny?.stripe_config;
+      if (stripeConfig) {
+        await saveStripeConfig(stripeConfig);
+      }
+    } catch (e) {
+      // ignore
+    }
+    return res;
   },
   updateProfileImage: (data: FormData) => {
     return api.patch<UserProfileResponse>('/profile', data);

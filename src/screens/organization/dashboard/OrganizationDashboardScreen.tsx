@@ -182,12 +182,7 @@ export const OrganizationDashboardScreen = () => {
                       )}
                     </View>
                     <View style={styles.cardTitleContainer}>
-                      <Text style={[styles.cardTitle, { marginBottom: 4 }]}>{request.category?.title || 'Help Request'}</Text>
-                    </View>
-                    <View style={[styles.statusBadge, { backgroundColor: statusStyle.bg, alignSelf: 'flex-start' }]}>
-                      <Text style={[styles.statusBadgeText, { color: statusStyle.text }]}>
-                        {statusDisplay}
-                      </Text>
+                      <Text style={[styles.cardTitle, { marginBottom: 4 }]} numberOfLines={2}>{request.category?.title || 'Help Request'}</Text>
                     </View>
                   </View>
 
@@ -197,7 +192,7 @@ export const OrganizationDashboardScreen = () => {
                         {request.title}
                       </Text>
                     ) : null}
-                    <Text style={{ ...Typography.caption, color: Colors.neutral[600], marginBottom: 12 }}>
+                    <Text style={{ ...Typography.caption, color: Colors.neutral[600], marginBottom: 8 }}>
                       #{request.reference_number || request.id}
                     </Text>
                     <View style={styles.row}>
@@ -224,11 +219,19 @@ export const OrganizationDashboardScreen = () => {
                         {request.address || request.location?.address || request.meeting_location || 'Location TBD'}
                       </Text>
                     </View>
-                    <View style={[styles.row, { marginTop: 4 }]}>
-                      <Users color={Colors.neutral[500]} size={14} />
-                      <Text style={styles.cardSubtitle}>
-                        {vCount} {vCount === 1 ? 'Volunteer' : 'Volunteers'}
-                      </Text>
+
+                    <View style={styles.cardBottomRow}>
+                      <View style={[styles.row, { marginTop: 0, marginBottom: 0 }]}>
+                        <Users color={Colors.neutral[500]} size={14} />
+                        <Text style={styles.cardSubtitle}>
+                          {vCount} {vCount === 1 ? 'Volunteer' : 'Volunteers'}
+                        </Text>
+                      </View>
+                      <View style={[styles.statusBadge, { backgroundColor: statusStyle.bg }]}>
+                        <Text style={[styles.statusBadgeText, { color: statusStyle.text }]}>
+                          {statusDisplay}
+                        </Text>
+                      </View>
                     </View>
                   </View>
                 </TouchableOpacity>
@@ -412,11 +415,17 @@ const styles = StyleSheet.create({
     color: Colors.neutral[800],
     marginLeft: horizontalScale(4) || 4,
   },
+  cardBottomRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: verticalScale(6) || 6,
+  },
   statusBadge: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: horizontalScale(10) || 12,
+    paddingHorizontal: horizontalScale(10) || 10,
     paddingVertical: verticalScale(4) || 4,
     borderRadius: moderateScale(12) || 12,
+    flexShrink: 0,
   },
   statusBadgeText: {
     ...Typography.labelSmall,

@@ -15,7 +15,7 @@ import {Colors} from '../../../theme/colors';
 import {FontFamily} from '../../../theme/typography';
 import {AppText} from '../../../components/AppText';
 import {formatDate, formatTime12Hour} from '../../../utils/dateFormatter';
-import {getStatusColors, formatStatus} from '../../../utils/statusUtils';
+import {getStatusColors, formatStatus, isCancelledStatus} from '../../../utils/statusUtils';
 import {Button} from '../../../components/Button';
 import {
   ChevronLeft,
@@ -25,6 +25,7 @@ import {
   FileText,
   Info,
   MessageCircle,
+  ShieldCheck,
 } from 'lucide-react-native';
 import {
   horizontalScale,
@@ -107,7 +108,7 @@ export default function BeneficiaryRequestDetailsScreen() {
               </AppText>
             </View>
 
-            {!['in_progress', 'completed'].includes((request.status || '').toLowerCase()) && (
+            {!isCancelledStatus(request.status) && (request.status || '').toLowerCase() !== 'cancelled' && !['in_progress', 'completed'].includes((request.status || '').toLowerCase()) && (
               <TouchableOpacity 
                 style={styles.messageIconContainer}
                 onPress={() => {
@@ -131,19 +132,33 @@ export default function BeneficiaryRequestDetailsScreen() {
           </View>
         )}
 
-        {/* Start Code Section */}
-        {request.start_code && (request.status || '').toLowerCase() === 'on_the_way' && (
+        {/* Start Code / PIN Code Section */}
+        {request.start_code && ['accepted', 'assigned', 'on_the_way', 'in_progress'].includes((request.status || '').toLowerCase()) && (
           <View style={styles.startCodeCard}>
-            <AppText variant="labelMedium" color={Colors.primary[900]} style={{marginBottom: 12}}>
-              Start Code
-            </AppText>
+            <View style={{flexDirection: 'row', alignItems: 'center', marginBottom: 12}}>
+              <ShieldCheck color={Colors.primary[600]} size={20} style={{marginRight: 6}} />
+              <AppText variant="labelMedium" color={Colors.primary[900]}>
+                PIN Code
+              </AppText>
+            </View>
             <View style={styles.startCodeBox}>
               <AppText variant="h3" color={Colors.primary[900]} style={{letterSpacing: 12}}>
                 {request.start_code}
               </AppText>
             </View>
-            <AppText variant="caption" color={Colors.neutral[600]} style={{marginTop: 16, textAlign: 'center', lineHeight: 20}}>
-              Share this 6-digit code with the volunteer when they arrive to start the request.
+            <AppText variant="caption" color={Colors.neutral[700]} style={{marginTop: 16, textAlign: 'center', lineHeight: 20}}>
+              You can message your volunteer by clicking on the task under your active request. When you meet them, share your PIN code and tap ‘Start Request’
+            </AppText>
+          </View>
+        )}
+
+        {/* Guidance Note for Active/Pending Requests */}
+        {(!request.start_code || !['accepted', 'assigned', 'on_the_way', 'in_progress'].includes((request.status || '').toLowerCase())) &&
+          !['completed', 'cancelled'].includes((request.status || '').toLowerCase()) && (
+          <View style={styles.guidanceCard}>
+            <Info color={Colors.primary[600]} size={20} style={{marginTop: 2, marginRight: 10}} />
+            <AppText variant="caption" color={Colors.primary[900]} style={{flex: 1, lineHeight: 20}}>
+              You can message your volunteer by clicking on the task under your active request. When you meet them, share your PIN code and tap ‘Start Request’
             </AppText>
           </View>
         )}
@@ -247,24 +262,30 @@ export default function BeneficiaryRequestDetailsScreen() {
         </View>
 
         {/* Security / Cancel Note */}
-        {(request.status || '').toLowerCase() === 'cancelled' && request.cancel_reason ? (
+        {isCancelledStatus(request.status) ? (
           <View style={[styles.securityNote, { backgroundColor: '#FEE2E2' }]}>
             <Info color={Colors.error} size={24} />
             <AppText variant="caption" color={Colors.error} style={styles.securityText}>
-              {request.cancel_reason ? `Reason for cancellation: ${request.cancel_reason}` : 'Cancelled'}
+              {request.cancel_reason 
+                ? `Reason for cancellation: ${request.cancel_reason}` 
+                : formatStatus(request.status) === 'No Show'
+                ? 'Volunteer did not show up. This request has been cancelled.'
+                : formatStatus(request.status) === 'Not Started'
+                ? 'This job was not started and has been cancelled.'
+                : 'This request was cancelled and is no longer active.'}
             </AppText>
           </View>
         ) : (
           <View style={styles.securityNote}>
             <Info color={Colors.primary[500]} size={24} />
             <AppText variant="caption" color={Colors.primary[500]} style={styles.securityText}>
-              For your safety, never share belongings or personal information like you SSN or bank details with anyone.
+              For your safety, never share your belongings or personal information like your SSN or bank details with anyone.
             </AppText>
           </View>
         )}
       </ScrollView>
 
-      {(request.status || '').toLowerCase() !== 'cancelled' && (
+      {!isCancelledStatus(request.status) && (
         <View style={styles.actionContainer}>
           <Button 
             title="Track Request" 
@@ -370,6 +391,16 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: Colors.neutral[100],
     marginBottom: verticalScale(24),
+  },
+  guidanceCard: {
+    flexDirection: 'row',
+    backgroundColor: Colors.primary[50],
+    borderWidth: 1,
+    borderColor: Colors.primary[100],
+    borderRadius: moderateScale(14),
+    padding: moderateScale(14),
+    marginBottom: verticalScale(20),
+    alignItems: 'flex-start',
   },
   startCodeCard: {
     backgroundColor: Colors.primary[50],

@@ -14,7 +14,7 @@ import {api, getFullImageUrl} from '../../../api/client';
 import {Colors} from '../../../theme/colors';
 import {Typography, FontFamily} from '../../../theme/typography';
 import {formatDate, formatTime12Hour} from '../../../utils/dateFormatter';
-import {formatStatus, getStatusColors} from '../../../utils/statusUtils';
+import {formatStatus, getStatusColors, isCancelledStatus} from '../../../utils/statusUtils';
 import {AppText} from '../../../components/AppText';
 import {CategoryIcon} from '../../../components/CategoryIcon';
 import {horizontalScale, verticalScale, moderateScale} from '../../../utils/responsive';
@@ -78,8 +78,8 @@ export default function MyRequestsScreen() {
     });
   };
 
-  const activeRequests = filterBySearch(requests.filter(r => r.status === 'pending' || r.status === 'accepted' || r.status === 'assigned' || r.status === 'on_the_way' || r.status === 'in_progress'));
-  const historyRequests = filterBySearch(requests.filter(r => r.status === 'completed' || r.status === 'cancelled'));
+  const activeRequests = filterBySearch(requests.filter(r => !isCancelledStatus(r.status) && (r.status === 'pending' || r.status === 'accepted' || r.status === 'assigned' || r.status === 'on_the_way' || r.status === 'in_progress')));
+  const historyRequests = filterBySearch(requests.filter(r => isCancelledStatus(r.status) || r.status === 'completed'));
   const displayRequests = activeTab === 'Active' ? activeRequests : historyRequests;
   return (
     <>
@@ -201,10 +201,7 @@ const RequestCard = ({
       <View style={styles.cardTopRow}>
         <View style={styles.iconContainer}>{icon}</View>
         <View style={styles.cardContent}>
-          <Text style={styles.cardTitle}>{title}</Text>
-        </View>
-        <View style={[styles.statusBadge, { backgroundColor: badge.bg }]}>
-          <Text style={[styles.statusBadgeText, { color: badge.text }]}>{displayStatus}</Text>
+          <Text style={styles.cardTitle} numberOfLines={2}>{title}</Text>
         </View>
       </View>
       
@@ -215,7 +212,7 @@ const RequestCard = ({
           </Text>
         ) : null}
         {referenceNumber ? (
-          <Text style={[styles.infoText, { marginBottom: 12 }]}>#{referenceNumber}</Text>
+          <Text style={[styles.infoText, { marginBottom: 8 }]}>#{referenceNumber}</Text>
         ) : null}
         <View style={[styles.infoRow, { alignItems: 'flex-start' }]}>
           <Calendar color={Colors.neutral[400]} size={14} style={[styles.infoIcon, { marginTop: 2 }]} />
@@ -237,6 +234,13 @@ const RequestCard = ({
         <View style={[styles.infoRow, { alignItems: 'flex-start', marginTop: 6 }]}>
           <MapPin color={Colors.neutral[400]} size={14} style={[styles.infoIcon, { marginTop: 2 }]} />
           <Text style={[styles.infoText, { flex: 1, lineHeight: 18 }]} numberOfLines={1}>{location}</Text>
+        </View>
+
+        <View style={styles.cardBottomRow}>
+          <View />
+          <View style={[styles.statusBadge, { backgroundColor: badge.bg }]}>
+            <Text style={[styles.statusBadgeText, { color: badge.text }]}>{displayStatus}</Text>
+          </View>
         </View>
       </View>
     </TouchableOpacity>
@@ -333,6 +337,7 @@ const styles = StyleSheet.create({
   },
   cardTopRow: {
     flexDirection: 'row',
+    alignItems: 'center',
   },
   iconContainer: {
     width: moderateScale(48),
@@ -345,13 +350,13 @@ const styles = StyleSheet.create({
   },
   cardContent: {
     flex: 1,
+    justifyContent: 'center',
   },
   cardTitle: {
-    ...Typography.labelLarge,
+    ...Typography.bodyLarge,
     fontFamily: 'Inter-SemiBold',
     fontWeight: '600',
     color: Colors.neutral[900],
-    marginBottom: verticalScale(4),
   },
   infoRow: {
     flexDirection: 'row',
@@ -369,16 +374,22 @@ const styles = StyleSheet.create({
     color: Colors.neutral[800],
     marginHorizontal: horizontalScale(6),
   },
+  cardBottomRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: verticalScale(6),
+  },
   cardFooterAligned: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
-    marginTop: verticalScale(8),
+    marginTop: verticalScale(6),
   },
   statusBadge: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: horizontalScale(12),
+    paddingHorizontal: horizontalScale(10),
     paddingVertical: verticalScale(4),
     borderRadius: moderateScale(12),
+    flexShrink: 0,
   },
   statusBadgeText: {
     ...Typography.labelSmall,

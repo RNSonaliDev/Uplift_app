@@ -57,7 +57,7 @@ export const handlePostAuthNavigation = async (
     }
 
     if (user.registration_step === 'role_setup') {
-      navigation.reset({ index: 0, routes: [{ name: 'SelectRoles' }] });
+      navigation.reset({ index: 0, routes: [{ name: 'SelectRoles', params: { date_of_birth: (user as any).date_of_birth } }] });
       return;
     }
 
@@ -88,11 +88,11 @@ export const handlePostAuthNavigation = async (
       else if (role === 'sponsor') navigation.reset({ index: 0, routes: [{ name: 'SponsorFlow' }] });
       else if (role === 'organization') navigation.reset({ index: 0, routes: [{ name: 'OrganizationFlow' }] });
       else if (role === 'beneficiary') navigation.reset({ index: 0, routes: [{ name: 'BeneficiaryFlow' }] });
-      else navigation.reset({ index: 0, routes: [{ name: 'SelectRoles' }] });
+      else navigation.reset({ index: 0, routes: [{ name: 'SelectRoles', params: { date_of_birth: (user as any).date_of_birth } }] });
       return;
     }
 
-    navigation.reset({ index: 0, routes: [{ name: 'SelectRoles' }] });
+    navigation.reset({ index: 0, routes: [{ name: 'SelectRoles', params: { date_of_birth: (user as any).date_of_birth } }] });
   } else if (registrationStep === 'basic_profile' || response.verification_token) {
         console.log("@@@ routeroute resultresultresult==============", result)
 
@@ -103,6 +103,6 @@ export const handlePostAuthNavigation = async (
       lastName: result.user?.last_name || (response as any)?.last_name || '',
     });
   } else {
-    navigation.reset({ index: 0, routes: [{ name: 'SelectRoles' }] });
+    navigation.reset({ index: 0, routes: [{ name: 'SelectRoles', params: { date_of_birth: (response.user as any)?.date_of_birth } }] });
   }
 };

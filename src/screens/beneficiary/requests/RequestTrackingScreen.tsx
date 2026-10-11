@@ -16,6 +16,7 @@ import {api, getFullImageUrl} from '../../../api/client';
 import {Colors} from '../../../theme/colors';
 import {Typography} from '../../../theme/typography';
 import {AppText} from '../../../components/AppText';
+import {isCancelledStatus, formatStatus} from '../../../utils/statusUtils';
 import {
   ChevronLeft,
   ShoppingCart,
@@ -187,11 +188,19 @@ export default function RequestTrackingScreen() {
 
 
 
-          {requestDetail.status === 'cancelled' ? (
+          {isCancelledStatus(requestDetail.status) ? (
             <View style={[styles.timelineContainer, { paddingVertical: 24, paddingHorizontal: 16, backgroundColor: Colors.error + '10', borderRadius: 12, alignItems: 'center', marginTop: 16 }]}>
-              <Text style={{ ...Typography.h5, color: Colors.error, marginBottom: 8 }}>Request Cancelled</Text>
+              <Text style={{ ...Typography.h5, color: Colors.error, marginBottom: 8 }}>
+                {requestDetail.status?.toLowerCase().includes('no_show')
+                  ? 'Volunteer Did Not Show'
+                  : requestDetail.status?.toLowerCase().includes('not_started')
+                  ? 'Job Not Started'
+                  : 'Request Cancelled'}
+              </Text>
               <Text style={{ ...Typography.bodyMedium, color: Colors.neutral[600], textAlign: 'center' }}>
-                This request was cancelled and is no longer active.
+                {requestDetail.cancel_reason 
+                  ? `Reason: ${requestDetail.cancel_reason}`
+                  : 'This request was cancelled and is no longer active.'}
               </Text>
             </View>
           ) : (
@@ -283,10 +292,19 @@ export default function RequestTrackingScreen() {
           )}
 
           <View style={styles.bottomContainer}>
+            {!['completed', 'cancelled'].includes(requestDetail.status) && (
+              <View style={[styles.safetyNoteContainer, { marginBottom: 12, backgroundColor: Colors.primary[50], borderWidth: 1, borderColor: Colors.primary[100] }]}>
+                <Info color={Colors.primary[600]} size={24} />
+                <AppText variant="caption" color={Colors.primary[900]} style={[styles.safetyNoteText, { color: Colors.primary[900] }]}>
+                  You can message your volunteer by clicking on the task under your active request. When you meet them, share your PIN code and tap ‘Start Request’
+                </AppText>
+              </View>
+            )}
+
             <View style={styles.safetyNoteContainer}>
               <Info color={Colors.primary[500]} size={24} />
               <AppText variant="caption" color={Colors.primary[500]} style={styles.safetyNoteText}>
-                For your safety, never share belongings or personal information like you SSN or bank details with anyone.
+                For your safety, never share your belongings or personal information like your SSN or bank details with anyone.
               </AppText>
             </View>
 

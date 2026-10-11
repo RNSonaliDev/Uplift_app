@@ -130,37 +130,42 @@ export default function BrowseRequestsScreen() {
               <CategoryIcon title={item.category?.title} color={Colors.primary[500]} size={20} />
             )}
           </View>
-          <View style={{flex: 1}}>
-            <AppText variant="labelLarge" weight="semiBold" color={Colors.neutral[900]} style={{marginBottom: 4}}>
+          <View style={styles.cardTitleContainer}>
+            <AppText 
+              variant="bodyLarge" 
+              weight="semiBold" 
+              color={Colors.neutral[900]} 
+              numberOfLines={2}
+            >
               {item.category?.title || 'Help Request'}
             </AppText>
           </View>
-          <View style={[styles.newBadge, { backgroundColor: Colors.accent[50] }]}>
-            <AppText variant="labelMedium" color={Colors.accent[700]}>
-              {item.distance != null ? `${(parseFloat(item.distance) * 0.621371).toFixed(1)} miles` : displayStatus}
+          <View style={[styles.newBadge, { backgroundColor: statusColors.bg }]}>
+            <AppText variant="caption" weight="semiBold" color={statusColors.text}>
+              {displayStatus}
             </AppText>
           </View>
         </View>
         
         <View style={styles.cardDetails}>
           {item.title ? (
-            <AppText variant="bodyMedium" color={Colors.neutral[800]} style={{marginBottom: 4, fontFamily: FontFamily.medium}}>
+            <AppText variant="bodyMedium" weight="medium" color={Colors.neutral[800]}>
               {item.title}
             </AppText>
           ) : null}
-          <AppText variant="caption" color={Colors.neutral[600]} style={{marginBottom: 12}}>
+          <AppText variant="caption" color={Colors.neutral[500]}>
             #{item.reference_number || item.id}
           </AppText>
           <View style={styles.detailRow}>
             <Calendar color={Colors.neutral[500]} size={14} />
-            <AppText variant="caption" color={Colors.neutral[800]} style={styles.detailText}>
+            <AppText variant="caption" color={Colors.neutral[700]} style={styles.detailText}>
               {formatDate(item.preferred_date)}
             </AppText>
           </View>
           {(item.preferred_start_time || item.start_time || item.preferred_time || item.hours_required) ? (
-            <View style={[styles.detailRow, { marginTop: 4 }]}>
+            <View style={styles.detailRow}>
               <Clock color={Colors.neutral[500]} size={14} />
-              <AppText variant="caption" color={Colors.neutral[800]} style={styles.detailText}>
+              <AppText variant="caption" color={Colors.neutral[700]} style={styles.detailText}>
                 {(item.preferred_start_time || item.start_time) ? `${formatTime12Hour(item.preferred_start_time || item.start_time)}${(item.preferred_end_time || item.end_time) ? ` - ${formatTime12Hour(item.preferred_end_time || item.end_time)}` : ''}` : (item.preferred_time || 'Time TBD')}
                 {(item.preferred_start_time || item.start_time || item.preferred_time) && item.hours_required ? ' ' : ''}
                 {item.hours_required ? `(${item.hours_required} hours)` : ''}
@@ -169,10 +174,18 @@ export default function BrowseRequestsScreen() {
           ) : null}
           <View style={styles.detailRow}>
             <MapPin color={Colors.neutral[500]} size={14} />
-            <AppText variant="caption" color={Colors.neutral[800]} style={styles.detailText} numberOfLines={1}>
+            <AppText variant="caption" color={Colors.neutral[700]} style={styles.detailText} numberOfLines={1} ellipsizeMode="tail">
               {item.location?.address || item.meeting_location || 'Location TBD'}
             </AppText>
           </View>
+          {item.distance != null && !isNaN(parseFloat(item.distance)) && (
+            <View style={styles.detailRow}>
+              <MapPin color={Colors.neutral[500]} size={14} />
+              <AppText variant="caption" color={Colors.neutral[700]} style={styles.detailText}>
+                {(parseFloat(item.distance) * 0.621371).toFixed(1)} miles
+              </AppText>
+            </View>
+          )}
         </View>
       </TouchableOpacity>
     );
@@ -196,10 +209,10 @@ export default function BrowseRequestsScreen() {
           >
             <AppText 
               variant="labelLarge" 
-              color={activeTab === 'beneficiary' ? Colors.primary[600] : Colors.neutral[500]}
+              color={activeTab === 'beneficiary' ? Colors.primary[500] : Colors.neutral[500]}
               numberOfLines={1}
             >
-              Beneficiary 
+              Beneficiary
             </AppText>
             {activeTab === 'beneficiary' && <View style={styles.activeTabIndicator} />}
           </TouchableOpacity>
@@ -213,10 +226,10 @@ export default function BrowseRequestsScreen() {
           >
             <AppText 
               variant="labelLarge" 
-              color={activeTab === 'organization' ? Colors.primary[600] : Colors.neutral[500]}
+              color={activeTab === 'organization' ? Colors.primary[500] : Colors.neutral[500]}
               numberOfLines={1}
             >
-              Organization 
+              Organization
             </AppText>
             {activeTab === 'organization' && <View style={styles.activeTabIndicator} />}
           </TouchableOpacity>
@@ -231,6 +244,7 @@ export default function BrowseRequestsScreen() {
               placeholderTextColor={Colors.neutral[400]}
               value={searchQuery}
               onChangeText={setSearchQuery}
+              returnKeyType="search"
             />
           </View>
           <TouchableOpacity 
@@ -338,7 +352,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: 2,
-    backgroundColor: Colors.primary[600],
+    backgroundColor: Colors.primary[500],
   },
   searchRow: {
     flexDirection: 'row',
@@ -361,8 +375,10 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     marginLeft: horizontalScale(12),
-    fontSize: 16,
+    fontSize: 15,
+    fontFamily: FontFamily.regular,
     color: Colors.neutral[900],
+    paddingVertical: 0,
   },
   filterBtn: {
     width: moderateScale(48),
@@ -412,9 +428,13 @@ const styles = StyleSheet.create({
   },
   cardHeader: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    marginBottom: verticalScale(16),
+    alignItems: 'center',
+    marginBottom: verticalScale(14),
+  },
+  cardTitleContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    marginRight: horizontalScale(8),
   },
   requestIconContainer: {
     width: moderateScale(40),
@@ -435,9 +455,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: horizontalScale(10),
     paddingVertical: verticalScale(4),
     borderRadius: 12,
+    alignSelf: 'center',
   },
   cardDetails: {
-    gap: verticalScale(8),
+    gap: verticalScale(6),
   },
   detailRow: {
     flexDirection: 'row',

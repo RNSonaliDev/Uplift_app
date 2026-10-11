@@ -451,7 +451,7 @@ export const VerifyAccountScreen: React.FC = () => {
             navigation.reset({ index: 0, routes: [{ name: 'BeneficiarySetup' as any, params: routeParams }] });
           }
         } else if (response.user?.registration_step === 'role_setup') {
-          navigation.reset({ index: 0, routes: [{ name: 'SelectRoles' as any }] });
+          navigation.reset({ index: 0, routes: [{ name: 'SelectRoles' as any, params: { date_of_birth: response.user?.date_of_birth || route.params?.dob } }] });
         } else if (response.user?.default_role) {
             pushNotificationService.requestUserPermission();
             if (response.user.default_role === 'volunteer') {

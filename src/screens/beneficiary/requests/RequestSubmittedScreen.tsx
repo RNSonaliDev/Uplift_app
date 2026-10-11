@@ -6,10 +6,11 @@ import {
   TouchableOpacity,
   SafeAreaView,
   Platform,
+  ScrollView,
 } from 'react-native';
 import { useNavigation, useRoute, CommonActions } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Check } from 'lucide-react-native';
+import { Check, Info, ShieldCheck } from 'lucide-react-native';
 
 import { Colors } from '../../../theme/colors';
 import { Typography, FontFamily } from '../../../theme/typography';
@@ -18,7 +19,7 @@ export default function RequestSubmittedScreen() {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const insets = useSafeAreaInsets();
-  const { referenceNumber } = route.params || {};
+  const { referenceNumber, startCode } = route.params || {};
 
   const handleViewRequests = () => {
     // Reset current stack and navigate directly to MyRequests tab
@@ -44,8 +45,13 @@ export default function RequestSubmittedScreen() {
     <View style={[styles.container, { paddingTop: Platform.OS === 'android' ? insets.top : 0 }]}>
       {Platform.OS === 'ios' && <SafeAreaView />}
 
-      <View style={styles.content}>
-        
+      <ScrollView 
+        contentContainerStyle={[
+          styles.content,
+          { paddingTop: 24, paddingBottom: 24 }
+        ]}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Success Icon */}
         <View style={styles.iconContainer}>
           {/* Confetti simulation dots around */}
@@ -67,14 +73,34 @@ export default function RequestSubmittedScreen() {
           Volunteers within the selected radius can now view and accept your request.
         </Text>
 
-        <View style={styles.card}>
+        {/* <View style={styles.card}>
           <Text style={styles.cardLabel}>Request ID</Text>
           <Text style={styles.cardValue}>
             {referenceNumber ? `#${referenceNumber}` : '#REQ-2024-0522-001'}
           </Text>
+        </View> */}
+
+        {/* Guidance / Next Steps Card */}
+        <View style={styles.instructionCard}>
+          <View style={styles.instructionHeader}>
+            <Info color={Colors.primary[600]} size={20} />
+            <Text style={styles.instructionTitle}>Next Steps</Text>
+          </View>
+          <Text style={styles.instructionText}>
+            You can message your volunteer by clicking on the task under your active request. When you meet them, share your PIN code and tap ‘Start Request’
+          </Text>
+          {/* {startCode ? (
+            <View style={styles.pinContainer}>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <ShieldCheck color={Colors.primary[600]} size={18} style={{ marginRight: 6 }} />
+                <Text style={styles.pinLabel}>Your PIN Code:</Text>
+              </View>
+              <Text style={styles.pinValue}>{startCode}</Text>
+            </View>
+          ) : null} */}
         </View>
 
-      </View>
+      </ScrollView>
 
       {/* Footer Buttons */}
       <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 20) }]}>
@@ -102,14 +128,13 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.neutral[0],
   },
   content: {
-    flex: 1,
     alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 32,
+    paddingHorizontal: 24,
   },
   iconContainer: {
     position: 'relative',
-    marginBottom: 48,
+    marginBottom: 36,
+    marginTop: 16,
   },
   circle: {
     width: 96,
@@ -128,22 +153,22 @@ const styles = StyleSheet.create({
   title: {
     ...Typography.h3,
     color: Colors.neutral[900],
-    marginBottom: 16,
+    marginBottom: 12,
     textAlign: 'center',
   },
   subtitle: {
     ...Typography.bodyMedium,
     fontFamily: FontFamily.medium,
     color: Colors.neutral[900],
-    marginBottom: 16,
+    marginBottom: 12,
     textAlign: 'center',
   },
   description: {
     ...Typography.bodyMedium,
     color: Colors.neutral[600],
     textAlign: 'center',
-    lineHeight: 24,
-    marginBottom: 24,
+    lineHeight: 22,
+    marginBottom: 20,
   },
   card: {
     backgroundColor: Colors.primary[50],
@@ -151,7 +176,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
     width: '100%',
-    marginBottom: 24,
+    marginBottom: 16,
   },
   cardLabel: {
     ...Typography.labelMedium,
@@ -163,10 +188,57 @@ const styles = StyleSheet.create({
     fontFamily: FontFamily.semiBold,
     color: Colors.neutral[900],
   },
+  instructionCard: {
+    backgroundColor: Colors.primary[50],
+    borderRadius: 16,
+    padding: 18,
+    width: '100%',
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: Colors.primary[200],
+  },
+  instructionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  instructionTitle: {
+    ...Typography.labelLarge,
+    fontFamily: FontFamily.semiBold,
+    color: Colors.primary[900],
+    marginLeft: 8,
+  },
+  instructionText: {
+    ...Typography.bodyMedium,
+    color: Colors.neutral[700],
+    lineHeight: 22,
+  },
+  pinContainer: {
+    marginTop: 14,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: Colors.primary[200],
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  pinLabel: {
+    ...Typography.bodyMedium,
+    fontFamily: FontFamily.medium,
+    color: Colors.primary[900],
+  },
+  pinValue: {
+    ...Typography.h4,
+    fontFamily: FontFamily.bold,
+    letterSpacing: 4,
+    color: Colors.primary[700],
+  },
   footer: {
     paddingHorizontal: 20,
     paddingTop: 16,
     backgroundColor: Colors.neutral[0],
+    borderTopWidth: 1,
+    borderTopColor: Colors.neutral[100],
   },
   primaryButton: {
     backgroundColor: Colors.primary[500],

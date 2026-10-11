@@ -64,7 +64,7 @@ export function OrganizationTabNavigator() {
           },
         })}
       />
-      <Tab.Screen
+      {/* <Tab.Screen
         name="ScheduleTab"
         component={VolunteerScheduleStack}
         options={{
@@ -77,7 +77,7 @@ export function OrganizationTabNavigator() {
             navigation.navigate('ScheduleTab', { screen: 'MySchedule' });
           },
         })}
-      />
+      /> */}
 
       <Tab.Screen
         name="JobsTab"

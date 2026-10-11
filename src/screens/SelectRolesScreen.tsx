@@ -14,7 +14,6 @@ import {authApi} from '../api/auth';
 import {AppText} from '../components/AppText';
 import {Button} from '../components/Button';
 import {UpliftLogo} from '../components/UpliftLogo';
-import { BackArrowIcon } from '../assets/icons';
 import { ChevronLeft } from 'lucide-react-native';
 import {Colors} from '../theme/colors';
 import {FontFamily} from '../theme/typography';
@@ -175,6 +174,7 @@ interface RoleCardProps {
   isSelected: boolean;
   onToggle: () => void;
   isDisabled?: boolean;
+  isSingle?: boolean;
 }
 
 const RoleCard: React.FC<RoleCardProps> = ({
@@ -184,6 +184,7 @@ const RoleCard: React.FC<RoleCardProps> = ({
   isSelected,
   onToggle,
   isDisabled,
+  isSingle,
 }) => {
   const getIcon = () => {
     switch (type) {
@@ -202,6 +203,7 @@ const RoleCard: React.FC<RoleCardProps> = ({
     <Pressable
       style={[
         styles.roleCard,
+        isSingle && styles.roleCardSingle,
         isSelected && styles.roleCardSelected,
         isDisabled && { opacity: 0.5 },
       ]}
@@ -246,7 +248,7 @@ type RootStackParamList = {
   Welcome: undefined;
   CreateAccount: undefined;
   VerifyAccount: { emailOrPhone: string };
-  SelectRoles: { fromProfile?: boolean };
+  SelectRoles: { fromProfile?: boolean; date_of_birth?: string; userAge?: number; dob?: string };
 };
 
 type NavigationProps = NativeStackNavigationProp<RootStackParamList>;
@@ -255,10 +257,25 @@ export const SelectRolesScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProps>();
   const route = useRoute<any>();
   const isFromProfile = route.params?.fromProfile || false;
-  const [selectedRoles, setSelectedRoles] = useState<RoleType[]>([]);
-  const [existingRoles, setExistingRoles] = useState<string[]>([]);
 
-  const [userAge, setUserAge] = useState<number | null>(null);
+  const calculateAge = (dobString?: string): number | null => {
+    if (!dobString) return null;
+    const dob = new Date(dobString);
+    if (isNaN(dob.getTime())) return null;
+    let age = new Date().getFullYear() - dob.getFullYear();
+    const m = new Date().getMonth() - dob.getMonth();
+    if (m < 0 || (m === 0 && new Date().getDate() < dob.getDate())) {
+      age--;
+    }
+    return age;
+  };
+
+  const initialAge = route.params?.userAge ?? calculateAge(route.params?.date_of_birth || route.params?.dob);
+  const [userAge, setUserAge] = useState<number | null>(initialAge);
+  const isMinor = userAge !== null && userAge < 18;
+
+  const [selectedRoles, setSelectedRoles] = useState<RoleType[]>(isMinor ? ['volunteer'] : []);
+  const [existingRoles, setExistingRoles] = useState<string[]>([]);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -268,13 +285,13 @@ export const SelectRolesScreen: React.FC = () => {
         setExistingRoles(combinedRoles.map(r => r.toLowerCase()));
 
         if (data.date_of_birth) {
-          const dob = new Date(data.date_of_birth);
-          let age = new Date().getFullYear() - dob.getFullYear();
-          const m = new Date().getMonth() - dob.getMonth();
-          if (m < 0 || (m === 0 && new Date().getDate() < dob.getDate())) {
-            age--;
+          const age = calculateAge(data.date_of_birth);
+          if (age !== null) {
+            setUserAge(age);
+            if (age < 18) {
+              setSelectedRoles(['volunteer']);
+            }
           }
-          setUserAge(age);
         }
       } catch (error) {
         console.log('Could not fetch profile in SelectRolesScreen', error);
@@ -283,7 +300,19 @@ export const SelectRolesScreen: React.FC = () => {
     fetchProfile();
   }, []);
 
+  useEffect(() => {
+    if (isMinor && !selectedRoles.includes('volunteer')) {
+      setSelectedRoles(['volunteer']);
+    }
+  }, [isMinor]);
+
   const toggleRole = (role: RoleType) => {
+    if (isMinor) {
+      if (role === 'volunteer') {
+        setSelectedRoles(['volunteer']);
+      }
+      return;
+    }
     setSelectedRoles(prev => {
       if (prev.includes(role)) {
         return prev.filter(r => r !== role);
@@ -314,7 +343,11 @@ export const SelectRolesScreen: React.FC = () => {
             bounces={false}>
 
         <AppText variant="h4" center color={Colors.neutral[900]} style={styles.title}>
-          {isFromProfile ? 'Add a New Role' : `How Would You Like\nTo Join Uplift?`}
+          {isFromProfile 
+            ? 'Add a New Role' 
+            : isMinor 
+              ? 'Youth Volunteer' 
+              : `How Would You Like\nTo Join Uplift?`}
         </AppText>
 
         <AppText
@@ -322,14 +355,16 @@ export const SelectRolesScreen: React.FC = () => {
           center
           color={Colors.neutral[500]}
           style={styles.subtitle}>
-          {isFromProfile 
-            ? `Choose an additional role to add to your profile. You'll complete the setup for it next.`
-            : `Choose one or more roles. You'll complete\nthe setup for each selected role one at a time.`}
+          {isMinor
+            ? 'As a volunteer under 18, you are registered as a youth volunteer. Complete your profile setup below to get started.'
+            : isFromProfile 
+              ? `Choose an additional role to add to your profile. You'll complete the setup for it next.`
+              : `Choose one or more roles. You'll complete\nthe setup for each selected role one at a time.`}
         </AppText>
 
         {/* Roles Grid */}
         <View style={styles.rolesGrid}>
-          {(!userAge || userAge > 18) && (
+          {!isMinor && (
             <RoleCard
               type="beneficiary"
               title="Beneficiary"
@@ -341,13 +376,18 @@ export const SelectRolesScreen: React.FC = () => {
           )}
           <RoleCard
             type="volunteer"
-            title="Volunteer"
-            description="Support people in your community."
-            isSelected={selectedRoles.includes('volunteer')}
+            title={isMinor ? "Youth Volunteer" : "Volunteer"}
+            description={
+              isMinor 
+                ? "Support people and youth activities in your community." 
+                : "Support people in your community."
+            }
+            isSelected={isMinor || selectedRoles.includes('volunteer')}
             onToggle={() => toggleRole('volunteer')}
-            isDisabled={existingRoles.includes('volunteer')}
+            isDisabled={isMinor ? false : existingRoles.includes('volunteer')}
+            isSingle={isMinor}
           />
-          {(!userAge || userAge > 18) && (
+          {!isMinor && (
             <>
               <RoleCard
                 type="organization"
@@ -369,18 +409,20 @@ export const SelectRolesScreen: React.FC = () => {
           )}
         </View>
 
-        {/* Info Banner */}
-        <View style={styles.infoBanner}>
-          <ShieldInfoIcon size={moderateScale(28)} />
-          <AppText
-            variant="caption"
-            color={Colors.neutral[600]}
-            style={styles.infoText}>
-            If you select multiple roles, we'll guide you through each setup
-            individually. Shared information will be filled automatically where
-            possible.
-          </AppText>
-        </View>
+        {/* Info Banner - Only shown for adult / multi-role selection */}
+        {!isMinor && (
+          <View style={styles.infoBanner}>
+            <ShieldInfoIcon size={moderateScale(28)} />
+            <AppText
+              variant="caption"
+              color={Colors.neutral[600]}
+              style={styles.infoText}>
+              If you select multiple roles, we'll guide you through each setup
+              individually. Shared information will be filled automatically where
+              possible.
+            </AppText>
+          </View>
+        )}
 
         {/* Spacer */}
         <View style={styles.spacer} />
@@ -392,13 +434,14 @@ export const SelectRolesScreen: React.FC = () => {
           size="lg"
           fullWidth
           onPress={() => {
-            if (selectedRoles.length === 0) return;
-            const roles = [...selectedRoles];
+            const effectiveRoles = isMinor && selectedRoles.length === 0 ? ['volunteer'] : selectedRoles;
+            if (effectiveRoles.length === 0) return;
+            const roles = [...effectiveRoles];
             const firstRole = roles.shift();
             const pendingRoles = roles;
             const routeParams = {
               pendingRoles,
-              selectedRoles: [...selectedRoles],
+              selectedRoles: [...effectiveRoles],
               collectedRolesData: [],
             };
             
@@ -412,7 +455,7 @@ export const SelectRolesScreen: React.FC = () => {
               navigation.navigate('BeneficiarySetup' as any, routeParams);
             }
           }}
-          disabled={selectedRoles.length === 0}
+          disabled={!isMinor && selectedRoles.length === 0}
           style={styles.continueButton}
         />
         </ScrollView>
@@ -474,6 +517,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.neutral[200],
     padding: moderateScale(16),
+  },
+  roleCardSingle: {
+    width: '100%',
   },
   roleCardSelected: {
     borderColor: Colors.primary[500],

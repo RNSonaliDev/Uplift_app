@@ -58,10 +58,16 @@ export default function StartRequestScreen() {
         onHide: () => navigation.goBack()
       });
     } catch (error: any) {
+      const errorMsg =
+        error?.data?.error ||
+        error?.data?.user_message ||
+        (Array.isArray(error?.data?.errors) ? error?.data?.errors[0] : error?.data?.errors) ||
+        error?.message ||
+        'Failed to start request.';
       Toast.show({
         type: 'error',
         text1: 'Error',
-        text2: error?.data?.errors?.[0] || error?.message || 'Failed to start request.'
+        text2: errorMsg
       });
     } finally {
       setLoading(false);

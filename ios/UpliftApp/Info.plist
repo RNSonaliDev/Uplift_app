@@ -68,7 +68,7 @@
 		<true/>
 	</dict>
 	<key>NSCameraUsageDescription</key>
-	<string>Uplift requires access to your camera so you can take and upload a profile picture.</string>
+	<string>Uplift requires access to your camera so you can take a photo of your Government ID and profile picture.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Uplift requires access to your location to set meeting places.</string>
 	<key>NSPhotoLibraryUsageDescription</key>

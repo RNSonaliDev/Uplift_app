@@ -388,7 +388,7 @@ export const VolunteerSetupScreen: React.FC = () => {
     }
 
     if (!address || !address.trim() || address === 'Current Location') {
-      newErrors.address = 'Address is required';
+      newErrors.address = 'Starting address is required';
     }
 
     // if (selectedCategories.length === 0) {
@@ -628,7 +628,7 @@ export const VolunteerSetupScreen: React.FC = () => {
               <View style={[styles.labelRow, {justifyContent: 'space-between', alignItems: 'center'}]}>
                 <View style={{flexDirection: 'row', alignItems: 'center'}}>
                   <AppText variant="labelMedium" color={Colors.neutral[700]} style={{marginBottom: Spacing.xs}}>
-                     Address <AppText color={Colors.error}>*</AppText>
+                     Starting address <AppText color={Colors.error}>*</AppText>
                   </AppText>
                   <TouchableOpacity 
                     style={{marginLeft: 6, marginBottom: Spacing.xs}}
@@ -667,9 +667,9 @@ export const VolunteerSetupScreen: React.FC = () => {
                   />
                   <View style={styles.tooltipContainer}>
                     {/* Left pointing triangle */}
-                    <View style={styles.tooltipTriangle} />
+                    <View style={[styles.tooltipTriangle, {left: 145}]} />
                     <AppText variant="caption" color={Colors.neutral[800]} style={{lineHeight: 18}}>
-                      Used to determine distance from the service requests; not shared with anyone
+                      Enter a nearby business address to match you with nearby requests— your exact location is never shared with anyone
                     </AppText>
                   </View>
                 </>

@@ -17,7 +17,7 @@ import {
   Tag,
   MapPin,
   Calendar,
-  Hash,
+  Package,
   Eye,
   CheckCircle2,
   Pencil,
@@ -274,7 +274,7 @@ export const PromotionsListingScreen = () => {
             <Text style={styles.metaText}>{dateRange}</Text>
           </View>
           <View style={styles.metaItem}>
-            <Hash size={14} color={Colors.neutral[500]} />
+            <Package size={14} color={Colors.neutral[500]} />
             <Text style={styles.metaText}>{quantity}</Text>
           </View>
           <View style={styles.metaItem}>

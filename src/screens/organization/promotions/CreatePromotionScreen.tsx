@@ -36,7 +36,6 @@ import {
   CheckCircle2,
   Eye,
   Layers,
-  Hash,
   Pencil,
   MapPin as LocationPinIcon,
   Navigation,
