@@ -160,7 +160,7 @@ export default function RequestDetailsScreen() {
       try {
         setIsAccepting(true);
         await api.post(`/help_requests/${request.id}/accept`);
-        navigation.navigate('RequestAccepted', { request });
+        navigation.replace('RequestAccepted', { request });
       } catch (error: any) {
         Toast.show({
           type: 'error',

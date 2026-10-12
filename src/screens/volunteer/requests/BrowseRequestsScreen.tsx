@@ -140,11 +140,6 @@ export default function BrowseRequestsScreen() {
               {item.category?.title || 'Help Request'}
             </AppText>
           </View>
-          <View style={[styles.newBadge, { backgroundColor: statusColors.bg }]}>
-            <AppText variant="caption" weight="semiBold" color={statusColors.text}>
-              {displayStatus}
-            </AppText>
-          </View>
         </View>
         
         <View style={styles.cardDetails}>
@@ -178,14 +173,21 @@ export default function BrowseRequestsScreen() {
               {item.location?.address || item.meeting_location || 'Location TBD'}
             </AppText>
           </View>
-          {item.distance != null && !isNaN(parseFloat(item.distance)) && (
-            <View style={styles.detailRow}>
-              <MapPin color={Colors.neutral[500]} size={14} />
-              <AppText variant="caption" color={Colors.neutral[700]} style={styles.detailText}>
-                {(parseFloat(item.distance) * 0.621371).toFixed(1)} miles
+          <View style={styles.cardBottomRow}>
+            {item.distance != null && !isNaN(parseFloat(item.distance)) ? (
+              <View style={styles.distanceRow}>
+                <MapPin color={Colors.neutral[500]} size={14} />
+                <AppText variant="caption" color={Colors.neutral[700]} style={styles.distanceText}>
+                  {(parseFloat(item.distance) * 0.621371).toFixed(1)} miles
+                </AppText>
+              </View>
+            ) : <View />}
+            <View style={[styles.newBadge, { backgroundColor: statusColors.bg }]}>
+              <AppText variant="caption" weight="semiBold" color={statusColors.text}>
+                {displayStatus}
               </AppText>
             </View>
-          )}
+          </View>
         </View>
       </TouchableOpacity>
     );
@@ -429,12 +431,12 @@ const styles = StyleSheet.create({
   cardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     marginBottom: verticalScale(14),
   },
   cardTitleContainer: {
     flex: 1,
     justifyContent: 'center',
-    marginRight: horizontalScale(8),
   },
   requestIconContainer: {
     width: moderateScale(40),
@@ -455,7 +457,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: horizontalScale(10),
     paddingVertical: verticalScale(4),
     borderRadius: 12,
-    alignSelf: 'center',
+    flexShrink: 0,
+  },
+  cardBottomRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: verticalScale(4),
+  },
+  distanceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  distanceText: {
+    marginLeft: horizontalScale(6),
   },
   cardDetails: {
     gap: verticalScale(6),

@@ -107,62 +107,63 @@ export default function NotificationsScreen() {
   };
 
   const handleNotificationPress = async (item: AppNotification) => {
-    const isUnread = item.is_read === false || (item.is_read === undefined && !(item as any).read);
-    if (isUnread) {
-      handleMarkAsRead(item.id);
-    }
+    console.log("@@@ itemitemitemitem=====", item)
+    // const isUnread = item.is_read === false || (item.is_read === undefined && !(item as any).read);
+    // if (isUnread) {
+    //   handleMarkAsRead(item.id);
+    // }
 
-    const refId = item.reference_id || (item as any).notifiable_id || (item as any).help_request_id || (item as any).data?.help_request_id;
-    const titleAndMsg = `${item.title || ''} ${item.message || (item as any).body || ''}`.toLowerCase();
-    const isCancelOrNoShow = titleAndMsg.includes('cancel') || titleAndMsg.includes('show') || titleAndMsg.includes('missed') || titleAndMsg.includes('not started');
+    // const refId = item.reference_id || (item as any).notifiable_id || (item as any).help_request_id || (item as any).data?.help_request_id;
+    // const titleAndMsg = `${item.title || ''} ${item.message || (item as any).body || ''}`.toLowerCase();
+    // const isCancelOrNoShow = titleAndMsg.includes('cancel') || titleAndMsg.includes('show') || titleAndMsg.includes('missed') || titleAndMsg.includes('not started');
 
-    if (currentRole === 'volunteer') {
-      const activeTab = isCancelOrNoShow ? 'History' : 'Active';
-      navigation.navigate('VolunteerFlow', {
-        screen: 'VolunteerTabs',
-        params: {
-          screen: 'ScheduleTab',
-          params: {
-            screen: 'MySchedule',
-            params: { activeTab },
-          },
-        },
-      });
-    } else if (currentRole === 'beneficiary') {
-      if (refId) {
-        navigation.navigate('BeneficiaryFlow', {
-          screen: 'RequestTracking',
-          params: { requestId: refId },
-        });
-      } else {
-        navigation.navigate('BeneficiaryFlow', {
-          screen: 'BeneficiaryTabs',
-          params: {
-            screen: 'MyRequests',
-            params: { activeTab: isCancelOrNoShow ? 'History' : 'Active' },
-          },
-        });
-      }
-    } else if (currentRole === 'organization') {
-      if (refId) {
-        navigation.navigate('OrganizationFlow', {
-          screen: 'OrgRequestDetails',
-          params: { requestId: refId },
-        });
-      } else {
-        navigation.navigate('OrganizationFlow', {
-          screen: 'OrganizationTabs',
-          params: {
-            screen: 'RequestsTab',
-            params: {
-              activeTab: isCancelOrNoShow ? 'History' : 'Active',
-            },
-          },
-        });
-      }
-    } else if (currentRole === 'sponsor') {
-      navigation.navigate('SponsorFlow');
-    }
+    // if (currentRole === 'volunteer') {
+    //   const activeTab = isCancelOrNoShow ? 'History' : 'Active';
+    //   navigation.navigate('VolunteerFlow', {
+    //     screen: 'VolunteerTabs',
+    //     params: {
+    //       screen: 'ScheduleTab',
+    //       params: {
+    //         screen: 'MySchedule',
+    //         params: { activeTab },
+    //       },
+    //     },
+    //   });
+    // } else if (currentRole === 'beneficiary') {
+    //   if (refId) {
+    //     navigation.navigate('BeneficiaryFlow', {
+    //       screen: 'RequestTracking',
+    //       params: { requestId: refId },
+    //     });
+    //   } else {
+    //     navigation.navigate('BeneficiaryFlow', {
+    //       screen: 'BeneficiaryTabs',
+    //       params: {
+    //         screen: 'MyRequests',
+    //         params: { activeTab: isCancelOrNoShow ? 'History' : 'Active' },
+    //       },
+    //     });
+    //   }
+    // } else if (currentRole === 'organization') {
+    //   if (refId) {
+    //     navigation.navigate('OrganizationFlow', {
+    //       screen: 'OrgRequestDetails',
+    //       params: { requestId: refId },
+    //     });
+    //   } else {
+    //     navigation.navigate('OrganizationFlow', {
+    //       screen: 'OrganizationTabs',
+    //       params: {
+    //         screen: 'RequestsTab',
+    //         params: {
+    //           activeTab: isCancelOrNoShow ? 'History' : 'Active',
+    //         },
+    //       },
+    //     });
+    //   }
+    // } else if (currentRole === 'sponsor') {
+    //   navigation.navigate('SponsorFlow');
+    // }
   };
 
   const renderItem = ({ item }: { item: AppNotification }) => {

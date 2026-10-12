@@ -445,7 +445,7 @@ export const BrowsePromotionsScreen = () => {
             <Search size={20} color={Colors.neutral[400]} style={{ marginRight: 8 }} />
             <TextInput
               style={styles.searchInput}
-              placeholder="Search promotions, deals or categories..."
+              placeholder="Search promotions..."
               placeholderTextColor={Colors.neutral[400]}
               value={searchQuery}
               onChangeText={setSearchQuery}
@@ -875,10 +875,10 @@ const styles = StyleSheet.create({
   },
   searchInput: {
     flex: 1,
-    fontFamily: FontFamily.regular,
-    fontSize: fontScale(14),
+    fontSize: 16,
     color: Colors.neutral[900],
     paddingVertical: 0,
+    letterSpacing: 0,
   },
   filterIconBtn: {
     padding: 4,
@@ -1214,5 +1214,6 @@ const styles = StyleSheet.create({
     fontSize: fontScale(15),
     color: Colors.neutral[900],
     paddingVertical: 0,
+    letterSpacing: 0,
   },
 });

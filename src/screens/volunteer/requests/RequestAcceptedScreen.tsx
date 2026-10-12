@@ -18,6 +18,54 @@ export default function RequestAcceptedScreen() {
   const route = useRoute<any>();
   const request = route.params?.request || {};
 
+  const handleViewSchedule = () => {
+    try {
+      if (navigation.canGoBack()) {
+        navigation.popToTop();
+      }
+    } catch (e) {
+      // ignore
+    }
+
+    try {
+      const parent = navigation.getParent();
+      if (parent) {
+        parent.navigate('ScheduleTab', {
+          screen: 'MySchedule',
+          params: { activeTab: 'Active' },
+        });
+        return;
+      }
+    } catch (e) {
+      // fallback
+    }
+
+    try {
+      navigation.navigate('ScheduleTab', {
+        screen: 'MySchedule',
+        params: { activeTab: 'Active' },
+      });
+      return;
+    } catch (e) {
+      // fallback
+    }
+
+    try {
+      navigation.navigate('VolunteerFlow', {
+        screen: 'VolunteerTabs',
+        params: {
+          screen: 'ScheduleTab',
+          params: {
+            screen: 'MySchedule',
+            params: { activeTab: 'Active' },
+          },
+        },
+      });
+    } catch (e) {
+      // fallback
+    }
+  };
+
   const getCategoryIcon = (title: string, size = 20) => {
     const t = title?.toLowerCase() || '';
     if (t.includes('groc') || t.includes('shop')) return <ShoppingCart color={Colors.primary[500]} size={size} />;
@@ -137,7 +185,7 @@ export default function RequestAcceptedScreen() {
       <View style={styles.footer}>
         <Button 
           title="View in Schedule" 
-          onPress={() => navigation.navigate('ScheduleTab')} 
+          onPress={handleViewSchedule} 
           fullWidth 
         />
       </View>

@@ -112,11 +112,17 @@ export default function BeneficiaryRequestDetailsScreen() {
               <TouchableOpacity 
                 style={styles.messageIconContainer}
                 onPress={() => {
-                  const assignId = request.assignments?.[0]?.id || 0;
-                  const recipientName = request.volunteer?.first_name 
-                    ? `${request.volunteer.first_name} ${request.volunteer.last_name || ''}`.trim() 
+                  const volunteerId = request.volunteer?.id || request.volunteer_id;
+                  const volunteerAssignment = request.assignments?.find((a: any) => {
+                    const aVolId = a.volunteer?.id || a.volunteer_id;
+                    return volunteerId && aVolId && String(aVolId) === String(volunteerId);
+                  });
+                  const assignId = volunteerAssignment?.id || request.assignments?.[0]?.id || 0;
+                  const vol = volunteerAssignment?.volunteer || request.volunteer;
+                  const recipientName = vol?.first_name 
+                    ? `${vol.first_name} ${vol.last_name || ''}`.trim() 
                     : 'Volunteer';
-                  const recipientAvatar = request.volunteer?.profile_image_url;
+                  const recipientAvatar = vol?.profile_image_url;
                   navigation.navigate('ChatScreen', {
                     helpRequestId: request.id,
                     assignmentId: assignId,
@@ -128,7 +134,7 @@ export default function BeneficiaryRequestDetailsScreen() {
               >
                 <MessageCircle color={Colors.primary[500]} size={24} />
               </TouchableOpacity>
-            )}
+       )}
           </View>
         )}
 

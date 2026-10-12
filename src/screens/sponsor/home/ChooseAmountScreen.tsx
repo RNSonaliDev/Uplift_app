@@ -203,12 +203,12 @@ export default function ChooseAmountScreen() {
           onPress={handleContinue}
           disabled={validAmount <= 0 || !recipientType}
         />
-        <View style={styles.stripeBadgeRow}>
+        {/* <View style={styles.stripeBadgeRow}>
           <ShieldCheck color={Colors.neutral[500]} size={16} />
           <AppText variant="caption" color={Colors.neutral[500]} style={styles.stripeBadgeText}>
             Powered by Stripe · Secure 256-bit encryption
           </AppText>
-        </View>
+        </View> */}
       </View>
 
       <Modal visible={isRecipientModalVisible} transparent animationType="fade">
