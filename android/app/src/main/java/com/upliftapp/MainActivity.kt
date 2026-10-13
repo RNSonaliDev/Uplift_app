@@ -1,4 +1,4 @@
-package com.upliftapp
+package com.iupliftu
 
 import com.facebook.react.ReactActivity
 import com.facebook.react.ReactActivityDelegate

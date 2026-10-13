@@ -179,7 +179,17 @@ export default function MyProfileScreen() {
     navigation.navigate('LegalContent', { type: 'privacy' });
   };
 
-  const userRoles = profile?.roles?.map((r: any) => r) || [];
+  const userRoles = profile?.roles?.map((r: any) => (typeof r === 'string' ? r : r.role || r.name || r)) || [];
+  const pendingRoles = (profile as any)?.pending_roles?.map((r: any) => (typeof r === 'string' ? r : r.role || r.name || r)) || [];
+  const combinedRolesList = Array.from(
+    new Set([
+      ...userRoles,
+      ...pendingRoles,
+      ...Object.keys(profile?.profiles || {}),
+    ].map((r: string) => String(r).toLowerCase()))
+  );
+  const ALL_ROLES = ['beneficiary', 'volunteer', 'organization', 'sponsor'];
+  const hasAllRoles = ALL_ROLES.every(role => combinedRolesList.includes(role)) || combinedRolesList.length >= 4 || userRoles.length >= 4;
   
   // Get active role specific details
   const activeRole = profile?.default_role || 'beneficiary';
@@ -290,11 +300,13 @@ export default function MyProfileScreen() {
             title="Notification Preferences" 
             onPress={() => navigation.navigate('Settings')} 
           />
-          <MenuItem 
-            icon={<PlusCircle color={Colors.neutral[500]} size={24} />} 
-            title="Add Role" 
-            onPress={() => navigation.navigate('SelectRoles', { fromProfile: true })} 
-          />
+          {!hasAllRoles && (
+            <MenuItem 
+              icon={<PlusCircle color={Colors.neutral[500]} size={24} />} 
+              title="Add Role" 
+              onPress={() => navigation.navigate('SelectRoles', { fromProfile: true })} 
+            />
+          )}
           {userRoles.length > 1 && (
             <MenuItem 
               icon={<SettingsIcon color={Colors.neutral[500]} size={24} />} 

@@ -1,4 +1,4 @@
-package com.upliftapp
+package com.iupliftu
 
 import android.app.Application
 import com.facebook.react.PackageList

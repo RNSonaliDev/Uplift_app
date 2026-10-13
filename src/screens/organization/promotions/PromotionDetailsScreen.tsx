@@ -257,9 +257,13 @@ export const PromotionDetailsScreen = () => {
                   <Info color={Colors.neutral[600]} size={20} />
                   <AppText variant="bodyMedium" color={Colors.neutral[900]} style={{ marginLeft: 8, fontFamily: FontFamily.medium }}>Status</AppText>
                 </View>
-                <AppText variant="bodyMedium" color={statusStyle?.text || Colors.neutral[600]} style={{ flex: 1, textAlign: 'right', marginLeft: 16 }}>
-                  {formatStatus(promotion.status)}
-                </AppText>
+                <View style={{ flex: 1, alignItems: 'flex-end', marginLeft: 16 }}>
+                  <View style={[styles.statusBadge, { backgroundColor: statusStyle?.bg || Colors.neutral[50] }]}>
+                    <AppText variant="labelMedium" color={statusStyle?.text || Colors.neutral[600]}>
+                      {formatStatus(promotion.status)}
+                    </AppText>
+                  </View>
+                </View>
               </View>
             ) : null}
 
@@ -268,7 +272,7 @@ export const PromotionDetailsScreen = () => {
                 <Megaphone color={Colors.neutral[600]} size={20} />
                 <AppText variant="bodyMedium" color={Colors.neutral[900]} style={{ marginLeft: 8, fontFamily: FontFamily.medium }}>Business Name</AppText>
               </View>
-              <AppText variant="bodyMedium" color={Colors.neutral[600]} style={{ flex: 1, textAlign: 'right', marginLeft: 16 }}>
+              <AppText variant="bodyMedium" color={Colors.neutral[800]} style={{ flex: 1, textAlign: 'right', marginLeft: 16 }}>
                 {promoTitle}
               </AppText>
             </View>
@@ -294,7 +298,7 @@ export const PromotionDetailsScreen = () => {
               </View>
               <View style={{ flex: 1, alignItems: 'flex-end' }}>
                 <View style={styles.badgeOutline}>
-                  <AppText variant="labelSmall" color={Colors.neutral[600]}>
+                  <AppText variant="labelSmall" color={Colors.neutral[700]}>
                     {categoryName}
                   </AppText>
                 </View>
@@ -306,36 +310,10 @@ export const PromotionDetailsScreen = () => {
                 <Calendar color={Colors.neutral[600]} size={20} />
                 <AppText variant="bodyMedium" color={Colors.neutral[900]} style={{ marginLeft: 8, fontFamily: FontFamily.medium }}>Promotion Period</AppText>
               </View>
-              <AppText variant="bodyMedium" color={Colors.neutral[600]} style={{ flex: 1, textAlign: 'right', marginLeft: 16 }}>
+              <AppText variant="bodyMedium" color={Colors.neutral[800]} style={{ flex: 1, textAlign: 'right', marginLeft: 16 }}>
                 {promotion?.dates || `${formatDateVal(availableFrom)} - ${formatDateVal(availableUntil)}`}
               </AppText>
             </View>
-
-            {(locationType === 'in_store' || locationType === 'both' || address) ? (
-              <View style={styles.detailRowItem}>
-                <View style={styles.detailLabelRow}>
-                  <MapPin color={Colors.neutral[600]} size={20} />
-                  <AppText variant="bodyMedium" color={Colors.neutral[900]} style={{ marginLeft: 8, fontFamily: FontFamily.medium }}>Location</AppText>
-                </View>
-                <AppText variant="bodyMedium" color={Colors.neutral[600]} style={{ flex: 1, textAlign: 'right', marginLeft: 16 }}>
-                  {address || 'In store'}
-                </AppText>
-              </View>
-            ) : null}
-
-            {(locationType === 'online' || locationType === 'both' || url) ? (
-              <View style={styles.detailColumnItem}>
-                <View style={styles.detailLabelRow}>
-                  <Globe color={Colors.neutral[600]} size={20} />
-                  <AppText variant="bodyMedium" color={Colors.neutral[900]} style={{ marginLeft: 8, fontFamily: FontFamily.medium }}>URL</AppText>
-                </View>
-                <TouchableOpacity onPress={() => url && Linking.openURL(url.startsWith('http') ? url : `https://${url}`)}>
-                  <AppText variant="bodyMedium" color={Colors.primary[600]} style={{ marginLeft: 28, marginTop: 4, lineHeight: 22, textDecorationLine: 'underline' }}>
-                    {url || 'Online'}
-                  </AppText>
-                </TouchableOpacity>
-              </View>
-            ) : null}
 
             <View style={styles.detailRowItem}>
               <View style={styles.detailLabelRow}>
@@ -344,7 +322,7 @@ export const PromotionDetailsScreen = () => {
               </View>
               <View style={{ flex: 1, alignItems: 'flex-end' }}>
                 <View style={styles.badgeOutline}>
-                  <AppText variant="labelSmall" color={Colors.neutral[600]}>
+                  <AppText variant="labelSmall" color={Colors.neutral[700]}>
                     {quantity}
                   </AppText>
                 </View>
@@ -356,7 +334,7 @@ export const PromotionDetailsScreen = () => {
                 <Eye color={Colors.neutral[600]} size={20} />
                 <AppText variant="bodyMedium" color={Colors.neutral[900]} style={{ marginLeft: 8, fontFamily: FontFamily.medium }}>Total Views</AppText>
               </View>
-              <AppText variant="bodyMedium" color={Colors.neutral[600]} style={{ flex: 1, textAlign: 'right', marginLeft: 16 }}>
+              <AppText variant="bodyMedium" color={Colors.neutral[800]} style={{ flex: 1, textAlign: 'right', marginLeft: 16 }}>
                 {promotion?.views_count || promotion?.views || 0} views
               </AppText>
             </View>
@@ -394,9 +372,35 @@ export const PromotionDetailsScreen = () => {
                   <FileText color={Colors.neutral[600]} size={20} />
                   <AppText variant="bodyMedium" color={Colors.neutral[900]} style={{ marginLeft: 8, fontFamily: FontFamily.medium }}>Description</AppText>
                 </View>
-                <AppText variant="bodyMedium" color={Colors.neutral[600]} style={{ marginLeft: 28, marginTop: 4, lineHeight: 22 }}>
+                <AppText variant="bodyMedium" color={Colors.neutral[800]} style={{ marginLeft: 28, marginTop: 4, lineHeight: 22 }}>
                   {description}
                 </AppText>
+              </View>
+            ) : null}
+
+            {(locationType === 'in_store' || locationType === 'both' || address) ? (
+              <View style={styles.detailColumnItem}>
+                <View style={styles.detailLabelRow}>
+                  <MapPin color={Colors.neutral[600]} size={20} />
+                  <AppText variant="bodyMedium" color={Colors.neutral[900]} style={{ marginLeft: 8, fontFamily: FontFamily.medium }}>Location</AppText>
+                </View>
+                <AppText variant="bodyMedium" color={Colors.neutral[800]} style={{ marginLeft: 28, marginTop: 4, lineHeight: 22 }}>
+                  {address || 'In store'}
+                </AppText>
+              </View>
+            ) : null}
+
+            {(locationType === 'online' || locationType === 'both' || url) ? (
+              <View style={styles.detailColumnItem}>
+                <View style={styles.detailLabelRow}>
+                  <Globe color={Colors.neutral[600]} size={20} />
+                  <AppText variant="bodyMedium" color={Colors.neutral[900]} style={{ marginLeft: 8, fontFamily: FontFamily.medium }}>URL</AppText>
+                </View>
+                <TouchableOpacity onPress={() => url && Linking.openURL(url.startsWith('http') ? url : `https://${url}`)}>
+                  <AppText variant="bodyMedium" color={Colors.primary[600]} style={{ marginLeft: 28, marginTop: 4, lineHeight: 22, textDecorationLine: 'underline' }}>
+                    {url || 'Online'}
+                  </AppText>
+                </TouchableOpacity>
               </View>
             ) : null}
 
@@ -458,6 +462,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   content: { padding: 16 },
+  statusBadge: { paddingHorizontal: 12, paddingVertical: 4, borderRadius: 16 },
   badge: { backgroundColor: Colors.primary[50], paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16 },
   badgeOutline: { backgroundColor: Colors.neutral[50], paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16 },
   detailColumnItem: {

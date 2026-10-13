@@ -815,7 +815,7 @@ export const VolunteerSetupScreen: React.FC = () => {
                 setHours(numeric);
               }}
               keyboardType="number-pad"
-              maxLength={3}
+              maxLength={2}
               required={false}
             />
           </View>

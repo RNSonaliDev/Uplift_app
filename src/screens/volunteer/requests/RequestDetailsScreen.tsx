@@ -429,9 +429,13 @@ export default function RequestDetailsScreen() {
               <Info color={Colors.neutral[600]} size={20} />
               <AppText variant="bodyMedium" color={Colors.neutral[900]} style={{marginLeft: 8, fontFamily: FontFamily.medium}}>Status</AppText>
             </View>
-            <AppText variant="bodyMedium" color={getStatusColors(reqStatus || 'pending').text} style={{flex: 1, textAlign: 'right', marginLeft: 16}}>
-              {formatStatus(reqStatus || 'pending')}
-            </AppText>
+            <View style={{flex: 1, alignItems: 'flex-end', marginLeft: 16}}>
+              <View style={[styles.statusBadge, { backgroundColor: getStatusColors(reqStatus || 'pending').bg }]}>
+                <AppText variant="labelMedium" color={getStatusColors(reqStatus || 'pending').text}>
+                  {formatStatus(reqStatus || 'pending')}
+                </AppText>
+              </View>
+            </View>
           </View>
 
           <View style={styles.detailRowItem}>
@@ -858,6 +862,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: horizontalScale(24),
     paddingVertical: verticalScale(10),
     borderRadius: 24,
+  },
+  statusBadge: {
+    paddingHorizontal: horizontalScale(12),
+    paddingVertical: verticalScale(4),
+    borderRadius: 16,
+    alignSelf: 'flex-end',
   },
   profileSection: {
     flexDirection: 'row',

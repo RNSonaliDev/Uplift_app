@@ -23,7 +23,8 @@ import {Colors} from '../../../theme/colors';
 import {AppText} from '../../../components/AppText';
 import {Input} from '../../../components/Input';
 import {Button} from '../../../components/Button';
-import {ChevronLeft, Calendar, MapPin, Clock, Info, Navigation, BadgeCheck, Phone, ChevronDown, Check, X, Eye, FileText} from 'lucide-react-native';
+import {ChevronLeft, Calendar, MapPin, Clock, Info, Navigation, BadgeCheck, Phone, ChevronDown, Check, X, Eye, FileText, Camera} from 'lucide-react-native';
+import { ImagePickerModal, SelectedImage } from '../../../components/ImagePickerModal';
 import {Spacing} from '../../../theme/spacing';
 import {authApi} from '../../../api/auth';
 import {getFullImageUrl} from '../../../api/client';
@@ -169,6 +170,18 @@ export default function EditProfileScreen() {
   const [date, setDate] = useState(new Date(2000, 0, 1));
   const [isMapModalVisible, setIsMapModalVisible] = useState(false);
   const [previewImage, setPreviewImage] = useState<{ uri: string; title: string } | null>(null);
+  const [showGovernmentIdModal, setShowGovernmentIdModal] = useState(false);
+  const [newGovernmentIdFile, setNewGovernmentIdFile] = useState<any>(null);
+
+  const handleGovernmentIdSelected = (image: SelectedImage) => {
+    setShowGovernmentIdModal(false);
+    handleChange('government_id', image.uri);
+    setNewGovernmentIdFile({
+      uri: image.uri,
+      type: image.type || 'image/jpeg',
+      name: image.fileName || 'government_id.jpg',
+    });
+  };
   const [region, setRegion] = useState({
     latitude: 37.78825,
     longitude: -122.4324,
@@ -363,12 +376,35 @@ export default function EditProfileScreen() {
 
     try {
       setSaving(true);
-      const { latitude, longitude, base_first_name, base_last_name, anonymity, ...restProfile } = formData;
+
+      if (newGovernmentIdFile) {
+        try {
+          const idFormData = new FormData();
+          idFormData.append('government_id', {
+            uri: newGovernmentIdFile.uri,
+            type: newGovernmentIdFile.type || 'image/jpeg',
+            name: newGovernmentIdFile.name || 'government_id.jpg',
+          } as any);
+          idFormData.append('profile[government_id]', {
+            uri: newGovernmentIdFile.uri,
+            type: newGovernmentIdFile.type || 'image/jpeg',
+            name: newGovernmentIdFile.name || 'government_id.jpg',
+          } as any);
+          await authApi.updateBaseProfile(idFormData);
+        } catch (idErr) {
+          console.error('Failed to upload government ID:', idErr);
+        }
+      }
+
+      const { latitude, longitude, base_first_name, base_last_name, anonymity, government_id, ...restProfile } = formData;
       const profilePayload: any = {
         ...restProfile,
         service_radius: Number(formData.service_radius) || 0,
         hours_goal_per_week: Number(formData.hours_goal_per_week) || null,
       };
+
+      // Do not send string government_id in role_profile API
+      delete profilePayload.government_id;
 
       if (currentRole === 'sponsor') {
         profilePayload.anonymous = anonymity === 'hide';
@@ -389,7 +425,7 @@ export default function EditProfileScreen() {
         type: 'success',
         text1: 'Success',
         text2: 'Profile updated successfully',
-        onHide: () => navigation.goBack()
+        // onHide: () => navigation.goBack()
       });
     } catch (error: any) {
       Toast.show({
@@ -539,19 +575,48 @@ export default function EditProfileScreen() {
                       style={styles.uploadedThumbnail}
                       resizeMode="cover"
                     />
-                  
                   </View>
-                  <View style={styles.viewBadge}>
-                    <Eye color={Colors.primary[600]} size={16} style={{marginRight: 4}} />
-                    <AppText variant="labelSmall" color={Colors.primary[600]} weight="bold">
-                      View Document
-                    </AppText>
+                  <View style={{flexDirection: 'row', alignItems: 'center', gap: 8}}>
+                    <View style={styles.viewBadge}>
+                      <Eye color={Colors.primary[600]} size={16} style={{marginRight: 4}} />
+                      <AppText variant="labelSmall" color={Colors.primary[600]} weight="bold">
+                        View
+                      </AppText>
+                    </View>
+                    <TouchableOpacity
+                      onPress={() => setShowGovernmentIdModal(true)}
+                      hitSlop={{top: 8, bottom: 8, left: 8, right: 8}}
+                      style={[styles.viewBadge, { backgroundColor: Colors.neutral[100] }]}
+                    >
+                      <AppText variant="labelSmall" color={Colors.neutral[700]} weight="bold">
+                        Change
+                      </AppText>
+                    </TouchableOpacity>
                   </View>
                 </TouchableOpacity>
               ) : (
-                <View style={[styles.idUploadBox, { opacity: 0.6 }]}>
-                  <AppText variant="bodySmall" color={Colors.neutral[600]}>No Government ID on file</AppText>
-                </View>
+                <TouchableOpacity
+                  style={styles.idUploadBox}
+                  onPress={() => setShowGovernmentIdModal(true)}
+                  activeOpacity={0.7}
+                >
+                  <View style={styles.idUploadPlaceholder}>
+                    <View style={styles.idUploadIconCircle}>
+                      <Camera color={Colors.primary[500]} size={24} />
+                    </View>
+                    <AppText variant="labelMedium" color={Colors.primary[900]} weight="bold" style={{ marginTop: 8 }}>
+                      Upload Government ID
+                    </AppText>
+                    <AppText variant="caption" color={Colors.neutral[500]} style={{ marginTop: 2, textAlign: 'center' }}>
+                      Driver's License, Passport, or State ID
+                    </AppText>
+                    <View style={styles.uploadCtaPill}>
+                      <AppText variant="caption" color={Colors.primary[600]} weight="bold">
+                        Take Photo or Upload
+                      </AppText>
+                    </View>
+                  </View>
+                </TouchableOpacity>
               )}
             </View>
           )}
@@ -696,6 +761,7 @@ export default function EditProfileScreen() {
                 value={formData.hours_goal_per_week}
                 onChangeText={v => handleChange('hours_goal_per_week', v)}
                 keyboardType="number-pad"
+                maxLength={2}
                 leftIcon={<Clock color={Colors.neutral[400]} size={20} />}
                 rightIcon={<AppText variant="caption" color={Colors.neutral[500]}>hrs/week</AppText>}
               />
@@ -1041,6 +1107,13 @@ export default function EditProfileScreen() {
           </View>
         </TouchableOpacity>
       </Modal>
+      <ImagePickerModal
+        visible={showGovernmentIdModal}
+        onClose={() => setShowGovernmentIdModal(false)}
+        onImageSelected={handleGovernmentIdSelected}
+        title="Government ID Photo"
+        subtitle="Take a photo or upload from your gallery"
+      />
     </>
   );
 }
@@ -1239,12 +1312,37 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: Colors.neutral[300],
     borderStyle: 'dashed',
-    borderRadius: 8,
+    borderRadius: 12,
     backgroundColor: Colors.primary[50],
     padding: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: 110,
+    minHeight: 120,
+  },
+  idUploadPlaceholder: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+  },
+  idUploadIconCircle: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#FFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  uploadCtaPill: {
+    marginTop: 8,
+    backgroundColor: Colors.primary[100],
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 16,
   },
   idPreviewContainer: {
     width: '100%',

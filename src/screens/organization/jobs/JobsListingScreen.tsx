@@ -47,57 +47,43 @@ export const JobsListingScreen = () => {
         onPress={() => navigation.navigate('JobDetails', { job })}
         activeOpacity={0.7}
       >
-        <View style={styles.cardRow}>
-          <View style={styles.cardIconContainer}>
-            <Briefcase color={Colors.primary[600]} size={20} />
-          </View>
-          <View style={styles.cardBody}>
-            <View style={styles.titleRow}>
-              <AppText variant="labelLarge" color={Colors.neutral[900]} numberOfLines={1} style={{flex: 1}}>
-                {job.title}
-              </AppText>
-              {/* <View style={[styles.statusBadge, { backgroundColor: statusStyle.bg, borderColor: statusStyle.text }]}>
-                <AppText variant="labelSmall" color={statusStyle.text}>
-                  {formatStatus(job.status)}
+        {(job.department || job.job_type) && (
+          <View style={styles.badgeRow}>
+            {job.department && (
+              <View style={styles.categoryBadge}>
+                <AppText variant="labelSmall" color={Colors.primary[700]}>
+                  {typeof job.department === 'object' && job.department !== null ? job.department.title : job.department}
                 </AppText>
-              </View> */}
-            </View>
-
-            {(job.department || job.job_type) && (
-              <View style={styles.badgeRow}>
-                {job.department && (
-                  <View style={styles.categoryBadge}>
-                    <AppText variant="labelSmall" color={Colors.primary[700]}>
-                      {typeof job.department === 'object' && job.department !== null ? job.department.title : job.department}
-                    </AppText>
-                  </View>
-                )}
-                {job.job_type && (
-                  <View style={styles.subCategoryBadge}>
-                    <AppText variant="labelSmall" color={Colors.neutral[600]}>
-                      {job.job_type}
-                    </AppText>
-                  </View>
-                )}
               </View>
             )}
-
-            {job.company_url ? (
-              <View style={styles.urlRow}>
-                <Link2 color={Colors.neutral[400]} size={14} />
-                <AppText variant="bodySmall" color={Colors.neutral[500]} style={{marginLeft: 6, flex: 1}} numberOfLines={1}>
-                  {job.company_url}
+            {job.job_type && (
+              <View style={styles.subCategoryBadge}>
+                <AppText variant="labelSmall" color={Colors.neutral[600]}>
+                  {job.job_type}
                 </AppText>
               </View>
-            ) : null}
-
-            {job.description ? (
-              <AppText variant="bodySmall" color={Colors.neutral[500]} numberOfLines={2} style={{marginTop: 6, lineHeight: 18}}>
-                {job.description}
-              </AppText>
-            ) : null}
+            )}
           </View>
-        </View>
+        )}
+
+        <AppText variant="bodyLarge" weight="semiBold" color={Colors.neutral[900]} numberOfLines={1} style={styles.jobTitle}>
+          {job.title}
+        </AppText>
+
+        {job.company_url ? (
+          <View style={styles.urlRow}>
+            <Link2 color={Colors.neutral[500]} size={14} />
+            <AppText variant="caption" color={Colors.neutral[700]} style={{marginLeft: 8, flex: 1}} numberOfLines={1}>
+              {job.company_url}
+            </AppText>
+          </View>
+        ) : null}
+
+        {job.description ? (
+          <AppText variant="caption" color={Colors.neutral[700]} numberOfLines={2} style={{marginTop: 6, lineHeight: 18}}>
+            {job.description}
+          </AppText>
+        ) : null}
       </TouchableOpacity>
     );
   };
@@ -235,21 +221,27 @@ const styles = StyleSheet.create({
   },
   badgeRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-    marginTop: 8,
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 6,
+  },
+  jobTitle: {
+    marginBottom: 2,
   },
   categoryBadge: {
     backgroundColor: Colors.primary[50],
     paddingHorizontal: 10,
     paddingVertical: 3,
     borderRadius: 12,
+    flexShrink: 1,
+    marginRight: 8,
   },
   subCategoryBadge: {
     backgroundColor: Colors.neutral[50],
     paddingHorizontal: 10,
     paddingVertical: 3,
     borderRadius: 12,
+    marginLeft: 'auto',
   },
   urlRow: {
     flexDirection: 'row',

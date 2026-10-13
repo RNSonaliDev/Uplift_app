@@ -17,7 +17,6 @@ import {
   Tag,
   MapPin,
   Calendar,
-  Package,
   Eye,
   CheckCircle2,
   Pencil,
@@ -274,10 +273,6 @@ export const PromotionsListingScreen = () => {
             <Text style={styles.metaText}>{dateRange}</Text>
           </View>
           <View style={styles.metaItem}>
-            <Package size={14} color={Colors.neutral[500]} />
-            <Text style={styles.metaText}>{quantity}</Text>
-          </View>
-          <View style={styles.metaItem}>
             <Eye size={14} color={Colors.neutral[500]} />
             <Text style={styles.metaText}>{views} Views</Text>
           </View>
@@ -459,56 +454,56 @@ const styles = StyleSheet.create({
   },
   typeBadgeText: {
     fontFamily: FontFamily.medium,
-    fontSize: fontScale(11.5),
+    fontSize: fontScale(12),
     color: Colors.primary[700],
   },
   statusBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: horizontalScale(8),
-    paddingVertical: verticalScale(3),
+    paddingHorizontal: horizontalScale(10),
+    paddingVertical: verticalScale(4),
     borderRadius: moderateScale(12),
   },
   statusText: {
-    fontFamily: FontFamily.medium,
-    fontSize: fontScale(11.5),
+    fontFamily: FontFamily.semiBold,
+    fontSize: fontScale(12),
   },
   promoTitle: {
     fontFamily: FontFamily.semiBold,
-    fontSize: fontScale(15.5),
+    fontSize: fontScale(18),
     color: Colors.neutral[900],
-    marginBottom: verticalScale(8),
-    lineHeight: fontScale(21),
+    marginBottom: verticalScale(6),
+    lineHeight: fontScale(24),
   },
   codeRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: verticalScale(10),
+    marginBottom: verticalScale(8),
   },
   codeBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.primary[100],
+    backgroundColor: Colors.primary[50],
     paddingHorizontal: horizontalScale(10),
     paddingVertical: verticalScale(4),
-    borderRadius: moderateScale(8),
+    borderRadius: moderateScale(12),
     marginRight: horizontalScale(8),
   },
   codeText: {
-    fontFamily: FontFamily.bold,
-    fontSize: fontScale(12.5),
+    fontFamily: FontFamily.semiBold,
+    fontSize: fontScale(13),
     color: Colors.primary[700],
   },
   categoryBadge: {
     backgroundColor: Colors.neutral[100],
-    paddingHorizontal: horizontalScale(8),
+    paddingHorizontal: horizontalScale(10),
     paddingVertical: verticalScale(4),
-    borderRadius: moderateScale(8),
+    borderRadius: moderateScale(12),
   },
   categoryText: {
-    fontFamily: FontFamily.regular,
+    fontFamily: FontFamily.medium,
     fontSize: fontScale(12),
-    color: Colors.neutral[500],
+    color: Colors.neutral[600],
   },
   metaRow: {
     flexDirection: 'row',
@@ -525,9 +520,9 @@ const styles = StyleSheet.create({
   },
   metaText: {
     fontFamily: FontFamily.regular,
-    fontSize: fontScale(12),
-    color: Colors.neutral[500],
-    marginLeft: 4,
+    fontSize: fontScale(14),
+    color: Colors.neutral[700],
+    marginLeft: horizontalScale(6),
     flexShrink: 1,
   },
   fab: {

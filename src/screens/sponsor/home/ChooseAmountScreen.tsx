@@ -197,7 +197,7 @@ export default function ChooseAmountScreen() {
       {/* Footer */}
       <View style={styles.footer}>
         <Button 
-          title={validAmount > 0 ? `Continue to Payment · $${feeInfo.total.toFixed(2)}` : 'Continue to Payment'} 
+          title={validAmount > 0 ? `Continue to Payment` : 'Continue to Payment'} 
           size="lg"
           fullWidth
           onPress={handleContinue}
