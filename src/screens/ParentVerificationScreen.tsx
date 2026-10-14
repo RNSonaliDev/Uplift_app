@@ -12,6 +12,7 @@ import {
   Modal,
   Keyboard,
   Platform,
+  AppState,
 } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import {SafeAreaView} from 'react-native-safe-area-context';
@@ -229,12 +230,17 @@ const otpStyles = StyleSheet.create({
   input: {
     flex: 1,
     aspectRatio: 1,
-    maxWidth: moderateScale(44),
-    maxHeight: moderateScale(44),
+    maxWidth: moderateScale(46),
+    height: moderateScale(46),
     borderWidth: 1.5,
     borderColor: Colors.neutral[300],
     borderRadius: BorderRadius.md,
     textAlign: 'center',
+    textAlignVertical: 'center',
+    padding: 0,
+    paddingVertical: 0,
+    paddingHorizontal: 0,
+    includeFontPadding: false,
     fontSize: fontScale(18),
     fontFamily: FontFamily.semiBold,
     color: Colors.primary[500],
@@ -317,7 +323,7 @@ const formatPhoneNumber = (phone?: string) => {
   if (trimmed.startsWith('+')) return trimmed;
   const digits = trimmed.replace(/\D/g, '');
   if (!digits) return phone;
-  return `+1 ${digits}`;
+  return `+1${digits}`;
 };
 
 export const ParentVerificationScreen: React.FC = () => {
@@ -344,27 +350,41 @@ export const ParentVerificationScreen: React.FC = () => {
 
   const [isVerifying, setIsVerifying] = useState(false);
 
-  useEffect(() => {
-    if (emailTimer <= 0) {
-      setCanResendEmail(true);
-      return;
-    }
-    const interval = setInterval(() => {
-      setEmailTimer(prev => prev - 1);
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [emailTimer]);
+  const emailEndTimeRef = useRef<number>(Date.now() + RESEND_TIMER_SECONDS * 1000);
+  const phoneEndTimeRef = useRef<number>(Date.now() + RESEND_TIMER_SECONDS * 1000);
+  const editEmailInputRef = useRef<TextInput>(null);
+  const editPhoneInputRef = useRef<TextInput>(null);
 
   useEffect(() => {
-    if (phoneTimer <= 0) {
-      setCanResendPhone(true);
-      return;
-    }
-    const interval = setInterval(() => {
-      setPhoneTimer(prev => prev - 1);
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [phoneTimer]);
+    const updateTimers = () => {
+      const now = Date.now();
+      const emailRemaining = Math.max(0, Math.ceil((emailEndTimeRef.current - now) / 1000));
+      setEmailTimer(emailRemaining);
+      if (emailRemaining <= 0) {
+        setCanResendEmail(true);
+      }
+
+      const phoneRemaining = Math.max(0, Math.ceil((phoneEndTimeRef.current - now) / 1000));
+      setPhoneTimer(phoneRemaining);
+      if (phoneRemaining <= 0) {
+        setCanResendPhone(true);
+      }
+    };
+
+    updateTimers();
+    const interval = setInterval(updateTimers, 1000);
+
+    const subscription = AppState.addEventListener('change', (nextAppState) => {
+      if (nextAppState === 'active') {
+        updateTimers();
+      }
+    });
+
+    return () => {
+      clearInterval(interval);
+      subscription.remove();
+    };
+  }, []);
 
   const handleResendEmail = useCallback(async () => {
     if (!canResendEmail || isResendingEmail) {
@@ -377,6 +397,7 @@ export const ParentVerificationScreen: React.FC = () => {
         parent_email: parentEmail || undefined,
       });
 
+      emailEndTimeRef.current = Date.now() + RESEND_TIMER_SECONDS * 1000;
       setEmailTimer(RESEND_TIMER_SECONDS);
       setCanResendEmail(false);
       setEmailOtp(Array(OTP_LENGTH).fill(''));
@@ -407,6 +428,7 @@ export const ParentVerificationScreen: React.FC = () => {
         parent_phone: parentPhone ? `+1${parentPhone.replace(/\D/g, '')}` : undefined,
       });
 
+      phoneEndTimeRef.current = Date.now() + RESEND_TIMER_SECONDS * 1000;
       setPhoneTimer(RESEND_TIMER_SECONDS);
       setCanResendPhone(false);
       setPhoneOtp(Array(OTP_LENGTH).fill(''));
@@ -447,6 +469,8 @@ export const ParentVerificationScreen: React.FC = () => {
       setParentEmail(editEmail);
       setParentPhone(editPhone);
       setIsEditModalOpen(false);
+      emailEndTimeRef.current = Date.now() + RESEND_TIMER_SECONDS * 1000;
+      phoneEndTimeRef.current = Date.now() + RESEND_TIMER_SECONDS * 1000;
       setEmailTimer(RESEND_TIMER_SECONDS);
       setCanResendEmail(false);
       setPhoneTimer(RESEND_TIMER_SECONDS);
@@ -749,22 +773,29 @@ export const ParentVerificationScreen: React.FC = () => {
 
             <View style={{width: '100%'}}>
               <Input
+                ref={editEmailInputRef}
                 label="Parent Email Address"
                 placeholder="parent@example.com"
                 value={editEmail}
                 onChangeText={setEditEmail}
                 keyboardType="email-address"
                 autoCapitalize="none"
+                returnKeyType="next"
+                blurOnSubmit={false}
+                onSubmitEditing={() => editPhoneInputRef.current?.focus()}
               />
 
               <View style={{marginTop: 12}}>
                 <Input
+                  ref={editPhoneInputRef}
                   label="Parent Phone Number"
                   placeholder="(201) 555-0123"
                   value={editPhone}
                   onChangeText={setEditPhone}
                   keyboardType="phone-pad"
                   maxLength={10}
+                  returnKeyType="done"
+                  onSubmitEditing={handleSaveContact}
                 />
               </View>
             </View>

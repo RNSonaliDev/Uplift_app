@@ -33,7 +33,7 @@ interface InputProps extends TextInputProps {
   containerStyle?: ViewStyle;
 }
 
-export const Input: React.FC<InputProps> = ({
+export const Input = React.forwardRef<TextInput, InputProps>(({
   label,
   bottomRight,
   error,
@@ -46,8 +46,10 @@ export const Input: React.FC<InputProps> = ({
   style,
   onFocus,
   onBlur,
+  returnKeyType,
+  blurOnSubmit,
   ...rest
-}) => {
+}, ref) => {
   const [isFocused, setIsFocused] = useState(false);
 
   const getBorderColor = () => {
@@ -101,6 +103,7 @@ export const Input: React.FC<InputProps> = ({
         {leftIcon && <View style={styles.leftIcon}>{leftIcon}</View>}
 
         <TextInput
+          ref={ref}
           style={[
             styles.input,
             leftIcon ? {paddingLeft: 0} : null,
@@ -111,6 +114,8 @@ export const Input: React.FC<InputProps> = ({
           editable={!disabled}
           onFocus={handleFocus}
           onBlur={handleBlur}
+          returnKeyType={returnKeyType}
+          blurOnSubmit={blurOnSubmit !== undefined ? blurOnSubmit : returnKeyType === 'next' ? false : undefined}
           {...rest}
         />
 
@@ -135,7 +140,9 @@ export const Input: React.FC<InputProps> = ({
       </View>
     </View>
   );
-};
+});
+
+Input.displayName = 'Input';
 
 const styles = StyleSheet.create({
   container: {

@@ -12,6 +12,7 @@ import {
   Modal,
   Keyboard,
   Platform,
+  AppState,
 } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import {SafeAreaView} from 'react-native-safe-area-context';
@@ -210,11 +211,16 @@ const otpStyles = StyleSheet.create({
     flex: 1,
     aspectRatio: 1,
     maxWidth: moderateScale(52),
-    maxHeight: moderateScale(52),
+    height: moderateScale(52),
     borderWidth: 1.5,
     borderColor: Colors.neutral[300],
     borderRadius: BorderRadius.md,
     textAlign: 'center',
+    textAlignVertical: 'center',
+    padding: 0,
+    paddingVertical: 0,
+    paddingHorizontal: 0,
+    includeFontPadding: false,
     fontSize: fontScale(22),
     fontFamily: FontFamily.semiBold,
     color: Colors.primary[500],
@@ -317,18 +323,31 @@ export const VerifyAccountScreen: React.FC = () => {
   const [parentEmail, setParentEmail] = useState<string | null>((route.params as any)?.parentEmail || null);
   const [parentPhone, setParentPhone] = useState<string | null>((route.params as any)?.parentPhone || null);
 
+  const endTimeRef = useRef<number>(Date.now() + RESEND_TIMER_SECONDS * 1000);
+
   useEffect(() => {
-    if (timer <= 0) {
-      setCanResend(true);
-      return;
-    }
+    const updateTimer = () => {
+      const remaining = Math.max(0, Math.ceil((endTimeRef.current - Date.now()) / 1000));
+      setTimer(remaining);
+      if (remaining <= 0) {
+        setCanResend(true);
+      }
+    };
 
-    const interval = setInterval(() => {
-      setTimer(prev => prev - 1);
-    }, 1000);
+    updateTimer();
+    const interval = setInterval(updateTimer, 1000);
 
-    return () => clearInterval(interval);
-  }, [timer]);
+    const subscription = AppState.addEventListener('change', (nextAppState) => {
+      if (nextAppState === 'active') {
+        updateTimer();
+      }
+    });
+
+    return () => {
+      clearInterval(interval);
+      subscription.remove();
+    };
+  }, []);
 
   const handleResend = useCallback(async () => {
     if (!canResend || isResending) {
@@ -344,6 +363,7 @@ export const VerifyAccountScreen: React.FC = () => {
         },
       });
 
+      endTimeRef.current = Date.now() + RESEND_TIMER_SECONDS * 1000;
       setTimer(RESEND_TIMER_SECONDS);
       setCanResend(false);
       setOtp(Array(OTP_LENGTH).fill(''));

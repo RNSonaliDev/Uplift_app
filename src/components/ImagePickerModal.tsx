@@ -188,6 +188,7 @@ export const ImagePickerModal: React.FC<ImagePickerModalProps> = ({
       });
 
       if (result.didCancel) {
+        onClose();
         return;
       }
 
@@ -203,14 +204,16 @@ export const ImagePickerModal: React.FC<ImagePickerModalProps> = ({
       if (result.assets && result.assets.length > 0) {
         const asset: Asset = result.assets[0];
         if (asset.uri) {
+          onClose();
           onImageSelected({
             uri: asset.uri,
-            fileName: asset.fileName || 'government_id.jpg',
+            fileName: asset.fileName || (title.toLowerCase().includes('profile') ? 'profile_photo.jpg' : 'government_id.jpg'),
             type: asset.type || 'image/jpeg',
             fileSize: asset.fileSize,
           });
-          onClose();
         }
+      } else {
+        onClose();
       }
     } catch (error: any) {
       console.error('Error launching camera:', error);
@@ -230,6 +233,7 @@ export const ImagePickerModal: React.FC<ImagePickerModalProps> = ({
       });
 
       if (result.didCancel) {
+        onClose();
         return;
       }
 
@@ -245,14 +249,16 @@ export const ImagePickerModal: React.FC<ImagePickerModalProps> = ({
       if (result.assets && result.assets.length > 0) {
         const asset: Asset = result.assets[0];
         if (asset.uri) {
+          onClose();
           onImageSelected({
             uri: asset.uri,
-            fileName: asset.fileName || 'government_id.jpg',
+            fileName: asset.fileName || (title.toLowerCase().includes('profile') ? 'profile_photo.jpg' : 'government_id.jpg'),
             type: asset.type || 'image/jpeg',
             fileSize: asset.fileSize,
           });
-          onClose();
         }
+      } else {
+        onClose();
       }
     } catch (error: any) {
       console.error('Error launching image library:', error);

@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useMemo, useRef} from 'react';
 import {
   View,
   StyleSheet,
@@ -18,7 +18,7 @@ import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view
 import Toast from 'react-native-toast-message';
 import {useNavigation, useRoute} from '@react-navigation/native';
 import { DatePickerModal } from '../../../components/DatePickerModal';
-import { GooglePlacesAutocomplete } from 'react-native-google-places-autocomplete';
+import { GooglePlacesAutocomplete, GooglePlacesAutocompleteRef } from 'react-native-google-places-autocomplete';
 import {Colors} from '../../../theme/colors';
 import {AppText} from '../../../components/AppText';
 import {Input} from '../../../components/Input';
@@ -159,6 +159,12 @@ export default function EditProfileScreen() {
   const route = useRoute<any>();
   const currentRole = route.params?.role || 'beneficiary';
   const GOOGLE_MAPS_API_KEY = 'AIzaSyAfVdKkV8tvaV4yQnLLtCKZ91qbuRWFBR0';
+  const googlePlacesQuery = useMemo(() => ({
+    key: GOOGLE_MAPS_API_KEY,
+    language: 'en',
+  }), []);
+  const volunteerPlacesRef = useRef<GooglePlacesAutocompleteRef>(null);
+  const addressPlacesRef = useRef<GooglePlacesAutocompleteRef>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [isScrollEnabled, setIsScrollEnabled] = useState(true);
@@ -302,6 +308,10 @@ export default function EditProfileScreen() {
           latitude: roleProfile.latitude ? String(roleProfile.latitude) : '',
           longitude: roleProfile.longitude ? String(roleProfile.longitude) : '',
         });
+        if (roleProfile.address) {
+          volunteerPlacesRef.current?.setAddressText(roleProfile.address);
+          addressPlacesRef.current?.setAddressText(roleProfile.address);
+        }
       } catch (error) {
         console.error('Failed to fetch profile', error);
       }
@@ -583,15 +593,6 @@ export default function EditProfileScreen() {
                         View
                       </AppText>
                     </View>
-                    <TouchableOpacity
-                      onPress={() => setShowGovernmentIdModal(true)}
-                      hitSlop={{top: 8, bottom: 8, left: 8, right: 8}}
-                      style={[styles.viewBadge, { backgroundColor: Colors.neutral[100] }]}
-                    >
-                      <AppText variant="labelSmall" color={Colors.neutral[700]} weight="bold">
-                        Change
-                      </AppText>
-                    </TouchableOpacity>
                   </View>
                 </TouchableOpacity>
               ) : (
@@ -670,7 +671,11 @@ export default function EditProfileScreen() {
                 error={errors.zip_code}
                 leftIcon={<MapPin color={Colors.neutral[400]} size={20} />}
               />
-              <View style={{marginBottom: 16}}>
+              <View style={{
+                marginBottom: 16,
+                zIndex: 9999,
+                elevation: Platform.OS === 'android' ? 10 : undefined,
+              }}>
                 <View style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8}}>
                   <AppText variant="labelMedium" color={Colors.neutral[700]}>
                     Starting address
@@ -684,28 +689,34 @@ export default function EditProfileScreen() {
                   ) : null}
                 </View>
                 <GooglePlacesAutocomplete
+                  ref={volunteerPlacesRef}
                   placeholder="Enter address"
                   fetchDetails={true}
+                  enablePoweredByContainer={false}
+                  keyboardShouldPersistTaps="handled"
+                  debounce={300}
+                  minLength={1}
+                  onFail={(error) => console.log('Google Places Autocomplete Error:', error)}
                   onPress={(data, details = null) => {
-                    if (details) {
-                      handleChange('address', data.description);
-                      if (details.geometry) {
-                        handleChange('latitude', details.geometry.location.lat.toString());
-                        handleChange('longitude', details.geometry.location.lng.toString());
-                        setRegion({
-                          ...region,
-                          latitude: details.geometry.location.lat,
-                          longitude: details.geometry.location.lng,
-                        });
-                      }
+                    const selectedAddr = data.description || data.formatted_address || '';
+                    handleChange('address', selectedAddr);
+                    volunteerPlacesRef.current?.setAddressText(selectedAddr);
+                    if (details?.geometry?.location) {
+                      handleChange('latitude', details.geometry.location.lat.toString());
+                      handleChange('longitude', details.geometry.location.lng.toString());
+                      setRegion({
+                        ...region,
+                        latitude: details.geometry.location.lat,
+                        longitude: details.geometry.location.lng,
+                      });
                     }
                   }}
-                  query={{
-                    key: GOOGLE_MAPS_API_KEY,
-                    language: 'en',
-                  }}
+                  query={googlePlacesQuery}
                   styles={{
-                    container: { flex: 0 },
+                    container: {
+                      flex: 0,
+                      zIndex: 9999,
+                    },
                     textInputContainer: {
                       backgroundColor: Colors.neutral[0],
                       borderRadius: 12,
@@ -729,14 +740,36 @@ export default function EditProfileScreen() {
                       borderColor: Colors.neutral[200],
                       borderRadius: 8,
                       marginTop: 4,
+                      elevation: 10,
+                      zIndex: 9999,
+                      maxHeight: 220,
+                    },
+                    row: {
+                      backgroundColor: Colors.neutral[0],
+                      padding: 12,
+                      height: 48,
+                      flexDirection: 'row',
+                    },
+                    description: {
+                      color: Colors.neutral[900],
+                      fontSize: 14,
+                    },
+                    separator: {
+                      height: 1,
+                      backgroundColor: Colors.neutral[100],
                     },
                   }}
                   textInputProps={{
                     placeholderTextColor: Colors.neutral[400],
-                    value: formData.address || '',
+                    autoCorrect: false,
+                    defaultValue: formData.address || '',
                     onChangeText: (text) => {
                       handleChange('address', text);
                     }
+                  }}
+                  listViewProps={{
+                    nestedScrollEnabled: true,
+                    keyboardShouldPersistTaps: 'always',
                   }}
                   renderLeftButton={() => (
                     <View style={{ marginRight: 8 }}>
@@ -886,7 +919,11 @@ export default function EditProfileScreen() {
                 onChangeText={v => handleChange('organization_name', v)}
                 error={errors.organization_name}
               />
-              <View style={{marginBottom: 16}}>
+              <View style={{
+                marginBottom: 16,
+                zIndex: 9999,
+                elevation: Platform.OS === 'android' ? 10 : undefined,
+              }}>
                 <View style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8}}>
                   <AppText variant="labelMedium" color={Colors.neutral[700]}>
                     Address
@@ -900,29 +937,34 @@ export default function EditProfileScreen() {
                   ) : null}
                 </View>
                 <GooglePlacesAutocomplete
+                  ref={addressPlacesRef}
                   placeholder="Enter address"
                   fetchDetails={true}
+                  enablePoweredByContainer={false}
+                  keyboardShouldPersistTaps="handled"
+                  debounce={300}
+                  minLength={1}
+                  onFail={(error) => console.log('Google Places Autocomplete Error:', error)}
                   onPress={(data, details = null) => {
-                    if (details) {
-                      console.log("Selected Address Details: ", details);
-                      handleChange('address', data.description);
-                      if (details.geometry) {
-                        handleChange('latitude', details.geometry.location.lat.toString());
-                        handleChange('longitude', details.geometry.location.lng.toString());
-                        setRegion({
-                          ...region,
-                          latitude: details.geometry.location.lat,
-                          longitude: details.geometry.location.lng,
-                        });
-                      }
+                    const selectedAddr = data.description || data.formatted_address || '';
+                    handleChange('address', selectedAddr);
+                    addressPlacesRef.current?.setAddressText(selectedAddr);
+                    if (details?.geometry?.location) {
+                      handleChange('latitude', details.geometry.location.lat.toString());
+                      handleChange('longitude', details.geometry.location.lng.toString());
+                      setRegion({
+                        ...region,
+                        latitude: details.geometry.location.lat,
+                        longitude: details.geometry.location.lng,
+                      });
                     }
                   }}
-                  query={{
-                    key: GOOGLE_MAPS_API_KEY,
-                    language: 'en',
-                  }}
+                  query={googlePlacesQuery}
                   styles={{
-                    container: { flex: 0 },
+                    container: {
+                      flex: 0,
+                      zIndex: 9999,
+                    },
                     textInputContainer: {
                       backgroundColor: Colors.neutral[0],
                       borderRadius: 12,
@@ -946,14 +988,36 @@ export default function EditProfileScreen() {
                       borderColor: Colors.neutral[200],
                       borderRadius: 8,
                       marginTop: 4,
+                      elevation: 10,
+                      zIndex: 9999,
+                      maxHeight: 220,
+                    },
+                    row: {
+                      backgroundColor: Colors.neutral[0],
+                      padding: 12,
+                      height: 48,
+                      flexDirection: 'row',
+                    },
+                    description: {
+                      color: Colors.neutral[900],
+                      fontSize: 14,
+                    },
+                    separator: {
+                      height: 1,
+                      backgroundColor: Colors.neutral[100],
                     },
                   }}
                   textInputProps={{
                     placeholderTextColor: Colors.neutral[400],
-                    value: formData.address || '',
+                    autoCorrect: false,
+                    defaultValue: formData.address || '',
                     onChangeText: (text) => {
                       handleChange('address', text);
                     }
+                  }}
+                  listViewProps={{
+                    nestedScrollEnabled: true,
+                    keyboardShouldPersistTaps: 'always',
                   }}
                   renderLeftButton={() => (
                     <View style={{ marginRight: 8 }}>

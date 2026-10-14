@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   View,
   Text,
@@ -12,6 +12,7 @@ import {
   ActivityIndicator,
   RefreshControl,
   Modal,
+  Platform,
 } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -100,6 +101,10 @@ export const CreatePromotionScreen = () => {
   const [fetchingMetadata, setFetchingMetadata] = useState(false);
 
   const GOOGLE_MAPS_API_KEY = 'AIzaSyAfVdKkV8tvaV4yQnLLtCKZ91qbuRWFBR0';
+  const googlePlacesQuery = useMemo(() => ({
+    key: GOOGLE_MAPS_API_KEY,
+    language: 'en',
+  }), []);
   const googlePlacesRef = useRef<any>(null);
 
   // Form states
@@ -639,7 +644,12 @@ export const CreatePromotionScreen = () => {
 
               {/* Conditional Location Inputs */}
               {(locationType === 'in_store' || locationType === 'both') && (
-                <View style={{ marginTop: 8, marginBottom: 8 }}>
+                <View style={{
+                  marginTop: 8,
+                  marginBottom: 8,
+                  zIndex: 9999,
+                  elevation: Platform.OS === 'android' ? 10 : undefined,
+                }}>
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
                     <Text style={[styles.subLabel, { marginBottom: 0 }]}>
                       Business Address <Text style={{ color: Colors.error }}>*</Text>
@@ -657,9 +667,17 @@ export const CreatePromotionScreen = () => {
                     ref={googlePlacesRef}
                     placeholder="e.g. 123 Community Lane, Coimbatore"
                     fetchDetails={true}
+                    enablePoweredByContainer={false}
+                    keyboardShouldPersistTaps="handled"
+                    debounce={300}
+                    minLength={1}
+                    onFail={(error) => console.log('Google Places Autocomplete Error:', error)}
                     onPress={(data, details = null) => {
-                      if (details) {
-                        setStoreAddress(data.description);
+                      const selectedAddr = data.description || data.formatted_address || '';
+                      setStoreAddress(selectedAddr);
+                      googlePlacesRef.current?.setAddressText(selectedAddr);
+                      if (fieldErrors.storeAddress) setFieldErrors(prev => ({ ...prev, storeAddress: '' }));
+                      if (details?.geometry?.location) {
                         setLatitude(details.geometry.location.lat.toString());
                         setLongitude(details.geometry.location.lng.toString());
                         setRegion({
@@ -667,15 +685,14 @@ export const CreatePromotionScreen = () => {
                           latitude: details.geometry.location.lat,
                           longitude: details.geometry.location.lng,
                         });
-                        if (fieldErrors.storeAddress) setFieldErrors(prev => ({ ...prev, storeAddress: '' }));
                       }
                     }}
-                    query={{
-                      key: GOOGLE_MAPS_API_KEY,
-                      language: 'en',
-                    }}
+                    query={googlePlacesQuery}
                     styles={{
-                      container: { flex: 0 },
+                      container: {
+                        flex: 0,
+                        zIndex: 9999,
+                      },
                       textInputContainer: {
                         backgroundColor: Colors.neutral[0],
                         borderRadius: moderateScale(12),
@@ -700,16 +717,36 @@ export const CreatePromotionScreen = () => {
                         borderColor: Colors.neutral[200],
                         borderRadius: 8,
                         marginTop: 4,
-                        elevation: 4,
-                        zIndex: 999,
+                        elevation: 10,
+                        zIndex: 9999,
+                        maxHeight: 220,
+                      },
+                      row: {
+                        backgroundColor: Colors.neutral[0],
+                        padding: 12,
+                        height: 48,
+                        flexDirection: 'row',
+                      },
+                      description: {
+                        color: Colors.neutral[900],
+                        fontSize: 14,
+                      },
+                      separator: {
+                        height: 1,
+                        backgroundColor: Colors.neutral[100],
                       },
                     }}
                     textInputProps={{
                       placeholderTextColor: Colors.neutral[400],
+                      autoCorrect: false,
                       onChangeText: (text) => {
                         setStoreAddress(text);
                         if (fieldErrors.storeAddress) setFieldErrors(prev => ({ ...prev, storeAddress: '' }));
                       },
+                    }}
+                    listViewProps={{
+                      nestedScrollEnabled: true,
+                      keyboardShouldPersistTaps: 'always',
                     }}
                     renderLeftButton={() => (
                       <View style={{ marginRight: 4 }}>

@@ -143,7 +143,7 @@ export const authApi = {
       },
     });
   },
-  saveRoleProfile: (payload: RoleProfilePayload) => {
+  saveRoleProfile: (payload: RoleProfilePayload | FormData) => {
     return api.post<RoleProfileResponse>('/role_profile', payload);
   },
   getProfile: async (options?: any) => {

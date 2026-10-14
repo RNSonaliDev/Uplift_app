@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { PanResponder } from 'react-native';
 import {
   View,
@@ -153,6 +153,10 @@ export const RequestDetailsScreen = () => {
   const [isMapModalVisible, setIsMapModalVisible] = useState(false);
 
   const GOOGLE_MAPS_API_KEY = 'AIzaSyAfVdKkV8tvaV4yQnLLtCKZ91qbuRWFBR0';
+  const googlePlacesQuery = useMemo(() => ({
+    key: GOOGLE_MAPS_API_KEY,
+    language: 'en',
+  }), []);
   const googlePlacesRef = useRef<GooglePlacesAutocompleteRef>(null);
   const scrollViewRef = useRef<any>(null);
   const scrollYRef = useRef<number>(0);
@@ -523,7 +527,7 @@ export const RequestDetailsScreen = () => {
 
         
         {/* Address */}
-        <View style={styles.inputGroup}>
+        <View style={[styles.inputGroup, { zIndex: 9999, elevation: Platform.OS === 'android' ? 10 : undefined }]}>
           <View style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8}}>
             <Text style={[styles.label, {marginBottom: 0}]}>Address <Text style={{color: Colors.error}}>*</Text></Text>
             {(latitude && longitude) ? (
@@ -538,23 +542,32 @@ export const RequestDetailsScreen = () => {
             ref={googlePlacesRef}
             placeholder="Enter address"
             fetchDetails={true}
+            enablePoweredByContainer={false}
+            keyboardShouldPersistTaps="handled"
+            debounce={300}
+            minLength={1}
+            onFail={(error) => console.log('Google Places Autocomplete Error:', error)}
             onPress={async (data, details = null) => {
               const currentScrollY = scrollYRef.current;
               if (addressError) setAddressError('');
+              const selectedAddr = data.description || data.formatted_address || '';
+              setAddress(selectedAddr);
+              googlePlacesRef.current?.setAddressText(selectedAddr);
               if (details) {
                 console.log("Selected Address Details: ", details);
                 
-                const validationData = await validateBusinessAddressWithAPI(data.description, GOOGLE_MAPS_API_KEY);
+                const validationData = await validateBusinessAddressWithAPI(selectedAddr, GOOGLE_MAPS_API_KEY);
                 setAddressValidation(validationData);
                 
-                setAddress(data.description);
-                setLatitude(details.geometry.location.lat.toString());
-                setLongitude(details.geometry.location.lng.toString());
-                setRegion({
-                  ...region,
-                  latitude: details.geometry.location.lat,
-                  longitude: details.geometry.location.lng,
-                });
+                if (details.geometry?.location) {
+                  setLatitude(details.geometry.location.lat.toString());
+                  setLongitude(details.geometry.location.lng.toString());
+                  setRegion({
+                    ...region,
+                    latitude: details.geometry.location.lat,
+                    longitude: details.geometry.location.lng,
+                  });
+                }
               }
               setTimeout(() => {
                 scrollViewRef.current?.scrollToPosition?.(0, currentScrollY, false);
@@ -563,12 +576,12 @@ export const RequestDetailsScreen = () => {
                 scrollViewRef.current?.scrollToPosition?.(0, currentScrollY, false);
               }, 300);
             }}
-            query={{
-              key: GOOGLE_MAPS_API_KEY,
-              language: 'en',
-            }}
+            query={googlePlacesQuery}
             styles={{
-              container: { flex: 0 },
+              container: {
+                flex: 0,
+                zIndex: 9999,
+              },
               textInputContainer: {
                 backgroundColor: Colors.neutral[50],
                 borderRadius: 12,
@@ -593,14 +606,36 @@ export const RequestDetailsScreen = () => {
                 borderColor: Colors.neutral[200],
                 borderRadius: 8,
                 marginTop: 4,
+                elevation: 10,
+                zIndex: 9999,
+                maxHeight: 220,
+              },
+              row: {
+                backgroundColor: Colors.neutral[0],
+                padding: 12,
+                height: 48,
+                flexDirection: 'row',
+              },
+              description: {
+                color: Colors.neutral[900],
+                fontSize: 14,
+              },
+              separator: {
+                height: 1,
+                backgroundColor: Colors.neutral[100],
               },
             }}
             textInputProps={{
               placeholderTextColor: Colors.neutral[400],
+              autoCorrect: false,
               onChangeText: (text) => {
                 setAddress(text);
                 if (addressError) setAddressError('');
               }
+            }}
+            listViewProps={{
+              nestedScrollEnabled: true,
+              keyboardShouldPersistTaps: 'always',
             }}
             renderLeftButton={() => (
               <View style={{marginRight: 4}}>

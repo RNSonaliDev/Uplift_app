@@ -1,4 +1,4 @@
-import React, {useState, useRef} from 'react';
+import React, {useState, useRef, useMemo} from 'react';
 import {
   View,
   StyleSheet,
@@ -440,6 +440,10 @@ export default function CreateRequestScreen() {
   const [isMapModalVisible, setIsMapModalVisible] = useState(false);
 
   const GOOGLE_MAPS_API_KEY = 'AIzaSyAfVdKkV8tvaV4yQnLLtCKZ91qbuRWFBR0'; // TODO: Provide your Google Maps API Key here
+  const googlePlacesQuery = useMemo(() => ({
+    key: GOOGLE_MAPS_API_KEY,
+    language: 'en',
+  }), []);
 
   const googlePlacesRef = useRef<GooglePlacesAutocompleteRef>(null);
   const scrollViewRef = useRef<any>(null);
@@ -817,21 +821,33 @@ export default function CreateRequestScreen() {
               ref={googlePlacesRef}
               placeholder="e.g. 123 Main St, Beverly Hills, CA"
               fetchDetails={true}
+              enablePoweredByContainer={false}
+              keyboardShouldPersistTaps="handled"
+              debounce={300}
+              minLength={1}
+              onFail={(error) => console.log('Google Places Autocomplete Error:', error)}
               onPress={async (data, details = null) => {
                 const currentScrollY = scrollYRef.current;
+                const selectedAddr = data.description || data.formatted_address || '';
+                handleChange('meeting_location', selectedAddr);
+                googlePlacesRef.current?.setAddressText(selectedAddr);
+                if (errors.meeting_location) {
+                  setErrors(prev => ({ ...prev, meeting_location: '' }));
+                }
                 if (details) {
                   console.log("Selected Address Details: ", details);
-                  const validationData = await validateBusinessAddressWithAPI(data.description, GOOGLE_MAPS_API_KEY);
+                  const validationData = await validateBusinessAddressWithAPI(selectedAddr, GOOGLE_MAPS_API_KEY);
                   setAddressValidation(validationData);
                   
-                  handleChange('meeting_location', data.description);
-                  handleChange('latitude', details.geometry.location.lat.toString());
-                  handleChange('longitude', details.geometry.location.lng.toString());
-                  setRegion({
-                    ...region,
-                    latitude: details.geometry.location.lat,
-                    longitude: details.geometry.location.lng,
-                  });
+                  if (details.geometry?.location) {
+                    handleChange('latitude', details.geometry.location.lat.toString());
+                    handleChange('longitude', details.geometry.location.lng.toString());
+                    setRegion({
+                      ...region,
+                      latitude: details.geometry.location.lat,
+                      longitude: details.geometry.location.lng,
+                    });
+                  }
                 }
                 setTimeout(() => {
                   scrollViewRef.current?.scrollToPosition?.(0, currentScrollY, false);
@@ -840,21 +856,36 @@ export default function CreateRequestScreen() {
                   scrollViewRef.current?.scrollToPosition?.(0, currentScrollY, false);
                 }, 300);
               }}
-              query={{
-                key: GOOGLE_MAPS_API_KEY,
-                language: 'en',
-              }}
+              query={googlePlacesQuery}
               styles={{
-                container: { flex: 0 },
+                container: {
+                  flex: 0,
+                  zIndex: 9999,
+                },
                 textInputContainer: {
                   ...styles.placesInputContainer,
                   borderColor: errors.meeting_location ? Colors.error : Colors.neutral[200],
                 },
                 textInput: styles.placesInput,
                 listView: styles.placesListView,
+                row: {
+                  backgroundColor: Colors.neutral[0],
+                  padding: 12,
+                  height: 48,
+                  flexDirection: 'row',
+                },
+                description: {
+                  color: Colors.neutral[900],
+                  fontSize: 14,
+                },
+                separator: {
+                  height: 1,
+                  backgroundColor: Colors.neutral[100],
+                },
               }}
               textInputProps={{
                 placeholderTextColor: Colors.neutral[400],
+                autoCorrect: false,
                 onChangeText: (text) => {
                   handleChange('meeting_location', text);
                   setAddressValidation(null);
@@ -863,11 +894,10 @@ export default function CreateRequestScreen() {
                   }
                 },
               }}
-              {...({
-                listViewProps: {
-                  nestedScrollEnabled: true,
-                },
-              } as any)}
+              listViewProps={{
+                nestedScrollEnabled: true,
+                keyboardShouldPersistTaps: 'always',
+              }}
               renderLeftButton={() => (
                 <View style={styles.leftIconContainer}>
                   <MapPin color={Colors.primary[500]} size={20} />
@@ -1161,7 +1191,8 @@ const styles = StyleSheet.create({
   },
   addressSection: {
     marginBottom: Spacing.xl,
-    zIndex: 99,
+    zIndex: 9999,
+    elevation: Platform.OS === 'android' ? 10 : undefined,
   },
   leftIconContainer: {
     justifyContent: 'center',
@@ -1187,13 +1218,14 @@ const styles = StyleSheet.create({
   placesListView: {
     backgroundColor: Colors.neutral[0],
     borderRadius: moderateScale(12),
-    elevation: 5,
+    elevation: 10,
+    zIndex: 9999,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     marginTop: verticalScale(4),
-    maxHeight: verticalScale(200),
+    maxHeight: verticalScale(220),
   },
   locationBtn: {
     padding: moderateScale(8),

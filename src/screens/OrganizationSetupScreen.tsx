@@ -1,4 +1,4 @@
-import React, {useState, useEffect, useRef} from 'react';
+import React, {useState, useEffect, useRef, useMemo} from 'react';
 import {
   View,
   StyleSheet,
@@ -9,6 +9,8 @@ import {
   Modal,
   FlatList,
   TouchableWithoutFeedback,
+  Platform,
+  TextInput,
 } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -231,7 +233,16 @@ export const OrganizationSetupScreen: React.FC = () => {
   const [isMapModalVisible, setIsMapModalVisible] = useState(false);
 
   const GOOGLE_MAPS_API_KEY = 'AIzaSyAfVdKkV8tvaV4yQnLLtCKZ91qbuRWFBR0';
+  const googlePlacesQuery = useMemo(() => ({
+    key: GOOGLE_MAPS_API_KEY,
+    language: 'en',
+  }), []);
   const googlePlacesRef = useRef<GooglePlacesAutocompleteRef>(null);
+  const orgNameInputRef = useRef<TextInput>(null);
+  const orgEmailInputRef = useRef<TextInput>(null);
+  const contactNameInputRef = useRef<TextInput>(null);
+  const contactEmailInputRef = useRef<TextInput>(null);
+  const contactPhoneInputRef = useRef<TextInput>(null);
 
   const handleCurrentLocation = () => {
     Geolocation.getCurrentPosition(
@@ -506,6 +517,7 @@ export const OrganizationSetupScreen: React.FC = () => {
             )}
 
             <Input
+              ref={orgNameInputRef}
               label="Organization Name"
               placeholder="Enter organization name"
               leftIcon={<BuildingOutlineIcon />}
@@ -514,11 +526,15 @@ export const OrganizationSetupScreen: React.FC = () => {
                 setOrgName(text);
                 if (errors.orgName) setErrors({...errors, orgName: ''});
               }}
+              returnKeyType="next"
+              blurOnSubmit={false}
+              onSubmitEditing={() => orgEmailInputRef.current?.focus()}
               onFocus={() => setTypeModalVisible(false)}
               error={errors.orgName}
             />
 
             <Input
+              ref={orgEmailInputRef}
               label="Organization Email"
               placeholder="Enter organization email"
               leftIcon={<MailOutlineIcon />}
@@ -529,11 +545,18 @@ export const OrganizationSetupScreen: React.FC = () => {
               }}
               keyboardType="email-address"
               autoCapitalize="none"
+              returnKeyType="next"
+              blurOnSubmit={false}
+              onSubmitEditing={() => contactNameInputRef.current?.focus()}
               onFocus={() => setTypeModalVisible(false)}
               error={errors.orgEmail}
             />
 
-            <View style={{marginBottom: Spacing.lg}}>
+            <View style={{
+              marginBottom: Spacing.lg,
+              zIndex: 9999,
+              elevation: Platform.OS === 'android' ? 10 : undefined,
+            }}>
               <View style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8}}>
                 <AppText variant="labelMedium" color={Colors.neutral[700]}>
                   Organization Address <AppText color={Colors.error}>*</AppText>
@@ -550,9 +573,17 @@ export const OrganizationSetupScreen: React.FC = () => {
                 ref={googlePlacesRef}
                 placeholder="Enter organization address"
                 fetchDetails={true}
+                enablePoweredByContainer={false}
+                keyboardShouldPersistTaps="handled"
+                debounce={300}
+                minLength={1}
+                onFail={(error) => console.log('Google Places Autocomplete Error:', error)}
                 onPress={(data, details = null) => {
-                  if (details) {
-                    setOrgAddress(data.description);
+                  const selectedAddr = data.description || data.formatted_address || '';
+                  setOrgAddress(selectedAddr);
+                  googlePlacesRef.current?.setAddressText(selectedAddr);
+                  if (errors.orgAddress) setErrors(prev => ({...prev, orgAddress: ''}));
+                  if (details?.geometry?.location) {
                     setLatitude(details.geometry.location.lat.toString());
                     setLongitude(details.geometry.location.lng.toString());
                     setRegion({
@@ -560,15 +591,14 @@ export const OrganizationSetupScreen: React.FC = () => {
                       latitude: details.geometry.location.lat,
                       longitude: details.geometry.location.lng,
                     });
-                    if (errors.orgAddress) setErrors({...errors, orgAddress: ''});
                   }
                 }}
-                query={{
-                  key: GOOGLE_MAPS_API_KEY,
-                  language: 'en',
-                }}
+                query={googlePlacesQuery}
                 styles={{
-                  container: { flex: 0 },
+                  container: {
+                    flex: 0,
+                    zIndex: 9999,
+                  },
                   textInputContainer: {
                     backgroundColor: Colors.neutral[0],
                     borderRadius: 12,
@@ -593,10 +623,28 @@ export const OrganizationSetupScreen: React.FC = () => {
                     borderColor: Colors.neutral[200],
                     borderRadius: 8,
                     marginTop: 4,
+                    elevation: 10,
+                    zIndex: 9999,
+                    maxHeight: 220,
+                  },
+                  row: {
+                    backgroundColor: Colors.neutral[0],
+                    padding: 12,
+                    height: 48,
+                    flexDirection: 'row',
+                  },
+                  description: {
+                    color: Colors.neutral[900],
+                    fontSize: 14,
+                  },
+                  separator: {
+                    height: 1,
+                    backgroundColor: Colors.neutral[100],
                   },
                 }}
                 textInputProps={{
                   placeholderTextColor: Colors.neutral[400],
+                  autoCorrect: false,
                   onFocus: () => setTypeModalVisible(false),
                   onChangeText: (text) => {
                     setOrgAddress(text);
@@ -605,6 +653,7 @@ export const OrganizationSetupScreen: React.FC = () => {
                 }}
                 listViewProps={{
                   nestedScrollEnabled: true,
+                  keyboardShouldPersistTaps: 'always',
                 }}
                 renderLeftButton={() => (
                   <View style={{marginRight: 4}}>
@@ -632,6 +681,7 @@ export const OrganizationSetupScreen: React.FC = () => {
             </AppText>
 
             <Input
+              ref={contactNameInputRef}
               label="Contact Name"
               placeholder="Enter contact name"
               leftIcon={<UserOutlineIcon />}
@@ -640,11 +690,15 @@ export const OrganizationSetupScreen: React.FC = () => {
                 setContactName(text);
                 if (errors.contactName) setErrors({...errors, contactName: ''});
               }}
+              returnKeyType="next"
+              blurOnSubmit={false}
+              onSubmitEditing={() => contactEmailInputRef.current?.focus()}
               onFocus={() => setTypeModalVisible(false)}
               error={errors.contactName}
             />
 
             <Input
+              ref={contactEmailInputRef}
               label="Contact Email"
               placeholder="Enter contact email"
               leftIcon={<MailOutlineIcon />}
@@ -655,11 +709,15 @@ export const OrganizationSetupScreen: React.FC = () => {
               }}
               keyboardType="email-address"
               autoCapitalize="none"
+              returnKeyType="next"
+              blurOnSubmit={false}
+              onSubmitEditing={() => contactPhoneInputRef.current?.focus()}
               onFocus={() => setTypeModalVisible(false)}
               error={errors.contactEmail}
             />
 
             <Input
+              ref={contactPhoneInputRef}
               label="Contact Phone"
               placeholder="(201) 555-0198"
               leftIcon={<PhonePrefixPrefix />}
@@ -670,6 +728,8 @@ export const OrganizationSetupScreen: React.FC = () => {
               }}
               keyboardType="phone-pad"
               maxLength={10}
+              returnKeyType="done"
+              onSubmitEditing={handleContinue}
               onFocus={() => setTypeModalVisible(false)}
               error={errors.contactPhone}
             />
