@@ -39,7 +39,7 @@ import {
 } from '../utils/responsive';
 
 const OTP_LENGTH = 6;
-const RESEND_TIMER_SECONDS = 45;
+const RESEND_TIMER_SECONDS = 90;
 
 // ── Icon Components ──────────────────────────────────
 

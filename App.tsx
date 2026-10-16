@@ -57,7 +57,11 @@ type RootStackParamList = {
   VolunteerFlow: undefined;
   OrganizationFlow: undefined;
   SponsorFlow: undefined;
-  LegalContent: { type: 'terms' | 'privacy' };
+  LegalContent: {
+    type?: 'terms' | 'privacy' | 'guidelines' | 'safety' | 'minor-volunteer';
+    slug?: string;
+    title?: string;
+  };
   Notifications: undefined;
   ContactSupport: undefined;
   ContactSupportDetails: { id: number };

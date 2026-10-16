@@ -259,6 +259,12 @@ export default function ChatScreen() {
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color={Colors.primary[500]} />
           </View>
+        ) : messages.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <AppText variant="bodyMedium" color={Colors.neutral[400]} center>
+              No messages yet.{'\n'}Start the conversation!
+            </AppText>
+          </View>
         ) : (
           <FlatList
             ref={flatListRef}
@@ -268,13 +274,6 @@ export default function ChatScreen() {
             inverted
             contentContainerStyle={styles.messagesList}
             showsVerticalScrollIndicator={false}
-            ListEmptyComponent={
-              <View style={styles.emptyContainer}>
-                <AppText variant="bodyMedium" color={Colors.neutral[400]} center>
-                  No messages yet.{'\n'}Start the conversation!
-                </AppText>
-              </View>
-            }
           />
         )}
 
@@ -367,8 +366,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingTop: verticalScale(80),
-    transform: [{ scaleY: -1 }], // Counteract inverted FlatList
+    paddingHorizontal: horizontalScale(24),
   },
   timestampContainer: {
     alignItems: 'center',

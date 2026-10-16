@@ -14,6 +14,8 @@ import {
   Dimensions,
   Pressable,
   TextInput,
+  ActivityIndicator,
+  Keyboard,
 } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -26,7 +28,8 @@ import { ImagePickerModal, SelectedImage } from '../components/ImagePickerModal'
 import MapView, { Marker, Circle as MapCircle } from 'react-native-maps';
 import { GooglePlacesAutocomplete, GooglePlacesAutocompleteRef } from 'react-native-google-places-autocomplete';
 import Geolocation from '@react-native-community/geolocation';
-import { Navigation, MapPin, X } from 'lucide-react-native';
+import { Navigation, MapPin, X, Info } from 'lucide-react-native';
+import { validateBusinessAddressWithAPI, ValidationResult } from '../utils/addressValidation';
 import {AppText} from '../components/AppText';
 import {Button} from '../components/Button';
 import {Input} from '../components/Input';
@@ -366,6 +369,8 @@ export const VolunteerSetupScreen: React.FC = () => {
   };
 
   const [address, setAddress] = useState('');
+  const [addressValidation, setAddressValidation] = useState<ValidationResult | null>(null);
+  const [isValidatingAddress, setIsValidatingAddress] = useState(false);
   const [latitude, setLatitude] = useState('');
   const [longitude, setLongitude] = useState('');
   const [region, setRegion] = useState({
@@ -391,7 +396,7 @@ export const VolunteerSetupScreen: React.FC = () => {
 
   const handleCurrentLocation = () => {
     Geolocation.getCurrentPosition(
-      (position) => {
+      async (position) => {
         const { latitude: lat, longitude: lng } = position.coords;
         setRegion({
           ...region,
@@ -400,8 +405,42 @@ export const VolunteerSetupScreen: React.FC = () => {
         });
         setLatitude(lat.toString());
         setLongitude(lng.toString());
-        setAddress('Current Location');
-        googlePlacesRef.current?.setAddressText('Current Location');
+
+        try {
+          const response = await fetch(
+            `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${GOOGLE_MAPS_API_KEY}`
+          );
+          const data = await response.json();
+          if (data.results && data.results.length > 0) {
+            const fetchedAddress = data.results[0].formatted_address;
+            setAddress(fetchedAddress);
+            googlePlacesRef.current?.setAddressText(fetchedAddress);
+            if (errors.address) setErrors(prev => ({...prev, address: ''}));
+
+            const zipComponent = data.results[0].address_components?.find((c: any) => c.types?.includes('postal_code'));
+            if (zipComponent) {
+              setZipCode(zipComponent.long_name);
+              if (errors.zipCode) setErrors(prev => ({...prev, zipCode: ''}));
+            }
+
+            try {
+              setIsValidatingAddress(true);
+              const validationData = await validateBusinessAddressWithAPI(fetchedAddress, GOOGLE_MAPS_API_KEY);
+              setAddressValidation(validationData);
+            } catch (err) {
+              console.log('Error validating current location address:', err);
+            } finally {
+              setIsValidatingAddress(false);
+            }
+          } else {
+            setAddress('Current Location');
+            googlePlacesRef.current?.setAddressText('Current Location');
+          }
+        } catch (error) {
+          console.error('Error reverse geocoding current location:', error);
+          setAddress('Current Location');
+          googlePlacesRef.current?.setAddressText('Current Location');
+        }
       },
       (error) => console.log(error.message),
       { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
@@ -430,6 +469,16 @@ export const VolunteerSetupScreen: React.FC = () => {
         const zipComponent = data.results[0].address_components.find((c: any) => c.types.includes('postal_code'));
         if (zipComponent) {
           setZipCode(zipComponent.long_name);
+        }
+
+        try {
+          setIsValidatingAddress(true);
+          const validationData = await validateBusinessAddressWithAPI(fetchedAddress, GOOGLE_MAPS_API_KEY);
+          setAddressValidation(validationData);
+        } catch (err) {
+          console.log('Error validating dragged address:', err);
+        } finally {
+          setIsValidatingAddress(false);
         }
       }
     } catch (error) {
@@ -502,6 +551,8 @@ export const VolunteerSetupScreen: React.FC = () => {
 
     if (!address || !address.trim() || address === 'Current Location') {
       newErrors.address = 'Starting address is required';
+    } else if (addressValidation?.addressType === 'residential' || addressValidation?.isBusinessAddress === false) {
+      newErrors.address = 'Please use the business address';
     }
 
     if (is18Plus && !governmentId) {
@@ -517,6 +568,27 @@ export const VolunteerSetupScreen: React.FC = () => {
   };
 
   const handleContinue = async () => {
+    let currentValidation = addressValidation;
+    if (address && address.trim() && address !== 'Current Location' && !currentValidation) {
+      try {
+        setIsValidatingAddress(true);
+        currentValidation = await validateBusinessAddressWithAPI(address, GOOGLE_MAPS_API_KEY);
+        setAddressValidation(currentValidation);
+      } catch (err) {
+        console.log('Error validating address on submit:', err);
+      } finally {
+        setIsValidatingAddress(false);
+      }
+    }
+
+    if (currentValidation?.addressType === 'residential' || currentValidation?.isBusinessAddress === false) {
+      setErrors(prev => ({
+        ...prev,
+        address: 'Please use the business address',
+      }));
+      return;
+    }
+
     if (validate()) {
       const currentRoleData = {
         role: 'volunteer',
@@ -618,6 +690,11 @@ export const VolunteerSetupScreen: React.FC = () => {
   const [showPhoneInfo, setShowPhoneInfo] = useState(false);
   const [showAddressInfo, setShowAddressInfo] = useState(false);
 
+  const handleOpenGovernmentIdModal = () => {
+    Keyboard.dismiss();
+    setShowGovernmentIdModal(true);
+  };
+
   const handleGovernmentIdSelected = (image: SelectedImage) => {
     setShowGovernmentIdModal(false);
     setGovernmentId(image.uri);
@@ -627,7 +704,9 @@ export const VolunteerSetupScreen: React.FC = () => {
   const handleSelectPhoto = async () => {
     const result = await launchImageLibrary({
       mediaType: 'photo',
-      quality: 0.8,
+      quality: 0.7,
+      maxWidth: 1024,
+      maxHeight: 1024,
     });
     
     if (result.assets && result.assets.length > 0) {
@@ -730,7 +809,7 @@ export const VolunteerSetupScreen: React.FC = () => {
             />
 
             {/* Phone Number with Tooltip */}
-            <View style={styles.phoneInputWrapper}>
+            <View style={[styles.phoneInputWrapper, showPhoneInfo && { zIndex: 99999, elevation: Platform.OS === 'android' ? 25 : undefined }]}>
               <View style={styles.labelRow}>
                 <AppText variant="labelMedium" color={Colors.neutral[700]} style={{marginBottom: Spacing.xs}}>
                   Phone number <AppText color={Colors.error}>*</AppText>
@@ -774,11 +853,11 @@ export const VolunteerSetupScreen: React.FC = () => {
                       left: -Dimensions.get('window').width,
                       right: -Dimensions.get('window').width,
                       backgroundColor: 'transparent',
-                      zIndex: 10,
+                      zIndex: 99998,
                     }}
                     onPress={() => setShowPhoneInfo(false)}
                   />
-                  <View style={styles.tooltipContainer}>
+                  <View style={[styles.tooltipContainer, { zIndex: 99999, elevation: 25 }]}>
                     {/* Left pointing triangle */}
                     <View style={styles.tooltipTriangle} />
                     <AppText variant="caption" color={Colors.neutral[800]} style={{lineHeight: 18}}>
@@ -791,8 +870,8 @@ export const VolunteerSetupScreen: React.FC = () => {
 
             <View style={[styles.phoneInputWrapper, {
               marginBottom: Spacing.lg,
-              zIndex: 9999,
-              elevation: Platform.OS === 'android' ? 10 : undefined,
+              zIndex: showAddressInfo ? 99999 : 9999,
+              elevation: Platform.OS === 'android' ? (showAddressInfo ? 25 : 10) : undefined,
             }]}>
               <View style={[styles.labelRow, {justifyContent: 'space-between', alignItems: 'center'}]}>
                 <View style={{flexDirection: 'row', alignItems: 'center'}}>
@@ -819,31 +898,6 @@ export const VolunteerSetupScreen: React.FC = () => {
                 ) : null}
               </View>
 
-              {/* Floating Tooltip */}
-              {showAddressInfo && (
-                <>
-                  <Pressable
-                    style={{
-                      position: 'absolute',
-                      top: -Dimensions.get('window').height,
-                      bottom: -Dimensions.get('window').height,
-                      left: -Dimensions.get('window').width,
-                      right: -Dimensions.get('window').width,
-                      backgroundColor: 'transparent',
-                      zIndex: 10,
-                    }}
-                    onPress={() => setShowAddressInfo(false)}
-                  />
-                  <View style={styles.tooltipContainer}>
-                    {/* Left pointing triangle */}
-                    <View style={[styles.tooltipTriangle, {left: 145}]} />
-                    <AppText variant="caption" color={Colors.neutral[800]} style={{lineHeight: 18}}>
-                      Enter a nearby business address to match you with nearby requests— your exact location is never shared with anyone
-                    </AppText>
-                  </View>
-                </>
-              )}
-
               <GooglePlacesAutocomplete
                 ref={googlePlacesRef}
                 placeholder="e.g. 123 Main St, Beverly Hills, CA"
@@ -853,11 +907,12 @@ export const VolunteerSetupScreen: React.FC = () => {
                 debounce={300}
                 minLength={1}
                 onFail={(error) => console.log('Google Places Autocomplete Error:', error)}
-                onPress={(data, details = null) => {
-                  const selectedAddr = data.description || data.formatted_address || '';
+                onPress={async (data, details = null) => {
+                  const selectedAddr = data.description || (data as any).formatted_address || '';
                   setAddress(selectedAddr);
                   googlePlacesRef.current?.setAddressText(selectedAddr);
                   if (errors.address) setErrors(prev => ({...prev, address: ''}));
+
                   if (details?.geometry?.location) {
                     setLatitude(details.geometry.location.lat.toString());
                     setLongitude(details.geometry.location.lng.toString());
@@ -866,6 +921,24 @@ export const VolunteerSetupScreen: React.FC = () => {
                       latitude: details.geometry.location.lat,
                       longitude: details.geometry.location.lng,
                     });
+                  }
+
+                  const zipComp = details?.address_components?.find((c: any) => c.types?.includes('postal_code'));
+                  if (zipComp) {
+                    setZipCode(zipComp.long_name);
+                    if (errors.zipCode) setErrors(prev => ({...prev, zipCode: ''}));
+                  }
+
+                  if (selectedAddr) {
+                    try {
+                      setIsValidatingAddress(true);
+                      const validationData = await validateBusinessAddressWithAPI(selectedAddr, GOOGLE_MAPS_API_KEY);
+                      setAddressValidation(validationData);
+                    } catch (err) {
+                      console.log('Error validating selected address:', err);
+                    } finally {
+                      setIsValidatingAddress(false);
+                    }
                   }
                 }}
                 query={googlePlacesQuery}
@@ -923,6 +996,7 @@ export const VolunteerSetupScreen: React.FC = () => {
                   onChangeText: (text) => {
                     setAddress(text);
                     if (errors.address) setErrors({...errors, address: ''});
+                    if (addressValidation) setAddressValidation(null);
                   }
                 }}
                 listViewProps={{
@@ -941,11 +1015,79 @@ export const VolunteerSetupScreen: React.FC = () => {
                 )}
               />
 
-              {!!errors.address && (
+              {/* Floating Tooltip */}
+              {showAddressInfo && (
+                <>
+                  <Pressable
+                    style={{
+                      position: 'absolute',
+                      top: -Dimensions.get('window').height,
+                      bottom: -Dimensions.get('window').height,
+                      left: -Dimensions.get('window').width,
+                      right: -Dimensions.get('window').width,
+                      backgroundColor: 'transparent',
+                      zIndex: 99998,
+                    }}
+                    onPress={() => setShowAddressInfo(false)}
+                  />
+                  <View style={[styles.tooltipContainer, { zIndex: 99999, elevation: 25 }]}>
+                    {/* Left pointing triangle */}
+                    <View style={[styles.tooltipTriangle, {left: 145}]} />
+                    <AppText variant="caption" color={Colors.neutral[800]} style={{lineHeight: 18}}>
+                      Enter a nearby business address to match you with nearby requests— your exact location is never shared with anyone
+                    </AppText>
+                  </View>
+                </>
+              )}
+
+              {!!errors.address ? (
                 <AppText variant="bodySmall" color={Colors.error} style={{marginTop: 4}}>
                   {errors.address}
                 </AppText>
-              )}
+              ) : isValidatingAddress ? (
+                <View style={{flexDirection: 'row', alignItems: 'center', marginTop: 8}}>
+                  <ActivityIndicator size="small" color={Colors.primary[500]} />
+                  <AppText variant="caption" color={Colors.neutral[500]} style={{marginLeft: 8}}>
+                    Validating address...
+                  </AppText>
+                </View>
+              ) : addressValidation?.message ? (
+                <View style={{
+                  flexDirection: 'row', 
+                  alignItems: 'flex-start', 
+                  backgroundColor: addressValidation.addressType === 'business' 
+                    ? Colors.secondary[50] 
+                    : (addressValidation.addressType === 'residential' || addressValidation.isBusinessAddress === false)
+                      ? '#FEE2E2'
+                      : Colors.primary[50],
+                  borderRadius: 8,
+                  padding: 12,
+                  marginTop: 8,
+                  borderWidth: (addressValidation.addressType === 'residential' || addressValidation.isBusinessAddress === false) ? 1 : 0,
+                  borderColor: '#FCA5A5',
+                }}>
+                  <Info 
+                    color={addressValidation.addressType === 'business' 
+                      ? Colors.success 
+                      : (addressValidation.addressType === 'residential' || addressValidation.isBusinessAddress === false)
+                        ? Colors.error
+                        : Colors.info} 
+                    size={20} 
+                    style={{marginTop: 0, marginRight: 8}} 
+                  />
+                  <AppText 
+                    variant="bodySmall" 
+                    color={addressValidation.addressType === 'business' 
+                      ? Colors.success 
+                      : (addressValidation.addressType === 'residential' || addressValidation.isBusinessAddress === false)
+                        ? Colors.error
+                        : Colors.info} 
+                    style={{flex: 1, lineHeight: 18}}
+                  >
+                    {addressValidation.message}
+                  </AppText>
+                </View>
+              ) : null}
             </View>
 
             <Input
@@ -1154,6 +1296,19 @@ export const VolunteerSetupScreen: React.FC = () => {
                           View Document
                         </AppText>
                       </TouchableOpacity>
+
+                      <View style={styles.verticalActionDivider} />
+
+                      <TouchableOpacity
+                        style={styles.changeDocButton}
+                        activeOpacity={0.7}
+                        onPress={handleOpenGovernmentIdModal}
+                      >
+                        <EditPhotoIcon size={14} color={Colors.neutral[700]} />
+                        <AppText variant="labelSmall" color={Colors.neutral[700]} weight="bold" style={{ marginLeft: 6 }}>
+                          Change Photo
+                        </AppText>
+                      </TouchableOpacity>
                     </View>
                   </View>
                 ) : (
@@ -1162,7 +1317,7 @@ export const VolunteerSetupScreen: React.FC = () => {
                       styles.idUploadBox,
                       errors.governmentId ? { borderColor: Colors.error } : null
                     ]}
-                    onPress={() => setShowGovernmentIdModal(true)}
+                    onPress={handleOpenGovernmentIdModal}
                     activeOpacity={0.7}
                   >
                     <View style={styles.idUploadPlaceholder}>
@@ -1452,8 +1607,8 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.md,
     padding: Spacing.md,
     ...Shadows.md,
-    elevation: 4,
-    zIndex: 20,
+    elevation: 25,
+    zIndex: 99999,
   },
   tooltipTriangle: {
     position: 'absolute',

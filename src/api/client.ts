@@ -1,8 +1,8 @@
 // src/api/client.ts
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const BASE_URL = 'https://uplift-backend.pixoatic.com/api/v1';
-export const IMAGE_BASE_URL = 'https://uplift-backend.pixoatic.com';
+const BASE_URL = 'https://production.iupliftu.com/api/v1';
+export const IMAGE_BASE_URL = 'https://production.iupliftu.com';
 
 export const getFullImageUrl = (path?: string | null) => {
   if (!path) return null;
@@ -70,8 +70,9 @@ export const apiClient = async <T>(endpoint: string, options: FetchOptions = {})
     if (data instanceof FormData) {
       config.body = data;
       // Let the browser/fetch automatically set the Content-Type with the boundary
-      if (config.headers && 'Content-Type' in (config.headers as any)) {
+      if (config.headers) {
         delete (config.headers as any)['Content-Type'];
+        delete (config.headers as any)['content-type'];
       }
     } else {
       config.body = JSON.stringify(data);
@@ -82,28 +83,50 @@ export const apiClient = async <T>(endpoint: string, options: FetchOptions = {})
 
   try {
     const response = await fetch(`${BASE_URL}${endpoint}`, config);
-    const responseData = await response.json();
+    const responseText = await response.text();
 
-    console.log(`[API RESPONSE] ${response.status} ${BASE_URL}${endpoint}`, responseData);
+    let responseData: any = null;
+    try {
+      responseData = responseText ? JSON.parse(responseText) : null;
+    } catch {
+      // responseText is not valid JSON (e.g., HTML error page like 413 or 500 from Nginx)
+      responseData = null;
+    }
+
+    console.log(`[API RESPONSE] ${response.status} ${BASE_URL}${endpoint}`, responseData ?? responseText);
 
     if (!response.ok) {
-      const errorMessage =
+      let errorMessage =
         responseData?.data?.user_message ||
         responseData?.user_message ||
         responseData?.data?.error ||
         responseData?.error ||
         responseData?.message ||
-        'An error occurred';
+        (Array.isArray(responseData?.errors) ? responseData.errors[0] : responseData?.errors);
+
+      if (!errorMessage) {
+        if (response.status === 413) {
+          errorMessage = 'The uploaded image is too large. Please select a smaller photo.';
+        } else if (response.status === 502 || response.status === 503 || response.status === 504) {
+          errorMessage = 'Server is temporarily unavailable. Please try again later.';
+        } else if (response.status === 500) {
+          errorMessage = 'Internal server error. Please try again later.';
+        } else if (response.status === 404) {
+          errorMessage = 'Requested service endpoint was not found.';
+        } else {
+          errorMessage = `Request failed with status ${response.status}`;
+        }
+      }
 
       throw {
         message: errorMessage,
         status: response.status,
-        data: responseData,
+        data: responseData || responseText,
       };
     }
 
-    return responseData as T;
-  } catch (error) {
+    return (responseData ?? ({} as any)) as T;
+  } catch (error: any) {
     console.error(`[API ERROR] ${BASE_URL}${endpoint}`, error);
     // If it's already our custom error format, rethrow it
     if (error && typeof error === 'object' && 'status' in error) {
@@ -112,7 +135,7 @@ export const apiClient = async <T>(endpoint: string, options: FetchOptions = {})
     
     // Otherwise, wrap network errors
     throw {
-      message: 'Failed to connect to the server',
+      message: error?.message || 'Failed to connect to the server',
       originalError: error,
     };
   }

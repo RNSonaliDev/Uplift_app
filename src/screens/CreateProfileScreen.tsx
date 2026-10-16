@@ -409,13 +409,15 @@ export const CreateProfileScreen: React.FC = () => {
 
 
       if (profilePhoto) {
-        formData.append('profile_image', {
-          uri: profilePhoto,
-          type: 'image/jpeg',
-          name: 'profile.jpg',
-        } as any);
-      } else {
-        formData.append('profile_image', '');
+        if (profilePhoto.startsWith('http://') || profilePhoto.startsWith('https://')) {
+          formData.append('profile_image', profilePhoto);
+        } else {
+          formData.append('profile_image', {
+            uri: profilePhoto,
+            type: 'image/jpeg',
+            name: profilePhotoName || 'profile.jpg',
+          } as any);
+        }
       }
 
       if (!verificationToken) {
@@ -827,7 +829,7 @@ export const CreateProfileScreen: React.FC = () => {
             <AppText variant="bodyMedium" color={Colors.neutral[600]} center style={{ marginBottom: 24, lineHeight: 22 }}>
               Verification codes will be sent to your parent's email and phone:
               {parentEmail ? `\n${parentEmail}` : ''}
-              {parentPhone ? `\n${parentPhone.startsWith('+') ? parentPhone : `+1 ${parentPhone}`}` : ''}
+              {parentPhone ? `\n${parentPhone.startsWith('+') ? parentPhone : `+1${parentPhone}`}` : ''}
             </AppText>
             <Button
               title="Continue"

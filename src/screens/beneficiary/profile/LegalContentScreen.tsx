@@ -19,34 +19,63 @@ import { horizontalScale, verticalScale, moderateScale } from '../../../utils/re
 export default function LegalContentScreen() {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
-  const { type } = route.params || { type: 'terms' };
+  const { type, slug: customSlug, title: customTitle } = route.params || { type: 'terms' };
   const { width } = useWindowDimensions();
   
   const [content, setContent] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const title = type === 'terms' ? 'Terms of Service' : 'Privacy Policy';
+  const getTitle = () => {
+    if (customTitle) return customTitle;
+    switch (type) {
+      case 'terms':
+        return 'Terms & Conditions';
+      case 'guidelines':
+        return 'Community Guidelines';
+      case 'privacy':
+        return 'Privacy Policy';
+      case 'safety':
+        return 'Safety Policy';
+      case 'minor-volunteer':
+        return 'Minor Volunteer Addendum';
+      default:
+        return 'Legal Document';
+    }
+  };
+
+  const title = getTitle();
 
   useEffect(() => {
     const fetchContent = async () => {
       try {
-        let res;
-        if (type === 'terms') {
+        let res: any;
+        if (customSlug) {
+          res = await contentApi.getContentBySlug(customSlug);
+        } else if (type === 'terms') {
           res = await contentApi.getTermsOfService();
-        } else {
+        } else if (type === 'privacy') {
           res = await contentApi.getPrivacyPolicy();
+        } else if (type === 'guidelines') {
+          res = await contentApi.getContentBySlug('community-guidelines');
+        } else if (type === 'safety') {
+          res = await contentApi.getContentBySlug('safety-policy');
+        } else if (type === 'minor-volunteer') {
+          res = await contentApi.getContentBySlug('minor-volunteer');
+        } else {
+          res = await contentApi.getTermsOfService();
         }
-        const cleanText = res.body ? res.body : '<p>No content available.</p>';
+
+        const cleanText = res?.body ? res.body : '<p>No content available.</p>';
         setContent(cleanText);
       } catch (error) {
-        setContent(`Failed to load ${title}. Please try again later.`);
+        setContent('<p>No content available.</p>');
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchContent();
-  }, [type, title]);
+  }, [type, title, customSlug]);
 
   return (
     <>

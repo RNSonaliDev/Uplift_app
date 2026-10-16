@@ -322,8 +322,7 @@ export const CreateAccountScreen: React.FC = () => {
               variant="bodySmall"
               color={Colors.neutral[600]}
               style={styles.infoText}>
-              We will send you a verification code{'\n'}on given email address
-              or phone number.
+              We’ll send a verification code to your provided email address or phone number. By continuing, you consent to receive one-time verification code.
             </AppText>
           </View>
 

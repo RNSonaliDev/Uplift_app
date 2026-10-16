@@ -424,7 +424,9 @@ export const BeneficiarySetupScreen: React.FC = () => {
   const handleSelectPhoto = async () => {
     const result = await launchImageLibrary({
       mediaType: 'photo',
-      quality: 0.8,
+      quality: 0.7,
+      maxWidth: 1024,
+      maxHeight: 1024,
     });
     
     if (result.assets && result.assets.length > 0) {

@@ -6,9 +6,7 @@ import {
   StatusBar,
   ScrollView,
   TouchableOpacity,
-  ImageBackground,
-  Modal,
-  ActivityIndicator,
+  Text,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {AppText} from '../components/AppText';
@@ -28,6 +26,8 @@ import {
 import { whatsappImage } from '../assets/images';
 import { contentApi } from '../api';
 
+import { FontFamily } from '../theme/typography';
+
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
@@ -37,19 +37,36 @@ type RootStackParamList = {
   CreateAccount: undefined;
   VerifyAccount: { emailOrPhone: string };
   SelectRoles: undefined;
-  LegalContent: { type: 'terms' | 'privacy' };
+  LegalContent: {
+    type?: 'terms' | 'privacy' | 'guidelines' | 'safety' | 'minor-volunteer';
+    slug?: string;
+    title?: string;
+  };
 };
 
 type NavigationProps = NativeStackNavigationProp<RootStackParamList>;
 
 export const WelcomeScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProps>();
+
   const openTerms = () => {
     navigation.navigate('LegalContent', { type: 'terms' });
   };
 
+  const openGuidelines = () => {
+    navigation.navigate('LegalContent', { type: 'guidelines' });
+  };
+
   const openPrivacy = () => {
     navigation.navigate('LegalContent', { type: 'privacy' });
+  };
+
+  const openSafety = () => {
+    navigation.navigate('LegalContent', { type: 'safety' });
+  };
+
+  const openMinorAddendum = () => {
+    navigation.navigate('LegalContent', { type: 'minor-volunteer' });
   };
 
   return (
@@ -119,32 +136,31 @@ export const WelcomeScreen: React.FC = () => {
             style={styles.loginButton}
           />
 
-          {/* Terms Text */}
+          {/* Legal Disclaimer Text */}
           <View style={styles.termsContainer}>
-            <AppText variant="bodySmall" color={Colors.neutral[500]}>
-              By continuing, you agree to our
-            </AppText>
-            <View style={styles.termsLinks}>
-              <TouchableOpacity onPress={openTerms}>
-                <AppText
-                  variant="bodySmall"
-                  color={Colors.primary[500]}
-                  weight="semiBold">
-                  Terms of Service
-                </AppText>
-              </TouchableOpacity>
-              <AppText variant="bodySmall" color={Colors.neutral[500]}>
-                {'  and  '}
-              </AppText>
-              <TouchableOpacity onPress={openPrivacy}>
-                <AppText
-                  variant="bodySmall"
-                  color={Colors.primary[500]}
-                  weight="semiBold">
-                  Privacy Policy
-                </AppText>
-              </TouchableOpacity>
-            </View>
+            <Text style={styles.disclaimerText}>
+              By providing your email address and/or phone number, you agree to iUpliftU’s{' '}
+              <Text style={styles.linkText} onPress={openTerms}>
+                Terms & Conditions
+              </Text>
+              {', '}
+              <Text style={styles.linkText} onPress={openGuidelines}>
+                Community Guidelines
+              </Text>
+              {', '}
+              <Text style={styles.linkText} onPress={openPrivacy}>
+                Privacy Policy
+              </Text>
+              {', '}
+              <Text style={styles.linkText} onPress={openSafety}>
+                Safety Policy
+              </Text>
+              {', and '}
+              <Text style={styles.linkText} onPress={openMinorAddendum}>
+                Minor Volunteer Addendum
+              </Text>
+              {' '}(where applicable).
+            </Text>
           </View>
         </View>
       </ScrollView>
@@ -204,12 +220,19 @@ const styles = StyleSheet.create({
   },
   termsContainer: {
     alignItems: 'center',
-    marginTop: verticalScale(20),
+    marginTop: verticalScale(16),
+    paddingHorizontal: horizontalScale(2),
   },
-  termsLinks: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: verticalScale(2),
+  disclaimerText: {
+    fontSize: moderateScale(11),
+    lineHeight: verticalScale(16),
+    color: Colors.neutral[500],
+    textAlign: 'center',
+    fontFamily: FontFamily.regular,
   },
-
+  linkText: {
+    color: Colors.primary[500],
+    fontFamily: FontFamily.semiBold,
+    textDecorationLine: 'underline',
+  },
 });

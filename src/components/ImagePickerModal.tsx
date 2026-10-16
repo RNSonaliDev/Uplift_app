@@ -8,6 +8,7 @@ import {
   Animated,
   Platform,
   PermissionsAndroid,
+  Keyboard,
 } from 'react-native';
 import Svg, { Path, Circle, Rect } from 'react-native-svg';
 import { launchCamera, launchImageLibrary, Asset } from 'react-native-image-picker';
@@ -126,25 +127,28 @@ export const ImagePickerModal: React.FC<ImagePickerModalProps> = ({
 }) => {
   const slideAnim = useRef(new Animated.Value(300)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
+  const isPickingRef = useRef(false);
 
   useEffect(() => {
     if (visible) {
+      Keyboard.dismiss();
+      isPickingRef.current = false;
       Animated.parallel([
-        Animated.spring(slideAnim, {
+        Animated.timing(slideAnim, {
           toValue: 0,
-          tension: 65,
-          friction: 9,
+          duration: 220,
           useNativeDriver: true,
         }),
         Animated.timing(opacityAnim, {
           toValue: 1,
-          duration: 200,
+          duration: 180,
           useNativeDriver: true,
         }),
       ]).start();
     } else {
       slideAnim.setValue(300);
       opacityAnim.setValue(0);
+      isPickingRef.current = false;
     }
   }, [visible, slideAnim, opacityAnim]);
 
@@ -169,9 +173,13 @@ export const ImagePickerModal: React.FC<ImagePickerModalProps> = ({
   };
 
   const handleTakePhoto = async () => {
+    if (isPickingRef.current) return;
+    isPickingRef.current = true;
+
     try {
       const hasPermission = await requestAndroidCameraPermission();
       if (!hasPermission) {
+        isPickingRef.current = false;
         Toast.show({
           type: 'error',
           text1: 'Camera Permission Required',
@@ -180,94 +188,109 @@ export const ImagePickerModal: React.FC<ImagePickerModalProps> = ({
         return;
       }
 
-      const result = await launchCamera({
-        mediaType: 'photo',
-        quality: 0.8,
-        saveToPhotos: false,
-        cameraType,
-      });
-
-      if (result.didCancel) {
-        onClose();
-        return;
-      }
-
-      if (result.errorCode) {
-        Toast.show({
-          type: 'error',
-          text1: 'Camera Error',
-          text2: result.errorMessage || 'Unable to open camera.',
-        });
-        return;
-      }
-
-      if (result.assets && result.assets.length > 0) {
-        const asset: Asset = result.assets[0];
-        if (asset.uri) {
-          onClose();
-          onImageSelected({
-            uri: asset.uri,
-            fileName: asset.fileName || (title.toLowerCase().includes('profile') ? 'profile_photo.jpg' : 'government_id.jpg'),
-            type: asset.type || 'image/jpeg',
-            fileSize: asset.fileSize,
+      onClose();
+      setTimeout(async () => {
+        try {
+          const result = await launchCamera({
+            mediaType: 'photo',
+            quality: 0.7,
+            maxWidth: 1024,
+            maxHeight: 1024,
+            saveToPhotos: false,
+            cameraType,
           });
+
+          if (result.didCancel) {
+            return;
+          }
+
+          if (result.errorCode) {
+            Toast.show({
+              type: 'error',
+              text1: 'Camera Error',
+              text2: result.errorMessage || 'Unable to open camera.',
+            });
+            return;
+          }
+
+          if (result.assets && result.assets.length > 0) {
+            const asset: Asset = result.assets[0];
+            if (asset.uri) {
+              onImageSelected({
+                uri: asset.uri,
+                fileName: asset.fileName || (title.toLowerCase().includes('profile') ? 'profile_photo.jpg' : 'government_id.jpg'),
+                type: asset.type || 'image/jpeg',
+                fileSize: asset.fileSize,
+              });
+            }
+          }
+        } catch (error: any) {
+          console.error('Error launching camera:', error);
+          Toast.show({
+            type: 'error',
+            text1: 'Camera Error',
+            text2: error?.message || 'Something went wrong while opening the camera.',
+          });
+        } finally {
+          isPickingRef.current = false;
         }
-      } else {
-        onClose();
-      }
+      }, 120);
     } catch (error: any) {
-      console.error('Error launching camera:', error);
-      Toast.show({
-        type: 'error',
-        text1: 'Camera Error',
-        text2: error?.message || 'Something went wrong while opening the camera.',
-      });
+      isPickingRef.current = false;
+      console.error('Error in handleTakePhoto:', error);
     }
   };
 
-  const handleChooseGallery = async () => {
-    try {
-      const result = await launchImageLibrary({
-        mediaType: 'photo',
-        quality: 0.8,
-      });
+  const handleChooseGallery = () => {
+    if (isPickingRef.current) return;
+    isPickingRef.current = true;
 
-      if (result.didCancel) {
-        onClose();
-        return;
-      }
+    onClose();
+    setTimeout(async () => {
+      try {
+        const result = await launchImageLibrary({
+          mediaType: 'photo',
+          selectionLimit: 1,
+          quality: 0.7,
+          maxWidth: 1024,
+          maxHeight: 1024,
+        });
 
-      if (result.errorCode) {
+        if (result.didCancel) {
+          return;
+        }
+
+        if (result.errorCode) {
+          Toast.show({
+            type: 'error',
+            text1: 'Gallery Error',
+            text2: result.errorMessage || 'Unable to open gallery.',
+          });
+          return;
+        }
+
+        if (result.assets && result.assets.length > 0) {
+          const asset: Asset = result.assets[0];
+          if (asset.uri) {
+            onImageSelected({
+              uri: asset.uri,
+              fileName: asset.fileName || (title.toLowerCase().includes('profile') ? 'profile_photo.jpg' : 'government_id.jpg'),
+              type: asset.type || 'image/jpeg',
+              fileSize: asset.fileSize,
+            });
+          }
+        }
+      } catch (error: any) {
+        console.error('Error launching image library:', error);
         Toast.show({
           type: 'error',
           text1: 'Gallery Error',
-          text2: result.errorMessage || 'Unable to open gallery.',
+          text2: error?.message || 'Something went wrong while opening the gallery.',
         });
-        return;
+      } finally {
+        isPickingRef.current = false;
       }
-
-      if (result.assets && result.assets.length > 0) {
-        const asset: Asset = result.assets[0];
-        if (asset.uri) {
-          onClose();
-          onImageSelected({
-            uri: asset.uri,
-            fileName: asset.fileName || (title.toLowerCase().includes('profile') ? 'profile_photo.jpg' : 'government_id.jpg'),
-            type: asset.type || 'image/jpeg',
-            fileSize: asset.fileSize,
-          });
-        }
-      } else {
-        onClose();
-      }
-    } catch (error: any) {
-      console.error('Error launching image library:', error);
-      Toast.show({
-        type: 'error',
-        text1: 'Gallery Error',
-        text2: error?.message || 'Something went wrong while opening the gallery.',
-      });
-    }
+    }, 120);
   };
 
   if (!visible) return null;
@@ -330,7 +353,8 @@ export const ImagePickerModal: React.FC<ImagePickerModalProps> = ({
             <TouchableOpacity
               style={styles.optionCard}
               onPress={handleTakePhoto}
-              activeOpacity={0.75}
+              activeOpacity={0.7}
+              delayPressIn={0}
             >
               <View style={[styles.iconWrapper, { backgroundColor: Colors.primary[50] }]}>
                 <CameraIcon size={24} color={Colors.primary[500]} />
@@ -350,7 +374,8 @@ export const ImagePickerModal: React.FC<ImagePickerModalProps> = ({
             <TouchableOpacity
               style={styles.optionCard}
               onPress={handleChooseGallery}
-              activeOpacity={0.75}
+              activeOpacity={0.7}
+              delayPressIn={0}
             >
               <View style={[styles.iconWrapper, { backgroundColor: Colors.secondary[50] }]}>
                 <GalleryIcon size={24} color={Colors.secondary[600]} />
@@ -371,7 +396,8 @@ export const ImagePickerModal: React.FC<ImagePickerModalProps> = ({
           <TouchableOpacity
             style={styles.cancelButton}
             onPress={onClose}
-            activeOpacity={0.8}
+            activeOpacity={0.7}
+            delayPressIn={0}
           >
             <AppText variant="labelMedium" color={Colors.neutral[700]} weight="bold">
               Cancel
@@ -392,6 +418,7 @@ const styles = StyleSheet.create({
   backdrop: {
     ...StyleSheet.absoluteFill,
     backgroundColor: 'rgba(15, 23, 42, 0.55)',
+    zIndex: 1,
   },
   sheetContainer: {
     width: '100%',
@@ -402,6 +429,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: horizontalScale(20),
     paddingBottom: verticalScale(Platform.OS === 'ios' ? 36 : 24),
     ...Shadows.xl,
+    elevation: 20,
+    zIndex: 10,
   },
   handleContainer: {
     alignItems: 'center',

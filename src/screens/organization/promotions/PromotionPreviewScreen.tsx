@@ -152,7 +152,7 @@ export const PromotionPreviewScreen = () => {
           contentContainerStyle={styles.content}
           showsVerticalScrollIndicator={false}>
 
-          {promotion?.status ? (
+          {/* {promotion?.status ? (
             <View style={styles.detailRowItem}>
               <View style={styles.detailLabelRow}>
                 <Info color={Colors.neutral[600]} size={20} />
@@ -166,7 +166,7 @@ export const PromotionPreviewScreen = () => {
                 </View>
               </View>
             </View>
-          ) : null}
+          ) : null} */}
 
           <View style={styles.detailRowItem}>
             <View style={styles.detailLabelRow}>

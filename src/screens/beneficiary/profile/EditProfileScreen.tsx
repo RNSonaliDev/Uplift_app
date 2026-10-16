@@ -571,30 +571,46 @@ export default function EditProfileScreen() {
                 </AppText>
               </View>
               {formData.government_id ? (
-                <TouchableOpacity
-                  style={styles.uploadedFileRow}
-                  activeOpacity={0.8}
-                  onPress={() => setPreviewImage({
-                    uri: getFullImageUrl(formData.government_id) || formData.government_id,
-                    title: 'Government ID Photo'
-                  })}
-                >
-                  <View style={styles.uploadedFileInfo}>
+                <View style={styles.uploadedFileRow}>
+                  <TouchableOpacity
+                    style={styles.uploadedFileInfo}
+                    activeOpacity={0.8}
+                    onPress={() => setPreviewImage({
+                      uri: getFullImageUrl(formData.government_id) || formData.government_id,
+                      title: 'Government ID'
+                    })}
+                  >
                     <Image
                       source={{ uri: getFullImageUrl(formData.government_id) || formData.government_id }}
                       style={styles.uploadedThumbnail}
                       resizeMode="cover"
                     />
-                  </View>
+                  </TouchableOpacity>
                   <View style={{flexDirection: 'row', alignItems: 'center', gap: 8}}>
-                    <View style={styles.viewBadge}>
+                    <TouchableOpacity
+                      style={styles.viewBadge}
+                      activeOpacity={0.7}
+                      onPress={() => setPreviewImage({
+                        uri: getFullImageUrl(formData.government_id) || formData.government_id,
+                        title: 'Government ID'
+                      })}
+                    >
                       <Eye color={Colors.primary[600]} size={16} style={{marginRight: 4}} />
                       <AppText variant="labelSmall" color={Colors.primary[600]} weight="bold">
                         View
                       </AppText>
-                    </View>
+                    </TouchableOpacity>
+                    {/* <TouchableOpacity
+                      style={[styles.viewBadge, { backgroundColor: Colors.neutral[100] }]}
+                      activeOpacity={0.7}
+                      onPress={() => setShowGovernmentIdModal(true)}
+                    >
+                      <AppText variant="labelSmall" color={Colors.neutral[700]} weight="bold">
+                        Change
+                      </AppText>
+                    </TouchableOpacity> */}
                   </View>
-                </TouchableOpacity>
+                </View>
               ) : (
                 <TouchableOpacity
                   style={styles.idUploadBox}
