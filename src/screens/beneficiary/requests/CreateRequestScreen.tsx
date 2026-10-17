@@ -15,24 +15,38 @@ import {
   Dimensions,
   Text,
   LogBox,
+  Pressable,
 } from 'react-native';
+import Svg, { Path, Circle as SvgCircle } from 'react-native-svg';
 import {useNavigation, useRoute} from '@react-navigation/native';
 import {Colors} from '../../../theme/colors';
 import {Typography, FontFamily} from '../../../theme/typography';
+import {BorderRadius, Spacing} from '../../../theme/spacing';
+import {Shadows} from '../../../theme/common';
 import {AppText} from '../../../components/AppText';
 import {Input} from '../../../components/Input';
 import {Button} from '../../../components/Button';
 import { DatePickerModal } from '../../../components/DatePickerModal';
 import {api, getFullImageUrl} from '../../../api/client';
 import {authApi, CategoryResponse} from '../../../api/auth';
-import {ChevronLeft, ShoppingCart, MapPin, Navigation, X, Info} from 'lucide-react-native';
-import {Spacing} from '../../../theme/spacing';
+import {ChevronLeft, ShoppingCart, MapPin, Navigation, X} from 'lucide-react-native';
 import {horizontalScale, verticalScale, moderateScale} from '../../../utils/responsive';
 import MapView, { Marker, Circle } from 'react-native-maps';
 import { GooglePlacesAutocomplete, GooglePlacesAutocompleteRef } from 'react-native-google-places-autocomplete';
 import Geolocation from '@react-native-community/geolocation';
 import { validateAddressType, validateBusinessAddressWithAPI, ValidationResult } from '../../../utils/addressValidation';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
+
+const InfoCircleIcon: React.FC<{size?: number; color?: string}> = ({
+  size = 18,
+  color = Colors.primary[500],
+}) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <SvgCircle cx="12" cy="12" r="10" stroke={color} strokeWidth="1.5" />
+    <Path d="M12 16V12" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
+    <SvgCircle cx="12" cy="8" r="1" fill={color} />
+  </Svg>
+);
 
 LogBox.ignoreLogs(['VirtualizedLists should never be nested']);
 
@@ -404,6 +418,7 @@ export default function CreateRequestScreen() {
   const [isCategoryModalVisible, setIsCategoryModalVisible] = useState(false);
   const [loadingCategories, setLoadingCategories] = useState(false);
   const [addressValidation, setAddressValidation] = useState<ValidationResult | null>(null);
+  const [showAddressInfo, setShowAddressInfo] = useState(false);
 
   const getInitialDate = () => {
     const now = new Date();
@@ -488,6 +503,11 @@ export default function CreateRequestScreen() {
         // Validate address using Address Validation API
         const validationData = await validateBusinessAddressWithAPI(address, GOOGLE_MAPS_API_KEY);
         setAddressValidation(validationData);
+        if (validationData?.addressType === 'residential' || validationData?.isBusinessAddress === false) {
+          setErrors(prev => ({ ...prev, meeting_location: 'For your safety, please use the business address' }));
+        } else {
+          setErrors(prev => ({ ...prev, meeting_location: '' }));
+        }
 
         handleChange('meeting_location', address);
         googlePlacesRef.current?.setAddressText(address);
@@ -670,7 +690,25 @@ export default function CreateRequestScreen() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handlePreview = () => {
+  const handlePreview = async () => {
+    let currentValidation = addressValidation;
+    if (formData.meeting_location && formData.meeting_location.trim() && formData.meeting_location !== 'Current Location' && !currentValidation) {
+      try {
+        currentValidation = await validateBusinessAddressWithAPI(formData.meeting_location, GOOGLE_MAPS_API_KEY);
+        setAddressValidation(currentValidation);
+      } catch (err) {
+        console.log('Error validating address on preview:', err);
+      }
+    }
+
+    if (currentValidation?.addressType === 'residential' || currentValidation?.isBusinessAddress === false) {
+      setErrors(prev => ({
+        ...prev,
+        meeting_location: 'For your safety, please use the business address',
+      }));
+      return;
+    }
+
     if (!validate()) return;
     
     navigation.navigate('PreviewRequest', {
@@ -804,11 +842,20 @@ export default function CreateRequestScreen() {
             error={errors.hours_required}
           /> */}
 
-          <View style={styles.addressSection}>
+          <View style={[styles.addressSection, { zIndex: showAddressInfo ? 99999 : 9999, elevation: Platform.OS === 'android' ? (showAddressInfo ? 25 : 10) : undefined }]}>
             <View style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8}}>
-              <AppText variant="labelLarge" color={Colors.neutral[700]}>
-                Meeting Location <AppText color={Colors.error}>*</AppText>
-              </AppText>
+              <View style={{flexDirection: 'row', alignItems: 'center'}}>
+                <AppText variant="labelLarge" color={Colors.neutral[700]}>
+                  Meeting Location <AppText color={Colors.error}>*</AppText>
+                </AppText>
+                <TouchableOpacity 
+                  style={{marginLeft: 6}}
+                  onPress={() => setShowAddressInfo(!showAddressInfo)}
+                  hitSlop={{top: 8, bottom: 8, left: 8, right: 8}}
+                >
+                  <InfoCircleIcon size={18} color={Colors.primary[500]} />
+                </TouchableOpacity>
+              </View>
               {(formData.latitude && formData.longitude) ? (
                 <TouchableOpacity onPress={() => setIsMapModalVisible(true)}>
                   <AppText variant="bodyMedium" color={Colors.primary[500]} style={{ textDecorationLine: 'underline' }}>
@@ -817,6 +864,31 @@ export default function CreateRequestScreen() {
                 </TouchableOpacity>
               ) : null}
             </View>
+
+            {/* Floating Tooltip */}
+            {showAddressInfo && (
+              <>
+                <Pressable
+                  style={{
+                    position: 'absolute',
+                    top: -Dimensions.get('window').height,
+                    bottom: -Dimensions.get('window').height,
+                    left: -Dimensions.get('window').width,
+                    right: -Dimensions.get('window').width,
+                    backgroundColor: 'transparent',
+                    zIndex: 99998,
+                  }}
+                  onPress={() => setShowAddressInfo(false)}
+                />
+                <View style={[styles.tooltipContainer, { zIndex: 99999, elevation: 25 }]}>
+                  {/* Left pointing triangle */}
+                  <View style={[styles.tooltipTriangle, {left: 145}]} />
+                  <AppText variant="caption" color={Colors.neutral[800]} style={{lineHeight: 18}}>
+                    Enter a nearby business address to match you with nearby requests— your exact location is never shared with anyone
+                  </AppText>
+                </View>
+              </>
+            )}
             <GooglePlacesAutocomplete
               ref={googlePlacesRef}
               placeholder="e.g. 123 Main St, Beverly Hills, CA"
@@ -828,7 +900,7 @@ export default function CreateRequestScreen() {
               onFail={(error) => console.log('Google Places Autocomplete Error:', error)}
               onPress={async (data, details = null) => {
                 const currentScrollY = scrollYRef.current;
-                const selectedAddr = data.description || data.formatted_address || '';
+                const selectedAddr = data.description || (data as any).formatted_address || '';
                 handleChange('meeting_location', selectedAddr);
                 googlePlacesRef.current?.setAddressText(selectedAddr);
                 if (errors.meeting_location) {
@@ -838,6 +910,11 @@ export default function CreateRequestScreen() {
                   console.log("Selected Address Details: ", details);
                   const validationData = await validateBusinessAddressWithAPI(selectedAddr, GOOGLE_MAPS_API_KEY);
                   setAddressValidation(validationData);
+                  if (validationData?.addressType === 'residential' || validationData?.isBusinessAddress === false) {
+                    setErrors(prev => ({ ...prev, meeting_location: 'For your safety, please use the business address' }));
+                  } else {
+                    setErrors(prev => ({ ...prev, meeting_location: '' }));
+                  }
                   
                   if (details.geometry?.location) {
                     handleChange('latitude', details.geometry.location.lat.toString());
@@ -894,10 +971,12 @@ export default function CreateRequestScreen() {
                   }
                 },
               }}
-              listViewProps={{
-                nestedScrollEnabled: true,
-                keyboardShouldPersistTaps: 'always',
-              }}
+              {...({
+                listViewProps: {
+                  nestedScrollEnabled: true,
+                  keyboardShouldPersistTaps: 'always',
+                },
+              } as any)}
               renderLeftButton={() => (
                 <View style={styles.leftIconContainer}>
                   <MapPin color={Colors.primary[500]} size={20} />
@@ -909,47 +988,11 @@ export default function CreateRequestScreen() {
                 </TouchableOpacity>
               )}
             />
-            {errors.meeting_location ? (
+            {!!errors.meeting_location && (
               <AppText variant="bodySmall" color={Colors.error} style={{marginTop: 4}}>
                 {errors.meeting_location}
               </AppText>
-            ) : addressValidation?.message ? (
-              <View style={{
-                flexDirection: 'row', 
-                alignItems: 'flex-start', 
-                backgroundColor: addressValidation.addressType === 'business' 
-                  ? Colors.secondary[50] 
-                  : (addressValidation.addressType === 'residential' || addressValidation.isBusinessAddress === false)
-                    ? '#FEE2E2'
-                    : Colors.primary[50],
-                borderRadius: 8,
-                padding: 12,
-                marginTop: 8,
-                borderWidth: (addressValidation.addressType === 'residential' || addressValidation.isBusinessAddress === false) ? 1 : 0,
-                borderColor: '#FCA5A5',
-              }}>
-                <Info 
-                  color={addressValidation.addressType === 'business' 
-                    ? Colors.success 
-                    : (addressValidation.addressType === 'residential' || addressValidation.isBusinessAddress === false)
-                      ? Colors.error
-                      : Colors.info} 
-                  size={20} 
-                  style={{marginTop: 0, marginRight: 8}} 
-                />
-                <AppText 
-                  variant="bodySmall" 
-                  color={addressValidation.addressType === 'business' 
-                    ? Colors.success 
-                    : (addressValidation.addressType === 'residential' || addressValidation.isBusinessAddress === false)
-                      ? Colors.error
-                      : Colors.info} 
-                  style={{flex: 1, lineHeight: 18}}
-                >
-                  {addressValidation.message}
-                </AppText>
-              </View>
-            ) : null}
+            )}
 
 
           </View>
@@ -1446,5 +1489,32 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 1,
     borderColor: Colors.primary[200],
+  },
+  tooltipContainer: {
+    position: 'absolute',
+    top: 32,
+    left: 0,
+    right: 0,
+    backgroundColor: Colors.neutral[0],
+    borderRadius: BorderRadius.md,
+    padding: Spacing.md,
+    ...Shadows.md,
+    elevation: 25,
+    zIndex: 99999,
+  },
+  tooltipTriangle: {
+    position: 'absolute',
+    top: -10,
+    left: 145,
+    width: 0,
+    height: 0,
+    borderLeftWidth: 10,
+    borderRightWidth: 10,
+    borderBottomWidth: 10,
+    borderStyle: 'solid',
+    backgroundColor: 'transparent',
+    borderLeftColor: 'transparent',
+    borderRightColor: 'transparent',
+    borderBottomColor: Colors.neutral[0],
   },
 });

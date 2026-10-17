@@ -11,6 +11,8 @@ import {
   TouchableWithoutFeedback,
   Platform,
   TextInput,
+  Pressable,
+  Dimensions,
 } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -30,6 +32,8 @@ import {UpliftLogo} from '../components/UpliftLogo';
 import {authApi} from '../api';
 import {Colors} from '../theme/colors';
 import {BorderRadius, Spacing} from '../theme/spacing';
+import {Shadows} from '../theme/common';
+import {validateBusinessAddressWithAPI, ValidationResult} from '../utils/addressValidation';
 import {
   moderateScale,
   fontScale,
@@ -189,6 +193,17 @@ const PhoneOutlineIcon: React.FC<{size?: number; color?: string}> = ({
   </Svg>
 );
 
+const InfoCircleIcon: React.FC<{size?: number; color?: string}> = ({
+  size = 18,
+  color = Colors.primary[500],
+}) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Circle cx="12" cy="12" r="10" stroke={color} strokeWidth="1.5" />
+    <Path d="M12 16V12" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
+    <Circle cx="12" cy="8" r="1" fill={color} />
+  </Svg>
+);
+
 // ── Custom Components ──────────────────────────────────
 const PhonePrefixPrefix = () => (
   <View style={styles.phonePrefixContainer}>
@@ -221,6 +236,9 @@ export const OrganizationSetupScreen: React.FC = () => {
   const [orgName, setOrgName] = useState('');
   const [orgAddress, setOrgAddress] = useState('');
   const [orgEmail, setOrgEmail] = useState('');
+  const [addressValidation, setAddressValidation] = useState<ValidationResult | null>(null);
+  const [isValidatingAddress, setIsValidatingAddress] = useState(false);
+  const [showAddressInfo, setShowAddressInfo] = useState(false);
   
   const [latitude, setLatitude] = useState('');
   const [longitude, setLongitude] = useState('');
@@ -246,7 +264,7 @@ export const OrganizationSetupScreen: React.FC = () => {
 
   const handleCurrentLocation = () => {
     Geolocation.getCurrentPosition(
-      (position) => {
+      async (position) => {
         const { latitude: lat, longitude: lng } = position.coords;
         setRegion({
           ...region,
@@ -255,8 +273,27 @@ export const OrganizationSetupScreen: React.FC = () => {
         });
         setLatitude(lat.toString());
         setLongitude(lng.toString());
-        setOrgAddress('Current Location');
-        googlePlacesRef.current?.setAddressText('Current Location');
+        
+        try {
+          const response = await fetch(
+            `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${GOOGLE_MAPS_API_KEY}`
+          );
+          const data = await response.json();
+          if (data.results && data.results.length > 0) {
+            const fetchedAddress = data.results[0].formatted_address;
+            setOrgAddress(fetchedAddress);
+            googlePlacesRef.current?.setAddressText(fetchedAddress);
+            const validationData = await validateBusinessAddressWithAPI(fetchedAddress, GOOGLE_MAPS_API_KEY);
+            setAddressValidation(validationData);
+            if (validationData?.addressType === 'residential' || validationData?.isBusinessAddress === false) {
+              setErrors(prev => ({ ...prev, orgAddress: 'For your safety, please use the business address' }));
+            } else {
+              setErrors(prev => ({ ...prev, orgAddress: '' }));
+            }
+          }
+        } catch (error) {
+          console.error('Error fetching reverse geocoding on current location:', error);
+        }
       },
       (error) => console.log(error.message),
       { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
@@ -281,6 +318,13 @@ export const OrganizationSetupScreen: React.FC = () => {
         const fetchedAddress = data.results[0].formatted_address;
         setOrgAddress(fetchedAddress);
         googlePlacesRef.current?.setAddressText(fetchedAddress);
+        const validationData = await validateBusinessAddressWithAPI(fetchedAddress, GOOGLE_MAPS_API_KEY);
+        setAddressValidation(validationData);
+        if (validationData?.addressType === 'residential' || validationData?.isBusinessAddress === false) {
+          setErrors(prev => ({ ...prev, orgAddress: 'For your safety, please use the business address' }));
+        } else {
+          setErrors(prev => ({ ...prev, orgAddress: '' }));
+        }
       }
     } catch (error) {
       console.error('Error fetching reverse geocoding:', error);
@@ -334,7 +378,13 @@ export const OrganizationSetupScreen: React.FC = () => {
     
     if (!orgType.trim()) newErrors.orgType = 'Organization type is required';
     if (!orgName.trim()) newErrors.orgName = 'Organization name is required';
-    if (!orgAddress.trim()) newErrors.orgAddress = 'Organization address is required';
+    if (!orgAddress.trim()) {
+      newErrors.orgAddress = 'Organization address is required';
+    } else if (errors.orgAddress) {
+      newErrors.orgAddress = errors.orgAddress;
+    } else if (addressValidation?.addressType === 'residential' || addressValidation?.isBusinessAddress === false) {
+      newErrors.orgAddress = 'For your safety, please use the business address';
+    }
     if (!contactName.trim()) newErrors.contactName = 'Contact name is required';
     
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -369,8 +419,48 @@ export const OrganizationSetupScreen: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleContinue = async () => {
-    if (validate()) {
-      const currentRoleData = {
+    const isValid = validate();
+    if (!isValid) return;
+
+    if (errors.orgAddress) {
+      Toast.show({
+        type: 'error',
+        text1: 'Validation Error',
+        text2: errors.orgAddress,
+      });
+      return;
+    }
+
+    let isResidential = addressValidation?.addressType === 'residential' || addressValidation?.isBusinessAddress === false;
+    if (!addressValidation && orgAddress.trim()) {
+      setIsValidatingAddress(true);
+      try {
+        const validationData = await validateBusinessAddressWithAPI(orgAddress.trim(), GOOGLE_MAPS_API_KEY);
+        setAddressValidation(validationData);
+        if (validationData?.addressType === 'residential' || validationData?.isBusinessAddress === false) {
+          isResidential = true;
+        }
+      } catch (e) {
+        console.log('Address validation error in handleContinue:', e);
+      } finally {
+        setIsValidatingAddress(false);
+      }
+    }
+
+    if (isResidential) {
+      setErrors(prev => ({
+        ...prev,
+        orgAddress: 'For your safety, please use the business address',
+      }));
+      Toast.show({
+        type: 'error',
+        text1: 'Validation Error',
+        text2: 'For your safety, please use the business address',
+      });
+      return;
+    }
+
+    const currentRoleData = {
         role: 'organization',
         profile: {
           organization_type: orgType,
@@ -424,7 +514,6 @@ export const OrganizationSetupScreen: React.FC = () => {
       } finally {
         setIsSubmitting(false);
       }
-    }
   };
 
   return (
@@ -554,13 +643,22 @@ export const OrganizationSetupScreen: React.FC = () => {
 
             <View style={{
               marginBottom: Spacing.lg,
-              zIndex: 9999,
-              elevation: Platform.OS === 'android' ? 10 : undefined,
+              zIndex: showAddressInfo ? 99999 : 9999,
+              elevation: Platform.OS === 'android' ? (showAddressInfo ? 25 : 10) : undefined,
             }}>
               <View style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8}}>
-                <AppText variant="labelMedium" color={Colors.neutral[700]}>
-                  Organization Address <AppText color={Colors.error}>*</AppText>
-                </AppText>
+                <View style={{flexDirection: 'row', alignItems: 'center'}}>
+                  <AppText variant="labelMedium" color={Colors.neutral[700]}>
+                    Organization Address <AppText color={Colors.error}>*</AppText>
+                  </AppText>
+                  <TouchableOpacity 
+                    style={{marginLeft: 6}}
+                    onPress={() => setShowAddressInfo(!showAddressInfo)}
+                    hitSlop={{top: 8, bottom: 8, left: 8, right: 8}}
+                  >
+                    <InfoCircleIcon size={18} color={Colors.primary[500]} />
+                  </TouchableOpacity>
+                </View>
                 {(latitude && longitude) ? (
                   <TouchableOpacity onPress={() => setIsMapModalVisible(true)}>
                     <AppText variant="bodyMedium" color={Colors.primary[500]} style={{ textDecorationLine: 'underline' }}>
@@ -569,6 +667,32 @@ export const OrganizationSetupScreen: React.FC = () => {
                   </TouchableOpacity>
                 ) : null}
               </View>
+
+              {/* Floating Tooltip */}
+              {showAddressInfo && (
+                <>
+                  <Pressable
+                    style={{
+                      position: 'absolute',
+                      top: -Dimensions.get('window').height,
+                      bottom: -Dimensions.get('window').height,
+                      left: -Dimensions.get('window').width,
+                      right: -Dimensions.get('window').width,
+                      backgroundColor: 'transparent',
+                      zIndex: 99998,
+                    }}
+                    onPress={() => setShowAddressInfo(false)}
+                  />
+                  <View style={[styles.tooltipContainer, { zIndex: 99999, elevation: 25 }]}>
+                    {/* Left pointing triangle */}
+                    <View style={[styles.tooltipTriangle, {left: 175}]} />
+                    <AppText variant="caption" color={Colors.neutral[800]} style={{lineHeight: 18}}>
+                      Enter a nearby business address to match you with nearby requests— your exact location is never shared with anyone
+                    </AppText>
+                  </View>
+                </>
+              )}
+
               <GooglePlacesAutocomplete
                 ref={googlePlacesRef}
                 placeholder="Enter organization address"
@@ -578,11 +702,19 @@ export const OrganizationSetupScreen: React.FC = () => {
                 debounce={300}
                 minLength={1}
                 onFail={(error) => console.log('Google Places Autocomplete Error:', error)}
-                onPress={(data, details = null) => {
-                  const selectedAddr = data.description || data.formatted_address || '';
+                onPress={async (data, details = null) => {
+                  const selectedAddr = data.description || (data as any).formatted_address || '';
                   setOrgAddress(selectedAddr);
                   googlePlacesRef.current?.setAddressText(selectedAddr);
-                  if (errors.orgAddress) setErrors(prev => ({...prev, orgAddress: ''}));
+                  
+                  const validationData = await validateBusinessAddressWithAPI(selectedAddr, GOOGLE_MAPS_API_KEY);
+                  setAddressValidation(validationData);
+                  if (validationData?.addressType === 'residential' || validationData?.isBusinessAddress === false) {
+                    setErrors(prev => ({ ...prev, orgAddress: 'For your safety, please use the business address' }));
+                  } else {
+                    setErrors(prev => ({ ...prev, orgAddress: '' }));
+                  }
+
                   if (details?.geometry?.location) {
                     setLatitude(details.geometry.location.lat.toString());
                     setLongitude(details.geometry.location.lng.toString());
@@ -648,13 +780,16 @@ export const OrganizationSetupScreen: React.FC = () => {
                   onFocus: () => setTypeModalVisible(false),
                   onChangeText: (text) => {
                     setOrgAddress(text);
-                    if (errors.orgAddress) setErrors({...errors, orgAddress: ''});
+                    setAddressValidation(null);
+                    if (errors.orgAddress) setErrors(prev => ({...prev, orgAddress: ''}));
                   }
                 }}
-                listViewProps={{
-                  nestedScrollEnabled: true,
-                  keyboardShouldPersistTaps: 'always',
-                }}
+                {...({
+                  listViewProps: {
+                    nestedScrollEnabled: true,
+                    keyboardShouldPersistTaps: 'always',
+                  },
+                } as any)}
                 renderLeftButton={() => (
                   <View style={{marginRight: 4}}>
                     <LocationPinIcon color={Colors.primary[500]} size={20} />
@@ -744,7 +879,8 @@ export const OrganizationSetupScreen: React.FC = () => {
             color="primary"
             size="lg"
             fullWidth
-            loading={isSubmitting}
+            loading={isSubmitting || isValidatingAddress}
+            disabled={isSubmitting || isValidatingAddress || Boolean(errors.orgAddress) || addressValidation?.addressType === 'residential' || addressValidation?.isBusinessAddress === false}
             onPress={handleContinue}
             style={styles.continueButton}
           />
@@ -898,5 +1034,32 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: Colors.neutral[200],
     backgroundColor: Colors.neutral[0],
+  },
+  tooltipContainer: {
+    position: 'absolute',
+    top: 32,
+    left: 0,
+    right: 0,
+    backgroundColor: Colors.neutral[0],
+    borderRadius: BorderRadius.md,
+    padding: Spacing.md,
+    ...Shadows.md,
+    elevation: 25,
+    zIndex: 99999,
+  },
+  tooltipTriangle: {
+    position: 'absolute',
+    top: -10,
+    left: 175,
+    width: 0,
+    height: 0,
+    borderLeftWidth: 10,
+    borderRightWidth: 10,
+    borderBottomWidth: 10,
+    borderStyle: 'solid',
+    backgroundColor: 'transparent',
+    borderLeftColor: 'transparent',
+    borderRightColor: 'transparent',
+    borderBottomColor: Colors.neutral[0],
   },
 });

@@ -25,10 +25,11 @@ import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import Svg, {Path, Circle, Rect, Polyline} from 'react-native-svg';
 import { launchImageLibrary } from 'react-native-image-picker';
 import { ImagePickerModal, SelectedImage } from '../components/ImagePickerModal';
+import { DatePickerModal } from '../components/DatePickerModal';
 import MapView, { Marker, Circle as MapCircle } from 'react-native-maps';
 import { GooglePlacesAutocomplete, GooglePlacesAutocompleteRef } from 'react-native-google-places-autocomplete';
 import Geolocation from '@react-native-community/geolocation';
-import { Navigation, MapPin, X, Info } from 'lucide-react-native';
+import { Navigation, MapPin, X } from 'lucide-react-native';
 import { validateBusinessAddressWithAPI, ValidationResult } from '../utils/addressValidation';
 import {AppText} from '../components/AppText';
 import {Button} from '../components/Button';
@@ -240,6 +241,16 @@ const EditPhotoIcon: React.FC<{ size?: number; color?: string }> = ({
   </Svg>
 );
 
+const CalendarIcon: React.FC<{size?: number; color?: string}> = ({
+  size = 20,
+  color = Colors.primary[500],
+}) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Rect x="3" y="4" width="18" height="18" rx="2" ry="2" stroke={color} strokeWidth="1.5" />
+    <Path d="M16 2v4M8 2v4M3 10h18" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
+  </Svg>
+);
+
 // ── Custom Components ──────────────────────────────────
 const PhonePrefixPrefix = () => (
   <View style={styles.phonePrefixContainer}>
@@ -341,7 +352,16 @@ export const VolunteerSetupScreen: React.FC = () => {
 
   const calculateAge = (dobString?: string): number | null => {
     if (!dobString) return null;
-    const dobDate = new Date(dobString);
+    let dobDate: Date;
+    const parts = dobString.split('T')[0].split('-');
+    if (parts.length === 3) {
+      const year = parseInt(parts[0], 10);
+      const month = parseInt(parts[1], 10) - 1;
+      const day = parseInt(parts[2], 10);
+      dobDate = new Date(year, month, day);
+    } else {
+      dobDate = new Date(dobString);
+    }
     if (isNaN(dobDate.getTime())) return null;
     let age = new Date().getFullYear() - dobDate.getFullYear();
     const m = new Date().getMonth() - dobDate.getMonth();
@@ -351,11 +371,68 @@ export const VolunteerSetupScreen: React.FC = () => {
     return age;
   };
 
+  const getDisplayDob = (dobString?: string) => {
+    if (!dobString) return '';
+    const parts = dobString.split('T')[0].split('-');
+    if (parts.length === 3) {
+      const [year, month, day] = parts;
+      if (year.length === 4) {
+        return `${month.padStart(2, '0')}/${day.padStart(2, '0')}/${year}`;
+      }
+    }
+    const d = new Date(dobString);
+    if (isNaN(d.getTime())) return dobString;
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    const year = d.getFullYear();
+    return `${month}/${day}/${year}`;
+  };
+
+  const getDatePickerDate = (dobString?: string): Date => {
+    if (!dobString) return new Date(2000, 0, 1);
+    const parts = dobString.split('T')[0].split('-');
+    if (parts.length === 3) {
+      const year = parseInt(parts[0], 10);
+      const month = parseInt(parts[1], 10) - 1;
+      const day = parseInt(parts[2], 10);
+      if (!isNaN(year) && !isNaN(month) && !isNaN(day)) {
+        return new Date(year, month, day);
+      }
+    }
+    const d = new Date(dobString);
+    return isNaN(d.getTime()) ? new Date(2000, 0, 1) : d;
+  };
+
   const initialDob = route?.params?.date_of_birth || route?.params?.dob || '';
   const initialAge = route?.params?.userAge ?? (initialDob ? calculateAge(initialDob) : null);
   const [userAge, setUserAge] = useState<number | null>(initialAge);
   const [dob, setDob] = useState(initialDob);
   const is18Plus = userAge !== null && userAge >= 18;
+  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+
+  const handleDateConfirm = (selectedDate: Date) => {
+    setIsDatePickerOpen(false);
+    const year = selectedDate.getFullYear();
+    const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+    const day = String(selectedDate.getDate()).padStart(2, '0');
+    const formattedDOB = `${year}-${month}-${day}`;
+    
+    const computedAge = calculateAge(formattedDOB);
+    if (computedAge !== null && computedAge < 14) {
+      Toast.show({
+        type: 'error',
+        text1: 'Age Restriction',
+        text2: 'You must be at least 14 years old.',
+      });
+      return;
+    }
+
+    setDob(formattedDOB);
+    setUserAge(computedAge);
+    if (errors.dob) {
+      setErrors(prev => ({ ...prev, dob: '' }));
+    }
+  };
 
   const [governmentId, setGovernmentId] = useState<string | null>(null);
   const [showGovernmentIdModal, setShowGovernmentIdModal] = useState(false);
@@ -427,6 +504,11 @@ export const VolunteerSetupScreen: React.FC = () => {
               setIsValidatingAddress(true);
               const validationData = await validateBusinessAddressWithAPI(fetchedAddress, GOOGLE_MAPS_API_KEY);
               setAddressValidation(validationData);
+              if (validationData?.addressType === 'residential' || validationData?.isBusinessAddress === false) {
+                setErrors(prev => ({...prev, address: 'Please use the business address'}));
+              } else {
+                setErrors(prev => ({...prev, address: ''}));
+              }
             } catch (err) {
               console.log('Error validating current location address:', err);
             } finally {
@@ -475,6 +557,11 @@ export const VolunteerSetupScreen: React.FC = () => {
           setIsValidatingAddress(true);
           const validationData = await validateBusinessAddressWithAPI(fetchedAddress, GOOGLE_MAPS_API_KEY);
           setAddressValidation(validationData);
+          if (validationData?.addressType === 'residential' || validationData?.isBusinessAddress === false) {
+            setErrors(prev => ({...prev, address: 'Please use the business address'}));
+          } else {
+            setErrors(prev => ({...prev, address: ''}));
+          }
         } catch (err) {
           console.log('Error validating dragged address:', err);
         } finally {
@@ -501,9 +588,10 @@ export const VolunteerSetupScreen: React.FC = () => {
           const digits = profile.phone.replace('+1', '');
           setPhoneNumber(digits);
         }
-        if (profile.date_of_birth) {
-          setDob(profile.date_of_birth);
-          const computedAge = calculateAge(profile.date_of_birth);
+        const profileDob = profile.date_of_birth || (profile as any).dob;
+        if (profileDob) {
+          setDob(profileDob);
+          const computedAge = calculateAge(profileDob);
           if (computedAge !== null) {
             setUserAge(computedAge);
           }
@@ -552,7 +640,16 @@ export const VolunteerSetupScreen: React.FC = () => {
     if (!address || !address.trim() || address === 'Current Location') {
       newErrors.address = 'Starting address is required';
     } else if (addressValidation?.addressType === 'residential' || addressValidation?.isBusinessAddress === false) {
-      newErrors.address = 'Please use the business address';
+      newErrors.address = 'For your safety, please use the business address';
+    }
+
+    if (!dob || !dob.trim()) {
+      newErrors.dob = 'Date of birth is required';
+    } else {
+      const age = calculateAge(dob);
+      if (age !== null && age < 14) {
+        newErrors.dob = 'You must be at least 14 years old';
+      }
     }
 
     if (is18Plus && !governmentId) {
@@ -586,6 +683,11 @@ export const VolunteerSetupScreen: React.FC = () => {
         ...prev,
         address: 'Please use the business address',
       }));
+      Toast.show({
+        type: 'error',
+        text1: 'Business Address Required',
+        text2: 'For your safety, please use the business address.',
+      });
       return;
     }
 
@@ -868,6 +970,33 @@ export const VolunteerSetupScreen: React.FC = () => {
               )}
             </View>
 
+            {/* Date of Birth Input */}
+            <View style={{ marginBottom: Spacing.lg, position: 'relative' }}>
+              <Input
+                label="Date of birth"
+                placeholder="MM/DD/YYYY"
+                leftIcon={<CalendarIcon size={20} color={Colors.primary[500]} />}
+                value={getDisplayDob(dob)}
+                editable={false}
+                error={errors.dob}
+              />
+              <TouchableOpacity
+                onPress={() => {
+                  Keyboard.dismiss();
+                  setIsDatePickerOpen(true);
+                }}
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  zIndex: 10,
+                  elevation: 10,
+                }}
+              />
+            </View>
+
             <View style={[styles.phoneInputWrapper, {
               marginBottom: Spacing.lg,
               zIndex: showAddressInfo ? 99999 : 9999,
@@ -934,6 +1063,11 @@ export const VolunteerSetupScreen: React.FC = () => {
                       setIsValidatingAddress(true);
                       const validationData = await validateBusinessAddressWithAPI(selectedAddr, GOOGLE_MAPS_API_KEY);
                       setAddressValidation(validationData);
+                      if (validationData?.addressType === 'residential' || validationData?.isBusinessAddress === false) {
+                        setErrors(prev => ({...prev, address: 'Please use the business address'}));
+                      } else {
+                        setErrors(prev => ({...prev, address: ''}));
+                      }
                     } catch (err) {
                       console.log('Error validating selected address:', err);
                     } finally {
@@ -999,10 +1133,12 @@ export const VolunteerSetupScreen: React.FC = () => {
                     if (addressValidation) setAddressValidation(null);
                   }
                 }}
-                listViewProps={{
-                  nestedScrollEnabled: true,
-                  keyboardShouldPersistTaps: 'always',
-                }}
+                {...({
+                  listViewProps: {
+                    nestedScrollEnabled: true,
+                    keyboardShouldPersistTaps: 'always',
+                  },
+                } as any)}
                 renderLeftButton={() => (
                   <View style={{marginRight: 4}}>
                     <MapPin color={Colors.primary[500]} size={20} />
@@ -1049,42 +1185,6 @@ export const VolunteerSetupScreen: React.FC = () => {
                   <ActivityIndicator size="small" color={Colors.primary[500]} />
                   <AppText variant="caption" color={Colors.neutral[500]} style={{marginLeft: 8}}>
                     Validating address...
-                  </AppText>
-                </View>
-              ) : addressValidation?.message ? (
-                <View style={{
-                  flexDirection: 'row', 
-                  alignItems: 'flex-start', 
-                  backgroundColor: addressValidation.addressType === 'business' 
-                    ? Colors.secondary[50] 
-                    : (addressValidation.addressType === 'residential' || addressValidation.isBusinessAddress === false)
-                      ? '#FEE2E2'
-                      : Colors.primary[50],
-                  borderRadius: 8,
-                  padding: 12,
-                  marginTop: 8,
-                  borderWidth: (addressValidation.addressType === 'residential' || addressValidation.isBusinessAddress === false) ? 1 : 0,
-                  borderColor: '#FCA5A5',
-                }}>
-                  <Info 
-                    color={addressValidation.addressType === 'business' 
-                      ? Colors.success 
-                      : (addressValidation.addressType === 'residential' || addressValidation.isBusinessAddress === false)
-                        ? Colors.error
-                        : Colors.info} 
-                    size={20} 
-                    style={{marginTop: 0, marginRight: 8}} 
-                  />
-                  <AppText 
-                    variant="bodySmall" 
-                    color={addressValidation.addressType === 'business' 
-                      ? Colors.success 
-                      : (addressValidation.addressType === 'residential' || addressValidation.isBusinessAddress === false)
-                        ? Colors.error
-                        : Colors.info} 
-                    style={{flex: 1, lineHeight: 18}}
-                  >
-                    {addressValidation.message}
                   </AppText>
                 </View>
               ) : null}
@@ -1356,7 +1456,7 @@ export const VolunteerSetupScreen: React.FC = () => {
             size="lg"
             fullWidth
             loading={isSubmitting}
-            disabled={isSubmitting}
+            disabled={isSubmitting || isValidatingAddress || addressValidation?.addressType === 'residential' || addressValidation?.isBusinessAddress === false}
             onPress={handleContinue}
             style={styles.continueButton}
           />
@@ -1505,6 +1605,15 @@ export const VolunteerSetupScreen: React.FC = () => {
         title="Government ID Photo"
         subtitle="Take a photo of your ID (Driver's License, Passport, State ID) or select from gallery"
         cameraType="back"
+      />
+
+      <DatePickerModal
+        open={isDatePickerOpen}
+        date={getDatePickerDate(dob)}
+        mode="date"
+        maximumDate={new Date()}
+        onConfirm={handleDateConfirm}
+        onCancel={() => setIsDatePickerOpen(false)}
       />
     </SafeAreaView>
   );

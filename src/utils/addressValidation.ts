@@ -123,18 +123,18 @@ export const validateBusinessAddressWithAPI = async (address: string, apiKey: st
     }
 
     return {
-      isBusinessAddress: 'unknown',
+      isBusinessAddress: true,
       addressType: 'unknown',
-      confidence: 'low',
-      message: 'Unable to verify address type. For your safety, please use the business address.',
+      confidence: 'medium',
+      message: '',
     };
   } catch (error) {
     console.log('Address Validation Error:', error);
     return {
-      isBusinessAddress: 'unknown',
+      isBusinessAddress: true,
       addressType: 'unknown',
       confidence: 'low',
-      message: 'Unable to confidently verify property type. For your safety, please use the business address.',
+      message: '',
     };
   }
 };

@@ -16,9 +16,7 @@ if (typeof document !== 'undefined') {
 }
 
 import { createConsumer } from '@rails/actioncable';
-import { getAuthToken } from '../api/client';
-
-const WS_BASE = 'wss://uplift-backend.pixoatic.com/cable';
+import { CABLE_URL, getAuthToken } from '../api/client';
 
 type MessageCallback = (message: any) => void;
 
@@ -39,7 +37,7 @@ class ChatCableService {
       return;
     }
 
-    const wsUrl = `${WS_BASE}?token=${token}`;
+    const wsUrl = `${CABLE_URL}?token=${token}`;
     this.consumer = createConsumer(wsUrl);
 
     this.subscription = this.consumer.subscriptions.create(

@@ -25,10 +25,12 @@ import {Input} from '../../../components/Input';
 import {Button} from '../../../components/Button';
 import {ChevronLeft, Calendar, MapPin, Clock, Info, Navigation, BadgeCheck, Phone, ChevronDown, Check, X, Eye, FileText, Camera} from 'lucide-react-native';
 import { ImagePickerModal, SelectedImage } from '../../../components/ImagePickerModal';
-import {Spacing} from '../../../theme/spacing';
+import {Spacing, BorderRadius} from '../../../theme/spacing';
+import {Shadows} from '../../../theme/common';
+import {validateBusinessAddressWithAPI, ValidationResult} from '../../../utils/addressValidation';
 import {authApi} from '../../../api/auth';
 import {getFullImageUrl} from '../../../api/client';
-import Svg, { Circle } from 'react-native-svg';
+import Svg, { Circle, Path } from 'react-native-svg';
 import MapView, { Marker, Circle as MapCircle } from 'react-native-maps';
 
 const CustomSlider = ({ value, onValueChange, min = 0, max = 100, onSlidingStart, onSlidingComplete }: { value: number, onValueChange: (val: number) => void, min?: number, max?: number, onSlidingStart?: () => void, onSlidingComplete?: () => void }) => {
@@ -111,6 +113,17 @@ const RadioInactiveIcon: React.FC<{size?: number; color?: string}> = ({
   </Svg>
 );
 
+const InfoCircleIcon: React.FC<{size?: number; color?: string}> = ({
+  size = 18,
+  color = Colors.primary[500],
+}) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Circle cx="12" cy="12" r="10" stroke={color} strokeWidth="1.5" />
+    <Path d="M12 16V12" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
+    <Circle cx="12" cy="8" r="1" fill={color} />
+  </Svg>
+);
+
 const RadioCard = ({
   title,
   description,
@@ -165,6 +178,9 @@ export default function EditProfileScreen() {
   }), []);
   const volunteerPlacesRef = useRef<GooglePlacesAutocompleteRef>(null);
   const addressPlacesRef = useRef<GooglePlacesAutocompleteRef>(null);
+  const [addressValidation, setAddressValidation] = useState<ValidationResult | null>(null);
+  const [isValidatingAddress, setIsValidatingAddress] = useState(false);
+  const [showAddressInfo, setShowAddressInfo] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [isScrollEnabled, setIsScrollEnabled] = useState(true);
@@ -211,6 +227,15 @@ export default function EditProfileScreen() {
       if (data.results && data.results.length > 0) {
         const address = data.results[0].formatted_address;
         handleChange('address', address);
+        volunteerPlacesRef.current?.setAddressText(address);
+        addressPlacesRef.current?.setAddressText(address);
+        const validationData = await validateBusinessAddressWithAPI(address, GOOGLE_MAPS_API_KEY);
+        setAddressValidation(validationData);
+        if (validationData?.addressType === 'residential' || validationData?.isBusinessAddress === false) {
+          setErrors(prev => ({...prev, address: 'For your safety, please use the business address'}));
+        } else {
+          setErrors(prev => ({...prev, address: ''}));
+        }
       }
     } catch (error) {
       console.log('Reverse geocoding error:', error);
@@ -373,8 +398,31 @@ export default function EditProfileScreen() {
       newErrors.zip_code = 'ZIP code must be 5 digits';
     }
 
+    if (errors.address) {
+      newErrors.address = errors.address;
+    } else if (formData.address && formData.address.trim()) {
+      let isResidential = addressValidation?.addressType === 'residential' || addressValidation?.isBusinessAddress === false;
+      if (!addressValidation) {
+        setIsValidatingAddress(true);
+        try {
+          const validationData = await validateBusinessAddressWithAPI(formData.address, GOOGLE_MAPS_API_KEY);
+          setAddressValidation(validationData);
+          if (validationData?.addressType === 'residential' || validationData?.isBusinessAddress === false) {
+            isResidential = true;
+          }
+        } catch (e) {
+          console.log('Address validation error in handleSave:', e);
+        } finally {
+          setIsValidatingAddress(false);
+        }
+      }
+      if (isResidential) {
+        newErrors.address = 'For your safety, please use the business address';
+      }
+    }
+
     if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
+      setErrors(prev => ({...prev, ...newErrors}));
       const firstError = Object.values(newErrors)[0];
       Toast.show({
         type: 'error',
@@ -689,13 +737,22 @@ export default function EditProfileScreen() {
               />
               <View style={{
                 marginBottom: 16,
-                zIndex: 9999,
-                elevation: Platform.OS === 'android' ? 10 : undefined,
+                zIndex: showAddressInfo ? 99999 : 9999,
+                elevation: Platform.OS === 'android' ? (showAddressInfo ? 25 : 10) : undefined,
               }}>
                 <View style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8}}>
-                  <AppText variant="labelMedium" color={Colors.neutral[700]}>
-                    Starting address
-                  </AppText>
+                  <View style={{flexDirection: 'row', alignItems: 'center'}}>
+                    <AppText variant="labelMedium" color={Colors.neutral[700]}>
+                      Starting address
+                    </AppText>
+                    <TouchableOpacity 
+                      style={{marginLeft: 6}}
+                      onPress={() => setShowAddressInfo(!showAddressInfo)}
+                      hitSlop={{top: 8, bottom: 8, left: 8, right: 8}}
+                    >
+                      <InfoCircleIcon size={18} color={Colors.primary[500]} />
+                    </TouchableOpacity>
+                  </View>
                   {(formData.address || (formData.latitude && formData.longitude)) ? (
                     <TouchableOpacity onPress={handleOpenMap}>
                       <AppText variant="bodyMedium" color={Colors.primary[500]} style={{ textDecorationLine: 'underline' }}>
@@ -704,6 +761,32 @@ export default function EditProfileScreen() {
                     </TouchableOpacity>
                   ) : null}
                 </View>
+
+                {/* Floating Tooltip */}
+                {showAddressInfo && (
+                  <>
+                    <Pressable
+                      style={{
+                        position: 'absolute',
+                        top: -Dimensions.get('window').height,
+                        bottom: -Dimensions.get('window').height,
+                        left: -Dimensions.get('window').width,
+                        right: -Dimensions.get('window').width,
+                        backgroundColor: 'transparent',
+                        zIndex: 99998,
+                      }}
+                      onPress={() => setShowAddressInfo(false)}
+                    />
+                    <View style={[styles.addressTooltipContainer, { zIndex: 99999, elevation: 25 }]}>
+                      {/* Left pointing triangle */}
+                      <View style={[styles.addressTooltipTriangle, {left: 125}]} />
+                      <AppText variant="caption" color={Colors.neutral[800]} style={{lineHeight: 18}}>
+                        Enter a nearby business address to match you with nearby requests— your exact location is never shared with anyone
+                      </AppText>
+                    </View>
+                  </>
+                )}
+
                 <GooglePlacesAutocomplete
                   ref={volunteerPlacesRef}
                   placeholder="Enter address"
@@ -713,10 +796,17 @@ export default function EditProfileScreen() {
                   debounce={300}
                   minLength={1}
                   onFail={(error) => console.log('Google Places Autocomplete Error:', error)}
-                  onPress={(data, details = null) => {
-                    const selectedAddr = data.description || data.formatted_address || '';
+                  onPress={async (data, details = null) => {
+                    const selectedAddr = data.description || (data as any).formatted_address || '';
                     handleChange('address', selectedAddr);
                     volunteerPlacesRef.current?.setAddressText(selectedAddr);
+                    const validationData = await validateBusinessAddressWithAPI(selectedAddr, GOOGLE_MAPS_API_KEY);
+                    setAddressValidation(validationData);
+                    if (validationData?.addressType === 'residential' || validationData?.isBusinessAddress === false) {
+                      setErrors(prev => ({...prev, address: 'For your safety, please use the business address'}));
+                    } else {
+                      setErrors(prev => ({...prev, address: ''}));
+                    }
                     if (details?.geometry?.location) {
                       handleChange('latitude', details.geometry.location.lat.toString());
                       handleChange('longitude', details.geometry.location.lng.toString());
@@ -737,7 +827,7 @@ export default function EditProfileScreen() {
                       backgroundColor: Colors.neutral[0],
                       borderRadius: 12,
                       borderWidth: 1,
-                      borderColor: Colors.neutral[300],
+                      borderColor: errors.address ? Colors.error : Colors.neutral[300],
                       height: 52,
                       flexDirection: 'row',
                       alignItems: 'center',
@@ -781,12 +871,18 @@ export default function EditProfileScreen() {
                     defaultValue: formData.address || '',
                     onChangeText: (text) => {
                       handleChange('address', text);
+                      setAddressValidation(null);
+                      if (errors.address) {
+                        setErrors(prev => ({...prev, address: ''}));
+                      }
                     }
                   }}
-                  listViewProps={{
-                    nestedScrollEnabled: true,
-                    keyboardShouldPersistTaps: 'always',
-                  }}
+                  {...({
+                    listViewProps: {
+                      nestedScrollEnabled: true,
+                      keyboardShouldPersistTaps: 'always',
+                    },
+                  } as any)}
                   renderLeftButton={() => (
                     <View style={{ marginRight: 8 }}>
                       <MapPin color={Colors.neutral[400]} size={20} />
@@ -804,6 +900,11 @@ export default function EditProfileScreen() {
                     </TouchableOpacity>
                   )}
                 />
+                {!!errors.address && (
+                  <AppText variant="caption" color={Colors.error} style={{ marginTop: 4, marginLeft: 4 }}>
+                    {errors.address}
+                  </AppText>
+                )}
               </View>
               <Input
                 label=" Volunteering hours goal per week (Optional)"
@@ -937,13 +1038,22 @@ export default function EditProfileScreen() {
               />
               <View style={{
                 marginBottom: 16,
-                zIndex: 9999,
-                elevation: Platform.OS === 'android' ? 10 : undefined,
+                zIndex: showAddressInfo ? 99999 : 9999,
+                elevation: Platform.OS === 'android' ? (showAddressInfo ? 25 : 10) : undefined,
               }}>
                 <View style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8}}>
-                  <AppText variant="labelMedium" color={Colors.neutral[700]}>
-                    Address
-                  </AppText>
+                  <View style={{flexDirection: 'row', alignItems: 'center'}}>
+                    <AppText variant="labelMedium" color={Colors.neutral[700]}>
+                      Address
+                    </AppText>
+                    <TouchableOpacity 
+                      style={{marginLeft: 6}}
+                      onPress={() => setShowAddressInfo(!showAddressInfo)}
+                      hitSlop={{top: 8, bottom: 8, left: 8, right: 8}}
+                    >
+                      <InfoCircleIcon size={18} color={Colors.primary[500]} />
+                    </TouchableOpacity>
+                  </View>
                   {(formData.address || (formData.latitude && formData.longitude)) ? (
                     <TouchableOpacity onPress={handleOpenMap}>
                       <AppText variant="bodyMedium" color={Colors.primary[500]} style={{ textDecorationLine: 'underline' }}>
@@ -952,6 +1062,32 @@ export default function EditProfileScreen() {
                     </TouchableOpacity>
                   ) : null}
                 </View>
+
+                {/* Floating Tooltip */}
+                {showAddressInfo && (
+                  <>
+                    <Pressable
+                      style={{
+                        position: 'absolute',
+                        top: -Dimensions.get('window').height,
+                        bottom: -Dimensions.get('window').height,
+                        left: -Dimensions.get('window').width,
+                        right: -Dimensions.get('window').width,
+                        backgroundColor: 'transparent',
+                        zIndex: 99998,
+                      }}
+                      onPress={() => setShowAddressInfo(false)}
+                    />
+                    <View style={[styles.addressTooltipContainer, { zIndex: 99999, elevation: 25 }]}>
+                      {/* Left pointing triangle */}
+                      <View style={[styles.addressTooltipTriangle, {left: 68}]} />
+                      <AppText variant="caption" color={Colors.neutral[800]} style={{lineHeight: 18}}>
+                        Enter a nearby business address to match you with nearby requests— your exact location is never shared with anyone
+                      </AppText>
+                    </View>
+                  </>
+                )}
+
                 <GooglePlacesAutocomplete
                   ref={addressPlacesRef}
                   placeholder="Enter address"
@@ -961,10 +1097,17 @@ export default function EditProfileScreen() {
                   debounce={300}
                   minLength={1}
                   onFail={(error) => console.log('Google Places Autocomplete Error:', error)}
-                  onPress={(data, details = null) => {
-                    const selectedAddr = data.description || data.formatted_address || '';
+                  onPress={async (data, details = null) => {
+                    const selectedAddr = data.description || (data as any).formatted_address || '';
                     handleChange('address', selectedAddr);
                     addressPlacesRef.current?.setAddressText(selectedAddr);
+                    const validationData = await validateBusinessAddressWithAPI(selectedAddr, GOOGLE_MAPS_API_KEY);
+                    setAddressValidation(validationData);
+                    if (validationData?.addressType === 'residential' || validationData?.isBusinessAddress === false) {
+                      setErrors(prev => ({...prev, address: 'For your safety, please use the business address'}));
+                    } else {
+                      setErrors(prev => ({...prev, address: ''}));
+                    }
                     if (details?.geometry?.location) {
                       handleChange('latitude', details.geometry.location.lat.toString());
                       handleChange('longitude', details.geometry.location.lng.toString());
@@ -985,7 +1128,7 @@ export default function EditProfileScreen() {
                       backgroundColor: Colors.neutral[0],
                       borderRadius: 12,
                       borderWidth: 1,
-                      borderColor: Colors.neutral[300],
+                      borderColor: errors.address ? Colors.error : Colors.neutral[300],
                       height: 52,
                       flexDirection: 'row',
                       alignItems: 'center',
@@ -1029,12 +1172,18 @@ export default function EditProfileScreen() {
                     defaultValue: formData.address || '',
                     onChangeText: (text) => {
                       handleChange('address', text);
+                      setAddressValidation(null);
+                      if (errors.address) {
+                        setErrors(prev => ({...prev, address: ''}));
+                      }
                     }
                   }}
-                  listViewProps={{
-                    nestedScrollEnabled: true,
-                    keyboardShouldPersistTaps: 'always',
-                  }}
+                  {...({
+                    listViewProps: {
+                      nestedScrollEnabled: true,
+                      keyboardShouldPersistTaps: 'always',
+                    },
+                  } as any)}
                   renderLeftButton={() => (
                     <View style={{ marginRight: 8 }}>
                       <MapPin color={Colors.primary[500]} size={20} />
@@ -1052,6 +1201,11 @@ export default function EditProfileScreen() {
                     </TouchableOpacity>
                   )}
                 />
+                {!!errors.address && (
+                  <AppText variant="caption" color={Colors.error} style={{ marginTop: 4, marginLeft: 4 }}>
+                    {errors.address}
+                  </AppText>
+                )}
               </View>
               <Input
                 label="Contact Name"
@@ -1083,8 +1237,8 @@ export default function EditProfileScreen() {
         <Button
           title="Save Changes"
           onPress={handleSave}
-          loading={saving || loading}
-          disabled={saving || loading}
+          loading={saving || loading || isValidatingAddress}
+          disabled={saving || loading || isValidatingAddress || Boolean(errors.address) || addressValidation?.addressType === 'residential' || addressValidation?.isBusinessAddress === false}
         />
       </View>
 
@@ -1501,5 +1655,31 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 320,
     borderRadius: 8,
+  },
+  addressTooltipContainer: {
+    position: 'absolute',
+    top: 32,
+    left: 0,
+    right: 0,
+    backgroundColor: Colors.neutral[0],
+    borderRadius: BorderRadius.md,
+    padding: Spacing.md,
+    ...Shadows.md,
+    elevation: 25,
+    zIndex: 99999,
+  },
+  addressTooltipTriangle: {
+    position: 'absolute',
+    top: -10,
+    width: 0,
+    height: 0,
+    borderLeftWidth: 10,
+    borderRightWidth: 10,
+    borderBottomWidth: 10,
+    borderStyle: 'solid',
+    backgroundColor: 'transparent',
+    borderLeftColor: 'transparent',
+    borderRightColor: 'transparent',
+    borderBottomColor: Colors.neutral[0],
   },
 });

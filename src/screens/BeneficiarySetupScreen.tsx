@@ -11,6 +11,7 @@ import {
   PanResponder,
   Modal,
   FlatList,
+  Keyboard,
 } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -20,6 +21,7 @@ import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import Svg, {Path, Circle, Rect, Polyline} from 'react-native-svg';
 import { launchImageLibrary } from 'react-native-image-picker';
 import { ImagePickerModal, SelectedImage } from '../components/ImagePickerModal';
+import { DatePickerModal } from '../components/DatePickerModal';
 
 import {AppText} from '../components/AppText';
 import {Button} from '../components/Button';
@@ -71,6 +73,16 @@ const PhoneOutlineIcon: React.FC<{size?: number; color?: string}> = ({
 }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+  </Svg>
+);
+
+const CalendarIcon: React.FC<{size?: number; color?: string}> = ({
+  size = 20,
+  color = Colors.primary[500],
+}) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Rect x="3" y="4" width="18" height="18" rx="2" ry="2" stroke={color} strokeWidth="1.5" />
+    <Path d="M16 2v4M8 2v4M3 10h18" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
   </Svg>
 );
 
@@ -230,7 +242,16 @@ export const BeneficiarySetupScreen: React.FC = () => {
 
   const calculateAge = (dobString?: string): number | null => {
     if (!dobString) return null;
-    const dobDate = new Date(dobString);
+    let dobDate: Date;
+    const parts = dobString.split('T')[0].split('-');
+    if (parts.length === 3) {
+      const year = parseInt(parts[0], 10);
+      const month = parseInt(parts[1], 10) - 1;
+      const day = parseInt(parts[2], 10);
+      dobDate = new Date(year, month, day);
+    } else {
+      dobDate = new Date(dobString);
+    }
     if (isNaN(dobDate.getTime())) return null;
     let age = new Date().getFullYear() - dobDate.getFullYear();
     const m = new Date().getMonth() - dobDate.getMonth();
@@ -240,11 +261,68 @@ export const BeneficiarySetupScreen: React.FC = () => {
     return age;
   };
 
+  const getDisplayDob = (dobString?: string) => {
+    if (!dobString) return '';
+    const parts = dobString.split('T')[0].split('-');
+    if (parts.length === 3) {
+      const [year, month, day] = parts;
+      if (year.length === 4) {
+        return `${month.padStart(2, '0')}/${day.padStart(2, '0')}/${year}`;
+      }
+    }
+    const d = new Date(dobString);
+    if (isNaN(d.getTime())) return dobString;
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    const year = d.getFullYear();
+    return `${month}/${day}/${year}`;
+  };
+
+  const getDatePickerDate = (dobString?: string): Date => {
+    if (!dobString) return new Date(2000, 0, 1);
+    const parts = dobString.split('T')[0].split('-');
+    if (parts.length === 3) {
+      const year = parseInt(parts[0], 10);
+      const month = parseInt(parts[1], 10) - 1;
+      const day = parseInt(parts[2], 10);
+      if (!isNaN(year) && !isNaN(month) && !isNaN(day)) {
+        return new Date(year, month, day);
+      }
+    }
+    const d = new Date(dobString);
+    return isNaN(d.getTime()) ? new Date(2000, 0, 1) : d;
+  };
+
   const initialDob = route.params?.date_of_birth || route.params?.dob || '';
   const initialAge = route.params?.userAge ?? (initialDob ? calculateAge(initialDob) : null);
   const [userAge, setUserAge] = useState<number | null>(initialAge);
   const [dob, setDob] = useState(initialDob);
   const is18Plus = userAge !== null && userAge >= 18;
+  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+
+  const handleDateConfirm = (selectedDate: Date) => {
+    setIsDatePickerOpen(false);
+    const year = selectedDate.getFullYear();
+    const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+    const day = String(selectedDate.getDate()).padStart(2, '0');
+    const formattedDOB = `${year}-${month}-${day}`;
+    
+    const computedAge = calculateAge(formattedDOB);
+    if (computedAge !== null && computedAge < 14) {
+      Toast.show({
+        type: 'error',
+        text1: 'Age Restriction',
+        text2: 'You must be at least 14 years old.',
+      });
+      return;
+    }
+
+    setDob(formattedDOB);
+    setUserAge(computedAge);
+    if (errors.dob) {
+      setErrors(prev => ({ ...prev, dob: '' }));
+    }
+  };
 
   const [governmentId, setGovernmentId] = useState<string | null>(null);
   const [showGovernmentIdModal, setShowGovernmentIdModal] = useState(false);
@@ -271,19 +349,16 @@ export const BeneficiarySetupScreen: React.FC = () => {
           const digits = profile.phone.replace('+1', '');
           setPhoneNumber(digits);
         }
-        if (profile.date_of_birth) {
-          setDob(profile.date_of_birth);
-          const computedAge = calculateAge(profile.date_of_birth);
+        const profileDob = profile.date_of_birth || (profile as any).dob;
+        if (profileDob) {
+          setDob(profileDob);
+          const computedAge = calculateAge(profileDob);
           if (computedAge !== null) {
             setUserAge(computedAge);
           }
         }
         if (profile.profile_image_url) {
           setProfilePhoto(profile.profile_image_url);
-        }
-        const existingId = (profile as any)?.identity_verification?.government_id_url || (profile as any)?.government_id_url;
-        if (existingId) {
-          setGovernmentId(existingId);
         }
       } catch (error) {
         // Handle error or ignore
@@ -318,7 +393,16 @@ export const BeneficiarySetupScreen: React.FC = () => {
       newErrors.zipCode = 'ZIP code must be 5 digits';
     }
 
-    if (!governmentId) {
+    if (!dob || !dob.trim()) {
+      newErrors.dob = 'Date of birth is required';
+    } else {
+      const age = calculateAge(dob);
+      if (age !== null && age < 14) {
+        newErrors.dob = 'You must be at least 14 years old';
+      }
+    }
+
+    if (is18Plus && !governmentId) {
       newErrors.governmentId = 'Government ID photo is required';
     }
 
@@ -564,6 +648,33 @@ export const BeneficiarySetupScreen: React.FC = () => {
               )}
             </View>
 
+            {/* Date of Birth Input */}
+            <View style={{ marginBottom: Spacing.md, position: 'relative' }}>
+              <Input
+                label="Date of birth"
+                placeholder="MM/DD/YYYY"
+                leftIcon={<CalendarIcon size={20} color={Colors.primary[500]} />}
+                value={getDisplayDob(dob)}
+                editable={false}
+                error={errors.dob}
+              />
+              <TouchableOpacity
+                onPress={() => {
+                  Keyboard.dismiss();
+                  setIsDatePickerOpen(true);
+                }}
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  zIndex: 10,
+                  elevation: 10,
+                }}
+              />
+            </View>
+
             <Input
               ref={zipCodeInputRef}
               label="ZIP Code"
@@ -775,6 +886,15 @@ export const BeneficiarySetupScreen: React.FC = () => {
           title="Government ID Photo"
           subtitle="Take a photo of your ID (Driver's License, Passport, State ID) or select from gallery"
           cameraType="back"
+        />
+
+        <DatePickerModal
+          open={isDatePickerOpen}
+          date={getDatePickerDate(dob)}
+          mode="date"
+          maximumDate={new Date()}
+          onConfirm={handleDateConfirm}
+          onCancel={() => setIsDatePickerOpen(false)}
         />
     </SafeAreaView>
   );

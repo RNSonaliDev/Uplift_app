@@ -13,7 +13,10 @@ import {
   RefreshControl,
   Modal,
   Platform,
+  Pressable,
+  Dimensions,
 } from 'react-native';
+import Svg, { Circle, Path } from 'react-native-svg';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { GooglePlacesAutocomplete, GooglePlacesAutocompleteRef } from 'react-native-google-places-autocomplete';
@@ -21,9 +24,11 @@ import MapView, { Marker } from 'react-native-maps';
 import Geolocation from '@react-native-community/geolocation';
 import { Colors } from '../../../theme/colors';
 import { Typography, FontFamily } from '../../../theme/typography';
+import { Shadows } from '../../../theme/common';
+import { BorderRadius, Spacing } from '../../../theme/spacing';
+import { validateBusinessAddressWithAPI, ValidationResult } from '../../../utils/addressValidation';
 import { AppText } from '../../../components/AppText';
 import { Button } from '../../../components/Button';
-import { HtmlContentView } from '../../../components/HtmlContentView';
 import { DatePickerModal } from '../../../components/DatePickerModal';
 import {
   Megaphone,
@@ -35,7 +40,6 @@ import {
   ChevronLeft,
   Sparkles,
   CheckCircle2,
-  Eye,
   Layers,
   Pencil,
   MapPin as LocationPinIcon,
@@ -52,6 +56,17 @@ export interface PromotionTypeItem {
   status?: string;
   position?: number;
 }
+
+const InfoCircleIcon: React.FC<{size?: number; color?: string}> = ({
+  size = 18,
+  color = Colors.primary[500],
+}) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Circle cx="12" cy="12" r="10" stroke={color} strokeWidth="1.5" />
+    <Path d="M12 16V12" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
+    <Circle cx="12" cy="8" r="1" fill={color} />
+  </Svg>
+);
 
 export interface ProductCategoryItem {
   id: number;
@@ -122,6 +137,9 @@ export const CreatePromotionScreen = () => {
   const [locationType, setLocationType] = useState<LocationType>('in_store');
   const [storeAddress, setStoreAddress] = useState('');
   const [onlineUrl, setOnlineUrl] = useState('');
+  const [addressValidation, setAddressValidation] = useState<ValidationResult | null>(null);
+  const [isValidatingAddress, setIsValidatingAddress] = useState(false);
+  const [showAddressInfo, setShowAddressInfo] = useState(false);
 
   // Map & Geolocation States
   const [latitude, setLatitude] = useState('');
@@ -151,6 +169,13 @@ export const CreatePromotionScreen = () => {
             const addressStr = data.results[0].formatted_address;
             setStoreAddress(addressStr);
             googlePlacesRef.current?.setAddressText(addressStr);
+            const validationData = await validateBusinessAddressWithAPI(addressStr, GOOGLE_MAPS_API_KEY);
+            setAddressValidation(validationData);
+            if (validationData?.addressType === 'residential' || validationData?.isBusinessAddress === false) {
+              setFieldErrors(prev => ({ ...prev, storeAddress: 'For your safety, please use the business address' }));
+            } else {
+              setFieldErrors(prev => ({ ...prev, storeAddress: '' }));
+            }
           }
         } catch (error) {
           console.error('Reverse geocoding error:', error);
@@ -178,6 +203,13 @@ export const CreatePromotionScreen = () => {
         const addressStr = data.results[0].formatted_address;
         setStoreAddress(addressStr);
         googlePlacesRef.current?.setAddressText(addressStr);
+        const validationData = await validateBusinessAddressWithAPI(addressStr, GOOGLE_MAPS_API_KEY);
+        setAddressValidation(validationData);
+        if (validationData?.addressType === 'residential' || validationData?.isBusinessAddress === false) {
+          setFieldErrors(prev => ({ ...prev, storeAddress: 'For your safety, please use the business address' }));
+        } else {
+          setFieldErrors(prev => ({ ...prev, storeAddress: '' }));
+        }
       }
     } catch (error) {
       console.error('Reverse geocoding error:', error);
@@ -188,7 +220,6 @@ export const CreatePromotionScreen = () => {
   const [promoCode, setPromoCode] = useState('UPLIFT');
   const [quantityAvailable, setQuantityAvailable] = useState('');
   const [termsConditions, setTermsConditions] = useState('');
-  const [showHtmlPreview, setShowHtmlPreview] = useState(false);
   const [description, setDescription] = useState('');
 
   // Modals / Dropdowns
@@ -385,6 +416,37 @@ export const CreatePromotionScreen = () => {
   const handleSubmit = async () => {
     if (!validateForm()) {
       return;
+    }
+
+    if (locationType === 'in_store' || locationType === 'both') {
+      let isResidential = addressValidation?.addressType === 'residential' || addressValidation?.isBusinessAddress === false;
+      if (!addressValidation && storeAddress.trim()) {
+        setIsValidatingAddress(true);
+        try {
+          const validationData = await validateBusinessAddressWithAPI(storeAddress.trim(), GOOGLE_MAPS_API_KEY);
+          setAddressValidation(validationData);
+          if (validationData?.addressType === 'residential' || validationData?.isBusinessAddress === false) {
+            isResidential = true;
+          }
+        } catch (e) {
+          console.log('Address validation error in handleSubmit:', e);
+        } finally {
+          setIsValidatingAddress(false);
+        }
+      }
+
+      if (isResidential || fieldErrors.storeAddress) {
+        setFieldErrors(prev => ({
+          ...prev,
+          storeAddress: 'For your safety, please use the business address',
+        }));
+        Toast.show({
+          type: 'error',
+          text1: 'Validation Error',
+          text2: 'For your safety, please use the business address',
+        });
+        return;
+      }
     }
 
     const rawPayload = {
@@ -647,13 +709,22 @@ export const CreatePromotionScreen = () => {
                 <View style={{
                   marginTop: 8,
                   marginBottom: 8,
-                  zIndex: 9999,
-                  elevation: Platform.OS === 'android' ? 10 : undefined,
+                  zIndex: showAddressInfo ? 99999 : 9999,
+                  elevation: Platform.OS === 'android' ? (showAddressInfo ? 25 : 10) : undefined,
                 }}>
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                    <Text style={[styles.subLabel, { marginBottom: 0 }]}>
-                      Business Address <Text style={{ color: Colors.error }}>*</Text>
-                    </Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                      <Text style={[styles.subLabel, { marginBottom: 0 }]}>
+                        Business Address <Text style={{ color: Colors.error }}>*</Text>
+                      </Text>
+                      <TouchableOpacity 
+                        style={{ marginLeft: 6 }}
+                        onPress={() => setShowAddressInfo(!showAddressInfo)}
+                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                      >
+                        <InfoCircleIcon size={18} color={Colors.primary[500]} />
+                      </TouchableOpacity>
+                    </View>
                     {(latitude && longitude) ? (
                       <TouchableOpacity onPress={() => setIsMapModalVisible(true)}>
                         <AppText variant="bodyMedium" color={Colors.primary[500]} style={{ textDecorationLine: 'underline' }}>
@@ -662,6 +733,31 @@ export const CreatePromotionScreen = () => {
                       </TouchableOpacity>
                     ) : null}
                   </View>
+
+                  {/* Floating Tooltip */}
+                  {showAddressInfo && (
+                    <>
+                      <Pressable
+                        style={{
+                          position: 'absolute',
+                          top: -Dimensions.get('window').height,
+                          bottom: -Dimensions.get('window').height,
+                          left: -Dimensions.get('window').width,
+                          right: -Dimensions.get('window').width,
+                          backgroundColor: 'transparent',
+                          zIndex: 99998,
+                        }}
+                        onPress={() => setShowAddressInfo(false)}
+                      />
+                      <View style={[styles.tooltipContainer, { zIndex: 99999, elevation: 25 }]}>
+                        {/* Left pointing triangle */}
+                        <View style={[styles.tooltipTriangle, { left: 145 }]} />
+                        <AppText variant="caption" color={Colors.neutral[800]} style={{ lineHeight: 18 }}>
+                          Enter a nearby business address to match you with nearby requests— your exact location is never shared with anyone
+                        </AppText>
+                      </View>
+                    </>
+                  )}
 
                   <GooglePlacesAutocomplete
                     ref={googlePlacesRef}
@@ -672,11 +768,17 @@ export const CreatePromotionScreen = () => {
                     debounce={300}
                     minLength={1}
                     onFail={(error) => console.log('Google Places Autocomplete Error:', error)}
-                    onPress={(data, details = null) => {
-                      const selectedAddr = data.description || data.formatted_address || '';
+                    onPress={async (data, details = null) => {
+                      const selectedAddr = data.description || (data as any).formatted_address || '';
                       setStoreAddress(selectedAddr);
                       googlePlacesRef.current?.setAddressText(selectedAddr);
-                      if (fieldErrors.storeAddress) setFieldErrors(prev => ({ ...prev, storeAddress: '' }));
+                      const validationData = await validateBusinessAddressWithAPI(selectedAddr, GOOGLE_MAPS_API_KEY);
+                      setAddressValidation(validationData);
+                      if (validationData?.addressType === 'residential' || validationData?.isBusinessAddress === false) {
+                        setFieldErrors(prev => ({ ...prev, storeAddress: 'For your safety, please use the business address' }));
+                      } else {
+                        setFieldErrors(prev => ({ ...prev, storeAddress: '' }));
+                      }
                       if (details?.geometry?.location) {
                         setLatitude(details.geometry.location.lat.toString());
                         setLongitude(details.geometry.location.lng.toString());
@@ -741,13 +843,16 @@ export const CreatePromotionScreen = () => {
                       autoCorrect: false,
                       onChangeText: (text) => {
                         setStoreAddress(text);
+                        setAddressValidation(null);
                         if (fieldErrors.storeAddress) setFieldErrors(prev => ({ ...prev, storeAddress: '' }));
                       },
                     }}
-                    listViewProps={{
-                      nestedScrollEnabled: true,
-                      keyboardShouldPersistTaps: 'always',
-                    }}
+                    {...({
+                      listViewProps: {
+                        nestedScrollEnabled: true,
+                        keyboardShouldPersistTaps: 'always',
+                      },
+                    } as any)}
                     renderLeftButton={() => (
                       <View style={{ marginRight: 4 }}>
                         <LocationPinIcon color={Colors.primary[500]} size={20} />
@@ -813,73 +918,17 @@ export const CreatePromotionScreen = () => {
               <Text style={styles.helperText}>Leave blank for unlimited</Text>
 
               {/* Terms and Conditions */}
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 12, marginBottom: 4 }}>
-                <Text style={[styles.label, { marginBottom: 0 }]}>Terms and Conditions (HTML)</Text>
-                <TouchableOpacity 
-                  onPress={() => setShowHtmlPreview(!showHtmlPreview)}
-                  style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.primary[50], paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 }}
-                >
-                  <Eye size={14} color={Colors.primary[600]} style={{ marginRight: 4 }} />
-                  <AppText variant="caption" color={Colors.primary[600]} style={{ fontFamily: FontFamily.medium }}>
-                    {showHtmlPreview ? 'Edit' : 'Preview'}
-                  </AppText>
-                </TouchableOpacity>
-              </View>
-
-              {/* HTML Formatting Helper Toolbar */}
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 8 }} contentContainerStyle={{ paddingVertical: 2 }}>
-                <TouchableOpacity 
-                  style={styles.htmlTagBtn} 
-                  onPress={() => setTermsConditions(prev => prev + '<b>bold text</b>')}
-                >
-                  <AppText variant="caption" color={Colors.neutral[800]} style={{ fontFamily: FontFamily.bold }}>B</AppText>
-                </TouchableOpacity>
-                <TouchableOpacity 
-                  style={styles.htmlTagBtn} 
-                  onPress={() => setTermsConditions(prev => prev + '<i>italic text</i>')}
-                >
-                  <AppText variant="caption" color={Colors.neutral[800]} style={{ fontFamily: FontFamily.italic }}>I</AppText>
-                </TouchableOpacity>
-                <TouchableOpacity 
-                  style={styles.htmlTagBtn} 
-                  onPress={() => setTermsConditions(prev => prev + '<ul>\n  <li>Item 1</li>\n  <li>Item 2</li>\n</ul>')}
-                >
-                  <AppText variant="caption" color={Colors.neutral[800]}>• List</AppText>
-                </TouchableOpacity>
-                <TouchableOpacity 
-                  style={styles.htmlTagBtn} 
-                  onPress={() => setTermsConditions(prev => prev + '<p>Paragraph text</p>')}
-                >
-                  <AppText variant="caption" color={Colors.neutral[800]}>&lt;p&gt;</AppText>
-                </TouchableOpacity>
-                <TouchableOpacity 
-                  style={styles.htmlTagBtn} 
-                  onPress={() => setTermsConditions(prev => prev + '<br/>')}
-                >
-                  <AppText variant="caption" color={Colors.neutral[800]}>Break</AppText>
-                </TouchableOpacity>
-              </ScrollView>
-
-              {showHtmlPreview ? (
-                <View style={[styles.input, { minHeight: 90, backgroundColor: Colors.neutral[50], padding: 12 }]}>
-                  {termsConditions.trim() ? (
-                    <HtmlContentView htmlContent={termsConditions} />
-                  ) : (
-                    <AppText variant="bodySmall" color={Colors.neutral[400]}>No terms entered to preview.</AppText>
-                  )}
-                </View>
-              ) : (
-                <TextInput
-                  style={[styles.input, styles.multilineInput]}
-                  placeholder="e.g. <b>One per customer.</b><br/>Valid until expiration date."
-                  placeholderTextColor={Colors.neutral[400]}
-                  multiline
-                  numberOfLines={4}
-                  textAlignVertical="top"
-                  value={termsConditions}
-                  onChangeText={setTermsConditions}
-                />
-              )}
+              <Text style={styles.label}>Terms and Conditions</Text>
+              <TextInput
+                style={[styles.input, styles.multilineInput]}
+                placeholder="e.g. One per customer. Valid until expiration date."
+                placeholderTextColor={Colors.neutral[400]}
+                multiline
+                numberOfLines={4}
+                textAlignVertical="top"
+                value={termsConditions}
+                onChangeText={setTermsConditions}
+              />
             </View>
           </TouchableWithoutFeedback>
         </KeyboardAwareScrollView>
@@ -889,7 +938,8 @@ export const CreatePromotionScreen = () => {
           <Button
             title={isEditing ? 'Update Promotion' : 'Preview Promotion'}
             onPress={handleSubmit}
-            loading={loading}
+            loading={loading || isValidatingAddress}
+            disabled={loading || isValidatingAddress || Boolean(fieldErrors.storeAddress) || ((locationType === 'in_store' || locationType === 'both') && (addressValidation?.addressType === 'residential' || addressValidation?.isBusinessAddress === false))}
             size="lg"
             fullWidth
           />
@@ -1322,17 +1372,35 @@ const styles = StyleSheet.create({
     color: Colors.neutral[600],
     marginLeft: 6,
   },
-  htmlTagBtn: {
-    backgroundColor: Colors.neutral[100],
-    borderWidth: 1,
-    borderColor: Colors.neutral[300],
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 6,
-    marginRight: 6,
-  },
   charCount: {
     ...Typography.caption,
     color: Colors.neutral[500],
+  },
+  tooltipContainer: {
+    position: 'absolute',
+    top: 32,
+    left: 0,
+    right: 0,
+    backgroundColor: Colors.neutral[0],
+    borderRadius: BorderRadius.md,
+    padding: Spacing.md,
+    ...Shadows.md,
+    elevation: 25,
+    zIndex: 99999,
+  },
+  tooltipTriangle: {
+    position: 'absolute',
+    top: -10,
+    left: 145,
+    width: 0,
+    height: 0,
+    borderLeftWidth: 10,
+    borderRightWidth: 10,
+    borderBottomWidth: 10,
+    borderStyle: 'solid',
+    backgroundColor: 'transparent',
+    borderLeftColor: 'transparent',
+    borderRightColor: 'transparent',
+    borderBottomColor: Colors.neutral[0],
   },
 });

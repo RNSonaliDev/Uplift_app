@@ -11,11 +11,14 @@ import {
   Platform,
   KeyboardAvoidingView,
   Modal,
+  Pressable,
+  Dimensions,
 } from 'react-native';
+import Svg, { Path, Circle } from 'react-native-svg';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ChevronLeft, ChevronDown, Calendar as CalendarIcon, Clock, CheckSquare, Square, MapPin, Crosshair, Map as MapIcon, Minus, Plus, Navigation, X, Info } from 'lucide-react-native';
+import { ChevronLeft, ChevronDown, Calendar as CalendarIcon, Clock, CheckSquare, Square, MapPin, Crosshair, Map as MapIcon, Minus, Plus, Navigation, X } from 'lucide-react-native';
 import MapView, { Marker, Circle as MapCircle } from 'react-native-maps';
 import { GooglePlacesAutocomplete, GooglePlacesAutocompleteRef } from 'react-native-google-places-autocomplete';
 import Geolocation from '@react-native-community/geolocation';
@@ -24,9 +27,22 @@ import { validateBusinessAddressWithAPI, ValidationResult } from '../../../utils
 
 import { Colors } from '../../../theme/colors';
 import { Typography, FontFamily } from '../../../theme/typography';
+import { BorderRadius, Spacing } from '../../../theme/spacing';
+import { Shadows } from '../../../theme/common';
 import { AppText } from '../../../components/AppText';
 import { Button } from '../../../components/Button';
 import { api } from '../../../api/client';
+
+const InfoCircleIcon: React.FC<{size?: number; color?: string}> = ({
+  size = 18,
+  color = Colors.primary[500],
+}) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Circle cx="12" cy="12" r="10" stroke={color} strokeWidth="1.5" />
+    <Path d="M12 16V12" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
+    <Circle cx="12" cy="8" r="1" fill={color} />
+  </Svg>
+);
 
 export const RequestDetailsScreen = () => {
   const navigation = useNavigation<any>();
@@ -56,6 +72,7 @@ export const RequestDetailsScreen = () => {
   const [description, setDescription] = useState('');
   const [errors, setErrors] = useState({ title: '', description: '', time: '' });
   const [addressValidation, setAddressValidation] = useState<ValidationResult | null>(null);
+  const [showAddressInfo, setShowAddressInfo] = useState(false);
   const [helpType, setHelpType] = useState<'single' | 'multiple'>('single');
   const [isMultipleDates, setIsMultipleDates] = useState(false);
   
@@ -199,6 +216,11 @@ export const RequestDetailsScreen = () => {
         
         const validationData = await validateBusinessAddressWithAPI(fetchedAddress, GOOGLE_MAPS_API_KEY);
         setAddressValidation(validationData);
+        if (validationData?.addressType === 'residential' || validationData?.isBusinessAddress === false) {
+          setAddressError('For your safety, please use the business address');
+        } else {
+          setAddressError('');
+        }
         
         setAddress(fetchedAddress);
         googlePlacesRef.current?.setAddressText(fetchedAddress);
@@ -272,8 +294,11 @@ export const RequestDetailsScreen = () => {
     //   newErrors.time = 'Request cannot exceed 4 hours';
     //   hasError = true;
     // }  
-      if (!address.trim()) {
+    if (!address.trim()) {
       setAddressError('Please enter an address');
+      hasError = true;
+    } else if (addressValidation?.addressType === 'residential' || addressValidation?.isBusinessAddress === false) {
+      setAddressError('For your safety, please use the business address');
       hasError = true;
     }
 
@@ -527,9 +552,18 @@ export const RequestDetailsScreen = () => {
 
         
         {/* Address */}
-        <View style={[styles.inputGroup, { zIndex: 9999, elevation: Platform.OS === 'android' ? 10 : undefined }]}>
+        <View style={[styles.inputGroup, { zIndex: showAddressInfo ? 99999 : 9999, elevation: Platform.OS === 'android' ? (showAddressInfo ? 25 : 10) : undefined }]}>
           <View style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8}}>
-            <Text style={[styles.label, {marginBottom: 0}]}>Address <Text style={{color: Colors.error}}>*</Text></Text>
+            <View style={{flexDirection: 'row', alignItems: 'center'}}>
+              <Text style={[styles.label, {marginBottom: 0}]}>Address <Text style={{color: Colors.error}}>*</Text></Text>
+              <TouchableOpacity 
+                style={{marginLeft: 6}}
+                onPress={() => setShowAddressInfo(!showAddressInfo)}
+                hitSlop={{top: 8, bottom: 8, left: 8, right: 8}}
+              >
+                <InfoCircleIcon size={18} color={Colors.primary[500]} />
+              </TouchableOpacity>
+            </View>
             {(latitude && longitude) ? (
               <TouchableOpacity onPress={() => setIsMapModalVisible(true)}>
                 <AppText variant="bodyMedium" color={Colors.primary[500]} style={{ textDecorationLine: 'underline' }}>
@@ -538,6 +572,31 @@ export const RequestDetailsScreen = () => {
               </TouchableOpacity>
             ) : null}
           </View>
+
+          {/* Floating Tooltip */}
+          {showAddressInfo && (
+            <>
+              <Pressable
+                style={{
+                  position: 'absolute',
+                  top: -Dimensions.get('window').height,
+                  bottom: -Dimensions.get('window').height,
+                  left: -Dimensions.get('window').width,
+                  right: -Dimensions.get('window').width,
+                  backgroundColor: 'transparent',
+                  zIndex: 99998,
+                }}
+                onPress={() => setShowAddressInfo(false)}
+              />
+              <View style={[styles.tooltipContainer, { zIndex: 99999, elevation: 25 }]}>
+                {/* Left pointing triangle */}
+                <View style={[styles.tooltipTriangle, {left: 75}]} />
+                <AppText variant="caption" color={Colors.neutral[800]} style={{lineHeight: 18}}>
+                  Enter a nearby business address to match you with nearby requests— your exact location is never shared with anyone
+                </AppText>
+              </View>
+            </>
+          )}
           <GooglePlacesAutocomplete
             ref={googlePlacesRef}
             placeholder="Enter address"
@@ -550,7 +609,7 @@ export const RequestDetailsScreen = () => {
             onPress={async (data, details = null) => {
               const currentScrollY = scrollYRef.current;
               if (addressError) setAddressError('');
-              const selectedAddr = data.description || data.formatted_address || '';
+              const selectedAddr = data.description || (data as any).formatted_address || '';
               setAddress(selectedAddr);
               googlePlacesRef.current?.setAddressText(selectedAddr);
               if (details) {
@@ -558,6 +617,11 @@ export const RequestDetailsScreen = () => {
                 
                 const validationData = await validateBusinessAddressWithAPI(selectedAddr, GOOGLE_MAPS_API_KEY);
                 setAddressValidation(validationData);
+                if (validationData?.addressType === 'residential' || validationData?.isBusinessAddress === false) {
+                  setAddressError('For your safety, please use the business address');
+                } else {
+                  setAddressError('');
+                }
                 
                 if (details.geometry?.location) {
                   setLatitude(details.geometry.location.lat.toString());
@@ -633,10 +697,12 @@ export const RequestDetailsScreen = () => {
                 if (addressError) setAddressError('');
               }
             }}
-            listViewProps={{
-              nestedScrollEnabled: true,
-              keyboardShouldPersistTaps: 'always',
-            }}
+            {...({
+              listViewProps: {
+                nestedScrollEnabled: true,
+                keyboardShouldPersistTaps: 'always',
+              },
+            } as any)}
             renderLeftButton={() => (
               <View style={{marginRight: 4}}>
                 <MapPin color={Colors.primary[500]} size={20} />
@@ -648,31 +714,9 @@ export const RequestDetailsScreen = () => {
               </TouchableOpacity>
             )}
           />
-          {!!addressError ? (
+          {!!addressError && (
             <Text style={styles.errorText}>{addressError}</Text>
-          ) : addressValidation?.message ? (
-            <View style={{
-              flexDirection: 'row', 
-              alignItems: 'flex-start', 
-              backgroundColor: addressValidation.addressType === 'business' ? Colors.secondary[50] : Colors.primary[50],
-              borderRadius: 8,
-              padding: 12,
-              marginTop: 8
-            }}>
-              <Info 
-                color={addressValidation.addressType === 'business' ? Colors.success : Colors.info} 
-                size={20} 
-                style={{marginTop: 0, marginRight: 8}} 
-              />
-              <AppText 
-                variant="bodySmall" 
-                color={addressValidation.addressType === 'business' ? Colors.success : Colors.info} 
-                style={{flex: 1, lineHeight: 18}}
-              >
-                {addressValidation.message}
-              </AppText>
-            </View>
-          ) : null}
+          )}
         </View>
 
 
@@ -1157,5 +1201,32 @@ const styles = StyleSheet.create({
   modalOptionText: {
     ...Typography.bodyMedium,
     color: Colors.neutral[700],
-  }
+  },
+  tooltipContainer: {
+    position: 'absolute',
+    top: 32,
+    left: 0,
+    right: 0,
+    backgroundColor: Colors.neutral[0],
+    borderRadius: BorderRadius.md,
+    padding: Spacing.md,
+    ...Shadows.md,
+    elevation: 25,
+    zIndex: 99999,
+  },
+  tooltipTriangle: {
+    position: 'absolute',
+    top: -10,
+    left: 75,
+    width: 0,
+    height: 0,
+    borderLeftWidth: 10,
+    borderRightWidth: 10,
+    borderBottomWidth: 10,
+    borderStyle: 'solid',
+    backgroundColor: 'transparent',
+    borderLeftColor: 'transparent',
+    borderRightColor: 'transparent',
+    borderBottomColor: Colors.neutral[0],
+  },
 });

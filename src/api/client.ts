@@ -2,6 +2,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const BASE_URL = 'https://production.iupliftu.com/api/v1';
+export const CABLE_URL = 'wss://production.iupliftu.com/cable';
 export const IMAGE_BASE_URL = 'https://production.iupliftu.com';
 
 export const getFullImageUrl = (path?: string | null) => {
