@@ -14,7 +14,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import {useNavigation, useFocusEffect} from '@react-navigation/native';
 import { launchImageLibrary } from 'react-native-image-picker';
 import Toast from 'react-native-toast-message';
-import {api, getFullImageUrl} from '../../../api/client';
+import {api, getFullImageUrl, clearAuthToken} from '../../../api/client';
 import {authApi, UserProfileResponse} from '../../../api/auth';
 import {pushNotificationService} from '../../../services/PushNotificationService';
 import {Colors} from '../../../theme/colors';
@@ -124,11 +124,11 @@ export default function MyProfileScreen() {
           } catch (e) {
             console.log('Logout API failed', e);
           }
-          await AsyncStorage.removeItem('UPLIFT_AUTH_TOKEN');
+          await clearAuthToken();
           // navigation.replace('Welcome');
           navigation.reset({
             index: 0,
-            routes: [{name: 'Welcome'}],
+            routes: [{name: 'Login'}],
           });
         }
       },

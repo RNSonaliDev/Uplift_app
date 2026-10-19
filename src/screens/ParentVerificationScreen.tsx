@@ -520,8 +520,9 @@ export const ParentVerificationScreen: React.FC = () => {
         } as any,
       });
 
-      if (response?.access_token) {
-        await persistAuthToken(response.access_token);
+      const token = response?.access_token || response?.token || (response as any)?.auth_token;
+      if (token) {
+        await persistAuthToken(token);
       }
 
       const pendingRoles = response?.pending_roles || [];

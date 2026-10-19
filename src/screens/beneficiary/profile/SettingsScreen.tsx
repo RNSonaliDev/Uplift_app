@@ -98,7 +98,7 @@ export default function SettingsScreen() {
       await clearAuthToken();
       navigation.reset({
         index: 0,
-        routes: [{ name: 'CreateAccount' }],
+        routes: [{ name: 'Login' }],
       });
     }
   };

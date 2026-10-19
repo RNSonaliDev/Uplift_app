@@ -5,6 +5,11 @@ const BASE_URL = 'https://production.iupliftu.com/api/v1';
 export const CABLE_URL = 'wss://production.iupliftu.com/cable';
 export const IMAGE_BASE_URL = 'https://production.iupliftu.com';
 
+
+// const BASE_URL = 'https://uplift-backend.pixoatic.com/api/v1';
+// export const CABLE_URL = 'wss://uplift-backend.pixoatic.com/cable';
+// export const IMAGE_BASE_URL = 'https://uplift-backend.pixoatic.com';
+
 export const getFullImageUrl = (path?: string | null) => {
   if (!path) return null;
   if (path.startsWith('http')) return path;
@@ -54,15 +59,64 @@ export const clearAuthToken = async () => {
 
 export const getAuthToken = () => globalAuthToken;
 
+import { resetToLogin } from '../navigation/navigationRef';
+import Toast from 'react-native-toast-message';
+
+type UnauthorizedCallback = () => void | Promise<void>;
+let unauthorizedCallback: UnauthorizedCallback | null = null;
+
+export const registerUnauthorizedHandler = (cb: UnauthorizedCallback) => {
+  unauthorizedCallback = cb;
+};
+
+let isHandlingUnauthorized = false;
+
+export const handleUnauthorized = async () => {
+  if (isHandlingUnauthorized) return;
+  isHandlingUnauthorized = true;
+
+  try {
+    console.warn('[AUTH] 401 Unauthorized received. Clearing token and redirecting to Login.');
+    await clearAuthToken();
+
+    if (unauthorizedCallback) {
+      try {
+        await unauthorizedCallback();
+      } catch (e) {
+        console.error('Error in unauthorizedCallback', e);
+      }
+    }
+
+    Toast.show({
+      type: 'error',
+      text1: 'Session Expired',
+      text2: 'Please log in again',
+    });
+
+    resetToLogin();
+  } catch (error) {
+    console.error('Failed to handle unauthorized redirect', error);
+  } finally {
+    setTimeout(() => {
+      isHandlingUnauthorized = false;
+    }, 2000);
+  }
+};
+
 export const apiClient = async <T>(endpoint: string, options: FetchOptions = {}): Promise<T> => {
   const { data, headers, ...customOptions } = options;
+
+  let token = globalAuthToken;
+  if (!token) {
+    token = await loadAuthToken();
+  }
 
   const config: RequestInit = {
     ...customOptions,
     headers: {
       'accept': 'application/json',
       'Content-Type': 'application/json',
-      ...(globalAuthToken ? { Authorization: `Bearer ${globalAuthToken}` } : {}),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...headers,
     },
   };
@@ -97,6 +151,19 @@ export const apiClient = async <T>(endpoint: string, options: FetchOptions = {})
     console.log(`[API RESPONSE] ${response.status} ${BASE_URL}${endpoint}`, responseData ?? responseText);
 
     if (!response.ok) {
+      if (response.status === 401) {
+        const isAuthEndpoint =
+          endpoint.startsWith('/auth/otp') ||
+          endpoint.startsWith('/auth/social_login') ||
+          endpoint.startsWith('/auth/parent_verification') ||
+          endpoint.startsWith('/auth/registrations') ||
+          endpoint.startsWith('/auth/token');
+
+        if (!isAuthEndpoint) {
+          handleUnauthorized();
+        }
+      }
+
       let errorMessage =
         responseData?.data?.user_message ||
         responseData?.user_message ||

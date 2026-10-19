@@ -429,8 +429,9 @@ export const VerifyAccountScreen: React.FC = () => {
       });
 
       if (response.user_exists) {
-        if (response.access_token) {
-          await persistAuthToken(response.access_token);
+        const token = response.access_token || response.token || (response as any).auth_token;
+        if (token) {
+          await persistAuthToken(token);
         }
 
         const pendingRoles = response.user?.pending_roles || [];
