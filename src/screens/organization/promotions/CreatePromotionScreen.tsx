@@ -30,6 +30,7 @@ import { validateBusinessAddressWithAPI, ValidationResult } from '../../../utils
 import { AppText } from '../../../components/AppText';
 import { Button } from '../../../components/Button';
 import { DatePickerModal } from '../../../components/DatePickerModal';
+import { useFormScrollToError } from '../../../utils/useFormScrollToError';
 import {
   Megaphone,
   Calendar,
@@ -107,6 +108,14 @@ export const CreatePromotionScreen = () => {
   // Edit Mode states
   const [isEditing, setIsEditing] = useState(false);
   const [editingId, setEditingId] = useState<string | number | null>(null);
+
+  const {
+    scrollViewRef,
+    registerField,
+    registerInput,
+    scrollToError,
+    scrollToFirstError,
+  } = useFormScrollToError();
 
   // Metadata from API
   const [promotionTypes, setPromotionTypes] = useState<PromotionTypeItem[]>(FALLBACK_PROMOTION_TYPES);
@@ -217,7 +226,7 @@ export const CreatePromotionScreen = () => {
   };
 
   // Promo details
-  const [promoCode, setPromoCode] = useState('UPLIFT');
+  const [promoCode, setPromoCode] = useState('iUpliftU');
   const [quantityAvailable, setQuantityAvailable] = useState('');
   const [termsConditions, setTermsConditions] = useState('');
   const [description, setDescription] = useState('');
@@ -242,7 +251,7 @@ export const CreatePromotionScreen = () => {
     setQuantityAvailable('');
     setTermsConditions('');
     setDescription('');
-    setPromoCode('UPLIFT');
+    setPromoCode('iUpliftU');
     setLocationType('in_store');
     setFieldErrors({});
   };
@@ -410,7 +419,12 @@ export const CreatePromotionScreen = () => {
     }
 
     setFieldErrors(errors);
-    return Object.keys(errors).length === 0;
+    if (Object.keys(errors).length > 0) {
+      const fieldOrder = ['title', 'promotionType', 'productCategory', 'storeAddress', 'onlineUrl'];
+      scrollToFirstError(errors, fieldOrder);
+      return false;
+    }
+    return true;
   };
 
   const handleSubmit = async () => {
@@ -440,6 +454,7 @@ export const CreatePromotionScreen = () => {
           ...prev,
           storeAddress: 'For your safety, please use the business address',
         }));
+        scrollToError('storeAddress');
         Toast.show({
           type: 'error',
           text1: 'Validation Error',
@@ -523,15 +538,9 @@ export const CreatePromotionScreen = () => {
         <View style={{ width: 40 }} />
       </View>
 
-      <View
-        style={styles.mainContainer}
-        onTouchStart={() => {
-          if (activeDropdown !== null) {
-            setActiveDropdown(null);
-          }
-        }}
-      >
+      <View style={styles.mainContainer}>
         <KeyboardAwareScrollView
+          ref={scrollViewRef}
           style={styles.container}
           contentContainerStyle={[styles.content, { paddingBottom: 140 }]}
           showsVerticalScrollIndicator={false}
@@ -540,7 +549,12 @@ export const CreatePromotionScreen = () => {
           extraHeight={140}
           enableOnAndroid={true}
           enableAutomaticScroll={true}
-          enableResetScrollToCoords={false}>
+          enableResetScrollToCoords={false}
+          onScrollBeginDrag={() => {
+            if (activeDropdown !== null) {
+              setActiveDropdown(null);
+            }
+          }}>
           <TouchableWithoutFeedback
             onPress={() => {
               if (activeDropdown !== null) {
@@ -552,102 +566,139 @@ export const CreatePromotionScreen = () => {
             <View style={{ flex: 1 }}>
 
               {/* Title / Business Name */}
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Text style={[styles.label, { marginBottom: 0 }]}>
-                  Business Name <Text style={{ color: Colors.error }}>*</Text>
-                </Text>
-                <Text style={styles.charCount}>{title.length}/20</Text>
+              <View {...registerField('title')}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Text style={[styles.label, { marginBottom: 0 }]}>
+                    Business Name <Text style={{ color: Colors.error }}>*</Text>
+                  </Text>
+                  <Text style={styles.charCount}>{title.length}/20</Text>
+                </View>
+                <TextInput
+                  ref={registerInput('title')}
+                  style={[styles.input, fieldErrors.title ? styles.inputError : null, { marginTop: 6 }]}
+                  placeholder="XYZ LLC"
+                  placeholderTextColor={Colors.neutral[400]}
+                  maxLength={20}
+                  value={title}
+                  onChangeText={(text) => {
+                    setTitle(text);
+                    if (fieldErrors.title) setFieldErrors(prev => ({ ...prev, title: '' }));
+                  }}
+                />
+                {fieldErrors.title ? <Text style={styles.fieldErrorText}>{fieldErrors.title}</Text> : null}
               </View>
-              <TextInput
-                style={[styles.input, fieldErrors.title ? styles.inputError : null, { marginTop: 6 }]}
-                placeholder="XYZ LLC"
-                placeholderTextColor={Colors.neutral[400]}
-                maxLength={20}
-                value={title}
-                onChangeText={(text) => {
-                  setTitle(text);
-                  if (fieldErrors.title) setFieldErrors(prev => ({ ...prev, title: '' }));
-                }}
-              />
-              {fieldErrors.title ? <Text style={styles.fieldErrorText}>{fieldErrors.title}</Text> : null}
 
               {/* Promotion Type */}
-              <Text style={styles.label}>
-                Promotion Type <Text style={{ color: Colors.error }}>*</Text>
-              </Text>
-              <TouchableOpacity
-                style={[styles.dropdownInput, fieldErrors.promotionType ? styles.inputError : null]}
-                onPress={() => setActiveDropdown(activeDropdown === 'type' ? null : 'type')}>
-                <Text style={styles.dropdownText}>
-                  {selectedPromotionType?.name || 'Select Promotion Type'}
+              <View {...registerField('promotionType')} style={{ position: 'relative', zIndex: 10 }}>
+                {activeDropdown === 'type' && (
+                  <Pressable
+                    style={styles.dropdownBackdrop}
+                    onPress={() => setActiveDropdown(null)}
+                  />
+                )}
+                <Text style={styles.label}>
+                  Promotion Type <Text style={{ color: Colors.error }}>*</Text>
                 </Text>
-                <ChevronDown size={20} color={Colors.neutral[500]} />
-              </TouchableOpacity>
-              {fieldErrors.promotionType ? <Text style={styles.fieldErrorText}>{fieldErrors.promotionType}</Text> : null}
-              {activeDropdown === 'type' && (
-                <View style={styles.dropdownList}>
-                  {promotionTypes.map((typeItem) => (
-                    <TouchableOpacity
-                      key={typeItem.id.toString()}
-                      style={styles.dropdownOption}
-                      onPress={() => {
-                        setSelectedPromotionType(typeItem);
-                        setActiveDropdown(null);
-                        if (fieldErrors.promotionType) setFieldErrors(prev => ({ ...prev, promotionType: '' }));
-                      }}>
-                      <Text
-                        style={[
-                          styles.dropdownOptionText,
-                          selectedPromotionType?.id === typeItem.id && {
-                            color: Colors.primary[600],
-                            fontFamily: FontFamily.semiBold,
-                          },
-                        ]}>
-                        {typeItem.name}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              )}
+                <TouchableOpacity
+                  style={[styles.dropdownInput, fieldErrors.promotionType ? styles.inputError : null, { zIndex: 2 }]}
+                  onPress={() => setActiveDropdown(activeDropdown === 'type' ? null : 'type')}>
+                  <Text style={styles.dropdownText}>
+                    {selectedPromotionType?.name || 'Select Promotion Type'}
+                  </Text>
+                  <ChevronDown size={20} color={Colors.neutral[500]} />
+                </TouchableOpacity>
+                {fieldErrors.promotionType ? <Text style={styles.fieldErrorText}>{fieldErrors.promotionType}</Text> : null}
+                {activeDropdown === 'type' && (
+                  <View style={styles.dropdownList} onStartShouldSetResponder={() => true}>
+                    <ScrollView
+                      nestedScrollEnabled={true}
+                      keyboardShouldPersistTaps="handled"
+                      showsVerticalScrollIndicator={true}
+                      bounces={false}
+                      style={styles.dropdownScrollView}
+                    >
+                      {promotionTypes.map((typeItem) => (
+                        <TouchableOpacity
+                          key={typeItem.id.toString()}
+                          style={styles.dropdownOption}
+                          activeOpacity={0.7}
+                          onPress={() => {
+                            setSelectedPromotionType(typeItem);
+                            setActiveDropdown(null);
+                            if (fieldErrors.promotionType) setFieldErrors(prev => ({ ...prev, promotionType: '' }));
+                          }}>
+                          <Text
+                            style={[
+                              styles.dropdownOptionText,
+                              selectedPromotionType?.id === typeItem.id && {
+                                color: Colors.primary[600],
+                                fontFamily: FontFamily.semiBold,
+                              },
+                            ]}>
+                            {typeItem.name}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </ScrollView>
+                  </View>
+                )}
+              </View>
 
               {/* Product Category */}
-              <Text style={styles.label}>
-                Product Category <Text style={{ color: Colors.error }}>*</Text>
-              </Text>
-              <TouchableOpacity
-                style={[styles.dropdownInput, fieldErrors.productCategory ? styles.inputError : null]}
-                onPress={() => setActiveDropdown(activeDropdown === 'category' ? null : 'category')}>
-                <Text style={styles.dropdownText}>
-                  {selectedProductCategory?.name || 'Select Product Category'}
+              <View {...registerField('productCategory')} style={{ position: 'relative', zIndex: 9 }}>
+                {activeDropdown === 'category' && (
+                  <Pressable
+                    style={styles.dropdownBackdrop}
+                    onPress={() => setActiveDropdown(null)}
+                  />
+                )}
+                <Text style={styles.label}>
+                  Product Category <Text style={{ color: Colors.error }}>*</Text>
                 </Text>
-                <ChevronDown size={20} color={Colors.neutral[500]} />
-              </TouchableOpacity>
-              {fieldErrors.productCategory ? <Text style={styles.fieldErrorText}>{fieldErrors.productCategory}</Text> : null}
-              {activeDropdown === 'category' && (
-                <View style={styles.dropdownList}>
-                  {productCategories.map((catItem) => (
-                    <TouchableOpacity
-                      key={catItem.id.toString()}
-                      style={styles.dropdownOption}
-                      onPress={() => {
-                        setSelectedProductCategory(catItem);
-                        setActiveDropdown(null);
-                        if (fieldErrors.productCategory) setFieldErrors(prev => ({ ...prev, productCategory: '' }));
-                      }}>
-                      <Text
-                        style={[
-                          styles.dropdownOptionText,
-                          selectedProductCategory?.id === catItem.id && {
-                            color: Colors.primary[600],
-                            fontFamily: FontFamily.semiBold,
-                          },
-                        ]}>
-                        {catItem.name}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              )}
+                <TouchableOpacity
+                  style={[styles.dropdownInput, fieldErrors.productCategory ? styles.inputError : null, { zIndex: 2 }]}
+                  onPress={() => setActiveDropdown(activeDropdown === 'category' ? null : 'category')}>
+                  <Text style={styles.dropdownText}>
+                    {selectedProductCategory?.name || 'Select Product Category'}
+                  </Text>
+                  <ChevronDown size={20} color={Colors.neutral[500]} />
+                </TouchableOpacity>
+                {fieldErrors.productCategory ? <Text style={styles.fieldErrorText}>{fieldErrors.productCategory}</Text> : null}
+                {activeDropdown === 'category' && (
+                  <View style={styles.dropdownList} onStartShouldSetResponder={() => true}>
+                    <ScrollView
+                      nestedScrollEnabled={true}
+                      keyboardShouldPersistTaps="handled"
+                      showsVerticalScrollIndicator={true}
+                      bounces={false}
+                      style={styles.dropdownScrollView}
+                    >
+                      {productCategories.map((catItem) => (
+                        <TouchableOpacity
+                          key={catItem.id.toString()}
+                          style={styles.dropdownOption}
+                          activeOpacity={0.7}
+                          onPress={() => {
+                            setSelectedProductCategory(catItem);
+                            setActiveDropdown(null);
+                            if (fieldErrors.productCategory) setFieldErrors(prev => ({ ...prev, productCategory: '' }));
+                          }}>
+                          <Text
+                            style={[
+                              styles.dropdownOptionText,
+                              selectedProductCategory?.id === catItem.id && {
+                                color: Colors.primary[600],
+                                fontFamily: FontFamily.semiBold,
+                              },
+                            ]}>
+                            {catItem.name}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </ScrollView>
+                  </View>
+                )}
+              </View>
 
               {/* Promotion Period */}
               <Text style={styles.label}>Promotion Period</Text>
@@ -706,7 +757,7 @@ export const CreatePromotionScreen = () => {
 
               {/* Conditional Location Inputs */}
               {(locationType === 'in_store' || locationType === 'both') && (
-                <View style={{
+                <View {...registerField('storeAddress')} style={{
                   marginTop: 8,
                   marginBottom: 8,
                   zIndex: showAddressInfo ? 99999 : 9999,
@@ -760,7 +811,10 @@ export const CreatePromotionScreen = () => {
                   )}
 
                   <GooglePlacesAutocomplete
-                    ref={googlePlacesRef}
+                    ref={(r) => {
+                      googlePlacesRef.current = r;
+                      registerInput('storeAddress')(r);
+                    }}
                     placeholder="e.g. 123 Community Lane, Coimbatore"
                     fetchDetails={true}
                     enablePoweredByContainer={false}
@@ -869,11 +923,12 @@ export const CreatePromotionScreen = () => {
               )}
 
               {(locationType === 'online' || locationType === 'both') && (
-                <View style={{ marginTop: 8 }}>
+                <View {...registerField('onlineUrl')} style={{ marginTop: 8 }}>
                   <Text style={styles.subLabel}>
                     Online URL <Text style={{ color: Colors.error }}>*</Text>
                   </Text>
                   <TextInput
+                    ref={registerInput('onlineUrl')}
                     style={[styles.input, fieldErrors.onlineUrl ? styles.inputError : null]}
                     placeholder="https://yourwebsite.com/deal"
                     placeholderTextColor={Colors.neutral[400]}
@@ -896,14 +951,14 @@ export const CreatePromotionScreen = () => {
               </View>
               <TextInput
                 style={[styles.input, { marginTop: 6 }]}
-                placeholder="UPLIFT"
+                placeholder="iUpliftU"
                 placeholderTextColor={Colors.neutral[400]}
                 autoCapitalize="characters"
                 maxLength={6}
                 value={promoCode}
                 onChangeText={(text) => setPromoCode(text.toUpperCase().slice(0, 6))}
               />
-              <Text style={styles.helperText}>Default is UPLIFT or enter a custom promo code</Text>
+              <Text style={styles.helperText}>Default is iUpliftU or enter a custom promo code</Text>
 
               {/* Quantity Available */}
               <Text style={styles.label}>Quantity Available</Text>
@@ -1195,7 +1250,22 @@ const styles = StyleSheet.create({
     borderColor: Colors.neutral[200],
     borderRadius: moderateScale(8),
     marginTop: verticalScale(4),
-    elevation: 4,
+    elevation: 5,
+    maxHeight: verticalScale(220),
+    overflow: 'hidden',
+    zIndex: 10,
+  },
+  dropdownBackdrop: {
+    position: 'absolute',
+    top: -4000,
+    bottom: -4000,
+    left: -4000,
+    right: -4000,
+    zIndex: 1,
+    backgroundColor: 'transparent',
+  },
+  dropdownScrollView: {
+    maxHeight: verticalScale(220),
   },
   dropdownOption: {
     paddingHorizontal: horizontalScale(14),

@@ -7,12 +7,12 @@ import {
   TouchableOpacity,
   Alert,
   Modal,
-  FlatList,
-  TouchableWithoutFeedback,
   Platform,
   TextInput,
   Pressable,
   Dimensions,
+  ActivityIndicator,
+  TouchableWithoutFeedback,
 } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -34,6 +34,7 @@ import {Colors} from '../theme/colors';
 import {BorderRadius, Spacing} from '../theme/spacing';
 import {Shadows} from '../theme/common';
 import {validateBusinessAddressWithAPI, ValidationResult} from '../utils/addressValidation';
+import {useFormScrollToError} from '../utils/useFormScrollToError';
 import {
   moderateScale,
   fontScale,
@@ -256,6 +257,13 @@ export const OrganizationSetupScreen: React.FC = () => {
     language: 'en',
   }), []);
   const googlePlacesRef = useRef<GooglePlacesAutocompleteRef>(null);
+  const {
+    scrollViewRef,
+    registerField,
+    registerInput,
+    scrollToError,
+    scrollToFirstError,
+  } = useFormScrollToError();
   const orgNameInputRef = useRef<TextInput>(null);
   const orgEmailInputRef = useRef<TextInput>(null);
   const contactNameInputRef = useRef<TextInput>(null);
@@ -275,6 +283,7 @@ export const OrganizationSetupScreen: React.FC = () => {
         setLongitude(lng.toString());
         
         try {
+          setIsValidatingAddress(true);
           const response = await fetch(
             `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${GOOGLE_MAPS_API_KEY}`
           );
@@ -286,13 +295,15 @@ export const OrganizationSetupScreen: React.FC = () => {
             const validationData = await validateBusinessAddressWithAPI(fetchedAddress, GOOGLE_MAPS_API_KEY);
             setAddressValidation(validationData);
             if (validationData?.addressType === 'residential' || validationData?.isBusinessAddress === false) {
-              setErrors(prev => ({ ...prev, orgAddress: 'For your safety, please use the business address' }));
+              setErrors(prev => ({ ...prev, orgAddress: 'Please use the business address' }));
             } else {
               setErrors(prev => ({ ...prev, orgAddress: '' }));
             }
           }
         } catch (error) {
           console.error('Error fetching reverse geocoding on current location:', error);
+        } finally {
+          setIsValidatingAddress(false);
         }
       },
       (error) => console.log(error.message),
@@ -310,6 +321,7 @@ export const OrganizationSetupScreen: React.FC = () => {
     setLatitude(lat.toString());
     setLongitude(lng.toString());
     try {
+      setIsValidatingAddress(true);
       const response = await fetch(
         `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${GOOGLE_MAPS_API_KEY}`
       );
@@ -321,13 +333,15 @@ export const OrganizationSetupScreen: React.FC = () => {
         const validationData = await validateBusinessAddressWithAPI(fetchedAddress, GOOGLE_MAPS_API_KEY);
         setAddressValidation(validationData);
         if (validationData?.addressType === 'residential' || validationData?.isBusinessAddress === false) {
-          setErrors(prev => ({ ...prev, orgAddress: 'For your safety, please use the business address' }));
+          setErrors(prev => ({ ...prev, orgAddress: 'Please use the business address' }));
         } else {
           setErrors(prev => ({ ...prev, orgAddress: '' }));
         }
       }
     } catch (error) {
       console.error('Error fetching reverse geocoding:', error);
+    } finally {
+      setIsValidatingAddress(false);
     }
   };
   
@@ -359,9 +373,11 @@ export const OrganizationSetupScreen: React.FC = () => {
       }
 
       try {
-        const categoriesData = await authApi.getOrganizationCategories();
+        const categoriesData = await authApi.getOrganizationTypes();
         if (categoriesData && Array.isArray(categoriesData)) {
-          const mappedTypes = categoriesData.map((c: any) => c.title || c.name || c.category_name || c);
+          const mappedTypes = categoriesData
+            .filter((c: any) => c.status !== 'inactive')
+            .map((c: any) => c.name || c.title || c.category_name || c);
           if (mappedTypes.length > 0) {
             setOrganizationTypes(mappedTypes);
           }
@@ -378,12 +394,10 @@ export const OrganizationSetupScreen: React.FC = () => {
     
     if (!orgType.trim()) newErrors.orgType = 'Organization type is required';
     if (!orgName.trim()) newErrors.orgName = 'Organization name is required';
-    if (!orgAddress.trim()) {
+    if (!orgAddress || !orgAddress.trim()) {
       newErrors.orgAddress = 'Organization address is required';
-    } else if (errors.orgAddress) {
-      newErrors.orgAddress = errors.orgAddress;
     } else if (addressValidation?.addressType === 'residential' || addressValidation?.isBusinessAddress === false) {
-      newErrors.orgAddress = 'For your safety, please use the business address';
+      newErrors.orgAddress = 'Please use the business address';
     }
     if (!contactName.trim()) newErrors.contactName = 'Contact name is required';
     
@@ -409,7 +423,20 @@ export const OrganizationSetupScreen: React.FC = () => {
     }
 
     setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    if (Object.keys(newErrors).length > 0) {
+      const fieldOrder = [
+        'orgType',
+        'orgName',
+        'orgEmail',
+        'orgAddress',
+        'contactName',
+        'contactEmail',
+        'contactPhone',
+      ];
+      scrollToFirstError(newErrors, fieldOrder);
+      return false;
+    }
+    return true;
   };
 
   const route = useRoute<any>();
@@ -419,46 +446,35 @@ export const OrganizationSetupScreen: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleContinue = async () => {
-    const isValid = validate();
-    if (!isValid) return;
-
-    if (errors.orgAddress) {
-      Toast.show({
-        type: 'error',
-        text1: 'Validation Error',
-        text2: errors.orgAddress,
-      });
-      return;
-    }
-
-    let isResidential = addressValidation?.addressType === 'residential' || addressValidation?.isBusinessAddress === false;
-    if (!addressValidation && orgAddress.trim()) {
-      setIsValidatingAddress(true);
+    let currentValidation = addressValidation;
+    if (orgAddress && orgAddress.trim() && !currentValidation) {
       try {
-        const validationData = await validateBusinessAddressWithAPI(orgAddress.trim(), GOOGLE_MAPS_API_KEY);
-        setAddressValidation(validationData);
-        if (validationData?.addressType === 'residential' || validationData?.isBusinessAddress === false) {
-          isResidential = true;
-        }
-      } catch (e) {
-        console.log('Address validation error in handleContinue:', e);
+        setIsValidatingAddress(true);
+        currentValidation = await validateBusinessAddressWithAPI(orgAddress.trim(), GOOGLE_MAPS_API_KEY);
+        setAddressValidation(currentValidation);
+      } catch (err) {
+        console.log('Error validating address on submit:', err);
       } finally {
         setIsValidatingAddress(false);
       }
     }
 
-    if (isResidential) {
+    if (currentValidation?.addressType === 'residential' || currentValidation?.isBusinessAddress === false) {
       setErrors(prev => ({
         ...prev,
-        orgAddress: 'For your safety, please use the business address',
+        orgAddress: 'Please use the business address',
       }));
+      scrollToError('orgAddress');
       Toast.show({
         type: 'error',
-        text1: 'Validation Error',
-        text2: 'For your safety, please use the business address',
+        text1: 'Business Address Required',
+        text2: 'For your safety, please use the business address.',
       });
       return;
     }
+
+    const isValid = validate();
+    if (!isValid) return;
 
     const currentRoleData = {
         role: 'organization',
@@ -520,6 +536,7 @@ export const OrganizationSetupScreen: React.FC = () => {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={Colors.neutral[0]} />
       <KeyboardAwareScrollView
+        ref={scrollViewRef}
         style={{flex: 1}}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
@@ -527,10 +544,17 @@ export const OrganizationSetupScreen: React.FC = () => {
         enableOnAndroid={true}
         extraScrollHeight={20}
         enableResetScrollToCoords={false}
-        onScrollBeginDrag={() => setTypeModalVisible(false)}>
+        onScrollBeginDrag={() => {
+          if (isTypeModalVisible) setTypeModalVisible(false);
+        }}>
           
-          <TouchableWithoutFeedback onPress={() => setTypeModalVisible(false)} accessible={false}>
-            <View style={{ flex: 1 }}>
+        <TouchableWithoutFeedback
+          onPress={() => {
+            if (isTypeModalVisible) setTypeModalVisible(false);
+          }}
+          accessible={false}
+        >
+          <View style={{ flex: 1 }}>
           {/* Header with Back Button */}
           <TouchableOpacity
             style={styles.backButton}
@@ -562,86 +586,112 @@ export const OrganizationSetupScreen: React.FC = () => {
           </View>
 
           {/* Organization Form Fields */}
-          <View style={styles.formSection}>
-            <TouchableOpacity activeOpacity={0.8} onPress={() => setTypeModalVisible(!isTypeModalVisible)}>
-              <View pointerEvents="none">
-                <Input
-                  label="Organization Type"
-                  placeholder="Select organization type"
-                  value={orgType || ''}
-                  editable={false}
-                  rightIcon={<ChevronDownIcon size={20} />}
-                  error={errors.orgType}
+          <View style={[styles.formSection, { zIndex: 100 }]}>
+            <View {...registerField('orgType')} style={{ position: 'relative', zIndex: 100 }}>
+              {isTypeModalVisible && (
+                <Pressable
+                  style={styles.dropdownBackdrop}
+                  onPress={() => setTypeModalVisible(false)}
                 />
-              </View>
-            </TouchableOpacity>
+              )}
+              <TouchableOpacity activeOpacity={0.8} onPress={() => setTypeModalVisible(!isTypeModalVisible)}>
+                <View pointerEvents="none">
+                  <Input
+                    label="Organization Type"
+                    placeholder="Select organization type"
+                    value={orgType || ''}
+                    editable={false}
+                    rightIcon={<ChevronDownIcon size={20} />}
+                    error={errors.orgType}
+                  />
+                </View>
+              </TouchableOpacity>
 
-            {isTypeModalVisible && (
-              <View style={styles.inlineDropdown}>
-                {organizationTypes.map((item, index) => {
-                  const isSelected = orgType === item;
-                  const isLast = index === organizationTypes.length - 1;
-                  return (
-                    <TouchableOpacity
-                      key={item + index}
-                      style={[styles.dropdownItem, isLast && { borderBottomWidth: 0 }]}
-                      onPress={() => {
-                        setOrgType(item);
-                        if (errors.orgType) setErrors({...errors, orgType: ''});
-                        setTypeModalVisible(false);
-                      }}
-                    >
-                      <AppText
-                        variant="bodyMedium"
-                        color={isSelected ? Colors.primary[500] : Colors.neutral[800]}
-                        weight={isSelected ? 'bold' : 'regular'}
-                      >
-                        {item || ''}
-                      </AppText>
-                      {isSelected && <Check color={Colors.primary[500]} size={18} />}
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-            )}
+              {isTypeModalVisible && (
+                <View style={styles.inlineDropdown} onStartShouldSetResponder={() => true}>
+                  <ScrollView
+                    nestedScrollEnabled={true}
+                    keyboardShouldPersistTaps="handled"
+                    showsVerticalScrollIndicator={true}
+                    bounces={false}
+                    style={styles.dropdownScrollView}
+                  >
+                    {organizationTypes.map((item, index) => {
+                      const isSelected = orgType === item;
+                      const isLast = index === organizationTypes.length - 1;
+                      return (
+                        <TouchableOpacity
+                          key={item + index}
+                          style={[styles.dropdownItem, isLast && { borderBottomWidth: 0 }]}
+                          onPress={() => {
+                            setOrgType(item);
+                            if (errors.orgType) setErrors({...errors, orgType: ''});
+                            setTypeModalVisible(false);
+                          }}
+                        >
+                          <AppText
+                            variant="bodyMedium"
+                            color={isSelected ? Colors.primary[500] : Colors.neutral[800]}
+                            weight={isSelected ? 'bold' : 'regular'}
+                          >
+                            {item || ''}
+                          </AppText>
+                          {isSelected && <Check color={Colors.primary[500]} size={18} />}
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </ScrollView>
+                </View>
+              )}
+            </View>
 
-            <Input
-              ref={orgNameInputRef}
-              label="Organization Name"
-              placeholder="Enter organization name"
-              leftIcon={<BuildingOutlineIcon />}
-              value={orgName}
-              onChangeText={(text) => {
-                setOrgName(text);
-                if (errors.orgName) setErrors({...errors, orgName: ''});
-              }}
-              returnKeyType="next"
-              blurOnSubmit={false}
-              onSubmitEditing={() => orgEmailInputRef.current?.focus()}
-              onFocus={() => setTypeModalVisible(false)}
-              error={errors.orgName}
-            />
+            <View {...registerField('orgName')}>
+              <Input
+                ref={(r) => {
+                  orgNameInputRef.current = r;
+                  registerInput('orgName')(r);
+                }}
+                label="Organization Name"
+                placeholder="Enter organization name"
+                leftIcon={<BuildingOutlineIcon />}
+                value={orgName}
+                onChangeText={(text) => {
+                  setOrgName(text);
+                  if (errors.orgName) setErrors({...errors, orgName: ''});
+                }}
+                returnKeyType="next"
+                blurOnSubmit={false}
+                onSubmitEditing={() => orgEmailInputRef.current?.focus()}
+                onFocus={() => setTypeModalVisible(false)}
+                error={errors.orgName}
+              />
+            </View>
 
-            <Input
-              ref={orgEmailInputRef}
-              label="Organization Email"
-              placeholder="Enter organization email"
-              leftIcon={<MailOutlineIcon />}
-              value={orgEmail}
-              onChangeText={(text) => {
-                setOrgEmail(text);
-                if (errors.orgEmail) setErrors({...errors, orgEmail: ''});
-              }}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              returnKeyType="next"
-              blurOnSubmit={false}
-              onSubmitEditing={() => contactNameInputRef.current?.focus()}
-              onFocus={() => setTypeModalVisible(false)}
-              error={errors.orgEmail}
-            />
+            <View {...registerField('orgEmail')}>
+              <Input
+                ref={(r) => {
+                  orgEmailInputRef.current = r;
+                  registerInput('orgEmail')(r);
+                }}
+                label="Organization Email"
+                placeholder="Enter organization email"
+                leftIcon={<MailOutlineIcon />}
+                value={orgEmail}
+                onChangeText={(text) => {
+                  setOrgEmail(text);
+                  if (errors.orgEmail) setErrors({...errors, orgEmail: ''});
+                }}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                returnKeyType="next"
+                blurOnSubmit={false}
+                onSubmitEditing={() => contactNameInputRef.current?.focus()}
+                onFocus={() => setTypeModalVisible(false)}
+                error={errors.orgEmail}
+              />
+            </View>
 
-            <View style={{
+            <View {...registerField('orgAddress')} style={{
               marginBottom: Spacing.lg,
               zIndex: showAddressInfo ? 99999 : 9999,
               elevation: Platform.OS === 'android' ? (showAddressInfo ? 25 : 10) : undefined,
@@ -694,7 +744,10 @@ export const OrganizationSetupScreen: React.FC = () => {
               )}
 
               <GooglePlacesAutocomplete
-                ref={googlePlacesRef}
+                ref={(r) => {
+                  googlePlacesRef.current = r;
+                  registerInput('orgAddress')(r);
+                }}
                 placeholder="Enter organization address"
                 fetchDetails={true}
                 enablePoweredByContainer={false}
@@ -706,14 +759,6 @@ export const OrganizationSetupScreen: React.FC = () => {
                   const selectedAddr = data.description || (data as any).formatted_address || '';
                   setOrgAddress(selectedAddr);
                   googlePlacesRef.current?.setAddressText(selectedAddr);
-                  
-                  const validationData = await validateBusinessAddressWithAPI(selectedAddr, GOOGLE_MAPS_API_KEY);
-                  setAddressValidation(validationData);
-                  if (validationData?.addressType === 'residential' || validationData?.isBusinessAddress === false) {
-                    setErrors(prev => ({ ...prev, orgAddress: 'For your safety, please use the business address' }));
-                  } else {
-                    setErrors(prev => ({ ...prev, orgAddress: '' }));
-                  }
 
                   if (details?.geometry?.location) {
                     setLatitude(details.geometry.location.lat.toString());
@@ -723,6 +768,23 @@ export const OrganizationSetupScreen: React.FC = () => {
                       latitude: details.geometry.location.lat,
                       longitude: details.geometry.location.lng,
                     });
+                  }
+
+                  if (selectedAddr) {
+                    try {
+                      setIsValidatingAddress(true);
+                      const validationData = await validateBusinessAddressWithAPI(selectedAddr, GOOGLE_MAPS_API_KEY);
+                      setAddressValidation(validationData);
+                      if (validationData?.addressType === 'residential' || validationData?.isBusinessAddress === false) {
+                        setErrors(prev => ({ ...prev, orgAddress: 'Please use the business address' }));
+                      } else {
+                        setErrors(prev => ({ ...prev, orgAddress: '' }));
+                      }
+                    } catch (err) {
+                      console.log('Error validating selected address:', err);
+                    } finally {
+                      setIsValidatingAddress(false);
+                    }
                   }
                 }}
                 query={googlePlacesQuery}
@@ -780,7 +842,7 @@ export const OrganizationSetupScreen: React.FC = () => {
                   onFocus: () => setTypeModalVisible(false),
                   onChangeText: (text) => {
                     setOrgAddress(text);
-                    setAddressValidation(null);
+                    if (addressValidation) setAddressValidation(null);
                     if (errors.orgAddress) setErrors(prev => ({...prev, orgAddress: ''}));
                   }
                 }}
@@ -801,10 +863,17 @@ export const OrganizationSetupScreen: React.FC = () => {
                   </TouchableOpacity>
                 )}
               />
-              {errors.orgAddress ? (
-                <AppText variant="caption" color={Colors.error} style={{marginTop: 4}}>
+              {!!errors.orgAddress ? (
+                <AppText variant="bodySmall" color={Colors.error} style={{marginTop: 4}}>
                   {errors.orgAddress}
                 </AppText>
+              ) : isValidatingAddress ? (
+                <View style={{flexDirection: 'row', alignItems: 'center', marginTop: 8}}>
+                  <ActivityIndicator size="small" color={Colors.primary[500]} />
+                  <AppText variant="caption" color={Colors.neutral[500]} style={{marginLeft: 8}}>
+                    Validating address...
+                  </AppText>
+                </View>
               ) : null}
             </View>
           </View>
@@ -815,59 +884,74 @@ export const OrganizationSetupScreen: React.FC = () => {
               Primary Contact
             </AppText>
 
-            <Input
-              ref={contactNameInputRef}
-              label="Contact Name"
-              placeholder="Enter contact name"
-              leftIcon={<UserOutlineIcon />}
-              value={contactName}
-              onChangeText={(text) => {
-                setContactName(text);
-                if (errors.contactName) setErrors({...errors, contactName: ''});
-              }}
-              returnKeyType="next"
-              blurOnSubmit={false}
-              onSubmitEditing={() => contactEmailInputRef.current?.focus()}
-              onFocus={() => setTypeModalVisible(false)}
-              error={errors.contactName}
-            />
+            <View {...registerField('contactName')}>
+              <Input
+                ref={(r) => {
+                  contactNameInputRef.current = r;
+                  registerInput('contactName')(r);
+                }}
+                label="Contact Name"
+                placeholder="Enter contact name"
+                leftIcon={<UserOutlineIcon />}
+                value={contactName}
+                onChangeText={(text) => {
+                  setContactName(text);
+                  if (errors.contactName) setErrors({...errors, contactName: ''});
+                }}
+                returnKeyType="next"
+                blurOnSubmit={false}
+                onSubmitEditing={() => contactEmailInputRef.current?.focus()}
+                onFocus={() => setTypeModalVisible(false)}
+                error={errors.contactName}
+              />
+            </View>
 
-            <Input
-              ref={contactEmailInputRef}
-              label="Contact Email"
-              placeholder="Enter contact email"
-              leftIcon={<MailOutlineIcon />}
-              value={contactEmail}
-              onChangeText={(text) => {
-                setContactEmail(text);
-                if (errors.contactEmail) setErrors({...errors, contactEmail: ''});
-              }}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              returnKeyType="next"
-              blurOnSubmit={false}
-              onSubmitEditing={() => contactPhoneInputRef.current?.focus()}
-              onFocus={() => setTypeModalVisible(false)}
-              error={errors.contactEmail}
-            />
+            <View {...registerField('contactEmail')}>
+              <Input
+                ref={(r) => {
+                  contactEmailInputRef.current = r;
+                  registerInput('contactEmail')(r);
+                }}
+                label="Contact Email"
+                placeholder="Enter contact email"
+                leftIcon={<MailOutlineIcon />}
+                value={contactEmail}
+                onChangeText={(text) => {
+                  setContactEmail(text);
+                  if (errors.contactEmail) setErrors({...errors, contactEmail: ''});
+                }}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                returnKeyType="next"
+                blurOnSubmit={false}
+                onSubmitEditing={() => contactPhoneInputRef.current?.focus()}
+                onFocus={() => setTypeModalVisible(false)}
+                error={errors.contactEmail}
+              />
+            </View>
 
-            <Input
-              ref={contactPhoneInputRef}
-              label="Contact Phone"
-              placeholder="(201) 555-0198"
-              leftIcon={<PhonePrefixPrefix />}
-              value={contactPhone}
-              onChangeText={(text) => {
-                setContactPhone(text);
-                if (errors.contactPhone) setErrors({...errors, contactPhone: ''});
-              }}
-              keyboardType="phone-pad"
-              maxLength={10}
-              returnKeyType="done"
-              onSubmitEditing={handleContinue}
-              onFocus={() => setTypeModalVisible(false)}
-              error={errors.contactPhone}
-            />
+            <View {...registerField('contactPhone')}>
+              <Input
+                ref={(r) => {
+                  contactPhoneInputRef.current = r;
+                  registerInput('contactPhone')(r);
+                }}
+                label="Contact Phone"
+                placeholder="(201) 555-0198"
+                leftIcon={<PhonePrefixPrefix />}
+                value={contactPhone}
+                onChangeText={(text) => {
+                  setContactPhone(text);
+                  if (errors.contactPhone) setErrors({...errors, contactPhone: ''});
+                }}
+                keyboardType="phone-pad"
+                maxLength={10}
+                returnKeyType="done"
+                onSubmitEditing={handleContinue}
+                onFocus={() => setTypeModalVisible(false)}
+                error={errors.contactPhone}
+              />
+            </View>
           </View>
 
           {/* Spacer */}
@@ -880,7 +964,7 @@ export const OrganizationSetupScreen: React.FC = () => {
             size="lg"
             fullWidth
             loading={isSubmitting || isValidatingAddress}
-            disabled={isSubmitting || isValidatingAddress || Boolean(errors.orgAddress) || addressValidation?.addressType === 'residential' || addressValidation?.isBusinessAddress === false}
+            disabled={isSubmitting || isValidatingAddress || addressValidation?.addressType === 'residential' || addressValidation?.isBusinessAddress === false}
             onPress={handleContinue}
             style={styles.continueButton}
           />
@@ -1006,7 +1090,21 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 4,
-    elevation: 2,
+    elevation: 5,
+    maxHeight: verticalScale(220),
+    zIndex: 10,
+  },
+  dropdownBackdrop: {
+    position: 'absolute',
+    top: -4000,
+    bottom: -4000,
+    left: -4000,
+    right: -4000,
+    zIndex: 1,
+    backgroundColor: 'transparent',
+  },
+  dropdownScrollView: {
+    maxHeight: verticalScale(220),
   },
   dropdownItem: {
     flexDirection: 'row',

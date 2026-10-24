@@ -11,7 +11,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleDisplayName</key>
-	<string>Uplift</string>
+	<string>iUpliftU</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -53,11 +53,11 @@
 		<true/>
 	</dict>
 	<key>NSCameraUsageDescription</key>
-	<string>Uplift requires access to your camera so you can take a photo of your Government ID and profile picture.</string>
+	<string>iUpliftU requires access to your camera so you can take a photo of your Government ID and profile picture.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Uplift requires access to your location to set meeting places.</string>
+	<string>iUpliftU requires access to your location to set meeting places.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Uplift requires access to your photo library so you can upload and update your profile picture.</string>
+	<string>iUpliftU requires access to your photo library so you can upload and update your profile picture.</string>
 	<key>RCTNewArchEnabled</key>
 	<true/>
 	<key>UIAppFonts</key>

@@ -172,6 +172,9 @@ export const authApi = {
   getOrganizationCategories: () => {
     return api.get<CategoryResponse[]>('/categories?category_type=organization');
   },
+  getOrganizationTypes: () => {
+    return api.get<{ id: number; name: string; status?: string }[]>('/organization_categories');
+  },
   setDefaultRole: async (payload: { default_role: string }) => {
     const res = await api.patch<any>('/profile/default_role', payload);
     try {

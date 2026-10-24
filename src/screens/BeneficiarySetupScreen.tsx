@@ -27,6 +27,7 @@ import {AppText} from '../components/AppText';
 import {Button} from '../components/Button';
 import {Input} from '../components/Input';
 import {UpliftLogo} from '../components/UpliftLogo';
+import {useFormScrollToError} from '../utils/useFormScrollToError';
 import {authApi} from '../api';
 import {Colors} from '../theme/colors';
 import {BorderRadius, Spacing} from '../theme/spacing';
@@ -239,6 +240,12 @@ export const BeneficiarySetupScreen: React.FC = () => {
   const emailInputRef = useRef<TextInput>(null);
   const phoneInputRef = useRef<TextInput>(null);
   const zipCodeInputRef = useRef<TextInput>(null);
+  const {
+    scrollViewRef,
+    registerField,
+    registerInput,
+    scrollToFirstError,
+  } = useFormScrollToError();
 
   const calculateAge = (dobString?: string): number | null => {
     if (!dobString) return null;
@@ -311,8 +318,8 @@ export const BeneficiarySetupScreen: React.FC = () => {
     if (computedAge !== null && computedAge < 14) {
       Toast.show({
         type: 'error',
-        text1: 'Age Restriction',
-        text2: 'You must be at least 14 years old.',
+        text1: '',
+        text2: 'The age should be 14+.',
       });
       return;
     }
@@ -407,7 +414,20 @@ export const BeneficiarySetupScreen: React.FC = () => {
     }
 
     setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    if (Object.keys(newErrors).length > 0) {
+      const fieldOrder = [
+        'firstName',
+        'lastName',
+        'email',
+        'phoneNumber',
+        'dob',
+        'zipCode',
+        'governmentId',
+      ];
+      scrollToFirstError(newErrors, fieldOrder);
+      return false;
+    }
+    return true;
   };
 
   const handleContinue = async () => {
@@ -522,6 +542,7 @@ export const BeneficiarySetupScreen: React.FC = () => {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={Colors.neutral[0]} />
       <KeyboardAwareScrollView
+        ref={scrollViewRef}
         style={styles.flex}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
@@ -555,58 +576,73 @@ export const BeneficiarySetupScreen: React.FC = () => {
 
           {/* Form Fields */}
           <View style={styles.formSection}>
-            <Input
-              ref={firstNameInputRef}
-              label="First name"
-              placeholder="Enter your first name"
-              leftIcon={<UserOutlineIcon />}
-              value={firstName}
-              onChangeText={(text) => {
-                setFirstName(text);
-                if (errors.firstName) setErrors({...errors, firstName: ''});
-              }}
-              returnKeyType="next"
-              blurOnSubmit={false}
-              onSubmitEditing={() => lastNameInputRef.current?.focus()}
-              error={errors.firstName}
-            />
+            <View {...registerField('firstName')}>
+              <Input
+                ref={(r) => {
+                  firstNameInputRef.current = r;
+                  registerInput('firstName')(r);
+                }}
+                label="First name"
+                placeholder="Enter your first name"
+                leftIcon={<UserOutlineIcon />}
+                value={firstName}
+                onChangeText={(text) => {
+                  setFirstName(text);
+                  if (errors.firstName) setErrors({...errors, firstName: ''});
+                }}
+                returnKeyType="next"
+                blurOnSubmit={false}
+                onSubmitEditing={() => lastNameInputRef.current?.focus()}
+                error={errors.firstName}
+              />
+            </View>
 
-            <Input
-              ref={lastNameInputRef}
-              label="Last name"
-              placeholder="Enter your last name"
-              leftIcon={<UserOutlineIcon />}
-              value={lastName}
-              onChangeText={(text) => {
-                setLastName(text);
-                if (errors.lastName) setErrors({...errors, lastName: ''});
-              }}
-              returnKeyType="next"
-              blurOnSubmit={false}
-              onSubmitEditing={() => emailInputRef.current?.focus()}
-              error={errors.lastName}
-            />
+            <View {...registerField('lastName')}>
+              <Input
+                ref={(r) => {
+                  lastNameInputRef.current = r;
+                  registerInput('lastName')(r);
+                }}
+                label="Last name"
+                placeholder="Enter your last name"
+                leftIcon={<UserOutlineIcon />}
+                value={lastName}
+                onChangeText={(text) => {
+                  setLastName(text);
+                  if (errors.lastName) setErrors({...errors, lastName: ''});
+                }}
+                returnKeyType="next"
+                blurOnSubmit={false}
+                onSubmitEditing={() => emailInputRef.current?.focus()}
+                error={errors.lastName}
+              />
+            </View>
 
-            <Input
-              ref={emailInputRef}
-              label="Email address"
-              placeholder="Enter your email address"
-              leftIcon={<MailOutlineIcon />}
-              value={email}
-              onChangeText={(text) => {
-                setEmail(text);
-                if (errors.email) setErrors({...errors, email: ''});
-              }}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              returnKeyType="next"
-              blurOnSubmit={false}
-              onSubmitEditing={() => phoneInputRef.current?.focus()}
-              error={errors.email}
-            />
+            <View {...registerField('email')}>
+              <Input
+                ref={(r) => {
+                  emailInputRef.current = r;
+                  registerInput('email')(r);
+                }}
+                label="Email address"
+                placeholder="Enter your email address"
+                leftIcon={<MailOutlineIcon />}
+                value={email}
+                onChangeText={(text) => {
+                  setEmail(text);
+                  if (errors.email) setErrors({...errors, email: ''});
+                }}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                returnKeyType="next"
+                blurOnSubmit={false}
+                onSubmitEditing={() => phoneInputRef.current?.focus()}
+                error={errors.email}
+              />
+            </View>
 
             {/* Phone Number with Tooltip */}
-            <View style={styles.phoneInputWrapper}>
+            <View {...registerField('phoneNumber')} style={styles.phoneInputWrapper}>
               <View style={styles.labelRow}>
                 <AppText variant="labelMedium" color={Colors.neutral[900]} style={{marginBottom: Spacing.xs}}>
                   Phone number
@@ -620,7 +656,10 @@ export const BeneficiarySetupScreen: React.FC = () => {
               </View>
 
               <Input
-                ref={phoneInputRef}
+                ref={(r) => {
+                  phoneInputRef.current = r;
+                  registerInput('phoneNumber')(r);
+                }}
                 placeholder="(201) 555-0123"
                 leftIcon={<PhonePrefixPrefix />}
                 value={phoneNumber}
@@ -649,7 +688,7 @@ export const BeneficiarySetupScreen: React.FC = () => {
             </View>
 
             {/* Date of Birth Input */}
-            <View style={{ marginBottom: Spacing.md, position: 'relative' }}>
+            <View {...registerField('dob')} style={{ marginBottom: Spacing.md, position: 'relative' }}>
               <Input
                 label="Date of birth"
                 placeholder="MM/DD/YYYY"
@@ -675,27 +714,32 @@ export const BeneficiarySetupScreen: React.FC = () => {
               />
             </View>
 
-            <Input
-              ref={zipCodeInputRef}
-              label="ZIP Code"
-              placeholder="Enter ZIP code"
-              leftIcon={<LocationPinIcon />}
-              value={zipCode}
-              onChangeText={(text) => {
-                const numeric = text.replace(/[^0-9]/g, '').slice(0, 5);
-                setZipCode(numeric);
-                if (errors.zipCode) setErrors({...errors, zipCode: ''});
-              }}
-              keyboardType="number-pad"
-              maxLength={5}
-              returnKeyType="done"
-              onSubmitEditing={handleContinue}
-              error={errors.zipCode}
-            />
+            <View {...registerField('zipCode')}>
+              <Input
+                ref={(r) => {
+                  zipCodeInputRef.current = r;
+                  registerInput('zipCode')(r);
+                }}
+                label="ZIP Code"
+                placeholder="Enter ZIP code"
+                leftIcon={<LocationPinIcon />}
+                value={zipCode}
+                onChangeText={(text) => {
+                  const numeric = text.replace(/[^0-9]/g, '').slice(0, 5);
+                  setZipCode(numeric);
+                  if (errors.zipCode) setErrors({...errors, zipCode: ''});
+                }}
+                keyboardType="number-pad"
+                maxLength={5}
+                returnKeyType="done"
+                onSubmitEditing={handleContinue}
+                error={errors.zipCode}
+              />
+            </View>
 
             {/* Government ID Photo (Required for Ages 18+) */}
             {is18Plus && (
-              <View style={{ marginTop: verticalScale(16) }}>
+              <View {...registerField('governmentId')} style={{ marginTop: verticalScale(16) }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
                     <AppText variant="labelMedium" color={Colors.neutral[700]}>
                       Government ID Photo
@@ -704,6 +748,9 @@ export const BeneficiarySetupScreen: React.FC = () => {
                       *
                     </AppText>
                   </View>
+                  <AppText variant="bodySmall" color={Colors.neutral[500]} style={{ marginBottom: verticalScale(8) }}>
+                    For your safety and the safety of others, please upload your id
+                  </AppText>
                   {governmentId ? (
                     <View style={styles.uploadedFileCard}>
                       <TouchableOpacity

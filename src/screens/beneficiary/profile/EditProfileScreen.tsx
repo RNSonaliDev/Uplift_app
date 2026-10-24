@@ -28,6 +28,7 @@ import { ImagePickerModal, SelectedImage } from '../../../components/ImagePicker
 import {Spacing, BorderRadius} from '../../../theme/spacing';
 import {Shadows} from '../../../theme/common';
 import {validateBusinessAddressWithAPI, ValidationResult} from '../../../utils/addressValidation';
+import {useFormScrollToError} from '../../../utils/useFormScrollToError';
 import {authApi} from '../../../api/auth';
 import {getFullImageUrl} from '../../../api/client';
 import Svg, { Circle, Path } from 'react-native-svg';
@@ -178,6 +179,12 @@ export default function EditProfileScreen() {
   }), []);
   const volunteerPlacesRef = useRef<GooglePlacesAutocompleteRef>(null);
   const addressPlacesRef = useRef<GooglePlacesAutocompleteRef>(null);
+  const {
+    scrollViewRef,
+    registerField,
+    registerInput,
+    scrollToFirstError,
+  } = useFormScrollToError();
   const [addressValidation, setAddressValidation] = useState<ValidationResult | null>(null);
   const [isValidatingAddress, setIsValidatingAddress] = useState(false);
   const [showAddressInfo, setShowAddressInfo] = useState(false);
@@ -343,9 +350,11 @@ export default function EditProfileScreen() {
 
       if (currentRole === 'organization') {
         try {
-          const categoriesData = await authApi.getOrganizationCategories();
+          const categoriesData = await authApi.getOrganizationTypes();
           if (categoriesData && Array.isArray(categoriesData)) {
-            const mappedTypes = categoriesData.map((c: any) => c.title || c.name || c.category_name || c);
+            const mappedTypes = categoriesData
+              .filter((c: any) => c.status !== 'inactive')
+              .map((c: any) => c.name || c.title || c.category_name || c);
             if (mappedTypes.length > 0) {
               setOrganizationTypes(mappedTypes);
             }
@@ -423,6 +432,10 @@ export default function EditProfileScreen() {
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(prev => ({...prev, ...newErrors}));
+      const fieldOrder = currentRole === 'organization'
+        ? ['organization_name', 'address', 'contact_name', 'contact_email', 'contact_phone']
+        : ['first_name', 'last_name', 'zip_code', 'address'];
+      scrollToFirstError(newErrors, fieldOrder);
       const firstError = Object.values(newErrors)[0];
       Toast.show({
         type: 'error',
@@ -509,6 +522,7 @@ export default function EditProfileScreen() {
       </View>
 
       <KeyboardAwareScrollView
+        ref={scrollViewRef}
         style={{ flex: 1, backgroundColor: Colors.neutral[50] }}
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
@@ -618,6 +632,9 @@ export default function EditProfileScreen() {
                   Government ID Photo
                 </AppText>
               </View>
+              <AppText variant="bodySmall" color={Colors.neutral[500]} style={{ marginBottom: 8 }}>
+                For your safety and the safety of others, please upload your id
+              </AppText>
               {formData.government_id ? (
                 <View style={styles.uploadedFileRow}>
                   <TouchableOpacity
@@ -692,50 +709,61 @@ export default function EditProfileScreen() {
 
           {currentRole !== 'organization' && (
             <>
-              <Input
-                label="First Name"
-                value={formData.first_name}
-                onChangeText={v => handleChange('first_name', v)}
-                disabled={false}
-                error={errors.first_name}
-              />
-              <Input
-                label="Last Name"
-                value={formData.last_name}
-                onChangeText={v => handleChange('last_name', v)}
-                disabled={false}
-                error={errors.last_name}
-              />
+              <View {...registerField('first_name')}>
+                <Input
+                  ref={registerInput('first_name')}
+                  label="First Name"
+                  value={formData.first_name}
+                  onChangeText={v => handleChange('first_name', v)}
+                  disabled={false}
+                  error={errors.first_name}
+                />
+              </View>
+              <View {...registerField('last_name')}>
+                <Input
+                  ref={registerInput('last_name')}
+                  label="Last Name"
+                  value={formData.last_name}
+                  onChangeText={v => handleChange('last_name', v)}
+                  disabled={false}
+                  error={errors.last_name}
+                />
+              </View>
             </>
           )}
 
           {currentRole === 'beneficiary' && (
             <>
-
-              <Input
-                label="ZIP Code"
-                value={formData.zip_code}
-                onChangeText={v => handleChange('zip_code', v.replace(/[^0-9]/g, '').slice(0, 5))}
-                keyboardType="number-pad"
-                maxLength={5}
-                error={errors.zip_code}
-                leftIcon={<MapPin color={Colors.neutral[400]} size={20} />}
-              />
+              <View {...registerField('zip_code')}>
+                <Input
+                  ref={registerInput('zip_code')}
+                  label="ZIP Code"
+                  value={formData.zip_code}
+                  onChangeText={v => handleChange('zip_code', v.replace(/[^0-9]/g, '').slice(0, 5))}
+                  keyboardType="number-pad"
+                  maxLength={5}
+                  error={errors.zip_code}
+                  leftIcon={<MapPin color={Colors.neutral[400]} size={20} />}
+                />
+              </View>
             </>
           )}
 
           {currentRole === 'volunteer' && (
             <>
-              <Input
-                label="ZIP Code"
-                value={formData.zip_code}
-                onChangeText={v => handleChange('zip_code', v.replace(/[^0-9]/g, '').slice(0, 5))}
-                keyboardType="number-pad"
-                maxLength={5}
-                error={errors.zip_code}
-                leftIcon={<MapPin color={Colors.neutral[400]} size={20} />}
-              />
-              <View style={{
+              <View {...registerField('zip_code')}>
+                <Input
+                  ref={registerInput('zip_code')}
+                  label="ZIP Code"
+                  value={formData.zip_code}
+                  onChangeText={v => handleChange('zip_code', v.replace(/[^0-9]/g, '').slice(0, 5))}
+                  keyboardType="number-pad"
+                  maxLength={5}
+                  error={errors.zip_code}
+                  leftIcon={<MapPin color={Colors.neutral[400]} size={20} />}
+                />
+              </View>
+              <View {...registerField('address')} style={{
                 marginBottom: 16,
                 zIndex: showAddressInfo ? 99999 : 9999,
                 elevation: Platform.OS === 'android' ? (showAddressInfo ? 25 : 10) : undefined,
@@ -788,7 +816,10 @@ export default function EditProfileScreen() {
                 )}
 
                 <GooglePlacesAutocomplete
-                  ref={volunteerPlacesRef}
+                  ref={(r) => {
+                    volunteerPlacesRef.current = r;
+                    registerInput('address')(r);
+                  }}
                   placeholder="Enter address"
                   fetchDetails={true}
                   enablePoweredByContainer={false}
@@ -978,14 +1009,7 @@ export default function EditProfileScreen() {
               <View style={{ position: 'relative', zIndex: 9 }}>
                 {isTypeModalVisible && (
                   <Pressable
-                    style={{
-                      position: 'absolute',
-                      top: -Dimensions.get('window').height,
-                      bottom: -Dimensions.get('window').height,
-                      left: -Dimensions.get('window').width,
-                      right: -Dimensions.get('window').width,
-                      backgroundColor: 'transparent',
-                    }}
+                    style={styles.dropdownBackdrop}
                     onPress={() => setTypeModalVisible(false)}
                   />
                 )}
@@ -1002,41 +1026,52 @@ export default function EditProfileScreen() {
                 </TouchableOpacity>
 
                 {isTypeModalVisible && (
-                  <View style={styles.inlineDropdown}>
-                    {organizationTypes.map((item, index) => {
-                    const isSelected = formData.organization_type === item;
-                    const isLast = index === organizationTypes.length - 1;
-                    return (
-                      <TouchableOpacity
-                        key={item + index}
-                        style={[styles.dropdownItem, isLast && { borderBottomWidth: 0 }]}
-                        onPress={() => {
-                          setFormData(prev => ({ ...prev, organization_type: item }));
-                          setTypeModalVisible(false);
-                        }}
-                      >
-                        <AppText
-                          variant="bodyMedium"
-                          color={isSelected ? Colors.primary[500] : Colors.neutral[800]}
-                          weight={isSelected ? 'bold' : 'regular'}
-                        >
-                          {item || ''}
-                        </AppText>
-                        {isSelected && <Check color={Colors.primary[500]} size={18} />}
-                      </TouchableOpacity>
-                    );
-                  })}
-                </View>
-              )}
+                  <View style={styles.inlineDropdown} onStartShouldSetResponder={() => true}>
+                    <ScrollView
+                      nestedScrollEnabled={true}
+                      keyboardShouldPersistTaps="handled"
+                      showsVerticalScrollIndicator={true}
+                      bounces={false}
+                      style={styles.dropdownScrollView}
+                    >
+                      {organizationTypes.map((item, index) => {
+                        const isSelected = formData.organization_type === item;
+                        const isLast = index === organizationTypes.length - 1;
+                        return (
+                          <TouchableOpacity
+                            key={item + index}
+                            style={[styles.dropdownItem, isLast && { borderBottomWidth: 0 }]}
+                            onPress={() => {
+                              setFormData(prev => ({ ...prev, organization_type: item }));
+                              setTypeModalVisible(false);
+                            }}
+                          >
+                            <AppText
+                              variant="bodyMedium"
+                              color={isSelected ? Colors.primary[500] : Colors.neutral[800]}
+                              weight={isSelected ? 'bold' : 'regular'}
+                            >
+                              {item || ''}
+                            </AppText>
+                            {isSelected && <Check color={Colors.primary[500]} size={18} />}
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </ScrollView>
+                  </View>
+                )}
               </View>
 
-              <Input
-                label="Organization Name"
-                value={formData.organization_name}
-                onChangeText={v => handleChange('organization_name', v)}
-                error={errors.organization_name}
-              />
-              <View style={{
+              <View {...registerField('organization_name')}>
+                <Input
+                  ref={registerInput('organization_name')}
+                  label="Organization Name"
+                  value={formData.organization_name}
+                  onChangeText={v => handleChange('organization_name', v)}
+                  error={errors.organization_name}
+                />
+              </View>
+              <View {...registerField('address')} style={{
                 marginBottom: 16,
                 zIndex: showAddressInfo ? 99999 : 9999,
                 elevation: Platform.OS === 'android' ? (showAddressInfo ? 25 : 10) : undefined,
@@ -1089,7 +1124,10 @@ export default function EditProfileScreen() {
                 )}
 
                 <GooglePlacesAutocomplete
-                  ref={addressPlacesRef}
+                  ref={(r) => {
+                    addressPlacesRef.current = r;
+                    registerInput('address')(r);
+                  }}
                   placeholder="Enter address"
                   fetchDetails={true}
                   enablePoweredByContainer={false}
@@ -1207,27 +1245,36 @@ export default function EditProfileScreen() {
                   </AppText>
                 )}
               </View>
-              <Input
-                label="Contact Name"
-                value={formData.contact_name}
-                onChangeText={v => handleChange('contact_name', v)}
-                error={errors.contact_name}
-              />
-              <Input
-                label="Contact Email"
-                value={formData.contact_email}
-                onChangeText={v => handleChange('contact_email', v)}
-                keyboardType="email-address"
-                error={errors.contact_email}
-              />
-              <Input
-                label="Contact Phone"
-                value={formData.contact_phone?.startsWith('+1') ? formData.contact_phone.slice(2) : formData.contact_phone}
-                onChangeText={v => handleChange('contact_phone', v)}
-                keyboardType="phone-pad"
-                leftIcon={<PhonePrefixPrefix />}
-                error={errors.contact_phone}
-              />
+              <View {...registerField('contact_name')}>
+                <Input
+                  ref={registerInput('contact_name')}
+                  label="Contact Name"
+                  value={formData.contact_name}
+                  onChangeText={v => handleChange('contact_name', v)}
+                  error={errors.contact_name}
+                />
+              </View>
+              <View {...registerField('contact_email')}>
+                <Input
+                  ref={registerInput('contact_email')}
+                  label="Contact Email"
+                  value={formData.contact_email}
+                  onChangeText={v => handleChange('contact_email', v)}
+                  keyboardType="email-address"
+                  error={errors.contact_email}
+                />
+              </View>
+              <View {...registerField('contact_phone')}>
+                <Input
+                  ref={registerInput('contact_phone')}
+                  label="Contact Phone"
+                  value={formData.contact_phone?.startsWith('+1') ? formData.contact_phone.slice(2) : formData.contact_phone}
+                  onChangeText={v => handleChange('contact_phone', v)}
+                  keyboardType="phone-pad"
+                  leftIcon={<PhonePrefixPrefix />}
+                  error={errors.contact_phone}
+                />
+              </View>
             </>
           )}
 
@@ -1289,8 +1336,8 @@ export default function EditProfileScreen() {
           if (selectedAge < 14) {
             Toast.show({
               type: 'error',
-              text1: 'Age Restriction',
-              text2: 'You are not allowed but hope to see you when you turn 14.',
+              text1: '',
+             text2: 'The age should be 14+.',
             });
             return;
           }
@@ -1515,7 +1562,21 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 4,
-    elevation: 2,
+    elevation: 5,
+    maxHeight: 220,
+    zIndex: 10,
+  },
+  dropdownBackdrop: {
+    position: 'absolute',
+    top: -4000,
+    bottom: -4000,
+    left: -4000,
+    right: -4000,
+    zIndex: 1,
+    backgroundColor: 'transparent',
+  },
+  dropdownScrollView: {
+    maxHeight: 220,
   },
   dropdownItem: {
     flexDirection: 'row',

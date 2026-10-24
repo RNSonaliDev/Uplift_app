@@ -1,4 +1,4 @@
-import React, {useState, useRef, useMemo} from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import {
   View,
   StyleSheet,
@@ -18,26 +18,27 @@ import {
   Pressable,
 } from 'react-native';
 import Svg, { Path, Circle as SvgCircle } from 'react-native-svg';
-import {useNavigation, useRoute} from '@react-navigation/native';
-import {Colors} from '../../../theme/colors';
-import {Typography, FontFamily} from '../../../theme/typography';
-import {BorderRadius, Spacing} from '../../../theme/spacing';
-import {Shadows} from '../../../theme/common';
-import {AppText} from '../../../components/AppText';
-import {Input} from '../../../components/Input';
-import {Button} from '../../../components/Button';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import { Colors } from '../../../theme/colors';
+import { Typography, FontFamily } from '../../../theme/typography';
+import { BorderRadius, Spacing } from '../../../theme/spacing';
+import { Shadows } from '../../../theme/common';
+import { AppText } from '../../../components/AppText';
+import { Input } from '../../../components/Input';
+import { Button } from '../../../components/Button';
 import { DatePickerModal } from '../../../components/DatePickerModal';
-import {api, getFullImageUrl} from '../../../api/client';
-import {authApi, CategoryResponse} from '../../../api/auth';
-import {ChevronLeft, ShoppingCart, MapPin, Navigation, X} from 'lucide-react-native';
-import {horizontalScale, verticalScale, moderateScale} from '../../../utils/responsive';
+import { api, getFullImageUrl } from '../../../api/client';
+import { authApi, CategoryResponse } from '../../../api/auth';
+import { ChevronLeft, ShoppingCart, MapPin, Navigation, X } from 'lucide-react-native';
+import { horizontalScale, verticalScale, moderateScale } from '../../../utils/responsive';
 import MapView, { Marker, Circle } from 'react-native-maps';
 import { GooglePlacesAutocomplete, GooglePlacesAutocompleteRef } from 'react-native-google-places-autocomplete';
 import Geolocation from '@react-native-community/geolocation';
 import { validateAddressType, validateBusinessAddressWithAPI, ValidationResult } from '../../../utils/addressValidation';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
+import { useFormScrollToError } from '../../../utils/useFormScrollToError';
 
-const InfoCircleIcon: React.FC<{size?: number; color?: string}> = ({
+const InfoCircleIcon: React.FC<{ size?: number; color?: string }> = ({
   size = 18,
   color = Colors.primary[500],
 }) => (
@@ -461,7 +462,13 @@ export default function CreateRequestScreen() {
   }), []);
 
   const googlePlacesRef = useRef<GooglePlacesAutocompleteRef>(null);
-  const scrollViewRef = useRef<any>(null);
+  const {
+    scrollViewRef,
+    registerField,
+    registerInput,
+    scrollToError,
+    scrollToFirstError,
+  } = useFormScrollToError();
   const scrollYRef = useRef<number>(0);
 
   const handleCurrentLocation = () => {
@@ -492,7 +499,7 @@ export default function CreateRequestScreen() {
       latitude,
       longitude,
     });
-    
+
     try {
       const response = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${GOOGLE_MAPS_API_KEY}`);
       const data = await response.json();
@@ -530,19 +537,19 @@ export default function CreateRequestScreen() {
   const getMinTimeForPicker = (pickerDate: Date, selectedDate: Date) => {
     const min = new Date(pickerDate);
     min.setHours(8, 0, 0, 0);
-    
+
     const now = new Date();
-    const isToday = 
-      selectedDate.getFullYear() === now.getFullYear() && 
-      selectedDate.getMonth() === now.getMonth() && 
+    const isToday =
+      selectedDate.getFullYear() === now.getFullYear() &&
+      selectedDate.getMonth() === now.getMonth() &&
       selectedDate.getDate() === now.getDate();
-      
+
     if (isToday) {
       const minCurrentTime = new Date(pickerDate);
       minCurrentTime.setHours(now.getHours() + 2, now.getMinutes(), 0, 0);
       const max = new Date(pickerDate);
       max.setHours(20, 0, 0, 0);
-      
+
       if (minCurrentTime > max) return max;
       if (minCurrentTime > min) return minCurrentTime;
     }
@@ -585,7 +592,7 @@ export default function CreateRequestScreen() {
 
   const getPlaceholders = (categoryId: string) => {
     const name = getCategoryName(categoryId).toLowerCase();
-    
+
     if (name.includes('airport')) {
       return {
         title: 'e.g. Help carry two suitcases and help with check-in',
@@ -610,6 +617,13 @@ export default function CreateRequestScreen() {
         desc: 'e.g. Short walk followed by talking for some time',
       };
     }
+    if (name.includes('grocery shopping')) {
+      return {
+        title: 'e.g. Pick up produce and household items etc.',
+        desc: 'e.g. Pick up produce and household items etc.',
+      };
+    }
+
     if (name.includes('shopping')) {
       return {
         title: 'e.g. Buy furniture or electronics',
@@ -630,9 +644,9 @@ export default function CreateRequestScreen() {
   };
 
   const handleChange = (key: string, value: string) => {
-    setFormData(prev => ({...prev, [key]: value}));
+    setFormData(prev => ({ ...prev, [key]: value }));
     if (errors[key]) {
-      setErrors(prev => ({...prev, [key]: ''}));
+      setErrors(prev => ({ ...prev, [key]: '' }));
     }
   };
 
@@ -640,12 +654,12 @@ export default function CreateRequestScreen() {
     const newErrors: Record<string, string> = {};
     if (!formData.title) newErrors.title = 'Required';
     else if (formData.title.length > 20) newErrors.title = 'Maximum 20 characters allowed';
-    
+
     if (!formData.category_id) newErrors.category_id = 'Required';
-    
+
     if (!formData.description) newErrors.description = 'Required';
     else if (formData.description.length > 200) newErrors.description = 'Maximum 200 characters allowed';
-    
+
     if (!formData.preferred_date) newErrors.preferred_date = 'Required';
     if (!formData.preferred_start_time) newErrors.preferred_start_time = 'Required';
     if (!formData.preferred_end_time) newErrors.preferred_end_time = 'Required';
@@ -655,21 +669,21 @@ export default function CreateRequestScreen() {
     } else if (addressValidation?.addressType === 'residential' || addressValidation?.isBusinessAddress === false) {
       newErrors.meeting_location = 'For your safety, please use the business address';
     }
-    
+
     if (formData.preferred_start_time && formData.preferred_end_time) {
       const startMinutes = startTime.getHours() * 60 + startTime.getMinutes();
       const endMinutes = endTime.getHours() * 60 + endTime.getMinutes();
-      
+
       const now = new Date();
       if (
-        date.getFullYear() === now.getFullYear() && 
-        date.getMonth() === now.getMonth() && 
+        date.getFullYear() === now.getFullYear() &&
+        date.getMonth() === now.getMonth() &&
         date.getDate() === now.getDate()
       ) {
-         const currentMinutes = now.getHours() * 60 + now.getMinutes();
-         if (startMinutes < currentMinutes + 120) {
-            newErrors.preferred_start_time = 'Start time must be at least 2 hours from now';
-         }
+        const currentMinutes = now.getHours() * 60 + now.getMinutes();
+        if (startMinutes < currentMinutes + 120) {
+          newErrors.preferred_start_time = 'Start time must be at least 2 hours from now';
+        }
       }
 
       if (startTime.getHours() < 8 || endTime.getHours() > 20 || (endTime.getHours() === 20 && endTime.getMinutes() > 0)) {
@@ -681,13 +695,26 @@ export default function CreateRequestScreen() {
         newErrors.preferred_end_time = 'Request cannot exceed 4 hours';
       }
     }
-    
+
     // Basic validation for numbers
     if (formData.latitude && isNaN(Number(formData.latitude))) newErrors.latitude = 'Must be a number';
     if (formData.longitude && isNaN(Number(formData.longitude))) newErrors.longitude = 'Must be a number';
 
     setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    if (Object.keys(newErrors).length > 0) {
+      const fieldOrder = [
+        'category_id',
+        'title',
+        'description',
+        'preferred_date',
+        'preferred_start_time',
+        'preferred_end_time',
+        'meeting_location',
+      ];
+      scrollToFirstError(newErrors, fieldOrder);
+      return false;
+    }
+    return true;
   };
 
   const handlePreview = async () => {
@@ -706,11 +733,12 @@ export default function CreateRequestScreen() {
         ...prev,
         meeting_location: 'For your safety, please use the business address',
       }));
+      scrollToError('meeting_location');
       return;
     }
 
     if (!validate()) return;
-    
+
     navigation.navigate('PreviewRequest', {
       formData,
       categoryTitle: getCategoryName(formData.category_id),
@@ -721,91 +749,101 @@ export default function CreateRequestScreen() {
     <>
       <SafeAreaView style={{ flex: 0, backgroundColor: Colors.primary[500] }} />
       <SafeAreaView style={styles.safeArea}>
-      <View style={styles.header}>
-        <TouchableOpacity 
-          onPress={() => {
-            if (route.params?.fromDashboard) {
-              navigation.navigate('BeneficiaryTabs', { screen: 'BeneficiaryDashboard' });
-            } else {
-              navigation.goBack();
-            }
-          }} 
-          style={styles.backBtn}
-        >
-          <ChevronLeft color={Colors.neutral[0]} size={28} />
-        </TouchableOpacity>
-        <AppText variant="h5" color={Colors.neutral[0]} style={{textAlign: 'center'}}>Create Help Request</AppText>
-        <View style={{width: 28}} />
-      </View>
+        <View style={styles.header}>
+          <TouchableOpacity
+            onPress={() => {
+              if (route.params?.fromDashboard) {
+                navigation.navigate('BeneficiaryTabs', { screen: 'BeneficiaryDashboard' });
+              } else {
+                navigation.goBack();
+              }
+            }}
+            style={styles.backBtn}
+          >
+            <ChevronLeft color={Colors.neutral[0]} size={28} />
+          </TouchableOpacity>
+          <AppText variant="h5" color={Colors.neutral[0]} style={{ textAlign: 'center' }}>Create Help Request</AppText>
+          <View style={{ width: 28 }} />
+        </View>
 
-      <KeyboardAwareScrollView
-        ref={scrollViewRef}
-        style={{flex: 1, backgroundColor: Colors.neutral[50]}}
-        contentContainerStyle={styles.content} 
-        keyboardShouldPersistTaps="handled"
-        enableOnAndroid={true}
-        extraScrollHeight={20}
-        enableResetScrollToCoords={false}
-        onScroll={(e) => {
-          scrollYRef.current = e.nativeEvent.contentOffset.y;
-        }}
-        scrollEventThrottle={16}
-      >
+        <KeyboardAwareScrollView
+          ref={scrollViewRef}
+          style={{ flex: 1, backgroundColor: Colors.neutral[50] }}
+          contentContainerStyle={styles.content}
+          keyboardShouldPersistTaps="handled"
+          enableOnAndroid={true}
+          extraScrollHeight={20}
+          enableResetScrollToCoords={false}
+          onScroll={(e) => {
+            scrollYRef.current = e.nativeEvent.contentOffset.y;
+          }}
+          scrollEventThrottle={16}
+        >
           <AppText variant="bodyMedium" color={Colors.neutral[500]} style={styles.subtitle}>
             Fill out the details below to request assistance from a Volunteer.
           </AppText>
 
-          <TouchableOpacity onPress={() => setIsCategoryModalVisible(true)} activeOpacity={0.7}>
-            <View pointerEvents="none">
-              <Input
-                label="What can we help you with?"
-                placeholder="Select a Category"
-                value={formData.category_id ? getCategoryName(formData.category_id) : ''}
-                editable={false}
-                error={errors.category_id}
-              />
-            </View>
-          </TouchableOpacity>
+          <View {...registerField('category_id')}>
+            <TouchableOpacity onPress={() => setIsCategoryModalVisible(true)} activeOpacity={0.7}>
+              <View pointerEvents="none">
+                <Input
+                  label="What can we help you with?"
+                  placeholder="Select a Category"
+                  value={formData.category_id ? getCategoryName(formData.category_id) : ''}
+                  editable={false}
+                  error={errors.category_id}
+                />
+              </View>
+            </TouchableOpacity>
+          </View>
 
-          <Input
-            label={formData.category_id ? `Tell us what kind of ${getCategoryName(formData.category_id)} help you need` : "Tell us what kind of help you need"}
-            bottomRight={<AppText variant="caption" color={Colors.neutral[500]}>{formData.title.length}/20</AppText>}
-            placeholder={getPlaceholders(formData.category_id).title}
-            value={formData.title}
-            onChangeText={v => handleChange('title', v)}
-            maxLength={20}
-            multiline={true}
-            style={{ minHeight: 60, textAlignVertical: 'top' }}
-            error={errors.title}
-            required={true}
-          />
+          <View {...registerField('title')}>
+            <Input
+              ref={registerInput('title')}
+              label={formData.category_id ? `Tell us what kind of ${getCategoryName(formData.category_id)} help you need` : "Tell us what kind of help you need"}
+              bottomRight={<AppText variant="caption" color={Colors.neutral[500]}>{formData.title.length}/20</AppText>}
+              placeholder={getPlaceholders(formData.category_id).title}
+              value={formData.title}
+              onChangeText={v => handleChange('title', v)}
+              maxLength={20}
+              multiline={true}
+              style={{ minHeight: 60, textAlignVertical: 'top' }}
+              error={errors.title}
+              required={true}
+            />
+          </View>
 
-          <Input
-            label="Information for your volunteer."
-            bottomRight={<AppText variant="caption" color={Colors.neutral[500]}>{formData.description.length}/200</AppText>}
-            placeholder={getPlaceholders(formData.category_id).desc}
-            value={formData.description}
-            onChangeText={v => handleChange('description', v)}
-            multiline
-            maxLength={200}
-            style={{height: 80, textAlignVertical: 'top'}}
-            error={errors.description}
-          />
+          <View {...registerField('description')}>
+            <Input
+              ref={registerInput('description')}
+              label="Information for your volunteer."
+              bottomRight={<AppText variant="caption" color={Colors.neutral[500]}>{formData.description.length}/200</AppText>}
+              placeholder={getPlaceholders(formData.category_id).desc}
+              value={formData.description}
+              onChangeText={v => handleChange('description', v)}
+              multiline
+              maxLength={200}
+              style={{ height: 80, textAlignVertical: 'top' }}
+              error={errors.description}
+            />
+          </View>
 
-          <TouchableOpacity onPress={() => setIsDatePickerOpen(true)} activeOpacity={0.7}>
-            <View pointerEvents="box-only">
-              <Input
-                label="Preferred Date"
-                placeholder="MM/DD/YYYY"
-                value={formData.preferred_date}
-                editable={false}
-                error={errors.preferred_date}
-              />
-            </View>
-          </TouchableOpacity>
+          <View {...registerField('preferred_date')}>
+            <TouchableOpacity onPress={() => setIsDatePickerOpen(true)} activeOpacity={0.7}>
+              <View pointerEvents="box-only">
+                <Input
+                  label="Preferred Date"
+                  placeholder="MM/DD/YYYY"
+                  value={formData.preferred_date}
+                  editable={false}
+                  error={errors.preferred_date}
+                />
+              </View>
+            </TouchableOpacity>
+          </View>
 
           <View style={styles.row}>
-            <View style={[styles.halfInput, {marginRight: Spacing.sm}]}>
+            <View {...registerField('preferred_start_time')} style={[styles.halfInput, { marginRight: Spacing.sm }]}>
               <TouchableOpacity onPress={() => setIsStartTimePickerOpen(true)} activeOpacity={0.7}>
                 <View pointerEvents="none">
                   <Input
@@ -818,7 +856,7 @@ export default function CreateRequestScreen() {
                 </View>
               </TouchableOpacity>
             </View>
-            <View style={[styles.halfInput, {marginLeft: Spacing.sm}]}>
+            <View {...registerField('preferred_end_time')} style={[styles.halfInput, { marginLeft: Spacing.sm }]}>
               <TouchableOpacity onPress={() => setIsEndTimePickerOpen(true)} activeOpacity={0.7}>
                 <View pointerEvents="none">
                   <Input
@@ -842,16 +880,16 @@ export default function CreateRequestScreen() {
             error={errors.hours_required}
           /> */}
 
-          <View style={[styles.addressSection, { zIndex: showAddressInfo ? 99999 : 9999, elevation: Platform.OS === 'android' ? (showAddressInfo ? 25 : 10) : undefined }]}>
-            <View style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8}}>
-              <View style={{flexDirection: 'row', alignItems: 'center'}}>
+          <View {...registerField('meeting_location')} style={[styles.addressSection, { zIndex: showAddressInfo ? 99999 : 9999, elevation: Platform.OS === 'android' ? (showAddressInfo ? 25 : 10) : undefined }]}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 <AppText variant="labelLarge" color={Colors.neutral[700]}>
                   Meeting Location <AppText color={Colors.error}>*</AppText>
                 </AppText>
-                <TouchableOpacity 
-                  style={{marginLeft: 6}}
+                <TouchableOpacity
+                  style={{ marginLeft: 6 }}
                   onPress={() => setShowAddressInfo(!showAddressInfo)}
-                  hitSlop={{top: 8, bottom: 8, left: 8, right: 8}}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 >
                   <InfoCircleIcon size={18} color={Colors.primary[500]} />
                 </TouchableOpacity>
@@ -882,15 +920,18 @@ export default function CreateRequestScreen() {
                 />
                 <View style={[styles.tooltipContainer, { zIndex: 99999, elevation: 25 }]}>
                   {/* Left pointing triangle */}
-                  <View style={[styles.tooltipTriangle, {left: 145}]} />
-                  <AppText variant="caption" color={Colors.neutral[800]} style={{lineHeight: 18}}>
+                  <View style={[styles.tooltipTriangle, { left: 145 }]} />
+                  <AppText variant="caption" color={Colors.neutral[800]} style={{ lineHeight: 18 }}>
                     Enter a nearby business address to match you with nearby requests— your exact location is never shared with anyone
                   </AppText>
                 </View>
               </>
             )}
             <GooglePlacesAutocomplete
-              ref={googlePlacesRef}
+              ref={(r) => {
+                googlePlacesRef.current = r;
+                registerInput('meeting_location')(r);
+              }}
               placeholder="e.g. 123 Main St, Beverly Hills, CA"
               fetchDetails={true}
               enablePoweredByContainer={false}
@@ -915,7 +956,7 @@ export default function CreateRequestScreen() {
                   } else {
                     setErrors(prev => ({ ...prev, meeting_location: '' }));
                   }
-                  
+
                   if (details.geometry?.location) {
                     handleChange('latitude', details.geometry.location.lat.toString());
                     handleChange('longitude', details.geometry.location.lng.toString());
@@ -989,7 +1030,7 @@ export default function CreateRequestScreen() {
               )}
             />
             {!!errors.meeting_location && (
-              <AppText variant="bodySmall" color={Colors.error} style={{marginTop: 4}}>
+              <AppText variant="bodySmall" color={Colors.error} style={{ marginTop: 4 }}>
                 {errors.meeting_location}
               </AppText>
             )}
@@ -998,146 +1039,146 @@ export default function CreateRequestScreen() {
           </View>
 
         </KeyboardAwareScrollView>
-      <View style={styles.footer}>
-        <Button
-          title="Preview Request"
-          onPress={handlePreview}
+        <View style={styles.footer}>
+          <Button
+            title="Preview Request"
+            onPress={handlePreview}
+          />
+        </View>
+
+        <DatePickerModal
+          open={isDatePickerOpen}
+          date={date}
+          minimumDate={new Date()}
+          mode="date"
+          onConfirm={(selectedDate) => {
+            setIsDatePickerOpen(false);
+            setDate(selectedDate);
+            const day = String(selectedDate.getDate()).padStart(2, '0');
+            const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+            const year = selectedDate.getFullYear();
+            handleChange('preferred_date', `${month}/${day}/${year}`);
+          }}
+          onCancel={() => {
+            setIsDatePickerOpen(false);
+          }}
         />
-      </View>
 
-      <DatePickerModal
-        open={isDatePickerOpen}
-        date={date}
-        minimumDate={new Date()}
-        mode="date"
-        onConfirm={(selectedDate) => {
-          setIsDatePickerOpen(false);
-          setDate(selectedDate);
-          const day = String(selectedDate.getDate()).padStart(2, '0');
-          const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
-          const year = selectedDate.getFullYear();
-          handleChange('preferred_date', `${month}/${day}/${year}`);
-        }}
-        onCancel={() => {
-          setIsDatePickerOpen(false);
-        }}
-      />
+        <CustomTimePickerModal
+          visible={isStartTimePickerOpen}
+          type="start"
+          selectedDate={date}
+          currentTime={startTime}
+          onSelectTime={(selectedTime) => {
+            setStartTime(selectedTime);
+            handleChange('preferred_start_time', formatTime(selectedTime));
 
-      <CustomTimePickerModal
-        visible={isStartTimePickerOpen}
-        type="start"
-        selectedDate={date}
-        currentTime={startTime}
-        onSelectTime={(selectedTime) => {
-          setStartTime(selectedTime);
-          handleChange('preferred_start_time', formatTime(selectedTime));
+            // Automatically adjust end time to start time + 1 hour (clamped to 8 PM)
+            const newEnd = new Date(selectedTime);
+            const endHour = Math.min(20, selectedTime.getHours() + 1);
+            newEnd.setHours(endHour, selectedTime.getMinutes(), 0, 0);
+            setEndTime(newEnd);
+            handleChange('preferred_end_time', formatTime(newEnd));
+          }}
+          onClose={() => setIsStartTimePickerOpen(false)}
+        />
 
-          // Automatically adjust end time to start time + 1 hour (clamped to 8 PM)
-          const newEnd = new Date(selectedTime);
-          const endHour = Math.min(20, selectedTime.getHours() + 1);
-          newEnd.setHours(endHour, selectedTime.getMinutes(), 0, 0);
-          setEndTime(newEnd);
-          handleChange('preferred_end_time', formatTime(newEnd));
-        }}
-        onClose={() => setIsStartTimePickerOpen(false)}
-      />
+        <CustomTimePickerModal
+          visible={isEndTimePickerOpen}
+          type="end"
+          selectedDate={date}
+          currentTime={endTime}
+          startTime={startTime}
+          onSelectTime={(selectedTime) => {
+            setEndTime(selectedTime);
+            handleChange('preferred_end_time', formatTime(selectedTime));
+          }}
+          onClose={() => setIsEndTimePickerOpen(false)}
+        />
 
-      <CustomTimePickerModal
-        visible={isEndTimePickerOpen}
-        type="end"
-        selectedDate={date}
-        currentTime={endTime}
-        startTime={startTime}
-        onSelectTime={(selectedTime) => {
-          setEndTime(selectedTime);
-          handleChange('preferred_end_time', formatTime(selectedTime));
-        }}
-        onClose={() => setIsEndTimePickerOpen(false)}
-      />
+        <Modal
+          visible={isCategoryModalVisible}
+          transparent={true}
+          animationType="slide"
+          onRequestClose={() => setIsCategoryModalVisible(false)}>
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <View style={styles.modalHeader}>
+                <AppText variant="labelLarge">Select Category</AppText>
+                <TouchableOpacity onPress={() => setIsCategoryModalVisible(false)} style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  {/* <AppText color={Colors.primary[500]} style={{marginRight: 4}}>Close</AppText> */}
+                  <X color={Colors.neutral[950]} size={30} />
+                </TouchableOpacity>
+              </View>
+              {loadingCategories ? (
+                <ActivityIndicator size="large" color={Colors.primary[500]} style={{ padding: 20 }} />
+              ) : (
+                <FlatList
+                  data={categories}
+                  keyExtractor={item => item.id.toString()}
+                  numColumns={2}
+                  contentContainerStyle={{ padding: moderateScale(8) }}
+                  renderItem={({ item }) => (
+                    <TouchableOpacity
+                      style={styles.categoryItem}
+                      onPress={() => {
+                        handleChange('category_id', item.id.toString());
+                        setIsCategoryModalVisible(false);
+                      }}>
+                      <View style={styles.iconContainer}>
+                        {item.logo_url ? (
+                          <Image
+                            source={{ uri: getFullImageUrl(item.logo_url) as string }}
+                            style={{ width: 32, height: 32 }}
+                            resizeMode="contain"
+                          />
+                        ) : (
+                          <ShoppingCart color={Colors.primary[500]} size={32} />
+                        )}
+                      </View>
+                      <Text style={styles.cardTitle} numberOfLines={2}>{item.title}</Text>
+                    </TouchableOpacity>
+                  )}
+                />
+              )}
+            </View>
+          </View>
+        </Modal>
 
-      <Modal
-        visible={isCategoryModalVisible}
-        transparent={true}
-        animationType="slide"
-        onRequestClose={() => setIsCategoryModalVisible(false)}>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <AppText variant="labelLarge">Select Category</AppText>
-              <TouchableOpacity onPress={() => setIsCategoryModalVisible(false)} style={{flexDirection: 'row', alignItems: 'center'}}>
-                {/* <AppText color={Colors.primary[500]} style={{marginRight: 4}}>Close</AppText> */}
-                <X color={Colors.neutral[950]} size={30} />
+        <Modal visible={isMapModalVisible} transparent animationType="slide">
+          <View style={styles.mapModalContainer}>
+            <View style={styles.mapModalHeader}>
+              <AppText variant="h5" style={{ color: Colors.neutral[900] }}>Location on Map</AppText>
+              <TouchableOpacity onPress={() => setIsMapModalVisible(false)} style={{ padding: 4 }}>
+                <X color={Colors.neutral[500]} size={24} />
               </TouchableOpacity>
             </View>
-            {loadingCategories ? (
-              <ActivityIndicator size="large" color={Colors.primary[500]} style={{padding: 20}} />
-            ) : (
-              <FlatList
-                data={categories}
-                keyExtractor={item => item.id.toString()}
-                numColumns={2}
-                contentContainerStyle={{ padding: moderateScale(8) }}
-                renderItem={({item}) => (
-                  <TouchableOpacity
-                    style={styles.categoryItem}
-                    onPress={() => {
-                      handleChange('category_id', item.id.toString());
-                      setIsCategoryModalVisible(false);
-                    }}>
-                    <View style={styles.iconContainer}>
-                      {item.logo_url ? (
-                        <Image 
-                          source={{ uri: getFullImageUrl(item.logo_url) as string }}
-                          style={{ width: 32, height: 32 }}
-                          resizeMode="contain"
-                        />
-                      ) : (
-                        <ShoppingCart color={Colors.primary[500]} size={32} />
-                      )}
-                    </View>
-                    <Text style={styles.cardTitle} numberOfLines={2}>{item.title}</Text>
-                  </TouchableOpacity>
-                )}
+            <MapView
+              style={{ flex: 1 }}
+              region={{
+                latitude: Number(formData.latitude) || region.latitude,
+                longitude: Number(formData.longitude) || region.longitude,
+                latitudeDelta: 0.01,
+                longitudeDelta: 0.01,
+              }}
+            >
+              <Marker
+                draggable
+                coordinate={{ latitude: Number(formData.latitude) || region.latitude, longitude: Number(formData.longitude) || region.longitude }}
+                onDragEnd={handleMarkerDragEnd}
               />
-            )}
+              <Circle
+                center={{ latitude: Number(formData.latitude) || region.latitude, longitude: Number(formData.longitude) || region.longitude }}
+                radius={200}
+                fillColor="rgba(79, 70, 229, 0.2)"
+                strokeColor="rgba(79, 70, 229, 0.5)"
+              />
+            </MapView>
+            <View style={{ padding: Spacing.md, backgroundColor: Colors.neutral[0], paddingBottom: Math.max(Spacing.md, 24) }}>
+              <Button title="Done" onPress={() => setIsMapModalVisible(false)} fullWidth />
+            </View>
           </View>
-        </View>
-      </Modal>
-
-      <Modal visible={isMapModalVisible} transparent animationType="slide">
-        <View style={styles.mapModalContainer}>
-          <View style={styles.mapModalHeader}>
-            <AppText variant="h5" style={{ color: Colors.neutral[900] }}>Location on Map</AppText>
-            <TouchableOpacity onPress={() => setIsMapModalVisible(false)} style={{ padding: 4 }}>
-              <X color={Colors.neutral[500]} size={24} />
-            </TouchableOpacity>
-          </View>
-          <MapView
-            style={{ flex: 1 }}
-            region={{
-              latitude: Number(formData.latitude) || region.latitude,
-              longitude: Number(formData.longitude) || region.longitude,
-              latitudeDelta: 0.01,
-              longitudeDelta: 0.01,
-            }}
-          >
-            <Marker 
-              draggable
-              coordinate={{ latitude: Number(formData.latitude) || region.latitude, longitude: Number(formData.longitude) || region.longitude }} 
-              onDragEnd={handleMarkerDragEnd}
-            />
-            <Circle
-              center={{ latitude: Number(formData.latitude) || region.latitude, longitude: Number(formData.longitude) || region.longitude }}
-              radius={200}
-              fillColor="rgba(79, 70, 229, 0.2)"
-              strokeColor="rgba(79, 70, 229, 0.5)"
-            />
-          </MapView>
-          <View style={{ padding: Spacing.md, backgroundColor: Colors.neutral[0], paddingBottom: Math.max(Spacing.md, 24) }}>
-             <Button title="Done" onPress={() => setIsMapModalVisible(false)} fullWidth />
-          </View>
-        </View>
-      </Modal>
+        </Modal>
       </SafeAreaView>
     </>
   );
@@ -1213,7 +1254,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: Colors.neutral[900],
-    shadowOffset: {width: 0, height: verticalScale(4)},
+    shadowOffset: { width: 0, height: verticalScale(4) },
     shadowOpacity: 0.05,
     shadowRadius: moderateScale(12),
     elevation: 3,

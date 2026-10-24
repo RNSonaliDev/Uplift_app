@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, TextInput, TouchableOpacity, ScrollView, Modal, FlatList, TouchableWithoutFeedback } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, TextInput, TouchableOpacity, ScrollView, Modal, FlatList, TouchableWithoutFeedback, Pressable } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { Colors } from '../../../theme/colors';
@@ -9,6 +9,7 @@ import { Button } from '../../../components/Button';
 import { ChevronDown, ChevronLeft } from 'lucide-react-native';
 import { api } from '../../../api/client';
 import Toast from 'react-native-toast-message';
+import { useFormScrollToError } from '../../../utils/useFormScrollToError';
 
 
 const JOB_TYPES = [
@@ -53,6 +54,8 @@ export const CreateJobScreen = () => {
 
   const [activeModal, setActiveModal] = useState<'department' | 'jobType' | 'workSetting' | 'compensation' | null>(null);
 
+  const { scrollViewRef, registerInput, registerField, scrollToFirstError } = useFormScrollToError();
+
   const handleBack = () => {
     navigation.goBack();
   };
@@ -85,6 +88,17 @@ export const CreateJobScreen = () => {
     setFieldErrors(newFieldErrors);
 
     if (Object.keys(newFieldErrors).length > 0) {
+      // Find the first invalid field in visual order
+      const fieldOrder = [
+        'title',
+        'description',
+        'department',
+        'jobType',
+        'workSetting',
+        'compensation',
+        'companyUrl',
+      ];
+      scrollToFirstError(newFieldErrors, fieldOrder);
       return;
     }
 
@@ -127,13 +141,24 @@ export const CreateJobScreen = () => {
     const isModalOpen = activeModal === field;
     const error = fieldErrors[field];
     return (
-      <View key={field}>
+      <View 
+        key={field} 
+        {...registerField(field)}
+        style={{ position: 'relative', zIndex: isModalOpen ? 10 : 1 }}
+      >
+        {isModalOpen && (
+          <Pressable
+            style={styles.dropdownBackdrop}
+            onPress={() => setActiveModal(null)}
+          />
+        )}
         <Text style={[styles.label, { marginTop: 16 }]}>{label} <Text style={{ color: Colors.error }}>*</Text></Text>
         <TouchableOpacity 
           style={[
             styles.dropdownInput, 
             error ? styles.inputError : null,
-            isModalOpen ? { borderBottomLeftRadius: 0, borderBottomRightRadius: 0, marginBottom: 0 } : null
+            isModalOpen ? { borderBottomLeftRadius: 0, borderBottomRightRadius: 0, marginBottom: 0 } : null,
+            { zIndex: 2 }
           ]} 
           onPress={() => setActiveModal(isModalOpen ? null : (field as any))}
         >
@@ -143,26 +168,36 @@ export const CreateJobScreen = () => {
           <ChevronDown color={Colors.neutral[400]} size={20} />
         </TouchableOpacity>
         {isModalOpen && (
-          <ScrollView style={styles.inlineDropdownContent} nestedScrollEnabled={true} keyboardShouldPersistTaps="handled">
-            {options.map(item => (
-              <TouchableOpacity
-                key={item.id}
-                style={styles.modalOption}
-                onPress={() => {
-                  if (field === 'department') setDepartment(item.id);
-                  if (field === 'jobType') setJobType(item.id);
-                  if (field === 'workSetting') setWorkSetting(item.id);
-                  if (field === 'compensation') setCompensation(item.id);
-                  setActiveModal(null);
-                  if (error) setFieldErrors(prev => ({ ...prev, [field]: '' }));
-                }}
-              >
-                <Text style={[styles.modalOptionText, value === item.id && { color: Colors.primary[600], fontFamily: FontFamily.semiBold }]}>
-                  {item.title}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
+          <View onStartShouldSetResponder={() => true} style={{ zIndex: 10 }}>
+            <ScrollView 
+              style={styles.inlineDropdownContent} 
+              nestedScrollEnabled={true} 
+              keyboardShouldPersistTaps="handled" 
+              showsVerticalScrollIndicator={true}
+              bounces={false}
+              contentContainerStyle={{ flexGrow: 1 }}
+            >
+              {options.map(item => (
+                <TouchableOpacity
+                  key={item.id}
+                  style={styles.modalOption}
+                  activeOpacity={0.7}
+                  onPress={() => {
+                    if (field === 'department') setDepartment(item.id);
+                    if (field === 'jobType') setJobType(item.id);
+                    if (field === 'workSetting') setWorkSetting(item.id);
+                    if (field === 'compensation') setCompensation(item.id);
+                    setActiveModal(null);
+                    if (error) setFieldErrors(prev => ({ ...prev, [field]: '' }));
+                  }}
+                >
+                  <Text style={[styles.modalOptionText, value === item.id && { color: Colors.primary[600], fontFamily: FontFamily.semiBold }]}>
+                    {item.title}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
         )}
         {error ? <Text style={styles.fieldErrorText}>{error}</Text> : null}
       </View>
@@ -183,6 +218,7 @@ export const CreateJobScreen = () => {
         <View style={{width: 40}} />
       </View>
       <KeyboardAwareScrollView
+        ref={scrollViewRef}
         contentContainerStyle={[styles.content, { paddingBottom: 100 }]}
         keyboardShouldPersistTaps="handled"
         extraScrollHeight={120}
@@ -190,6 +226,11 @@ export const CreateJobScreen = () => {
         enableOnAndroid={true}
         enableAutomaticScroll={true}
         enableResetScrollToCoords={false}
+        onScrollBeginDrag={() => {
+          if (activeModal !== null) {
+            setActiveModal(null);
+          }
+        }}
       >
         <TouchableWithoutFeedback 
           onPress={() => setActiveModal(null)}
@@ -197,71 +238,83 @@ export const CreateJobScreen = () => {
         >
           <View style={{ flex: 1 }}>
             
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Text style={[styles.label, { marginTop: 8, marginBottom: 0 }]}>Job Title <Text style={{ color: Colors.error }}>*</Text></Text>
-              <Text style={styles.charCount}>{title.length}/20</Text>
+            <View {...registerField('title')}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Text style={[styles.label, { marginTop: 8, marginBottom: 0 }]}>Job Title <Text style={{ color: Colors.error }}>*</Text></Text>
+                <Text style={styles.charCount}>{title.length}/20</Text>
+              </View>
+              <TextInput 
+                ref={registerInput('title')}
+                style={[styles.input, fieldErrors.title ? styles.inputError : null, { marginTop: 6 }]} 
+                value={title} 
+                maxLength={20}
+                onChangeText={(text) => {
+                  setTitle(text);
+                  if (fieldErrors.title) setFieldErrors(prev => ({ ...prev, title: '' }));
+                }} 
+                placeholder="e.g. Summer Intern" 
+                placeholderTextColor={Colors.neutral[400]}
+              />
+              {fieldErrors.title ? <Text style={styles.fieldErrorText}>{fieldErrors.title}</Text> : null}
             </View>
-            <TextInput 
-              style={[styles.input, fieldErrors.title ? styles.inputError : null, { marginTop: 6 }]} 
-              value={title} 
-              maxLength={20}
-              onChangeText={(text) => {
-                setTitle(text);
-                if (fieldErrors.title) setFieldErrors(prev => ({ ...prev, title: '' }));
-              }} 
-              placeholder="e.g. Summer Intern" 
-              placeholderTextColor={Colors.neutral[400]}
-            />
-            {fieldErrors.title ? <Text style={styles.fieldErrorText}>{fieldErrors.title}</Text> : null}
             
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: fieldErrors.title ? 0 : 4 }}>
-              <Text style={[styles.label, { marginTop: 0, marginBottom: 0 }]}>Description <Text style={{ color: Colors.error }}>*</Text></Text>
-              <Text style={styles.charCount}>{description.length}/200</Text>
+            <View {...registerField('description')}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: fieldErrors.title ? 0 : 4 }}>
+                <Text style={[styles.label, { marginTop: 0, marginBottom: 0 }]}>Description <Text style={{ color: Colors.error }}>*</Text></Text>
+                <Text style={styles.charCount}>{description.length}/200</Text>
+              </View>
+              <TextInput 
+                ref={registerInput('description')}
+                style={[styles.input, { height: 100, textAlignVertical: 'top', marginTop: 6 }, fieldErrors.description ? styles.inputError : null]} 
+                value={description} 
+                maxLength={200}
+                onChangeText={(text) => {
+                  setDescription(text);
+                  if (fieldErrors.description) setFieldErrors(prev => ({ ...prev, description: '' }));
+                }} 
+                placeholder="Job description..." 
+                placeholderTextColor={Colors.neutral[400]}
+                multiline 
+              />
+              {fieldErrors.description ? <Text style={styles.fieldErrorText}>{fieldErrors.description}</Text> : null}
             </View>
-            <TextInput 
-              style={[styles.input, { height: 100, textAlignVertical: 'top', marginTop: 6 }, fieldErrors.description ? styles.inputError : null]} 
-              value={description} 
-              maxLength={200}
-              onChangeText={(text) => {
-                setDescription(text);
-                if (fieldErrors.description) setFieldErrors(prev => ({ ...prev, description: '' }));
-              }} 
-              placeholder="Job description..." 
-              placeholderTextColor={Colors.neutral[400]}
-              multiline 
-            />
-            {fieldErrors.description ? <Text style={styles.fieldErrorText}>{fieldErrors.description}</Text> : null}
             
             {renderDropdown('Department', 'department', department, departments)}
             {renderDropdown('Job Type', 'jobType', jobType, JOB_TYPES)}
             {renderDropdown('Work Setting', 'workSetting', workSetting, WORK_SETTINGS)}
             {renderDropdown('Compensation', 'compensation', compensation, COMPENSATIONS)}
 
-            <Text style={[styles.label, { marginTop: 16 }]}>Company URL <Text style={{ color: Colors.error }}>*</Text></Text>
-            <TextInput 
-              style={[styles.input, fieldErrors.companyUrl ? styles.inputError : null]} 
-              value={companyUrl} 
-              onChangeText={(text) => {
-                setCompanyUrl(text);
-                if (fieldErrors.companyUrl) setFieldErrors(prev => ({ ...prev, companyUrl: '' }));
-              }} 
-              placeholder="https://..." 
-              placeholderTextColor={Colors.neutral[400]}
-              keyboardType="url" 
-              autoCapitalize="none" 
-            />
-            {fieldErrors.companyUrl ? <Text style={styles.fieldErrorText}>{fieldErrors.companyUrl}</Text> : null}
+            <View {...registerField('companyUrl')}>
+              <Text style={[styles.label, { marginTop: 16 }]}>Company URL <Text style={{ color: Colors.error }}>*</Text></Text>
+              <TextInput 
+                ref={registerInput('companyUrl')}
+                style={[styles.input, fieldErrors.companyUrl ? styles.inputError : null]} 
+                value={companyUrl} 
+                onChangeText={(text) => {
+                  setCompanyUrl(text);
+                  if (fieldErrors.companyUrl) setFieldErrors(prev => ({ ...prev, companyUrl: '' }));
+                }} 
+                placeholder="https://..." 
+                placeholderTextColor={Colors.neutral[400]}
+                keyboardType="url" 
+                autoCapitalize="none" 
+              />
+              {fieldErrors.companyUrl ? <Text style={styles.fieldErrorText}>{fieldErrors.companyUrl}</Text> : null}
+            </View>
 
-            <Text style={styles.label}>Job URL – Apply here (optional)</Text>
-            <TextInput 
-              style={styles.input} 
-              value={jobUrl} 
-              onChangeText={setJobUrl} 
-              placeholder="https://..." 
-              placeholderTextColor={Colors.neutral[400]}
-              keyboardType="url" 
-              autoCapitalize="none" 
-            />
+            <View {...registerField('jobUrl')}>
+              <Text style={styles.label}>Job URL – Apply here (optional)</Text>
+              <TextInput 
+                ref={registerInput('jobUrl')}
+                style={styles.input} 
+                value={jobUrl} 
+                onChangeText={setJobUrl} 
+                placeholder="https://..." 
+                placeholderTextColor={Colors.neutral[400]}
+                keyboardType="url" 
+                autoCapitalize="none" 
+              />
+            </View>
 
           </View>
         </TouchableWithoutFeedback>
@@ -323,6 +376,17 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 8,
     marginBottom: 16,
     maxHeight: 250,
+    zIndex: 10,
+    elevation: 5,
+  },
+  dropdownBackdrop: {
+    position: 'absolute',
+    top: -4000,
+    bottom: -4000,
+    left: -4000,
+    right: -4000,
+    zIndex: 1,
+    backgroundColor: 'transparent',
   },
   modalOption: {
     paddingVertical: 16,

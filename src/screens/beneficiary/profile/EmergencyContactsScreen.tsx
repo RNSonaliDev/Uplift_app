@@ -25,6 +25,7 @@ import { Spacing, BorderRadius } from '../../../theme/spacing';
 import { emergencyContactsApi, EmergencyContact } from '../../../api/emergencyContacts';
 import { useFocusEffect } from '@react-navigation/native';
 import Toast from 'react-native-toast-message';
+import { useFormScrollToError } from '../../../utils/useFormScrollToError';
 
 const getErrorMessage = (error: any, defaultMsg: string) => {
   console.log("@@@@ errorerrorerror===", error)
@@ -48,6 +49,13 @@ export default function EmergencyContactsScreen() {
   const [contacts, setContacts] = useState<EmergencyContact[]>([]);
   const [isRelationshipModalVisible, setIsRelationshipModalVisible] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  const {
+    scrollViewRef,
+    registerField,
+    registerInput,
+    scrollToFirstError,
+  } = useFormScrollToError();
   
   const [isAdding, setIsAdding] = useState(false);
   const [form, setForm] = useState({ name: '', relationship: '', phone: '', email: '' });
@@ -84,6 +92,7 @@ export default function EmergencyContactsScreen() {
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
+      scrollToFirstError(newErrors, ['name', 'relationship', 'phone']);
       return;
     }
     setErrors({});
@@ -109,6 +118,7 @@ export default function EmergencyContactsScreen() {
 
     if (Object.keys(newErrors).length > 0) {
       setEditErrors(newErrors);
+      scrollToFirstError(newErrors, ['name', 'relationship', 'phone']);
       return;
     }
     setEditErrors({});
@@ -171,7 +181,10 @@ export default function EmergencyContactsScreen() {
         style={styles.keyboardAvoid} 
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+        <ScrollView
+          ref={scrollViewRef}
+          style={styles.container}
+          contentContainerStyle={styles.content}>
           {contacts.length === 0 && !isAdding && !loading ? (
             <View style={styles.emptyContainer}>
               <User color={Colors.neutral[300]} size={48} />
@@ -207,31 +220,27 @@ export default function EmergencyContactsScreen() {
                       <Trash2 size={18} color={Colors.error} />
                     </TouchableOpacity>
                   </View>
-                  <Input
-                    label="Full Name"
-                    placeholder="Enter contact's name"
-                    value={isEditing ? editForm.name : contact.name}
-                    onChangeText={(text) => {
-                      if (isEditing) {
-                        setEditForm({ ...editForm, name: text });
-                        setEditErrors({ ...editErrors, name: undefined });
-                      }
-                    }}
-                    editable={isEditing}
-                    error={isEditing ? editErrors.name : undefined}
-                  />
+                  <View {...registerField('name')}>
+                    <Input
+                      ref={registerInput('name')}
+                      label="Full Name"
+                      placeholder="Enter contact's name"
+                      value={isEditing ? editForm.name : contact.name}
+                      onChangeText={(text) => {
+                        if (isEditing) {
+                          setEditForm({ ...editForm, name: text });
+                          setEditErrors({ ...editErrors, name: undefined });
+                        }
+                      }}
+                      editable={isEditing}
+                      error={isEditing ? editErrors.name : undefined}
+                    />
+                  </View>
                   {isEditing ? (
-                    <View style={{ position: 'relative', zIndex: 9 }}>
+                    <View {...registerField('relationship')} style={{ position: 'relative', zIndex: 9 }}>
                       {isRelationshipModalVisible && (
                         <Pressable
-                          style={{
-                            position: 'absolute',
-                            top: -Dimensions.get('window').height,
-                            bottom: -Dimensions.get('window').height,
-                            left: -Dimensions.get('window').width,
-                            right: -Dimensions.get('window').width,
-                            backgroundColor: 'transparent',
-                          }}
+                          style={styles.dropdownBackdrop}
                           onPress={() => setIsRelationshipModalVisible(false)}
                         />
                       )}
@@ -248,31 +257,39 @@ export default function EmergencyContactsScreen() {
                         </View>
                       </TouchableOpacity>
                       {isRelationshipModalVisible && (
-                        <View style={styles.inlineDropdown}>
-                          {RELATIONSHIP_OPTIONS.map((option, index) => {
-                            const isSelected = editForm.relationship === option;
-                            const isLast = index === RELATIONSHIP_OPTIONS.length - 1;
-                            return (
-                              <TouchableOpacity
-                                key={option}
-                                style={[styles.dropdownItem, isLast && { borderBottomWidth: 0 }]}
-                                onPress={() => {
-                                  setEditForm({ ...editForm, relationship: option });
-                                  setEditErrors({ ...editErrors, relationship: undefined });
-                                  setIsRelationshipModalVisible(false);
-                                }}
-                              >
-                                <AppText
-                                  variant="bodyMedium"
-                                  color={isSelected ? Colors.primary[500] : Colors.neutral[800]}
-                                  weight={isSelected ? 'bold' : 'regular'}
+                        <View style={styles.inlineDropdown} onStartShouldSetResponder={() => true}>
+                          <ScrollView
+                            nestedScrollEnabled={true}
+                            keyboardShouldPersistTaps="handled"
+                            showsVerticalScrollIndicator={true}
+                            bounces={false}
+                            style={styles.dropdownScrollView}
+                          >
+                            {RELATIONSHIP_OPTIONS.map((option, index) => {
+                              const isSelected = editForm.relationship === option;
+                              const isLast = index === RELATIONSHIP_OPTIONS.length - 1;
+                              return (
+                                <TouchableOpacity
+                                  key={option}
+                                  style={[styles.dropdownItem, isLast && { borderBottomWidth: 0 }]}
+                                  onPress={() => {
+                                    setEditForm({ ...editForm, relationship: option });
+                                    setEditErrors({ ...editErrors, relationship: undefined });
+                                    setIsRelationshipModalVisible(false);
+                                  }}
                                 >
-                                  {option}
-                                </AppText>
-                                {isSelected && <Check color={Colors.primary[500]} size={18} />}
-                              </TouchableOpacity>
-                            );
-                          })}
+                                  <AppText
+                                    variant="bodyMedium"
+                                    color={isSelected ? Colors.primary[500] : Colors.neutral[800]}
+                                    weight={isSelected ? 'bold' : 'regular'}
+                                  >
+                                    {option}
+                                  </AppText>
+                                  {isSelected && <Check color={Colors.primary[500]} size={18} />}
+                                </TouchableOpacity>
+                              );
+                            })}
+                          </ScrollView>
                         </View>
                       )}
                     </View>
@@ -283,12 +300,13 @@ export default function EmergencyContactsScreen() {
                       editable={false}
                     />
                   )}
-                  <View style={{ marginBottom: Spacing.lg }}>
+                  <View {...registerField('phone')} style={{ marginBottom: Spacing.lg }}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: Spacing.xs }}>
                       <AppText variant="labelMedium" color={Colors.neutral[700]}>Phone Number <AppText color={Colors.error}>*</AppText></AppText>
                       {/* <Info size={16} color={Colors.primary[500]} style={{ marginLeft: Spacing.xs }} /> */}
                     </View>
                     <Input
+                      ref={registerInput('phone')}
                       containerStyle={{ marginBottom: 0 }}
                       placeholder="(201) 555-0123"
                       keyboardType="phone-pad"
@@ -337,27 +355,23 @@ export default function EmergencyContactsScreen() {
           {isAdding && (
             <View style={[styles.contactCard, styles.inlineForm]}>
               <AppText variant="h4" style={styles.formTitle}>Add New Contact</AppText>
-              <Input
-                label="Full Name"
-                placeholder="Enter contact's name"
-                value={form.name}
-                onChangeText={(text) => {
-                  setForm({ ...form, name: text });
-                  setErrors({ ...errors, name: undefined });
-                }}
-                error={errors.name}
-              />
-              <View style={{ position: 'relative', zIndex: 9 }}>
+              <View {...registerField('name')}>
+                <Input
+                  ref={registerInput('name')}
+                  label="Full Name"
+                  placeholder="Enter contact's name"
+                  value={form.name}
+                  onChangeText={(text) => {
+                    setForm({ ...form, name: text });
+                    setErrors({ ...errors, name: undefined });
+                  }}
+                  error={errors.name}
+                />
+              </View>
+              <View {...registerField('relationship')} style={{ position: 'relative', zIndex: 10 }}>
                 {isRelationshipModalVisible && (
                   <Pressable
-                    style={{
-                      position: 'absolute',
-                      top: -Dimensions.get('window').height,
-                      bottom: -Dimensions.get('window').height,
-                      left: -Dimensions.get('window').width,
-                      right: -Dimensions.get('window').width,
-                      backgroundColor: 'transparent',
-                    }}
+                    style={styles.dropdownBackdrop}
                     onPress={() => setIsRelationshipModalVisible(false)}
                   />
                 )}
@@ -374,40 +388,49 @@ export default function EmergencyContactsScreen() {
                   </View>
                 </TouchableOpacity>
                 {isRelationshipModalVisible && (
-                  <View style={styles.inlineDropdown}>
-                    {RELATIONSHIP_OPTIONS.map((option, index) => {
-                      const isSelected = form.relationship === option;
-                      const isLast = index === RELATIONSHIP_OPTIONS.length - 1;
-                      return (
-                        <TouchableOpacity
-                          key={option}
-                          style={[styles.dropdownItem, isLast && { borderBottomWidth: 0 }]}
-                          onPress={() => {
-                            setForm({ ...form, relationship: option });
-                            setErrors({ ...errors, relationship: undefined });
-                            setIsRelationshipModalVisible(false);
-                          }}
-                        >
-                          <AppText
-                            variant="bodyMedium"
-                            color={isSelected ? Colors.primary[500] : Colors.neutral[800]}
-                            weight={isSelected ? 'bold' : 'regular'}
+                  <View style={styles.inlineDropdown} onStartShouldSetResponder={() => true}>
+                    <ScrollView
+                      nestedScrollEnabled={true}
+                      keyboardShouldPersistTaps="handled"
+                      showsVerticalScrollIndicator={true}
+                      bounces={false}
+                      style={styles.dropdownScrollView}
+                    >
+                      {RELATIONSHIP_OPTIONS.map((option, index) => {
+                        const isSelected = form.relationship === option;
+                        const isLast = index === RELATIONSHIP_OPTIONS.length - 1;
+                        return (
+                          <TouchableOpacity
+                            key={option}
+                            style={[styles.dropdownItem, isLast && { borderBottomWidth: 0 }]}
+                            onPress={() => {
+                              setForm({ ...form, relationship: option });
+                              setErrors({ ...errors, relationship: undefined });
+                              setIsRelationshipModalVisible(false);
+                            }}
                           >
-                            {option}
-                          </AppText>
-                          {isSelected && <Check color={Colors.primary[500]} size={18} />}
-                        </TouchableOpacity>
-                      );
-                    })}
+                            <AppText
+                              variant="bodyMedium"
+                              color={isSelected ? Colors.primary[500] : Colors.neutral[800]}
+                              weight={isSelected ? 'bold' : 'regular'}
+                            >
+                              {option}
+                            </AppText>
+                            {isSelected && <Check color={Colors.primary[500]} size={18} />}
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </ScrollView>
                   </View>
                 )}
               </View>
-              <View style={{ marginBottom: Spacing.lg }}>
+              <View {...registerField('phone')} style={{ marginBottom: Spacing.lg }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: Spacing.xs }}>
                   <AppText variant="labelMedium" color={Colors.neutral[700]}>Phone Number <AppText color={Colors.error}>*</AppText></AppText>
                   {/* <Info size={16} color={Colors.primary[500]} style={{ marginLeft: Spacing.xs }} /> */}
                 </View>
                 <Input
+                  ref={registerInput('phone')}
                   containerStyle={{ marginBottom: 0 }}
                   placeholder="(201) 555-0123"
                   keyboardType="phone-pad"
@@ -489,7 +512,21 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 4,
-    elevation: 2,
+    elevation: 5,
+    maxHeight: 200,
+    zIndex: 10,
+  },
+  dropdownBackdrop: {
+    position: 'absolute',
+    top: -4000,
+    bottom: -4000,
+    left: -4000,
+    right: -4000,
+    zIndex: 1,
+    backgroundColor: 'transparent',
+  },
+  dropdownScrollView: {
+    maxHeight: 200,
   },
   dropdownItem: {
     flexDirection: 'row',

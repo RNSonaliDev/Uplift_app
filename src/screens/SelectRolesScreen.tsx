@@ -368,7 +368,7 @@ export const SelectRolesScreen: React.FC = () => {
             <RoleCard
               type="beneficiary"
               title="Beneficiary"
-              description="Request help with shopping and groceries."
+              description="Request help with errands (shopping, grocery, etc.)"
               isSelected={selectedRoles.includes('beneficiary')}
               onToggle={() => toggleRole('beneficiary')}
               isDisabled={existingRoles.includes('beneficiary')}
@@ -379,8 +379,8 @@ export const SelectRolesScreen: React.FC = () => {
             title={isMinor ? "Youth Volunteer" : "Volunteer"}
             description={
               isMinor 
-                ? "Support people and youth activities in your community." 
-                : "Support people in your community."
+                ? "Support and connect with people in your community." 
+                : "Support and connect with people in your community."
             }
             isSelected={isMinor || selectedRoles.includes('volunteer')}
             onToggle={() => toggleRole('volunteer')}
@@ -392,7 +392,7 @@ export const SelectRolesScreen: React.FC = () => {
               <RoleCard
                 type="organization"
                 title="Organization"
-                description="Create internships and community events."
+                description="Create internships and community events or offer promotions"
                 isSelected={selectedRoles.includes('organization')}
                 onToggle={() => toggleRole('organization')}
                 isDisabled={existingRoles.includes('organization')}
@@ -400,7 +400,7 @@ export const SelectRolesScreen: React.FC = () => {
               <RoleCard
                 type="sponsor"
                 title="Sponsor"
-                description="Fund community support and grocery assistance."
+                description="Help support the community through funding "
                 isSelected={selectedRoles.includes('sponsor')}
                 onToggle={() => toggleRole('sponsor')}
                 isDisabled={existingRoles.includes('sponsor')}

@@ -323,7 +323,7 @@ console.log("@@@@@@@@googleresult", result.user)
               variant="bodySmall"
               color={Colors.neutral[600]}
               style={styles.infoText}>
-              We’ll send a verification code to your provided email address or phone number. By continuing, you consent to receive one-time verification code.
+             By providing your phone number/email, you agree to receive SMS text messages/email from iUpliftU, including one-time verification codes to create and access your account. Message and data rates may apply. Message frequency varies. Reply STOP to opt out.
             </AppText>
           </View>
 

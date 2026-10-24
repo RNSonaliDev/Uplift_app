@@ -27,6 +27,7 @@ import { AppText } from '../components/AppText';
 import { Button } from '../components/Button';
 import { Input } from '../components/Input';
 import { UpliftLogo } from '../components/UpliftLogo';
+import { useFormScrollToError } from '../utils/useFormScrollToError';
 import { button_user } from '../assets/images';
 import { authApi } from '../api';
 import { Colors } from '../theme/colors';
@@ -256,6 +257,12 @@ export const CreateProfileScreen: React.FC = () => {
   const phoneInputRef = useRef<TextInput>(null);
   const parentEmailInputRef = useRef<TextInput>(null);
   const parentPhoneInputRef = useRef<TextInput>(null);
+  const {
+    scrollViewRef,
+    registerField,
+    registerInput,
+    scrollToFirstError,
+  } = useFormScrollToError();
 
   const age = dob
     ? (new Date().getTime() - (dob.getTime() - 24 * 60 * 60 * 1000)) /
@@ -314,7 +321,7 @@ export const CreateProfileScreen: React.FC = () => {
     if (!dob) {
       newErrors.dob = 'Date of birth is required';
     } else if (age !== null && age < 14) {
-      newErrors.dob = 'You must be at least 14 years old';
+      newErrors.dob = 'The age should be 14+';
     }
 
 
@@ -334,7 +341,21 @@ export const CreateProfileScreen: React.FC = () => {
     }
 
     setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    if (Object.keys(newErrors).length > 0) {
+      const fieldOrder = [
+        'profilePhoto',
+        'firstName',
+        'lastName',
+        'email',
+        'phoneNumber',
+        'dob',
+        'parentEmail',
+        'parentPhone',
+      ];
+      scrollToFirstError(newErrors, fieldOrder);
+      return false;
+    }
+    return true;
   };
 
 
@@ -506,6 +527,7 @@ export const CreateProfileScreen: React.FC = () => {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={Colors.neutral[0]} />
       <KeyboardAwareScrollView
+        ref={scrollViewRef}
         style={styles.flex}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
@@ -541,7 +563,7 @@ export const CreateProfileScreen: React.FC = () => {
             </View>
 
             {/* Profile Photo Section */}
-            <View style={styles.sectionContainer}>
+            <View {...registerField('profilePhoto')} style={styles.sectionContainer}>
               <View style={styles.labelRow}>
                 <AppText variant="labelLarge" color={Colors.primary[900]} weight="bold">
                   Profile Photo
@@ -583,9 +605,12 @@ export const CreateProfileScreen: React.FC = () => {
 
             {/* Form Fields */}
             <View style={styles.sectionContainer}>
-              <View style={styles.nameColumn}>
+              <View {...registerField('firstName')} style={styles.nameColumn}>
                 <Input
-                  ref={firstNameInputRef}
+                  ref={(r) => {
+                    firstNameInputRef.current = r;
+                    registerInput('firstName')(r);
+                  }}
                   label="First name"
                   placeholder="Enter first name"
                   leftIcon={<UserOutlineIcon />}
@@ -601,9 +626,12 @@ export const CreateProfileScreen: React.FC = () => {
                 />
               </View>
               <View style={styles.nameSpacer} />
-              <View style={styles.nameColumn}>
+              <View {...registerField('lastName')} style={styles.nameColumn}>
                 <Input
-                  ref={lastNameInputRef}
+                  ref={(r) => {
+                    lastNameInputRef.current = r;
+                    registerInput('lastName')(r);
+                  }}
                   label="Last name"
                   placeholder="Enter last name"
                   leftIcon={<UserOutlineIcon />}
@@ -625,27 +653,32 @@ export const CreateProfileScreen: React.FC = () => {
                 />
               </View>
 
-              <Input
-                ref={emailInputRef}
-                label="Email address"
-                placeholder="Enter your email address"
-                leftIcon={<MailOutlineIcon />}
-                value={email}
-                onChangeText={(text) => {
-                  setEmail(text);
-                  if (errors.email) setErrors({ ...errors, email: '' });
-                }}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                returnKeyType="next"
-                blurOnSubmit={false}
-                onSubmitEditing={() => phoneInputRef.current?.focus()}
-                error={errors.email}
-                disabled={isEmail}
-              />
+              <View {...registerField('email')}>
+                <Input
+                  ref={(r) => {
+                    emailInputRef.current = r;
+                    registerInput('email')(r);
+                  }}
+                  label="Email address"
+                  placeholder="Enter your email address"
+                  leftIcon={<MailOutlineIcon />}
+                  value={email}
+                  onChangeText={(text) => {
+                    setEmail(text);
+                    if (errors.email) setErrors({ ...errors, email: '' });
+                  }}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  returnKeyType="next"
+                  blurOnSubmit={false}
+                  onSubmitEditing={() => phoneInputRef.current?.focus()}
+                  error={errors.email}
+                  disabled={isEmail}
+                />
+              </View>
 
               {/* Phone Number with Tooltip */}
-              <View style={styles.phoneInputWrapper}>
+              <View {...registerField('phoneNumber')} style={styles.phoneInputWrapper}>
                 <View style={styles.labelRow}>
                   <AppText variant="labelMedium" color={Colors.neutral[700]} style={{ marginBottom: Spacing.xs }}>
                     Phone number
@@ -662,7 +695,10 @@ export const CreateProfileScreen: React.FC = () => {
                 </View>
 
                 <Input
-                  ref={phoneInputRef}
+                  ref={(r) => {
+                    phoneInputRef.current = r;
+                    registerInput('phoneNumber')(r);
+                  }}
                   placeholder="(201) 555-0123"
                   leftIcon={<PhonePrefixPrefix />}
                   value={phoneNumber}
@@ -698,7 +734,7 @@ export const CreateProfileScreen: React.FC = () => {
               </View>
 
               {/* Date of Birth Input */}
-              <View style={{ marginTop: verticalScale(16), position: 'relative' }}>
+              <View {...registerField('dob')} style={{ marginTop: verticalScale(16), position: 'relative' }}>
                 <Input
                   label="Date of Birth"
                   placeholder="MM/DD/YYYY"
@@ -728,27 +764,35 @@ export const CreateProfileScreen: React.FC = () => {
                     Since you are under 18, we require both your parent's email address and phone number to send the activation code.
                   </AppText>
 
-                  <Input
-                    ref={parentEmailInputRef}
-                    label="Parent/Guardian Email Address"
-                    placeholder="Enter parent's email address"
-                    leftIcon={<MailOutlineIcon size={moderateScale(22)} />}
-                    value={parentEmail}
-                    onChangeText={(text) => {
-                      setParentEmail(text);
-                      if (errors.parentEmail) setErrors({ ...errors, parentEmail: '' });
-                    }}
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                    returnKeyType="next"
-                    blurOnSubmit={false}
-                    onSubmitEditing={() => parentPhoneInputRef.current?.focus()}
-                    error={errors.parentEmail}
-                  />
-
-                  <View style={{ marginTop: verticalScale(12) }}>
+                  <View {...registerField('parentEmail')}>
                     <Input
-                      ref={parentPhoneInputRef}
+                      ref={(r) => {
+                        parentEmailInputRef.current = r;
+                        registerInput('parentEmail')(r);
+                      }}
+                      label="Parent/Guardian Email Address"
+                      placeholder="Enter parent's email address"
+                      leftIcon={<MailOutlineIcon size={moderateScale(22)} />}
+                      value={parentEmail}
+                      onChangeText={(text) => {
+                        setParentEmail(text);
+                        if (errors.parentEmail) setErrors({ ...errors, parentEmail: '' });
+                      }}
+                      keyboardType="email-address"
+                      autoCapitalize="none"
+                      returnKeyType="next"
+                      blurOnSubmit={false}
+                      onSubmitEditing={() => parentPhoneInputRef.current?.focus()}
+                      error={errors.parentEmail}
+                    />
+                  </View>
+
+                  <View {...registerField('parentPhone')} style={{ marginTop: verticalScale(12) }}>
+                    <Input
+                      ref={(r) => {
+                        parentPhoneInputRef.current = r;
+                        registerInput('parentPhone')(r);
+                      }}
                       label="Parent/Guardian Phone Number"
                       placeholder="(201) 555-0123"
                       leftIcon={<PhonePrefixPrefix />}
@@ -763,6 +807,17 @@ export const CreateProfileScreen: React.FC = () => {
                       onSubmitEditing={handleCreateProfile}
                       error={errors.parentPhone}
                     />
+                  </View>
+
+                  {/* Info Banner */}
+                  <View style={{ flexDirection: 'row', alignItems: 'flex-start', marginTop: verticalScale(14), paddingTop: verticalScale(12), borderTopWidth: 1, borderTopColor: Colors.primary[100] }}>
+                    <InfoCircleIcon size={moderateScale(18)} />
+                    <AppText
+                      variant="bodySmall"
+                      color={Colors.neutral[600]}
+                      style={{ marginLeft: moderateScale(8), flex: 1 }}>
+                      By providing your phone number/email, you agree to receive SMS text messages/email from iUpliftU, including one-time verification codes to create and access your account. Message and data rates may apply. Message frequency varies. Reply STOP to opt out.
+                    </AppText>
                   </View>
                 </View>
               )}
@@ -795,7 +850,7 @@ export const CreateProfileScreen: React.FC = () => {
 
           const selectedAge = (new Date().getTime() - (date.getTime() - 24 * 60 * 60 * 1000)) / (1000 * 60 * 60 * 24 * 365.25);
           if (selectedAge < 14) {
-            setErrors({ ...errors, dob: 'Age Restriction: You are not allowed but hope to see you when you turn 14.' });
+            setErrors({ ...errors, dob: 'The age should be 14+.' });
             return;
           }
 
@@ -1005,5 +1060,17 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.xl,
     height: verticalScale(52),
   },
-
+  infoBanner: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: Colors.primary[50],
+    borderRadius: BorderRadius.md,
+    padding: moderateScale(14),
+    marginTop: verticalScale(20),
+    marginBottom: verticalScale(16),
+  },
+  infoText: {
+    marginLeft: moderateScale(10),
+    flex: 1,
+  },
 });

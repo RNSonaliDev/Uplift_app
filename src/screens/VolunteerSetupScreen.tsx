@@ -35,6 +35,7 @@ import {AppText} from '../components/AppText';
 import {Button} from '../components/Button';
 import {Input} from '../components/Input';
 import {UpliftLogo} from '../components/UpliftLogo';
+import {useFormScrollToError} from '../utils/useFormScrollToError';
 import {authApi} from '../api';
 import {Colors} from '../theme/colors';
 import {BorderRadius, Spacing} from '../theme/spacing';
@@ -421,8 +422,8 @@ export const VolunteerSetupScreen: React.FC = () => {
     if (computedAge !== null && computedAge < 14) {
       Toast.show({
         type: 'error',
-        text1: 'Age Restriction',
-        text2: 'You must be at least 14 years old.',
+        text1: '',
+        text2: 'The age should be 14+.',
       });
       return;
     }
@@ -470,6 +471,13 @@ export const VolunteerSetupScreen: React.FC = () => {
   const phoneInputRef = useRef<TextInput>(null);
   const zipCodeInputRef = useRef<TextInput>(null);
   const hoursInputRef = useRef<TextInput>(null);
+  const {
+    scrollViewRef,
+    registerField,
+    registerInput,
+    scrollToError,
+    scrollToFirstError,
+  } = useFormScrollToError();
 
   const handleCurrentLocation = () => {
     Geolocation.getCurrentPosition(
@@ -661,7 +669,21 @@ export const VolunteerSetupScreen: React.FC = () => {
     // }
 
     setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    if (Object.keys(newErrors).length > 0) {
+      const fieldOrder = [
+        'firstName',
+        'lastName',
+        'email',
+        'phoneNumber',
+        'dob',
+        'address',
+        'zipCode',
+        'governmentId',
+      ];
+      scrollToFirstError(newErrors, fieldOrder);
+      return false;
+    }
+    return true;
   };
 
   const handleContinue = async () => {
@@ -683,6 +705,7 @@ export const VolunteerSetupScreen: React.FC = () => {
         ...prev,
         address: 'Please use the business address',
       }));
+      scrollToError('address');
       Toast.show({
         type: 'error',
         text1: 'Business Address Required',
@@ -820,6 +843,7 @@ export const VolunteerSetupScreen: React.FC = () => {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={Colors.neutral[0]} />
       <KeyboardAwareScrollView
+        ref={scrollViewRef}
         style={styles.flex}
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
@@ -856,9 +880,12 @@ export const VolunteerSetupScreen: React.FC = () => {
           {/* Form Fields */}
           <View style={styles.sectionContainer}>
             {/* Name Row */}
-              <View style={styles.nameColumn}>
+              <View {...registerField('firstName')} style={styles.nameColumn}>
                 <Input
-                  ref={firstNameInputRef}
+                  ref={(r) => {
+                    firstNameInputRef.current = r;
+                    registerInput('firstName')(r);
+                  }}
                   label="First name"
                   placeholder="Enter your first name"
                   leftIcon={<UserOutlineIcon />}
@@ -874,9 +901,12 @@ export const VolunteerSetupScreen: React.FC = () => {
                 />
               </View>
               <View style={styles.nameSpacer} />
-              <View style={styles.nameColumn}>
+              <View {...registerField('lastName')} style={styles.nameColumn}>
                 <Input
-                  ref={lastNameInputRef}
+                  ref={(r) => {
+                    lastNameInputRef.current = r;
+                    registerInput('lastName')(r);
+                  }}
                   label="Last name"
                   placeholder="Enter your last name"
                   leftIcon={<UserOutlineIcon />}
@@ -892,26 +922,31 @@ export const VolunteerSetupScreen: React.FC = () => {
                 />
               </View>
 
-            <Input
-              ref={emailInputRef}
-              label="Email address"
-              placeholder="Enter your email address"
-              leftIcon={<MailOutlineIcon />}
-              value={email}
-              onChangeText={(text) => {
-                setEmail(text);
-                if (errors.email) setErrors({...errors, email: ''});
-              }}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              returnKeyType="next"
-              blurOnSubmit={false}
-              onSubmitEditing={() => phoneInputRef.current?.focus()}
-              error={errors.email}
-            />
+            <View {...registerField('email')}>
+              <Input
+                ref={(r) => {
+                  emailInputRef.current = r;
+                  registerInput('email')(r);
+                }}
+                label="Email address"
+                placeholder="Enter your email address"
+                leftIcon={<MailOutlineIcon />}
+                value={email}
+                onChangeText={(text) => {
+                  setEmail(text);
+                  if (errors.email) setErrors({...errors, email: ''});
+                }}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                returnKeyType="next"
+                blurOnSubmit={false}
+                onSubmitEditing={() => phoneInputRef.current?.focus()}
+                error={errors.email}
+              />
+            </View>
 
             {/* Phone Number with Tooltip */}
-            <View style={[styles.phoneInputWrapper, showPhoneInfo && { zIndex: 99999, elevation: Platform.OS === 'android' ? 25 : undefined }]}>
+            <View {...registerField('phoneNumber')} style={[styles.phoneInputWrapper, showPhoneInfo && { zIndex: 99999, elevation: Platform.OS === 'android' ? 25 : undefined }]}>
               <View style={styles.labelRow}>
                 <AppText variant="labelMedium" color={Colors.neutral[700]} style={{marginBottom: Spacing.xs}}>
                   Phone number <AppText color={Colors.error}>*</AppText>
@@ -928,7 +963,10 @@ export const VolunteerSetupScreen: React.FC = () => {
               </View>
 
               <Input
-                ref={phoneInputRef}
+                ref={(r) => {
+                  phoneInputRef.current = r;
+                  registerInput('phoneNumber')(r);
+                }}
                 placeholder="(201) 555-0123"
                 leftIcon={<PhonePrefixPrefix />}
                 value={phoneNumber}
@@ -971,7 +1009,7 @@ export const VolunteerSetupScreen: React.FC = () => {
             </View>
 
             {/* Date of Birth Input */}
-            <View style={{ marginBottom: Spacing.lg, position: 'relative' }}>
+            <View {...registerField('dob')} style={{ marginBottom: Spacing.lg, position: 'relative' }}>
               <Input
                 label="Date of birth"
                 placeholder="MM/DD/YYYY"
@@ -997,7 +1035,7 @@ export const VolunteerSetupScreen: React.FC = () => {
               />
             </View>
 
-            <View style={[styles.phoneInputWrapper, {
+            <View {...registerField('address')} style={[styles.phoneInputWrapper, {
               marginBottom: Spacing.lg,
               zIndex: showAddressInfo ? 99999 : 9999,
               elevation: Platform.OS === 'android' ? (showAddressInfo ? 25 : 10) : undefined,
@@ -1028,7 +1066,10 @@ export const VolunteerSetupScreen: React.FC = () => {
               </View>
 
               <GooglePlacesAutocomplete
-                ref={googlePlacesRef}
+                ref={(r) => {
+                  googlePlacesRef.current = r;
+                  registerInput('address')(r);
+                }}
                 placeholder="e.g. 123 Main St, Beverly Hills, CA"
                 fetchDetails={true}
                 enablePoweredByContainer={false}
@@ -1190,24 +1231,29 @@ export const VolunteerSetupScreen: React.FC = () => {
               ) : null}
             </View>
 
-            <Input
-              ref={zipCodeInputRef}
-              label="ZIP Code"
-              placeholder="Enter your ZIP code"
-              leftIcon={<LocationPinIcon />}
-              value={zipCode}
-              onChangeText={(text) => {
-                const numeric = text.replace(/[^0-9]/g, '').slice(0, 5);
-                setZipCode(numeric);
-                if (errors.zipCode) setErrors({...errors, zipCode: ''});
-              }}
-              keyboardType="number-pad"
-              maxLength={5}
-              returnKeyType="next"
-              blurOnSubmit={false}
-              onSubmitEditing={() => hoursInputRef.current?.focus()}
-              error={errors.zipCode}
-            />
+            <View {...registerField('zipCode')}>
+              <Input
+                ref={(r) => {
+                  zipCodeInputRef.current = r;
+                  registerInput('zipCode')(r);
+                }}
+                label="ZIP Code"
+                placeholder="Enter your ZIP code"
+                leftIcon={<LocationPinIcon />}
+                value={zipCode}
+                onChangeText={(text) => {
+                  const numeric = text.replace(/[^0-9]/g, '').slice(0, 5);
+                  setZipCode(numeric);
+                  if (errors.zipCode) setErrors({...errors, zipCode: ''});
+                }}
+                keyboardType="number-pad"
+                maxLength={5}
+                returnKeyType="next"
+                blurOnSubmit={false}
+                onSubmitEditing={() => hoursInputRef.current?.focus()}
+                error={errors.zipCode}
+              />
+            </View>
 
             {/* <View style={{ marginBottom: Spacing.lg }}>
               <View style={styles.labelRow}>
@@ -1336,7 +1382,7 @@ export const VolunteerSetupScreen: React.FC = () => {
 
           {/* Government ID Photo (Required for Ages 18+) */}
           {is18Plus && (
-            <View style={{ marginTop: verticalScale(16), paddingHorizontal: 0 }}>
+            <View {...registerField('governmentId')} style={{ marginTop: verticalScale(16), paddingHorizontal: 0 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
                   <AppText variant="labelMedium" color={Colors.neutral[700]}>
                     Government ID Photo
@@ -1345,6 +1391,9 @@ export const VolunteerSetupScreen: React.FC = () => {
                     *
                   </AppText>
                 </View>
+                <AppText variant="bodySmall" color={Colors.neutral[500]} style={{ marginBottom: verticalScale(8) }}>
+                  For your safety and the safety of others, please upload your id
+                </AppText>
                 {governmentId ? (
                   <View style={styles.uploadedFileCard}>
                     <TouchableOpacity

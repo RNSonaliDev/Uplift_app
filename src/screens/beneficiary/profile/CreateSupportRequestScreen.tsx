@@ -18,9 +18,11 @@ import { supportApi } from '../../../api/support';
 import Toast from 'react-native-toast-message';
 import { ChevronLeft, Headphones, Image as ImageIcon, X } from 'lucide-react-native';
 import { launchImageLibrary } from 'react-native-image-picker';
+import { useFormScrollToError } from '../../../utils/useFormScrollToError';
 
 export default function CreateSupportRequestScreen() {
   const navigation = useNavigation<any>();
+  const { scrollViewRef, registerField, registerInput, scrollToFirstError } = useFormScrollToError();
   // Form State
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
@@ -51,6 +53,7 @@ export default function CreateSupportRequestScreen() {
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
+      scrollToFirstError(newErrors, ['subject', 'message']);
       return;
     }
 
@@ -109,7 +112,12 @@ export default function CreateSupportRequestScreen() {
         <View style={{ width: 32 }} />
       </View>
 
-      <ScrollView style={styles.container} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      <ScrollView 
+        ref={scrollViewRef}
+        style={styles.container} 
+        contentContainerStyle={styles.content} 
+        keyboardShouldPersistTaps="handled"
+      >
         <View style={styles.illustrationContainer}>
             <AppText variant="labelLarge" color={Colors.error} style={{marginBottom: 16}} center>
               For any emergency call 911
@@ -121,36 +129,42 @@ export default function CreateSupportRequestScreen() {
           </View>
 
           <View style={styles.formContainer}>
-            <Input
-              label="Subject"
-              bottomRight={<AppText variant="caption" color={Colors.neutral[500]}>{subject.length}/50</AppText>}
-              placeholder="E.g. Unable to complete payment"
-              value={subject}
-              onChangeText={(text) => {
-                setSubject(text);
-                if (errors.subject) setErrors({...errors, subject: undefined});
-              }}
-              maxLength={50}
-              error={errors.subject}
-              containerStyle={styles.inputSpacing}
-            />
+            <View {...registerField('subject')}>
+              <Input
+                ref={registerInput('subject')}
+                label="Subject"
+                bottomRight={<AppText variant="caption" color={Colors.neutral[500]}>{subject.length}/50</AppText>}
+                placeholder="E.g. Unable to complete payment"
+                value={subject}
+                onChangeText={(text) => {
+                  setSubject(text);
+                  if (errors.subject) setErrors({...errors, subject: undefined});
+                }}
+                maxLength={50}
+                error={errors.subject}
+                containerStyle={styles.inputSpacing}
+              />
+            </View>
             
-            <Input
-              label="Message"
-              bottomRight={<AppText variant="caption" color={Colors.neutral[500]}>{message.length}/500</AppText>}
-              placeholder="Describe your issue in detail..."
-              value={message}
-              onChangeText={(text) => {
-                setMessage(text);
-                if (errors.message) setErrors({...errors, message: undefined});
-              }}
-              maxLength={500}
-              multiline
-              numberOfLines={6}
-              textAlignVertical="top"
-              error={errors.message}
-              containerStyle={styles.inputSpacing}
-            />
+            <View {...registerField('message')}>
+              <Input
+                ref={registerInput('message')}
+                label="Message"
+                bottomRight={<AppText variant="caption" color={Colors.neutral[500]}>{message.length}/500</AppText>}
+                placeholder="Describe your issue in detail..."
+                value={message}
+                onChangeText={(text) => {
+                  setMessage(text);
+                  if (errors.message) setErrors({...errors, message: undefined});
+                }}
+                maxLength={500}
+                multiline
+                numberOfLines={6}
+                textAlignVertical="top"
+                error={errors.message}
+                containerStyle={styles.inputSpacing}
+              />
+            </View>
 
             {imageUri ? (
               <View style={styles.imagePreviewContainer}>

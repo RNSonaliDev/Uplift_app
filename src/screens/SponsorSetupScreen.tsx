@@ -20,6 +20,7 @@ import {AppText} from '../components/AppText';
 import {Button} from '../components/Button';
 import {Input} from '../components/Input';
 import {UpliftLogo} from '../components/UpliftLogo';
+import {useFormScrollToError} from '../utils/useFormScrollToError';
 import {authApi} from '../api';
 import {Colors} from '../theme/colors';
 import {BorderRadius, Spacing} from '../theme/spacing';
@@ -211,6 +212,12 @@ export const SponsorSetupScreen: React.FC = () => {
   const [anonymity, setAnonymity] = useState<'show' | 'hide'>('hide');
   
   const [errors, setErrors] = useState<{[key: string]: string}>({});
+  const {
+    scrollViewRef,
+    registerField,
+    registerInput,
+    scrollToFirstError,
+  } = useFormScrollToError();
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -259,7 +266,12 @@ export const SponsorSetupScreen: React.FC = () => {
     }
 
     setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    if (Object.keys(newErrors).length > 0) {
+      const fieldOrder = ['firstName', 'lastName', 'email', 'phoneNumber'];
+      scrollToFirstError(newErrors, fieldOrder);
+      return false;
+    }
+    return true;
   };
 
   const route = useRoute<any>();
@@ -329,6 +341,7 @@ export const SponsorSetupScreen: React.FC = () => {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={Colors.neutral[0]} />
       <KeyboardAwareScrollView
+        ref={scrollViewRef}
         style={styles.flex}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
@@ -370,57 +383,69 @@ export const SponsorSetupScreen: React.FC = () => {
 
           {/* Form Fields */}
           <View style={styles.formSection}>
-            <Input
-              label="First Name"
-              placeholder="Enter your first name"
-              leftIcon={<UserOutlineIcon />}
-              value={firstName}
-              onChangeText={(text) => {
-                setFirstName(text);
-                if (errors.firstName) setErrors({...errors, firstName: ''});
-              }}
-              error={errors.firstName}
-            />
+            <View {...registerField('firstName')}>
+              <Input
+                ref={registerInput('firstName')}
+                label="First Name"
+                placeholder="Enter your first name"
+                leftIcon={<UserOutlineIcon />}
+                value={firstName}
+                onChangeText={(text) => {
+                  setFirstName(text);
+                  if (errors.firstName) setErrors({...errors, firstName: ''});
+                }}
+                error={errors.firstName}
+              />
+            </View>
 
-            <Input
-              label="Last Name"
-              placeholder="Enter your last name"
-              leftIcon={<UserOutlineIcon />}
-              value={lastName}
-              onChangeText={(text) => {
-                setLastName(text);
-                if (errors.lastName) setErrors({...errors, lastName: ''});
-              }}
-              error={errors.lastName}
-            />
+            <View {...registerField('lastName')}>
+              <Input
+                ref={registerInput('lastName')}
+                label="Last Name"
+                placeholder="Enter your last name"
+                leftIcon={<UserOutlineIcon />}
+                value={lastName}
+                onChangeText={(text) => {
+                  setLastName(text);
+                  if (errors.lastName) setErrors({...errors, lastName: ''});
+                }}
+                error={errors.lastName}
+              />
+            </View>
 
-            <Input
-              label="Email Address"
-              placeholder="Enter your email address"
-              leftIcon={<MailOutlineIcon />}
-              value={email}
-              onChangeText={(text) => {
-                setEmail(text);
-                if (errors.email) setErrors({...errors, email: ''});
-              }}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              error={errors.email}
-            />
+            <View {...registerField('email')}>
+              <Input
+                ref={registerInput('email')}
+                label="Email Address"
+                placeholder="Enter your email address"
+                leftIcon={<MailOutlineIcon />}
+                value={email}
+                onChangeText={(text) => {
+                  setEmail(text);
+                  if (errors.email) setErrors({...errors, email: ''});
+                }}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                error={errors.email}
+              />
+            </View>
 
-            <Input
-              label="Phone number"
-              placeholder="(201) 555-0123"
-              leftIcon={<PhonePrefixPrefix />}
-              value={phoneNumber}
-              onChangeText={(text) => {
-                setPhoneNumber(text);
-                if (errors.phoneNumber) setErrors({...errors, phoneNumber: ''});
-              }}
-              keyboardType="phone-pad"
-              maxLength={10}
-              error={errors.phoneNumber}
-            />
+            <View {...registerField('phoneNumber')}>
+              <Input
+                ref={registerInput('phoneNumber')}
+                label="Phone number"
+                placeholder="(201) 555-0123"
+                leftIcon={<PhonePrefixPrefix />}
+                value={phoneNumber}
+                onChangeText={(text) => {
+                  setPhoneNumber(text);
+                  if (errors.phoneNumber) setErrors({...errors, phoneNumber: ''});
+                }}
+                keyboardType="phone-pad"
+                maxLength={10}
+                error={errors.phoneNumber}
+              />
+            </View>
           </View>
 
           {/* Anonymity Preference Section */}

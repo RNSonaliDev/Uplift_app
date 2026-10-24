@@ -24,6 +24,7 @@ import { GooglePlacesAutocomplete, GooglePlacesAutocompleteRef } from 'react-nat
 import Geolocation from '@react-native-community/geolocation';
 import { DatePickerModal } from '../../../components/DatePickerModal';
 import { validateBusinessAddressWithAPI, ValidationResult } from '../../../utils/addressValidation';
+import { useFormScrollToError } from '../../../utils/useFormScrollToError';
 
 import { Colors } from '../../../theme/colors';
 import { Typography, FontFamily } from '../../../theme/typography';
@@ -175,7 +176,12 @@ export const RequestDetailsScreen = () => {
     language: 'en',
   }), []);
   const googlePlacesRef = useRef<GooglePlacesAutocompleteRef>(null);
-  const scrollViewRef = useRef<any>(null);
+  const {
+    scrollViewRef,
+    registerField,
+    registerInput,
+    scrollToFirstError,
+  } = useFormScrollToError();
   const scrollYRef = useRef<number>(0);
 
   const handleCurrentLocation = () => {
@@ -304,6 +310,18 @@ export const RequestDetailsScreen = () => {
 
     if (hasError) {
       setErrors(newErrors);
+      const addressErr = !address.trim()
+        ? 'Please enter an address'
+        : (addressValidation?.addressType === 'residential' || addressValidation?.isBusinessAddress === false)
+        ? 'For your safety, please use the business address'
+        : '';
+      const allErrors = {
+        title: newErrors.title,
+        description: newErrors.description,
+        time: newErrors.time,
+        address: addressErr,
+      };
+      scrollToFirstError(allErrors, ['title', 'description', 'time', 'address']);
       return;
     }
 
@@ -363,7 +381,13 @@ export const RequestDetailsScreen = () => {
       >
           
           {/* Category */}
-          <View style={styles.inputGroup}>
+          <View style={[styles.inputGroup, { position: 'relative', zIndex: 10 }]}>
+            {isCategoryModalOpen && (
+              <Pressable
+                style={styles.dropdownBackdrop}
+                onPress={() => setIsCategoryModalOpen(false)}
+              />
+            )}
             <Text style={styles.label}>Category <Text style={{color: Colors.error}}>*</Text></Text>
             <TouchableOpacity 
               style={[
@@ -378,7 +402,7 @@ export const RequestDetailsScreen = () => {
               <ChevronDown color={Colors.neutral[400]} size={20} />
             </TouchableOpacity>
             {isCategoryModalOpen && (
-              <ScrollView style={styles.inlineDropdownContent} nestedScrollEnabled={true} keyboardShouldPersistTaps="handled">
+              <ScrollView style={styles.inlineDropdownContent} nestedScrollEnabled={true} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={true}>
                 {categories.map(item => (
                   <TouchableOpacity
                     key={item.id}
@@ -403,9 +427,10 @@ export const RequestDetailsScreen = () => {
           </View>
 
           {/* Request Title */}
-          <View style={styles.inputGroup}>
+          <View {...registerField('title')} style={styles.inputGroup}>
             <Text style={styles.label}>Title <Text style={{color: Colors.error}}>*</Text></Text>
             <TextInput
+              ref={registerInput('title')}
               style={[styles.input, errors.title ? styles.inputError : null]}
               placeholder={placeholders.title}
               placeholderTextColor={Colors.neutral[400]}
@@ -427,9 +452,10 @@ export const RequestDetailsScreen = () => {
           </View>
 
           {/* Description */}
-          <View style={styles.inputGroup}>
+          <View {...registerField('description')} style={styles.inputGroup}>
             <Text style={styles.label}>Description <Text style={{color: Colors.error}}>*</Text></Text>
             <TextInput
+              ref={registerInput('description')}
               style={[styles.input, styles.textArea, errors.description ? styles.inputError : null]}
               placeholder={placeholders.desc}
               placeholderTextColor={Colors.neutral[400]}
@@ -532,27 +558,29 @@ export const RequestDetailsScreen = () => {
               </View>
             )}
           </View>
-          <View style={styles.row}>
-            <View style={[styles.inputGroup, { flex: 1, marginRight: 8, marginBottom: errors.time ? 8 : 24 }]}>
-              <Text style={styles.label}>Start Time <Text style={{color: Colors.error}}>*</Text></Text>
-              <TouchableOpacity style={[styles.dateInput, errors.time ? styles.inputError : null]} onPress={() => setIsStartTimePickerOpen(true)}>
-                <Text style={styles.dateText}>{formatTime(startTime)}</Text>
-                <Clock color={Colors.neutral[500]} size={20} />
-              </TouchableOpacity>
+          <View {...registerField('time')}>
+            <View style={styles.row}>
+              <View style={[styles.inputGroup, { flex: 1, marginRight: 8, marginBottom: errors.time ? 8 : 24 }]}>
+                <Text style={styles.label}>Start Time <Text style={{color: Colors.error}}>*</Text></Text>
+                <TouchableOpacity style={[styles.dateInput, errors.time ? styles.inputError : null]} onPress={() => setIsStartTimePickerOpen(true)}>
+                  <Text style={styles.dateText}>{formatTime(startTime)}</Text>
+                  <Clock color={Colors.neutral[500]} size={20} />
+                </TouchableOpacity>
+              </View>
+              <View style={[styles.inputGroup, { flex: 1, marginLeft: 8, marginBottom: errors.time ? 8 : 24 }]}>
+                <Text style={styles.label}>End Time <Text style={{color: Colors.error}}>*</Text></Text>
+                <TouchableOpacity style={[styles.dateInput, errors.time ? styles.inputError : null]} onPress={() => setIsEndTimePickerOpen(true)}>
+                  <Text style={styles.dateText}>{formatTime(endTime)}</Text>
+                  <Clock color={Colors.neutral[500]} size={20} />
+                </TouchableOpacity>
+              </View>
             </View>
-            <View style={[styles.inputGroup, { flex: 1, marginLeft: 8, marginBottom: errors.time ? 8 : 24 }]}>
-              <Text style={styles.label}>End Time <Text style={{color: Colors.error}}>*</Text></Text>
-              <TouchableOpacity style={[styles.dateInput, errors.time ? styles.inputError : null]} onPress={() => setIsEndTimePickerOpen(true)}>
-                <Text style={styles.dateText}>{formatTime(endTime)}</Text>
-                <Clock color={Colors.neutral[500]} size={20} />
-              </TouchableOpacity>
-            </View>
+            {!!errors.time && <Text style={[styles.errorText, { marginBottom: 24, marginTop: 0 }]}>{errors.time}</Text>}
           </View>
-          {!!errors.time && <Text style={[styles.errorText, { marginBottom: 24, marginTop: 0 }]}>{errors.time}</Text>}
 
         
         {/* Address */}
-        <View style={[styles.inputGroup, { zIndex: showAddressInfo ? 99999 : 9999, elevation: Platform.OS === 'android' ? (showAddressInfo ? 25 : 10) : undefined }]}>
+        <View {...registerField('address')} style={[styles.inputGroup, { zIndex: showAddressInfo ? 99999 : 9999, elevation: Platform.OS === 'android' ? (showAddressInfo ? 25 : 10) : undefined }]}>
           <View style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8}}>
             <View style={{flexDirection: 'row', alignItems: 'center'}}>
               <Text style={[styles.label, {marginBottom: 0}]}>Address <Text style={{color: Colors.error}}>*</Text></Text>
@@ -598,7 +626,10 @@ export const RequestDetailsScreen = () => {
             </>
           )}
           <GooglePlacesAutocomplete
-            ref={googlePlacesRef}
+            ref={(r) => {
+              googlePlacesRef.current = r;
+              registerInput('address')(r);
+            }}
             placeholder="Enter address"
             fetchDetails={true}
             enablePoweredByContainer={false}
@@ -1191,6 +1222,17 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 12,
     borderBottomRightRadius: 12,
     maxHeight: 250,
+    zIndex: 10,
+    elevation: 5,
+  },
+  dropdownBackdrop: {
+    position: 'absolute',
+    top: -4000,
+    bottom: -4000,
+    left: -4000,
+    right: -4000,
+    zIndex: 1,
+    backgroundColor: 'transparent',
   },
   modalOption: {
     paddingVertical: 16,
