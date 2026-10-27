@@ -335,9 +335,18 @@ export const BrowsePromotionsScreen = () => {
         activeOpacity={0.85}
         onPress={() => navigation.navigate('PromotionDetails', { id: item.id, promotion: item, isPublicView: true })}>
         <View style={styles.cardHeader}>
-          <View style={styles.typeBadge}>
-            <Megaphone size={14} color={Colors.primary[600]} style={{ marginRight: 6 }} />
-            <Text style={styles.typeBadgeText}>{promoType}</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+            <View style={styles.typeBadge}>
+              <Megaphone size={14} color={Colors.primary[600]} style={{ marginRight: 6 }} />
+              <Text style={styles.typeBadgeText}>{promoType}</Text>
+            </View>
+            {item.badge && (
+              <View style={[styles.typeBadge, { backgroundColor: Colors.primary[100] }]}>
+                <Text style={[styles.typeBadgeText, { color: Colors.primary[700], fontWeight: 'bold' }]}>
+                  ★ {item.badge}
+                </Text>
+              </View>
+            )}
           </View>
           <View style={styles.categoryBadge}>
             <Text style={styles.categoryText}>{categoryName}</Text>

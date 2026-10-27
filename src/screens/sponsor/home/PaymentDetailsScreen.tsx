@@ -111,6 +111,7 @@ export default function PaymentDetailsScreen() {
       const { error } = await initPaymentSheet({
         merchantDisplayName: 'Uplift',
         paymentIntentClientSecret: clientSecret,
+        returnURL: 'upliftapp://stripe-redirect',
         allowsDelayedPaymentMethods: true,
         paymentMethodOrder: ['card', 'us_bank_account'],
         link: {

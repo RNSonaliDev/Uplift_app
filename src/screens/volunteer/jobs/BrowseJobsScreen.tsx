@@ -138,8 +138,15 @@ export const BrowseJobsScreen = () => {
       onPress={() => navigation.navigate('VolunteerJobDetails', { job })}
       activeOpacity={0.7}
     >
-      {(job.department || job.job_type) && (
+      {(job.badge || job.department || job.job_type) && (
         <View style={styles.badgeRow}>
+          {job.badge && (
+            <View style={[styles.categoryBadge, { backgroundColor: Colors.primary[100], borderColor: Colors.primary[300] }]}>
+              <AppText variant="labelSmall" color={Colors.primary[700]} style={{ fontFamily: FontFamily.bold }}>
+                ★ {job.badge}
+              </AppText>
+            </View>
+          )}
           {job.department && (
             <View style={styles.categoryBadge}>
               <AppText variant="labelSmall" color={Colors.primary[700]}>

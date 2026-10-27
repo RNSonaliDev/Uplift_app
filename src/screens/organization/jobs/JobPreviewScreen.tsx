@@ -35,13 +35,24 @@ export const JobPreviewScreen = () => {
     try {
       setPublishing(true);
       if (isEditing && editJobId) {
-        await api.patch(`/job_posts/${editJobId}`, payload);
-        Toast.show({ type: 'success', text1: 'Success', text2: 'Job updated successfully!' });
+        const res: any = await api.patch(`/job_posts/${editJobId}`, payload);
+        if (res?.status === 'draft') {
+          Toast.show({ type: 'info', text1: 'Draft Saved', text2: 'Please select a plan to publish this job.' });
+          navigation.navigate('JobDetails', { job: res });
+        } else {
+          Toast.show({ type: 'success', text1: 'Success', text2: 'Job updated successfully!' });
+          navigation.navigate('OrganizationTabs', { screen: 'JobsTab' });
+        }
       } else {
-        await api.post<any>('/job_posts', payload);
-        Toast.show({ type: 'success', text1: 'Success', text2: 'Job published successfully!' });
+        const res: any = await api.post<any>('/job_posts', payload);
+        if (res?.status === 'draft') {
+          Toast.show({ type: 'info', text1: 'Draft Saved', text2: 'Please select a plan to publish this job.' });
+          navigation.navigate('JobDetails', { job: res });
+        } else {
+          Toast.show({ type: 'success', text1: 'Success', text2: 'Job published successfully!' });
+          navigation.navigate('OrganizationTabs', { screen: 'JobsTab' });
+        }
       }
-      navigation.navigate('OrganizationTabs', { screen: 'JobsTab' });
     } catch (error: any) {
       Toast.show({ type: 'error', text1: 'Error', text2: error?.data?.errors?.[0] || error?.message || 'Failed to publish job.' });
     } finally {

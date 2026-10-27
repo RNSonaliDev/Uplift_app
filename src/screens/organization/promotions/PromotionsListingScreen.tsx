@@ -22,6 +22,7 @@ import {
   Pencil,
   Trash2,
   XCircle,
+  Sparkles,
 } from 'lucide-react-native';
 import { Colors } from '../../../theme/colors';
 import { Typography, FontFamily } from '../../../theme/typography';
@@ -29,6 +30,7 @@ import { AppText } from '../../../components/AppText';
 import { horizontalScale, verticalScale, moderateScale, fontScale } from '../../../utils/responsive';
 import { api } from '../../../api/client';
 import { formatDate } from '../../../utils/dateFormatter';
+import { formatStatus, getStatusColors } from '../../../utils/statusUtils';
 import Toast from 'react-native-toast-message';
 
 export const PromotionsListingScreen = () => {
@@ -167,7 +169,7 @@ export const PromotionsListingScreen = () => {
   });
 
   const renderPromoCard = (item: any) => {
-    const statusStyle = getStatusStyle(item.status);
+    const statusStyle = getStatusColors(item.status);
     const promoTitle = item.business_name || item.title || 'Promotion';
     const promoType = item.promotion_type?.name || item.promotion_type_name || item.type || 'Promotion';
     const categoryName = item.product_category?.name || item.product_category_name || item.category || 'General';
@@ -215,33 +217,52 @@ export const PromotionsListingScreen = () => {
         activeOpacity={0.8}
         onPress={() => navigation.navigate('PromotionDetails', { id: item.id, promotion: item })}>
         <View style={styles.cardHeader}>
-          <View style={styles.typeBadge}>
-            <Megaphone size={14} color={Colors.primary[600]} style={{ marginRight: 6 }} />
-            <Text style={styles.typeBadgeText}>{promoType}</Text>
-          </View>
-          {!((item.status || '').toLowerCase() === 'closed' || (item.status || '').toLowerCase() === 'expired') && (
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <TouchableOpacity
-                style={{ padding: 6, marginRight: 6 }}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                onPress={(e) => {
-                  e.stopPropagation();
-                  navigation.navigate('CreatePromotion', { promotionToEdit: item });
-                }}>
-                <Pencil size={22} color={Colors.primary[600]} />
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={{ padding: 6 }}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                onPress={(e) => {
-                  e.stopPropagation();
-                  handleDeletePromotion(item);
-                }}>
-                <Trash2 size={22} color={Colors.error} />
-              </TouchableOpacity>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+            <View style={styles.typeBadge}>
+              <Megaphone size={14} color={Colors.primary[600]} style={{ marginRight: 6 }} />
+              <Text style={styles.typeBadgeText}>{promoType}</Text>
             </View>
-          )}
+            {item.badge && (
+              <View style={[styles.typeBadge, { backgroundColor: Colors.primary[100] }]}>
+                <Sparkles size={12} color={Colors.primary[700]} style={{ marginRight: 4 }} />
+                <Text style={[styles.typeBadgeText, { color: Colors.primary[700], fontFamily: FontFamily.bold }]}>
+                  {item.badge}
+                </Text>
+              </View>
+            )}
+          </View>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            {item.status ? (
+              <View style={[styles.statusBadge, { backgroundColor: statusStyle.bg }]}>
+                <Text style={[styles.statusText, { color: statusStyle.text }]}>
+                  {formatStatus(item.status)}
+                </Text>
+              </View>
+            ) : null}
+            {!((item.status || '').toLowerCase() === 'closed' || (item.status || '').toLowerCase() === 'expired') && (
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginLeft: 6 }}>
+                <TouchableOpacity
+                  style={{ padding: 4, marginRight: 4 }}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  onPress={(e) => {
+                    e.stopPropagation();
+                    navigation.navigate('CreatePromotion', { promotionToEdit: item });
+                  }}>
+                  <Pencil size={20} color={Colors.primary[600]} />
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={{ padding: 4 }}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  onPress={(e) => {
+                    e.stopPropagation();
+                    handleDeletePromotion(item);
+                  }}>
+                  <Trash2 size={20} color={Colors.error} />
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
         </View>
 
         <Text style={styles.promoTitle}>{promoTitle}</Text>

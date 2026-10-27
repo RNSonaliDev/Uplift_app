@@ -5,3 +5,4 @@ export * from './donations';
 export * from './notifications';
 export * from './support';
 export * from './emergencyContacts';
+export * from './plans';

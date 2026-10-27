@@ -62,6 +62,7 @@ export const VolunteerJobDetailsScreen = () => {
           </AppText>
         </View>
 
+
         {job.department && (
           <View style={styles.detailRowItem}>
             <View style={styles.detailLabelRow}>

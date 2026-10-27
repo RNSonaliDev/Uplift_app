@@ -36,6 +36,16 @@
 				<string>com.googleusercontent.apps.49775382219-ia43pma3ngtr7ubj864pn5aajprqgmd1</string>
 			</array>
 		</dict>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>upliftapp</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>upliftapp</string>
+			</array>
+		</dict>
 	</array>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>

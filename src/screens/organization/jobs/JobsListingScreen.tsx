@@ -47,22 +47,38 @@ export const JobsListingScreen = () => {
         onPress={() => navigation.navigate('JobDetails', { job })}
         activeOpacity={0.7}
       >
-        {(job.department || job.job_type) && (
+        {(job.department || job.job_type || job.status) && (
           <View style={styles.badgeRow}>
-            {job.department && (
-              <View style={styles.categoryBadge}>
-                <AppText variant="labelSmall" color={Colors.primary[700]}>
-                  {typeof job.department === 'object' && job.department !== null ? job.department.title : job.department}
+            <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, flexWrap: 'wrap', gap: 6, marginRight: 8 }}>
+              {job.badge && (
+                <View style={[styles.categoryBadge, { backgroundColor: Colors.primary[100], borderColor: Colors.primary[300] }]}>
+                  <AppText variant="labelSmall" color={Colors.primary[700]} style={{ fontFamily: FontFamily.bold }}>
+                    ★ {job.badge}
+                  </AppText>
+                </View>
+              )}
+              {job.department && (
+                <View style={styles.categoryBadge}>
+                  <AppText variant="labelSmall" color={Colors.primary[700]}>
+                    {typeof job.department === 'object' && job.department !== null ? job.department.title : job.department}
+                  </AppText>
+                </View>
+              )}
+              {job.job_type && (
+                <View style={styles.subCategoryBadge}>
+                  <AppText variant="labelSmall" color={Colors.neutral[600]}>
+                    {job.job_type}
+                  </AppText>
+                </View>
+              )}
+            </View>
+            {job.status ? (
+              <View style={[styles.statusBadge, { backgroundColor: statusStyle.bg, borderWidth: 0 }]}>
+                <AppText variant="labelSmall" color={statusStyle.text} style={{ fontFamily: FontFamily.semiBold }}>
+                  {formatStatus(job.status)}
                 </AppText>
               </View>
-            )}
-            {job.job_type && (
-              <View style={styles.subCategoryBadge}>
-                <AppText variant="labelSmall" color={Colors.neutral[600]}>
-                  {job.job_type}
-                </AppText>
-              </View>
-            )}
+            ) : null}
           </View>
         )}
 

@@ -86,20 +86,33 @@ export const PromotionPreviewScreen = () => {
         };
       }
 
+      let savedPromo: any = null;
       if (isEditing && targetId) {
-        await api.put(`/promotions/${targetId}`, payloadToUse);
+        savedPromo = await api.put(`/promotions/${targetId}`, payloadToUse);
       } else if (!targetId) {
-        const createRes: any = await api.post('/promotions', payloadToUse);
-        targetId = createRes?.id || createRes?.promotion?.id;
+        savedPromo = await api.post('/promotions', payloadToUse);
+        targetId = savedPromo?.id || savedPromo?.promotion?.id;
       }
 
-      Toast.show({
-        type: 'success',
-        text1: 'Success',
-        text2: 'Promotion published successfully!',
-      });
-
-      navigation.navigate('OrganizationTabs', { screen: 'PromotionsTab' });
+      const status = (savedPromo?.status || savedPromo?.promotion?.status || '').toLowerCase();
+      if (status === 'draft' && targetId) {
+        Toast.show({
+          type: 'info',
+          text1: 'Draft Saved',
+          text2: 'Please select a plan to publish this promotion.',
+        });
+        navigation.navigate('PromotionDetails', {
+          id: targetId,
+          promotion: savedPromo?.promotion || savedPromo,
+        });
+      } else {
+        Toast.show({
+          type: 'success',
+          text1: 'Success',
+          text2: isEditing ? 'Promotion updated successfully!' : 'Promotion published successfully!',
+        });
+        navigation.navigate('OrganizationTabs', { screen: 'PromotionsTab' });
+      }
     } catch (error: any) {
       console.error('Failed to publish promotion', error);
       Toast.show({
