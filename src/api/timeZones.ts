@@ -167,29 +167,6 @@ export const getTimeZoneCodeFromZipCode = (zipCode?: string | null): string | nu
   return null;
 };
 
-/**
- * Extracts a 5-digit US zip code from address string or Google Places details
- */
-export const extractZipCodeFromAddress = (address?: string | null, details?: any): string | null => {
-  if (details?.address_components && Array.isArray(details.address_components)) {
-    const postalComponent = details.address_components.find((comp: any) =>
-      comp.types?.includes('postal_code')
-    );
-    if (postalComponent?.short_name) {
-      return postalComponent.short_name.slice(0, 5);
-    }
-  }
-
-  if (address) {
-    const match = address.match(/\b(\d{5})(?:-\d{4})?\b/);
-    if (match) {
-      return match[1];
-    }
-  }
-
-  return null;
-};
-
 export const findTimeZoneByCode = (code: string, timeZones: TimeZone[]): TimeZone | undefined => {
   return timeZones.find(tz => tz.code.toUpperCase() === code.toUpperCase());
 };

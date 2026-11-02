@@ -21,7 +21,6 @@ interface TimeZonePickerModalProps {
   timeZones: TimeZone[];
   selectedTimeZone: TimeZone | null;
   onSelect: (timeZone: TimeZone) => void;
-  detectedZipCode?: string | null;
 }
 
 export const TimeZonePickerModal: React.FC<TimeZonePickerModalProps> = ({
@@ -30,7 +29,6 @@ export const TimeZonePickerModal: React.FC<TimeZonePickerModalProps> = ({
   timeZones,
   selectedTimeZone,
   onSelect,
-  detectedZipCode,
 }) => {
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
@@ -42,16 +40,9 @@ export const TimeZonePickerModal: React.FC<TimeZonePickerModalProps> = ({
               <View style={styles.iconContainer}>
                 <Globe size={18} color={Colors.primary[600]} />
               </View>
-              <View>
-                <AppText variant="h5" color={Colors.neutral[900]} style={{ fontFamily: FontFamily.semiBold }}>
-                  Select Time Zone
-                </AppText>
-                {detectedZipCode ? (
-                  <AppText variant="caption" color={Colors.primary[600]} style={{ marginTop: 2 }}>
-                    Auto-detected for ZIP: {detectedZipCode}
-                  </AppText>
-                ) : null}
-              </View>
+              <AppText variant="h5" color={Colors.neutral[900]} style={{ fontFamily: FontFamily.semiBold }}>
+                Select Time Zone
+              </AppText>
             </View>
             <TouchableOpacity onPress={onClose} style={styles.closeBtn} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
               <X size={22} color={Colors.neutral[500]} />

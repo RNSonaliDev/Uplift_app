@@ -31,7 +31,6 @@ import {
   timeZonesApi,
   TimeZone,
   getTimeZoneCodeFromZipCode,
-  extractZipCodeFromAddress,
   findTimeZoneByCode,
 } from '../../../api/timeZones';
 import { authApi } from '../../../api/auth';
@@ -103,7 +102,6 @@ export const RequestDetailsScreen = () => {
   const [selectedTimeZone, setSelectedTimeZone] = useState<TimeZone | null>(null);
   const timeZonesRef = useRef<TimeZone[]>([]);
   const [isTimeZoneModalOpen, setIsTimeZoneModalOpen] = useState(false);
-  const [detectedZipCode, setDetectedZipCode] = useState<string | null>(null);
 
   useEffect(() => {
     const loadTimeZones = async () => {
@@ -118,9 +116,8 @@ export const RequestDetailsScreen = () => {
         try {
           const profileRes = await authApi.getProfile();
           const activeProf = profileRes?.active_profile;
-          const userZip = activeProf?.zip_code || extractZipCodeFromAddress(activeProf?.address);
+          const userZip = activeProf?.zip_code;
           if (userZip) {
-            setDetectedZipCode(userZip);
             const tzCode = getTimeZoneCodeFromZipCode(userZip);
             if (tzCode) {
               const matched = findTimeZoneByCode(tzCode, list);
@@ -285,19 +282,6 @@ export const RequestDetailsScreen = () => {
         
         setAddress(fetchedAddress);
         googlePlacesRef.current?.setAddressText(fetchedAddress);
-
-        const zip = extractZipCodeFromAddress(fetchedAddress, data.results[0]);
-        if (zip) {
-          setDetectedZipCode(zip);
-          const tzCode = getTimeZoneCodeFromZipCode(zip);
-          if (tzCode) {
-            const activeList = timeZonesRef.current.length > 0 ? timeZonesRef.current : timeZones;
-            const matched = findTimeZoneByCode(tzCode, activeList);
-            if (matched) {
-              setSelectedTimeZone(matched);
-            }
-          }
-        }
       }
     } catch (error) {
       console.error('Error fetching reverse geocoding:', error);
@@ -657,14 +641,7 @@ export const RequestDetailsScreen = () => {
 
           {/* Time Zone */}
           <View style={[styles.inputGroup, { marginBottom: 24 }]}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-              <Text style={[styles.label, { marginBottom: 0 }]}>Time Zone <Text style={{color: Colors.error}}>*</Text></Text>
-              {detectedZipCode ? (
-                <AppText variant="caption" color={Colors.primary[600]} style={{ fontFamily: FontFamily.medium }}>
-                  Auto-detected (ZIP: {detectedZipCode})
-                </AppText>
-              ) : null}
-            </View>
+            <Text style={styles.label}>Time Zone <Text style={{color: Colors.error}}>*</Text></Text>
             <TouchableOpacity 
               style={[styles.dateInput, { justifyContent: 'space-between' }]} 
               onPress={() => setIsTimeZoneModalOpen(true)}
@@ -764,19 +741,6 @@ export const RequestDetailsScreen = () => {
                     latitude: details.geometry.location.lat,
                     longitude: details.geometry.location.lng,
                   });
-                }
-
-                const zip = extractZipCodeFromAddress(selectedAddr, details);
-                if (zip) {
-                  setDetectedZipCode(zip);
-                  const tzCode = getTimeZoneCodeFromZipCode(zip);
-                  if (tzCode) {
-                    const activeList = timeZonesRef.current.length > 0 ? timeZonesRef.current : timeZones;
-                    const matched = findTimeZoneByCode(tzCode, activeList);
-                    if (matched) {
-                      setSelectedTimeZone(matched);
-                    }
-                  }
                 }
               }
               setTimeout(() => {
@@ -966,7 +930,6 @@ export const RequestDetailsScreen = () => {
         onClose={() => setIsTimeZoneModalOpen(false)}
         timeZones={timeZones}
         selectedTimeZone={selectedTimeZone}
-        detectedZipCode={detectedZipCode}
         onSelect={(tz) => setSelectedTimeZone(tz)}
       />
 

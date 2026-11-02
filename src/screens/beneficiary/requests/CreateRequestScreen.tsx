@@ -44,7 +44,6 @@ import {
   timeZonesApi,
   TimeZone,
   getTimeZoneCodeFromZipCode,
-  extractZipCodeFromAddress,
   findTimeZoneByCode,
 } from '../../../api/timeZones';
 
@@ -461,7 +460,6 @@ export default function CreateRequestScreen() {
   const [selectedTimeZone, setSelectedTimeZone] = useState<TimeZone | null>(null);
   const timeZonesRef = useRef<TimeZone[]>([]);
   const [isTimeZoneModalOpen, setIsTimeZoneModalOpen] = useState(false);
-  const [detectedZipCode, setDetectedZipCode] = useState<string | null>(null);
 
   useEffect(() => {
     const loadTimeZones = async () => {
@@ -476,9 +474,8 @@ export default function CreateRequestScreen() {
         try {
           const profileRes = await authApi.getProfile();
           const activeProf = profileRes?.active_profile;
-          const userZip = activeProf?.zip_code || extractZipCodeFromAddress(activeProf?.address);
+          const userZip = activeProf?.zip_code;
           if (userZip) {
-            setDetectedZipCode(userZip);
             const tzCode = getTimeZoneCodeFromZipCode(userZip);
             if (tzCode) {
               const matched = findTimeZoneByCode(tzCode, list);
@@ -573,19 +570,6 @@ export default function CreateRequestScreen() {
 
         handleChange('meeting_location', address);
         googlePlacesRef.current?.setAddressText(address);
-
-        const zip = extractZipCodeFromAddress(address, data.results[0]);
-        if (zip) {
-          setDetectedZipCode(zip);
-          const tzCode = getTimeZoneCodeFromZipCode(zip);
-          if (tzCode) {
-            const activeList = timeZonesRef.current.length > 0 ? timeZonesRef.current : timeZones;
-            const matched = findTimeZoneByCode(tzCode, activeList);
-            if (matched) {
-              setSelectedTimeZone(matched);
-            }
-          }
-        }
       }
     } catch (error) {
       console.log('Reverse geocoding error:', error);
@@ -961,21 +945,14 @@ export default function CreateRequestScreen() {
 
           {/* Time Zone */}
           <View style={{ marginBottom: 16 }}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-              <AppText variant="labelLarge" color={Colors.neutral[700]}>
-                Time Zone <AppText color={Colors.error}>*</AppText>
-              </AppText>
-              {detectedZipCode ? (
-                <AppText variant="caption" color={Colors.primary[600]} style={{ fontFamily: FontFamily.medium }}>
-                  Auto-detected (ZIP: {detectedZipCode})
-                </AppText>
-              ) : null}
-            </View>
+            <AppText variant="labelLarge" color={Colors.neutral[700]} style={{ marginBottom: 6 }}>
+              Time Zone <AppText color={Colors.error}>*</AppText>
+            </AppText>
             <TouchableOpacity onPress={() => setIsTimeZoneModalOpen(true)} activeOpacity={0.7}>
               <View pointerEvents="box-only">
                 <Input
                   placeholder="Select Time Zone"
-                  value={selectedTimeZone?.label || 'CT — Central'}
+                  value={selectedTimeZone?.label || ''}
                   editable={false}
                   leftIcon={<Globe color={Colors.neutral[400]} size={20} />}
                   rightIcon={<ChevronDown color={Colors.neutral[400]} size={20} />}
@@ -1079,19 +1056,6 @@ export default function CreateRequestScreen() {
                       longitude: details.geometry.location.lng,
                     });
                   }
-
-                  const zip = extractZipCodeFromAddress(selectedAddr, details);
-                  if (zip) {
-                    setDetectedZipCode(zip);
-                    const tzCode = getTimeZoneCodeFromZipCode(zip);
-                    if (tzCode) {
-                      const activeList = timeZonesRef.current.length > 0 ? timeZonesRef.current : timeZones;
-                      const matched = findTimeZoneByCode(tzCode, activeList);
-                      if (matched) {
-                        setSelectedTimeZone(matched);
-                      }
-                    }
-                  }
                 }
                 setTimeout(() => {
                   scrollViewRef.current?.scrollToPosition?.(0, currentScrollY, false);
@@ -1179,7 +1143,6 @@ export default function CreateRequestScreen() {
           onClose={() => setIsTimeZoneModalOpen(false)}
           timeZones={timeZones}
           selectedTimeZone={selectedTimeZone}
-          detectedZipCode={detectedZipCode}
           onSelect={(tz) => setSelectedTimeZone(tz)}
         />
 
