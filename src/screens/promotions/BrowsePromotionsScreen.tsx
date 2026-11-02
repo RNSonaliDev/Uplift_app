@@ -19,7 +19,6 @@ import {
   Tag,
   MapPin,
   Calendar,
-  Eye,
   Search,
   SlidersHorizontal,
   X,
@@ -27,7 +26,7 @@ import {
   ChevronDown,
 } from 'lucide-react-native';
 import { Colors } from '../../theme/colors';
-import { Typography, FontFamily } from '../../theme/typography';
+import { FontFamily } from '../../theme/typography';
 import { AppText } from '../../components/AppText';
 import { Button } from '../../components/Button';
 import { horizontalScale, verticalScale, moderateScale, fontScale } from '../../utils/responsive';
@@ -166,14 +165,6 @@ export const BrowsePromotionsScreen = () => {
       }
     }, [fetchPromotions])
   );
-
-  const openFilterModal = () => {
-    setTempTypeId(selectedTypeId);
-    setTempCategoryId(selectedCategoryId);
-    setTempZipCode(zipCodeQuery);
-    setTempLocationMode(selectedLocationMode);
-    setIsFilterModalVisible(true);
-  };
 
   const applyFilters = () => {
     setSelectedTypeId(tempTypeId);
@@ -322,12 +313,6 @@ export const BrowsePromotionsScreen = () => {
       ? `${formatDateVal(availableFrom)} - ${formatDateVal(availableUntil)}`
       : (item.dates || 'Valid');
 
-    const quantity = item.quantity_available !== null && item.quantity_available !== undefined
-      ? `${item.quantity_available} Available`
-      : (item.quantity || 'Unlimited');
-
-    const views = item.views_count || item.views || 0;
-
     return (
       <TouchableOpacity
         key={item.id?.toString() || Math.random().toString()}
@@ -377,10 +362,6 @@ export const BrowsePromotionsScreen = () => {
           <View style={styles.metaItem}>
             <Calendar size={14} color={Colors.neutral[500]} />
             <Text style={styles.metaText}>{dateRange}</Text>
-          </View>
-          <View style={styles.metaItem}>
-            <Eye size={14} color={Colors.neutral[500]} />
-            <Text style={styles.metaText}>{views} Views</Text>
           </View>
         </View>
       </TouchableOpacity>

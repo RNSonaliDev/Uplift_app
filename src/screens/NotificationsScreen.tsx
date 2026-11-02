@@ -108,10 +108,10 @@ export default function NotificationsScreen() {
 
   const handleNotificationPress = async (item: AppNotification) => {
     console.log("@@@ itemitemitemitem=====", item)
-    // const isUnread = item.is_read === false || (item.is_read === undefined && !(item as any).read);
-    // if (isUnread) {
-    //   handleMarkAsRead(item.id);
-    // }
+    const isUnread = item.is_read === false || (item.is_read === undefined && !(item as any).read);
+    if (isUnread) {
+      handleMarkAsRead(item.id);
+    }
 
     // const refId = item.reference_id || (item as any).notifiable_id || (item as any).help_request_id || (item as any).data?.help_request_id;
     // const titleAndMsg = `${item.title || ''} ${item.message || (item as any).body || ''}`.toLowerCase();

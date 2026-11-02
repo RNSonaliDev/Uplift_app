@@ -1,8 +1,6 @@
 import React from 'react';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
-import {View, Text} from 'react-native';
 import {Colors} from '../theme/colors';
-import {Typography, FontFamily} from '../theme/typography';
 import {Home, Search, Calendar, Briefcase, User, Megaphone} from 'lucide-react-native';
 
 import VolunteerHomeStack from './VolunteerHomeStack';
@@ -13,13 +11,6 @@ import BeneficiaryProfileStack from './BeneficiaryProfileStack';
 import {BrowsePromotionsScreen} from '../screens/promotions/BrowsePromotionsScreen';
 
 const Tab = createBottomTabNavigator();
-
-// Dummy component for unimplemented tabs
-const DummyScreen = () => (
-  <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
-    <Text>Coming Soon</Text>
-  </View>
-);
 
 import { getFocusedRouteNameFromRoute } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -32,9 +23,9 @@ export function VolunteerTabNavigator() {
         const routeName = getFocusedRouteNameFromRoute(route) ?? '';
         const hiddenRoutes = [
           'RequestDetails', 'RequestAccepted', 'ParentTaskVerification', 'StartRequest', 
-          'CompleteRequest', 'RateExperience', 'VolunteerJobDetails', 'EditProfile',
+          'CompleteRequest', 'RateExperience', 'VolunteerJobDetails', 'EditProfile', 'ProfilePreview',
           'Settings', 'LegalContent', 'EmergencyContacts', 'ContactSupport', 'ContactSupportDetails', 'CreateSupportRequest',
-          'ChatScreen', 'PromotionDetails'
+          'ChatScreen', 'PromotionDetails', 'FAQ', 'Policies'
         ];
         const isHidden = hiddenRoutes.includes(routeName);
 

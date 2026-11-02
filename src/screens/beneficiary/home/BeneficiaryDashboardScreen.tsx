@@ -1,4 +1,4 @@
-import React, {useState, useCallback} from 'react';
+import React, {useState, useCallback, useMemo} from 'react';
 import {
   View,
   Text,
@@ -16,7 +16,7 @@ import {authApi, CategoryResponse, UserProfileResponse} from '../../../api/auth'
 import {notificationsApi, AppNotification} from '../../../api/notifications';
 import {AppText} from '../../../components/AppText';
 import {Colors} from '../../../theme/colors';
-import {Typography, FontFamily} from '../../../theme/typography';
+import {Typography, FontFamily, FontSize} from '../../../theme/typography';
 import {horizontalScale, verticalScale, moderateScale} from '../../../utils/responsive';
 import {formatDate, formatTime12Hour} from '../../../utils/dateFormatter';
 import {formatStatus, getStatusColors} from '../../../utils/statusUtils';
@@ -33,6 +33,7 @@ import {
   ShoppingCart,
   Pill,
   ChevronRight,
+  ChevronDown,
   MapPin,
   Calendar,
   FileText,
@@ -104,6 +105,25 @@ export default function BeneficiaryDashboardScreen() {
     setRefreshing(false);
   }, [fetchData]);
 
+  const userRoles = useMemo(() => {
+    const rawRoles = profile?.roles?.map((r: any) => (typeof r === 'string' ? r : r.role || r.name || r)) || [];
+    const profileKeys = Object.keys(profile?.profiles || {});
+    return Array.from(new Set([...rawRoles, ...profileKeys].filter(Boolean)));
+  }, [profile]);
+
+  const hasMultipleRoles = userRoles.length > 1;
+
+  const handleRolePress = () => {
+    if (hasMultipleRoles) {
+      navigation.navigate('DashboardRoleSelection', {
+        selectedRoles: userRoles,
+        currentRole: profile?.default_role || 'beneficiary',
+      });
+    } else {
+      navigation.navigate('SelectRoles', { fromProfile: true });
+    }
+  };
+
   return (
     <>
       <SafeAreaView style={{ flex: 0, backgroundColor: Colors.primary[500] }} />
@@ -135,12 +155,36 @@ export default function BeneficiaryDashboardScreen() {
                 <AppText variant="bodyLarge" style={styles.welcomeText}>
                   Welcome back,
                 </AppText>
-                <AppText variant="bodyLarge" style={[styles.nameText, {fontWeight: "400"}]}>
+                <AppText variant="bodyLarge" style={[styles.nameText, {fontWeight: "400"}]} numberOfLines={1}>
                   {profile?.profiles?.beneficiary?.first_name || profile?.first_name || 'User'}
                 </AppText>
               </View>
             </View>
-            <View style={{flexDirection: 'row', alignItems: 'center'}}>
+            <View style={{flexDirection: 'row', alignItems: 'center', gap: 8}}>
+              {profile && (
+                <TouchableOpacity
+                  style={styles.roleActionButton}
+                  onPress={handleRolePress}
+                  activeOpacity={0.75}
+                >
+                  <View style={styles.roleIconContainer}>
+                    {hasMultipleRoles ? (
+                      <ArrowRightLeft color={Colors.neutral[0]} size={12} strokeWidth={2.4} />
+                    ) : (
+                      <Plus color={Colors.neutral[0]} size={12} strokeWidth={2.4} />
+                    )}
+                  </View>
+                  <Text style={styles.roleActionText}>
+                    Role
+                  </Text>
+                  {hasMultipleRoles ? (
+                    <ChevronDown color={Colors.neutral[0]} size={12} strokeWidth={2.4} style={styles.chevronIcon} />
+                  ) : (
+                    <ChevronRight color={Colors.neutral[0]} size={12} strokeWidth={2.4} style={styles.chevronIcon} />
+                  )}
+                </TouchableOpacity>
+              )}
+
               <TouchableOpacity style={styles.notificationBtn} onPress={() => navigation.navigate('Notifications')}>
                 <Bell color={Colors.neutral[0]} size={24} />
                 {unreadNotifications && <View style={styles.notificationDot} />}
@@ -360,6 +404,35 @@ const styles = StyleSheet.create({
     ...Typography.h3,
     color: Colors.neutral[0],
     marginTop: verticalScale(4),
+  },
+  roleActionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.18)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.32)',
+    paddingLeft: horizontalScale(6),
+    paddingRight: horizontalScale(10),
+    paddingVertical: verticalScale(5),
+    borderRadius: moderateScale(20),
+    gap: horizontalScale(5),
+  },
+  roleIconContainer: {
+    width: moderateScale(20),
+    height: moderateScale(20),
+    borderRadius: moderateScale(10),
+    backgroundColor: 'rgba(255, 255, 255, 0.22)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  roleActionText: {
+    fontFamily: FontFamily.semiBold,
+    fontSize: FontSize.xs,
+    color: Colors.neutral[0],
+    letterSpacing: 0.2,
+  },
+  chevronIcon: {
+    opacity: 0.85,
   },
   notificationBtn: {
     padding: moderateScale(8),

@@ -10,6 +10,7 @@ import {
   ScrollView,
   Platform,
   KeyboardAvoidingView,
+  Keyboard,
   Modal,
   Pressable,
   Dimensions,
@@ -18,13 +19,22 @@ import Svg, { Path, Circle } from 'react-native-svg';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ChevronLeft, ChevronDown, Calendar as CalendarIcon, Clock, CheckSquare, Square, MapPin, Crosshair, Map as MapIcon, Minus, Plus, Navigation, X } from 'lucide-react-native';
+import { ChevronLeft, ChevronDown, Calendar as CalendarIcon, Clock, CheckSquare, Square, MapPin, Crosshair, Map as MapIcon, Minus, Plus, Navigation, X, Globe } from 'lucide-react-native';
 import MapView, { Marker, Circle as MapCircle } from 'react-native-maps';
 import { GooglePlacesAutocomplete, GooglePlacesAutocompleteRef } from 'react-native-google-places-autocomplete';
 import Geolocation from '@react-native-community/geolocation';
 import { DatePickerModal } from '../../../components/DatePickerModal';
 import { validateBusinessAddressWithAPI, ValidationResult } from '../../../utils/addressValidation';
 import { useFormScrollToError } from '../../../utils/useFormScrollToError';
+import { TimeZonePickerModal } from '../../../components/TimeZonePickerModal';
+import {
+  timeZonesApi,
+  TimeZone,
+  getTimeZoneCodeFromZipCode,
+  extractZipCodeFromAddress,
+  findTimeZoneByCode,
+} from '../../../api/timeZones';
+import { authApi } from '../../../api/auth';
 
 import { Colors } from '../../../theme/colors';
 import { Typography, FontFamily } from '../../../theme/typography';
@@ -88,6 +98,50 @@ export const RequestDetailsScreen = () => {
 
   const [endTime, setEndTime] = useState(new Date());
   const [isEndTimePickerOpen, setIsEndTimePickerOpen] = useState(false);
+
+  const [timeZones, setTimeZones] = useState<TimeZone[]>([]);
+  const [selectedTimeZone, setSelectedTimeZone] = useState<TimeZone | null>(null);
+  const timeZonesRef = useRef<TimeZone[]>([]);
+  const [isTimeZoneModalOpen, setIsTimeZoneModalOpen] = useState(false);
+  const [detectedZipCode, setDetectedZipCode] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadTimeZones = async () => {
+      try {
+        const res = await timeZonesApi.getTimeZones();
+        const list = res?.time_zones || [];
+        setTimeZones(list);
+        timeZonesRef.current = list;
+
+        let initialTz: TimeZone | null = res?.default_timezone || (list.length > 0 ? list[0] : null);
+
+        try {
+          const profileRes = await authApi.getProfile();
+          const activeProf = profileRes?.active_profile;
+          const userZip = activeProf?.zip_code || extractZipCodeFromAddress(activeProf?.address);
+          if (userZip) {
+            setDetectedZipCode(userZip);
+            const tzCode = getTimeZoneCodeFromZipCode(userZip);
+            if (tzCode) {
+              const matched = findTimeZoneByCode(tzCode, list);
+              if (matched) {
+                initialTz = matched;
+              }
+            }
+          }
+        } catch (e) {
+          // Profile zip fetch ignored
+        }
+
+        if (initialTz) {
+          setSelectedTimeZone(initialTz);
+        }
+      } catch (err) {
+        console.warn('Error loading time zones from API:', err);
+      }
+    };
+    loadTimeZones();
+  }, []);
 
   const formatDate = (date: Date) => {
     const day = String(date.getDate()).padStart(2, '0');
@@ -176,6 +230,7 @@ export const RequestDetailsScreen = () => {
     language: 'en',
   }), []);
   const googlePlacesRef = useRef<GooglePlacesAutocompleteRef>(null);
+  const descInputRef = useRef<TextInput>(null);
   const {
     scrollViewRef,
     registerField,
@@ -223,13 +278,26 @@ export const RequestDetailsScreen = () => {
         const validationData = await validateBusinessAddressWithAPI(fetchedAddress, GOOGLE_MAPS_API_KEY);
         setAddressValidation(validationData);
         if (validationData?.addressType === 'residential' || validationData?.isBusinessAddress === false) {
-          setAddressError('For your safety, please use the business address');
+          setAddressError('Enter a nearby business address to match you with nearby requests— your exact location is never shared with anyone');
         } else {
           setAddressError('');
         }
         
         setAddress(fetchedAddress);
         googlePlacesRef.current?.setAddressText(fetchedAddress);
+
+        const zip = extractZipCodeFromAddress(fetchedAddress, data.results[0]);
+        if (zip) {
+          setDetectedZipCode(zip);
+          const tzCode = getTimeZoneCodeFromZipCode(zip);
+          if (tzCode) {
+            const activeList = timeZonesRef.current.length > 0 ? timeZonesRef.current : timeZones;
+            const matched = findTimeZoneByCode(tzCode, activeList);
+            if (matched) {
+              setSelectedTimeZone(matched);
+            }
+          }
+        }
       }
     } catch (error) {
       console.error('Error fetching reverse geocoding:', error);
@@ -304,7 +372,7 @@ export const RequestDetailsScreen = () => {
       setAddressError('Please enter an address');
       hasError = true;
     } else if (addressValidation?.addressType === 'residential' || addressValidation?.isBusinessAddress === false) {
-      setAddressError('For your safety, please use the business address');
+      setAddressError('Enter a nearby business address to match you with nearby requests— your exact location is never shared with anyone');
       hasError = true;
     }
 
@@ -313,7 +381,7 @@ export const RequestDetailsScreen = () => {
       const addressErr = !address.trim()
         ? 'Please enter an address'
         : (addressValidation?.addressType === 'residential' || addressValidation?.isBusinessAddress === false)
-        ? 'For your safety, please use the business address'
+        ? 'Enter a nearby business address to match you with nearby requests— your exact location is never shared with anyone'
         : '';
       const allErrors = {
         title: newErrors.title,
@@ -335,6 +403,9 @@ export const RequestDetailsScreen = () => {
       startTime: formatTime(startTime),
       endDate: isMultipleDates ? formatDate(endDate) : formatDate(startDate),
       endTime: formatTime(endTime),
+      timeZone: selectedTimeZone,
+      timeZoneId: selectedTimeZone?.id,
+      timeZoneCode: selectedTimeZone?.code,
       startDateISO: startDate.toISOString().split('T')[0],
       startTimeISO: startTime.toTimeString().substring(0, 5),
       endDateISO: isMultipleDates ? endDate.toISOString().split('T')[0] : startDate.toISOString().split('T')[0],
@@ -365,6 +436,10 @@ export const RequestDetailsScreen = () => {
         <View style={{ width: 40 }} />
       </View>
 
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={{ flex: 1 }}
+      >
       <KeyboardAwareScrollView 
         ref={scrollViewRef}
         style={styles.flex1} 
@@ -382,12 +457,6 @@ export const RequestDetailsScreen = () => {
           
           {/* Category */}
           <View style={[styles.inputGroup, { position: 'relative', zIndex: 10 }]}>
-            {isCategoryModalOpen && (
-              <Pressable
-                style={styles.dropdownBackdrop}
-                onPress={() => setIsCategoryModalOpen(false)}
-              />
-            )}
             <Text style={styles.label}>Category <Text style={{color: Colors.error}}>*</Text></Text>
             <TouchableOpacity 
               style={[
@@ -440,6 +509,8 @@ export const RequestDetailsScreen = () => {
                 if (errors.title) setErrors(prev => ({ ...prev, title: '' }));
               }}
               maxLength={20}
+              returnKeyType="next"
+              onSubmitEditing={() => descInputRef.current?.focus()}
             />
             <View style={styles.descriptionFooter}>
               {!!errors.title ? (
@@ -455,7 +526,10 @@ export const RequestDetailsScreen = () => {
           <View {...registerField('description')} style={styles.inputGroup}>
             <Text style={styles.label}>Description <Text style={{color: Colors.error}}>*</Text></Text>
             <TextInput
-              ref={registerInput('description')}
+              ref={(r) => {
+                descInputRef.current = r;
+                registerInput('description')(r);
+              }}
               style={[styles.input, styles.textArea, errors.description ? styles.inputError : null]}
               placeholder={placeholders.desc}
               placeholderTextColor={Colors.neutral[400]}
@@ -468,6 +542,9 @@ export const RequestDetailsScreen = () => {
                 setDescription(text);
                 if (errors.description) setErrors(prev => ({ ...prev, description: '' }));
               }}
+              returnKeyType="done"
+              blurOnSubmit={true}
+              onSubmitEditing={() => Keyboard.dismiss()}
             />
             <View style={styles.descriptionFooter}>
               {!!errors.description ? (
@@ -578,6 +655,31 @@ export const RequestDetailsScreen = () => {
             {!!errors.time && <Text style={[styles.errorText, { marginBottom: 24, marginTop: 0 }]}>{errors.time}</Text>}
           </View>
 
+          {/* Time Zone */}
+          <View style={[styles.inputGroup, { marginBottom: 24 }]}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+              <Text style={[styles.label, { marginBottom: 0 }]}>Time Zone <Text style={{color: Colors.error}}>*</Text></Text>
+              {detectedZipCode ? (
+                <AppText variant="caption" color={Colors.primary[600]} style={{ fontFamily: FontFamily.medium }}>
+                  Auto-detected (ZIP: {detectedZipCode})
+                </AppText>
+              ) : null}
+            </View>
+            <TouchableOpacity 
+              style={[styles.dateInput, { justifyContent: 'space-between' }]} 
+              onPress={() => setIsTimeZoneModalOpen(true)}
+              activeOpacity={0.7}
+            >
+              <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, marginRight: 8 }}>
+                <Globe color={Colors.neutral[500]} size={20} style={{ marginRight: 10 }} />
+                <Text style={[styles.dateText, !selectedTimeZone ? { color: Colors.neutral[400] } : null]} numberOfLines={1}>
+                  {selectedTimeZone?.label || 'Select Time Zone'}
+                </Text>
+              </View>
+              <ChevronDown color={Colors.neutral[500]} size={20} />
+            </TouchableOpacity>
+          </View>
+
         
         {/* Address */}
         <View {...registerField('address')} style={[styles.inputGroup, { zIndex: showAddressInfo ? 99999 : 9999, elevation: Platform.OS === 'android' ? (showAddressInfo ? 25 : 10) : undefined }]}>
@@ -649,7 +751,7 @@ export const RequestDetailsScreen = () => {
                 const validationData = await validateBusinessAddressWithAPI(selectedAddr, GOOGLE_MAPS_API_KEY);
                 setAddressValidation(validationData);
                 if (validationData?.addressType === 'residential' || validationData?.isBusinessAddress === false) {
-                  setAddressError('For your safety, please use the business address');
+                  setAddressError('Enter a nearby business address to match you with nearby requests— your exact location is never shared with anyone');
                 } else {
                   setAddressError('');
                 }
@@ -662,6 +764,19 @@ export const RequestDetailsScreen = () => {
                     latitude: details.geometry.location.lat,
                     longitude: details.geometry.location.lng,
                   });
+                }
+
+                const zip = extractZipCodeFromAddress(selectedAddr, details);
+                if (zip) {
+                  setDetectedZipCode(zip);
+                  const tzCode = getTimeZoneCodeFromZipCode(zip);
+                  if (tzCode) {
+                    const activeList = timeZonesRef.current.length > 0 ? timeZonesRef.current : timeZones;
+                    const matched = findTimeZoneByCode(tzCode, activeList);
+                    if (matched) {
+                      setSelectedTimeZone(matched);
+                    }
+                  }
                 }
               }
               setTimeout(() => {
@@ -843,6 +958,17 @@ export const RequestDetailsScreen = () => {
           <Text style={styles.primaryButtonText}>Preview Request</Text>
         </TouchableOpacity>
       </View>
+      </KeyboardAvoidingView>
+
+      {/* Time Zone Picker Modal */}
+      <TimeZonePickerModal
+        visible={isTimeZoneModalOpen}
+        onClose={() => setIsTimeZoneModalOpen(false)}
+        timeZones={timeZones}
+        selectedTimeZone={selectedTimeZone}
+        detectedZipCode={detectedZipCode}
+        onSelect={(tz) => setSelectedTimeZone(tz)}
+      />
 
       {/* Map Modal */}
       <Modal visible={isMapModalVisible} transparent animationType="slide">
@@ -1224,15 +1350,6 @@ const styles = StyleSheet.create({
     maxHeight: 250,
     zIndex: 10,
     elevation: 5,
-  },
-  dropdownBackdrop: {
-    position: 'absolute',
-    top: -4000,
-    bottom: -4000,
-    left: -4000,
-    right: -4000,
-    zIndex: 1,
-    backgroundColor: 'transparent',
   },
   modalOption: {
     paddingVertical: 16,

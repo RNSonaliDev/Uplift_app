@@ -37,7 +37,7 @@ export default function LegalContentScreen() {
       case 'safety':
         return 'Safety Policy';
       case 'minor-volunteer':
-        return 'Minor Volunteer Addendum';
+        return 'Minor Volunteer Policy';
       default:
         return 'Legal Document';
     }
@@ -60,14 +60,22 @@ export default function LegalContentScreen() {
         } else if (type === 'safety') {
           res = await contentApi.getContentBySlug('safety-policy');
         } else if (type === 'minor-volunteer') {
-          res = await contentApi.getContentBySlug('minor-volunteer');
+          try {
+            res = await contentApi.getContentBySlug('minor-volunteer');
+            if (!res?.body && !res?.content) {
+              res = await contentApi.getContentBySlug('minor-volunteer-policy');
+            }
+          } catch {
+            res = await contentApi.getContentBySlug('minor-volunteer-policy');
+          }
         } else {
           res = await contentApi.getTermsOfService();
         }
 
-        const cleanText = res?.body ? res.body : '<p>No content available.</p>';
+        const cleanText = res?.body || res?.content || '<p>No content available.</p>';
         setContent(cleanText);
-      } catch (error) {
+      } catch (err) {
+        console.log('Fetch legal content error:', err);
         setContent('<p>No content available.</p>');
       } finally {
         setIsLoading(false);

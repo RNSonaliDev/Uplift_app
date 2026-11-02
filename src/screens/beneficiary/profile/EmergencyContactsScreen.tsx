@@ -238,12 +238,6 @@ export default function EmergencyContactsScreen() {
                   </View>
                   {isEditing ? (
                     <View {...registerField('relationship')} style={{ position: 'relative', zIndex: 9 }}>
-                      {isRelationshipModalVisible && (
-                        <Pressable
-                          style={styles.dropdownBackdrop}
-                          onPress={() => setIsRelationshipModalVisible(false)}
-                        />
-                      )}
                       <TouchableOpacity onPress={() => setIsRelationshipModalVisible(!isRelationshipModalVisible)} activeOpacity={0.7}>
                         <View pointerEvents="none">
                           <Input
@@ -257,7 +251,7 @@ export default function EmergencyContactsScreen() {
                         </View>
                       </TouchableOpacity>
                       {isRelationshipModalVisible && (
-                        <View style={styles.inlineDropdown} onStartShouldSetResponder={() => true}>
+                        <View style={styles.inlineDropdown}>
                           <ScrollView
                             nestedScrollEnabled={true}
                             keyboardShouldPersistTaps="handled"
@@ -369,12 +363,6 @@ export default function EmergencyContactsScreen() {
                 />
               </View>
               <View {...registerField('relationship')} style={{ position: 'relative', zIndex: 10 }}>
-                {isRelationshipModalVisible && (
-                  <Pressable
-                    style={styles.dropdownBackdrop}
-                    onPress={() => setIsRelationshipModalVisible(false)}
-                  />
-                )}
                 <TouchableOpacity onPress={() => setIsRelationshipModalVisible(!isRelationshipModalVisible)} activeOpacity={0.7}>
                   <View pointerEvents="none">
                     <Input
@@ -388,7 +376,7 @@ export default function EmergencyContactsScreen() {
                   </View>
                 </TouchableOpacity>
                 {isRelationshipModalVisible && (
-                  <View style={styles.inlineDropdown} onStartShouldSetResponder={() => true}>
+                  <View style={styles.inlineDropdown}>
                     <ScrollView
                       nestedScrollEnabled={true}
                       keyboardShouldPersistTaps="handled"
@@ -515,15 +503,6 @@ const styles = StyleSheet.create({
     elevation: 5,
     maxHeight: 200,
     zIndex: 10,
-  },
-  dropdownBackdrop: {
-    position: 'absolute',
-    top: -4000,
-    bottom: -4000,
-    left: -4000,
-    right: -4000,
-    zIndex: 1,
-    backgroundColor: 'transparent',
   },
   dropdownScrollView: {
     maxHeight: 200,

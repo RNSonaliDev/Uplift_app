@@ -11,6 +11,17 @@ export interface ContentResponse {
   [key: string]: any;
 }
 
+export interface FAQItem {
+  id: number;
+  title: string;
+  slug?: string;
+  description: string;
+  type?: string;
+  position?: number;
+  updated_at?: string;
+  [key: string]: any;
+}
+
 export const contentApi = {
   getTermsOfService: () => {
     return api.get<ContentResponse>('/contents/term-condition');
@@ -20,6 +31,9 @@ export const contentApi = {
   },
   getContentBySlug: (slug: string) => {
     return api.get<ContentResponse>(`/contents/${slug}`);
+  },
+  getFaqs: () => {
+    return api.get<FAQItem[]>('/faqs');
   },
 };
 

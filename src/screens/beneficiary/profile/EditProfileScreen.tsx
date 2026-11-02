@@ -1,4 +1,4 @@
-import React, {useState, useEffect, useMemo, useRef} from 'react';
+import React, {useState, useEffect, useCallback, useMemo, useRef} from 'react';
 import {
   View,
   StyleSheet,
@@ -13,10 +13,12 @@ import {
   Pressable,
   Modal,
   Image,
+  Keyboard,
+  TextInput,
 } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import Toast from 'react-native-toast-message';
-import {useNavigation, useRoute} from '@react-navigation/native';
+import {useNavigation, useRoute, useFocusEffect} from '@react-navigation/native';
 import { DatePickerModal } from '../../../components/DatePickerModal';
 import { GooglePlacesAutocomplete, GooglePlacesAutocompleteRef } from 'react-native-google-places-autocomplete';
 import {Colors} from '../../../theme/colors';
@@ -34,30 +36,64 @@ import {getFullImageUrl} from '../../../api/client';
 import Svg, { Circle, Path } from 'react-native-svg';
 import MapView, { Marker, Circle as MapCircle } from 'react-native-maps';
 
-const CustomSlider = ({ value, onValueChange, min = 0, max = 100, onSlidingStart, onSlidingComplete }: { value: number, onValueChange: (val: number) => void, min?: number, max?: number, onSlidingStart?: () => void, onSlidingComplete?: () => void }) => {
+interface CustomSliderProps {
+  value: number;
+  onValueChange: (val: number) => void;
+  min?: number;
+  max?: number;
+  unit?: string;
+  disabled?: boolean;
+  onSlidingStart?: () => void;
+  onSlidingComplete?: () => void;
+}
+
+const CustomSlider = ({
+  value,
+  onValueChange,
+  min = 0,
+  max = 100,
+  unit = 'miles',
+  disabled = false,
+  onSlidingStart,
+  onSlidingComplete,
+}: CustomSliderProps) => {
   const [width, setWidth] = useState(0);
   const widthRef = React.useRef(0);
   widthRef.current = width;
+
+  const [internalValue, setInternalValue] = useState(value);
+  const isDraggingRef = React.useRef(false);
+
+  useEffect(() => {
+    if (!isDraggingRef.current) {
+      setInternalValue(value);
+    }
+  }, [value]);
 
   const onValueChangeRef = React.useRef(onValueChange);
   onValueChangeRef.current = onValueChange;
 
   const startValue = React.useRef(value);
 
+  const disabledRef = React.useRef(disabled);
+  disabledRef.current = disabled;
+
   const panResponder = React.useRef(
     PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onStartShouldSetPanResponderCapture: () => true,
-      onMoveShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponderCapture: () => true,
+      onStartShouldSetPanResponder: () => !disabledRef.current,
+      onStartShouldSetPanResponderCapture: () => !disabledRef.current,
+      onMoveShouldSetPanResponder: () => !disabledRef.current,
+      onMoveShouldSetPanResponderCapture: () => !disabledRef.current,
       onPanResponderTerminationRequest: () => false,
       onPanResponderGrant: (evt) => {
         if (onSlidingStart) onSlidingStart();
+        isDraggingRef.current = true;
         if (widthRef.current > 0) {
           const locX = evt.nativeEvent.locationX;
           const percent = Math.max(0, Math.min(1, locX / widthRef.current));
           const newValue = min + percent * (max - min);
           startValue.current = newValue;
+          setInternalValue(newValue);
           onValueChangeRef.current(newValue);
         }
       },
@@ -66,19 +102,32 @@ const CustomSlider = ({ value, onValueChange, min = 0, max = 100, onSlidingStart
           const deltaPercent = gestureState.dx / widthRef.current;
           let newValue = startValue.current + deltaPercent * (max - min);
           newValue = Math.max(min, Math.min(max, newValue));
+          setInternalValue(newValue);
           onValueChangeRef.current(newValue);
         }
       },
       onPanResponderRelease: () => {
+        isDraggingRef.current = false;
         if (onSlidingComplete) onSlidingComplete();
       },
       onPanResponderTerminate: () => {
+        isDraggingRef.current = false;
         if (onSlidingComplete) onSlidingComplete();
       },
     })
   ).current;
 
-  const percentage = ((value - min) / (max - min)) * 100;
+  const displayValue = isDraggingRef.current ? internalValue : value;
+  const percentage = Math.max(0, Math.min(100, ((displayValue - min) / (max - min)) * 100));
+
+  const BUBBLE_WIDTH = 74;
+  const HALF_BUBBLE = BUBBLE_WIDTH / 2;
+  const thumbX = width > 0 ? (percentage / 100) * width : 0;
+  const bubbleLeft = width > 0 ? Math.max(0, Math.min(width - BUBBLE_WIDTH, thumbX - HALF_BUBBLE)) : 0;
+  const arrowLeft = width > 0 ? Math.max(10, Math.min(BUBBLE_WIDTH - 20, thumbX - bubbleLeft - 5)) : HALF_BUBBLE - 5;
+
+  const rounded = Math.round(displayValue);
+  const formattedText = unit ? `${rounded} ${rounded === 1 ? (unit === 'miles' ? 'mile' : unit) : unit}` : `${rounded}`;
 
   return (
     <View 
@@ -87,9 +136,40 @@ const CustomSlider = ({ value, onValueChange, min = 0, max = 100, onSlidingStart
       {...panResponder.panHandlers}
       hitSlop={{ top: 15, bottom: 15, left: 0, right: 0 }}
     >
+      {/* Floating value bubble on top of slider */}
+      <View
+        style={[
+          styles.sliderBubbleContainer,
+          width > 0
+            ? { left: bubbleLeft }
+            : { left: `${percentage}%`, marginLeft: -HALF_BUBBLE },
+        ]}
+        pointerEvents="none"
+      >
+        <View style={styles.sliderBubble}>
+          <AppText
+            variant="caption"
+            color={Colors.neutral[0]}
+            weight="bold"
+            style={styles.sliderBubbleText}
+          >
+            {formattedText}
+          </AppText>
+        </View>
+        <View
+          style={[
+            styles.sliderBubbleArrow,
+            width > 0 ? { left: arrowLeft } : { alignSelf: 'center' },
+          ]}
+        />
+      </View>
+
+      {/* Track */}
       <View style={styles.sliderTrack} pointerEvents="none">
         <View style={[styles.sliderFill, { width: `${percentage}%` }]} />
       </View>
+
+      {/* Thumb */}
       <View style={[styles.sliderThumb, { left: `${percentage}%` }]} pointerEvents="none" />
     </View>
   );
@@ -130,16 +210,22 @@ const RadioCard = ({
   description,
   isSelected,
   onPress,
+  disabled = false,
 }: {
   title: string;
   description: string;
   isSelected: boolean;
   onPress: () => void;
+  disabled?: boolean;
 }) => (
   <TouchableOpacity
-    style={[styles.radioCard, isSelected && styles.radioCardSelected]}
-    onPress={onPress}
-    activeOpacity={0.7}>
+    style={[
+      styles.radioCard,
+      isSelected && styles.radioCardSelected,
+      disabled && { opacity: 0.7, backgroundColor: isSelected ? Colors.primary[50] : Colors.neutral[100] },
+    ]}
+    onPress={disabled ? undefined : onPress}
+    activeOpacity={disabled ? 1 : 0.7}>
     <View style={styles.radioIconContainer}>
       {isSelected ? <RadioActiveIcon /> : <RadioInactiveIcon />}
     </View>
@@ -168,9 +254,14 @@ const PhonePrefixPrefix = () => (
   </View>
 );
 
-export default function EditProfileScreen() {
+interface EditProfileScreenProps {
+  isPreview?: boolean;
+}
+
+export default function EditProfileScreen(props?: EditProfileScreenProps) {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
+  const isPreview = props?.isPreview ?? route.params?.isPreview ?? (route.name === 'ProfilePreview');
   const currentRole = route.params?.role || 'beneficiary';
   const GOOGLE_MAPS_API_KEY = 'AIzaSyAfVdKkV8tvaV4yQnLLtCKZ91qbuRWFBR0';
   const googlePlacesQuery = useMemo(() => ({
@@ -179,6 +270,11 @@ export default function EditProfileScreen() {
   }), []);
   const volunteerPlacesRef = useRef<GooglePlacesAutocompleteRef>(null);
   const addressPlacesRef = useRef<GooglePlacesAutocompleteRef>(null);
+  const lastNameRef = useRef<TextInput>(null);
+  const zipCodeRef = useRef<TextInput>(null);
+  const contactNameRef = useRef<TextInput>(null);
+  const contactEmailRef = useRef<TextInput>(null);
+  const contactPhoneRef = useRef<TextInput>(null);
   const {
     scrollViewRef,
     registerField,
@@ -236,12 +332,17 @@ export default function EditProfileScreen() {
         handleChange('address', address);
         volunteerPlacesRef.current?.setAddressText(address);
         addressPlacesRef.current?.setAddressText(address);
-        const validationData = await validateBusinessAddressWithAPI(address, GOOGLE_MAPS_API_KEY);
-        setAddressValidation(validationData);
-        if (validationData?.addressType === 'residential' || validationData?.isBusinessAddress === false) {
-          setErrors(prev => ({...prev, address: 'For your safety, please use the business address'}));
+        if (currentRole === 'organization') {
+          const validationData = await validateBusinessAddressWithAPI(address, GOOGLE_MAPS_API_KEY);
+          setAddressValidation(validationData);
+          if (validationData?.addressType === 'residential' || validationData?.isBusinessAddress === false) {
+            setErrors(prev => ({...prev, address: 'Enter a nearby business address to match you with nearby requests— your exact location is never shared with anyone'}));
+          } else {
+            setErrors(prev => ({...prev, address: ''}));
+          }
         } else {
           setErrors(prev => ({...prev, address: ''}));
+          setAddressValidation(null);
         }
       }
     } catch (error) {
@@ -303,71 +404,79 @@ export default function EditProfileScreen() {
     return dobStr;
   };
   
-  useEffect(() => {
-    const fetchProfile = async () => {
+  const fetchProfile = useCallback(async () => {
+    try {
+      const data = await authApi.getProfile();
+      const roleProfile = data.roles?.find((r: any) => r.role === currentRole)?.profile || data.active_profile || {};
+      
+      let anonymityValue = 'hide';
+      if (roleProfile.anonymous !== undefined) {
+        anonymityValue = roleProfile.anonymous ? 'hide' : 'show';
+      } else if (roleProfile.anonymity) {
+        anonymityValue = roleProfile.anonymity;
+      }
+      setFormData({
+        base_first_name: data.first_name || '',
+        base_last_name: data.last_name || '',
+        first_name: roleProfile.first_name || data.first_name || '',
+        last_name: roleProfile.last_name || data.last_name || '',
+        phone: data.phone || '',
+        email: data.email || '',
+        email_verified: data.email_verified || false,
+        phone_verified: data.phone_verified || false,
+        zip_code: (data as any).zip_code || roleProfile.zip_code || '',
+        dob: data.date_of_birth || '',
+        government_id: roleProfile?.identity_verification?.government_id_url || roleProfile?.identity_verification?.government_id_url || '',
+        service_radius: roleProfile.service_radius ? String(roleProfile.service_radius) : '',
+        hours_goal_per_week: roleProfile.hours_goal_per_week ? String(roleProfile.hours_goal_per_week) : '',
+        address: roleProfile.address || '',
+        anonymity: anonymityValue,
+        organization_type: roleProfile.organization_type || '',
+        organization_name: roleProfile.organization_name || '',
+        contact_name: roleProfile.contact_name || '',
+        contact_email: roleProfile.contact_email || '',
+        contact_phone: roleProfile.contact_phone || '',
+        latitude: roleProfile.latitude ? String(roleProfile.latitude) : '',
+        longitude: roleProfile.longitude ? String(roleProfile.longitude) : '',
+      });
+      if (roleProfile.address) {
+        volunteerPlacesRef.current?.setAddressText(roleProfile.address);
+        addressPlacesRef.current?.setAddressText(roleProfile.address);
+      }
+    } catch (error) {
+      console.error('Failed to fetch profile', error);
+    }
+
+    if (currentRole === 'organization') {
       try {
-        const data = await authApi.getProfile();
-        const roleProfile = data.roles?.find((r: any) => r.role === currentRole)?.profile || data.active_profile || {};
-        
-        let anonymityValue = 'hide';
-        if (roleProfile.anonymous !== undefined) {
-          anonymityValue = roleProfile.anonymous ? 'hide' : 'show';
-        } else if (roleProfile.anonymity) {
-          anonymityValue = roleProfile.anonymity;
-        }
-      console.log('roleProfile', JSON.stringify(roleProfile));
-        setFormData({
-          base_first_name: data.first_name || '',
-          base_last_name: data.last_name || '',
-          first_name: roleProfile.first_name || data.first_name || '',
-          last_name: roleProfile.last_name || data.last_name || '',
-          phone: data.phone || '',
-          email: data.email || '',
-          email_verified: data.email_verified || false,
-          phone_verified: data.phone_verified || false,
-          zip_code: (data as any).zip_code || roleProfile.zip_code || '',
-          dob: data.date_of_birth || '',
-          government_id: roleProfile?.identity_verification?.government_id_url || roleProfile?.identity_verification?.government_id_url || '',
-          service_radius: roleProfile.service_radius ? String(roleProfile.service_radius) : '',
-          hours_goal_per_week: roleProfile.hours_goal_per_week ? String(roleProfile.hours_goal_per_week) : '',
-          address: roleProfile.address || '',
-          anonymity: anonymityValue,
-          organization_type: roleProfile.organization_type || '',
-          organization_name: roleProfile.organization_name || '',
-          contact_name: roleProfile.contact_name || '',
-          contact_email: roleProfile.contact_email || '',
-          contact_phone: roleProfile.contact_phone || '',
-          latitude: roleProfile.latitude ? String(roleProfile.latitude) : '',
-          longitude: roleProfile.longitude ? String(roleProfile.longitude) : '',
-        });
-        if (roleProfile.address) {
-          volunteerPlacesRef.current?.setAddressText(roleProfile.address);
-          addressPlacesRef.current?.setAddressText(roleProfile.address);
+        const categoriesData = await authApi.getOrganizationTypes();
+        if (categoriesData && Array.isArray(categoriesData)) {
+          const mappedTypes = categoriesData
+            .filter((c: any) => c.status !== 'inactive')
+            .map((c: any) => c.name || c.title || c.category_name || c);
+          if (mappedTypes.length > 0) {
+            setOrganizationTypes(mappedTypes);
+          }
         }
       } catch (error) {
-        console.error('Failed to fetch profile', error);
+        console.error('Failed to fetch organization categories', error);
       }
-
-      if (currentRole === 'organization') {
-        try {
-          const categoriesData = await authApi.getOrganizationTypes();
-          if (categoriesData && Array.isArray(categoriesData)) {
-            const mappedTypes = categoriesData
-              .filter((c: any) => c.status !== 'inactive')
-              .map((c: any) => c.name || c.title || c.category_name || c);
-            if (mappedTypes.length > 0) {
-              setOrganizationTypes(mappedTypes);
-            }
-          }
-        } catch (error) {
-          console.error('Failed to fetch organization categories', error);
-        }
-      }
-      
-      setLoading(false);
-    };
-    fetchProfile();
+    }
+    
+    setLoading(false);
   }, [currentRole]);
+
+  useEffect(() => {
+    fetchProfile();
+  }, [fetchProfile]);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (isPreview) {
+        fetchProfile();
+      }
+    }, [fetchProfile, isPreview])
+  );
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -407,26 +516,28 @@ export default function EditProfileScreen() {
       newErrors.zip_code = 'ZIP code must be 5 digits';
     }
 
-    if (errors.address) {
-      newErrors.address = errors.address;
-    } else if (formData.address && formData.address.trim()) {
-      let isResidential = addressValidation?.addressType === 'residential' || addressValidation?.isBusinessAddress === false;
-      if (!addressValidation) {
-        setIsValidatingAddress(true);
-        try {
-          const validationData = await validateBusinessAddressWithAPI(formData.address, GOOGLE_MAPS_API_KEY);
-          setAddressValidation(validationData);
-          if (validationData?.addressType === 'residential' || validationData?.isBusinessAddress === false) {
-            isResidential = true;
+    if (currentRole === 'organization') {
+      if (errors.address) {
+        newErrors.address = errors.address;
+      } else if (formData.address && formData.address.trim()) {
+        let isResidential = addressValidation?.addressType === 'residential' || addressValidation?.isBusinessAddress === false;
+        if (!addressValidation) {
+          setIsValidatingAddress(true);
+          try {
+            const validationData = await validateBusinessAddressWithAPI(formData.address, GOOGLE_MAPS_API_KEY);
+            setAddressValidation(validationData);
+            if (validationData?.addressType === 'residential' || validationData?.isBusinessAddress === false) {
+              isResidential = true;
+            }
+          } catch (e) {
+            console.log('Address validation error in handleSave:', e);
+          } finally {
+            setIsValidatingAddress(false);
           }
-        } catch (e) {
-          console.log('Address validation error in handleSave:', e);
-        } finally {
-          setIsValidatingAddress(false);
         }
-      }
-      if (isResidential) {
-        newErrors.address = 'For your safety, please use the business address';
+        if (isResidential) {
+          newErrors.address = 'Enter a nearby business address to match you with nearby requests— your exact location is never shared with anyone';
+        }
       }
     }
 
@@ -496,8 +607,10 @@ export default function EditProfileScreen() {
         type: 'success',
         text1: 'Success',
         text2: 'Profile updated successfully',
-        // onHide: () => navigation.goBack()
       });
+      setTimeout(() => {
+        navigation.goBack();
+      }, 500);
     } catch (error: any) {
       Toast.show({
         type: 'error',
@@ -517,10 +630,16 @@ export default function EditProfileScreen() {
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
           <ChevronLeft color={Colors.neutral[0]} size={28} />
         </TouchableOpacity>
-        <AppText variant="h5" color={Colors.neutral[0]} style={{textAlign: 'center'}}>Edit Profile</AppText>
+        <AppText variant="h5" color={Colors.neutral[0]} style={{textAlign: 'center'}}>
+          {isPreview ? 'Personal Information' : 'Edit Profile'}
+        </AppText>
         <View style={{width: 28}} />
       </View>
 
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={{ flex: 1 }}
+      >
       <KeyboardAwareScrollView
         ref={scrollViewRef}
         style={{ flex: 1, backgroundColor: Colors.neutral[50] }}
@@ -678,25 +797,27 @@ export default function EditProfileScreen() {
                 </View>
               ) : (
                 <TouchableOpacity
-                  style={styles.idUploadBox}
-                  onPress={() => setShowGovernmentIdModal(true)}
-                  activeOpacity={0.7}
+                  style={[styles.idUploadBox, isPreview && { opacity: 0.7, borderColor: Colors.neutral[300] }]}
+                  onPress={isPreview ? undefined : () => setShowGovernmentIdModal(true)}
+                  activeOpacity={isPreview ? 1 : 0.7}
                 >
                   <View style={styles.idUploadPlaceholder}>
-                    <View style={styles.idUploadIconCircle}>
-                      <Camera color={Colors.primary[500]} size={24} />
+                    <View style={[styles.idUploadIconCircle, isPreview && { backgroundColor: Colors.neutral[100] }]}>
+                      <Camera color={isPreview ? Colors.neutral[400] : Colors.primary[500]} size={24} />
                     </View>
-                    <AppText variant="labelMedium" color={Colors.primary[900]} weight="bold" style={{ marginTop: 8 }}>
-                      Upload Government ID
+                    <AppText variant="labelMedium" color={isPreview ? Colors.neutral[600] : Colors.primary[900]} weight="bold" style={{ marginTop: 8 }}>
+                      {isPreview ? 'No Government ID Uploaded' : 'Upload Government ID'}
                     </AppText>
                     <AppText variant="caption" color={Colors.neutral[500]} style={{ marginTop: 2, textAlign: 'center' }}>
                       Driver's License, Passport, or State ID
                     </AppText>
-                    <View style={styles.uploadCtaPill}>
-                      <AppText variant="caption" color={Colors.primary[600]} weight="bold">
-                        Take Photo or Upload
-                      </AppText>
-                    </View>
+                    {!isPreview && (
+                      <View style={styles.uploadCtaPill}>
+                        <AppText variant="caption" color={Colors.primary[600]} weight="bold">
+                          Take Photo or Upload
+                        </AppText>
+                      </View>
+                    )}
                   </View>
                 </TouchableOpacity>
               )}
@@ -715,18 +836,31 @@ export default function EditProfileScreen() {
                   label="First Name"
                   value={formData.first_name}
                   onChangeText={v => handleChange('first_name', v)}
-                  disabled={false}
+                  disabled={isPreview}
                   error={errors.first_name}
+                  returnKeyType="next"
+                  onSubmitEditing={() => lastNameRef.current?.focus()}
                 />
               </View>
               <View {...registerField('last_name')}>
                 <Input
-                  ref={registerInput('last_name')}
+                  ref={(r) => {
+                    lastNameRef.current = r;
+                    registerInput('last_name')(r);
+                  }}
                   label="Last Name"
                   value={formData.last_name}
                   onChangeText={v => handleChange('last_name', v)}
-                  disabled={false}
+                  disabled={isPreview}
                   error={errors.last_name}
+                  returnKeyType={currentRole === 'beneficiary' || currentRole === 'volunteer' ? 'next' : 'done'}
+                  onSubmitEditing={() => {
+                    if (currentRole === 'beneficiary' || currentRole === 'volunteer') {
+                      zipCodeRef.current?.focus();
+                    } else {
+                      Keyboard.dismiss();
+                    }
+                  }}
                 />
               </View>
             </>
@@ -736,14 +870,20 @@ export default function EditProfileScreen() {
             <>
               <View {...registerField('zip_code')}>
                 <Input
-                  ref={registerInput('zip_code')}
+                  ref={(r) => {
+                    zipCodeRef.current = r;
+                    registerInput('zip_code')(r);
+                  }}
                   label="ZIP Code"
                   value={formData.zip_code}
                   onChangeText={v => handleChange('zip_code', v.replace(/[^0-9]/g, '').slice(0, 5))}
                   keyboardType="number-pad"
                   maxLength={5}
+                  disabled={isPreview}
                   error={errors.zip_code}
                   leftIcon={<MapPin color={Colors.neutral[400]} size={20} />}
+                  returnKeyType="done"
+                  onSubmitEditing={() => Keyboard.dismiss()}
                 />
               </View>
             </>
@@ -753,14 +893,20 @@ export default function EditProfileScreen() {
             <>
               <View {...registerField('zip_code')}>
                 <Input
-                  ref={registerInput('zip_code')}
+                  ref={(r) => {
+                    zipCodeRef.current = r;
+                    registerInput('zip_code')(r);
+                  }}
                   label="ZIP Code"
                   value={formData.zip_code}
                   onChangeText={v => handleChange('zip_code', v.replace(/[^0-9]/g, '').slice(0, 5))}
                   keyboardType="number-pad"
                   maxLength={5}
+                  disabled={isPreview}
                   error={errors.zip_code}
                   leftIcon={<MapPin color={Colors.neutral[400]} size={20} />}
+                  returnKeyType="done"
+                  onSubmitEditing={() => Keyboard.dismiss()}
                 />
               </View>
               <View {...registerField('address')} style={{
@@ -809,7 +955,7 @@ export default function EditProfileScreen() {
                       {/* Left pointing triangle */}
                       <View style={[styles.addressTooltipTriangle, {left: 125}]} />
                       <AppText variant="caption" color={Colors.neutral[800]} style={{lineHeight: 18}}>
-                        Enter a nearby business address to match you with nearby requests— your exact location is never shared with anyone
+                        Your exact location is never shared with anyone.
                       </AppText>
                     </View>
                   </>
@@ -828,14 +974,11 @@ export default function EditProfileScreen() {
                   minLength={1}
                   onFail={(error) => console.log('Google Places Autocomplete Error:', error)}
                   onPress={async (data, details = null) => {
+                    if (isPreview) return;
                     const selectedAddr = data.description || (data as any).formatted_address || '';
                     handleChange('address', selectedAddr);
                     volunteerPlacesRef.current?.setAddressText(selectedAddr);
-                    const validationData = await validateBusinessAddressWithAPI(selectedAddr, GOOGLE_MAPS_API_KEY);
-                    setAddressValidation(validationData);
-                    if (validationData?.addressType === 'residential' || validationData?.isBusinessAddress === false) {
-                      setErrors(prev => ({...prev, address: 'For your safety, please use the business address'}));
-                    } else {
+                    if (errors.address) {
                       setErrors(prev => ({...prev, address: ''}));
                     }
                     if (details?.geometry?.location) {
@@ -855,7 +998,7 @@ export default function EditProfileScreen() {
                       zIndex: 9999,
                     },
                     textInputContainer: {
-                      backgroundColor: Colors.neutral[0],
+                      backgroundColor: isPreview ? Colors.neutral[100] : Colors.neutral[0],
                       borderRadius: 12,
                       borderWidth: 1,
                       borderColor: errors.address ? Colors.error : Colors.neutral[300],
@@ -899,8 +1042,10 @@ export default function EditProfileScreen() {
                   textInputProps={{
                     placeholderTextColor: Colors.neutral[400],
                     autoCorrect: false,
+                    editable: !isPreview,
                     defaultValue: formData.address || '',
                     onChangeText: (text) => {
+                      if (isPreview) return;
                       handleChange('address', text);
                       setAddressValidation(null);
                       if (errors.address) {
@@ -919,7 +1064,7 @@ export default function EditProfileScreen() {
                       <MapPin color={Colors.neutral[400]} size={20} />
                     </View>
                   )}
-                  renderRightButton={() => (
+                  renderRightButton={() => !isPreview ? (
                     <TouchableOpacity style={{ padding: 4 }} onPress={() => {
                       Toast.show({
                         type: 'info',
@@ -929,7 +1074,7 @@ export default function EditProfileScreen() {
                     }}>
                       <Navigation color={Colors.primary[500]} size={20} />
                     </TouchableOpacity>
-                  )}
+                  ) : null}
                 />
                 {!!errors.address && (
                   <AppText variant="caption" color={Colors.error} style={{ marginTop: 4, marginLeft: 4 }}>
@@ -943,6 +1088,7 @@ export default function EditProfileScreen() {
                 onChangeText={v => handleChange('hours_goal_per_week', v)}
                 keyboardType="number-pad"
                 maxLength={2}
+                disabled={isPreview}
                 leftIcon={<Clock color={Colors.neutral[400]} size={20} />}
                 rightIcon={<AppText variant="caption" color={Colors.neutral[500]}>hrs/week</AppText>}
               />
@@ -957,24 +1103,23 @@ export default function EditProfileScreen() {
                       <Info size={16} color={Colors.primary[500]} />
                     </TouchableOpacity> */}
                   </View>
-                  <View style={styles.pillContainer}>
-                    <AppText variant="caption" color={Colors.primary[600]} weight="semiBold">
-                      {Math.round(Number(formData.service_radius) || 20)} miles
-                    </AppText>
-                  </View>
                 </View>
                 <AppText variant="caption" color={Colors.neutral[500]} style={styles.sliderSubtitle}>
                   Show opportunities within your current radius.
                 </AppText>
                 
-                <CustomSlider 
-                  value={Number(formData.service_radius) || 20} 
-                  onValueChange={(val) => handleChange('service_radius', String(Math.round(val)))} 
-                  min={5} 
-                  max={50}
-                  onSlidingStart={() => setIsScrollEnabled(false)}
-                  onSlidingComplete={() => setIsScrollEnabled(true)} 
-                />
+                <View pointerEvents={isPreview ? 'none' : 'auto'} style={isPreview ? { opacity: 0.7 } : undefined}>
+                  <CustomSlider 
+                    value={Number(formData.service_radius) || 20} 
+                    onValueChange={(val) => handleChange('service_radius', String(Math.round(val)))} 
+                    min={5} 
+                    max={50}
+                    unit="miles"
+                    disabled={isPreview}
+                    onSlidingStart={() => setIsScrollEnabled(false)}
+                    onSlidingComplete={() => setIsScrollEnabled(true)} 
+                  />
+                </View>
                 
                 <View style={styles.sliderLimitsRow}>
                   <AppText variant="caption" color={Colors.neutral[500]}>5 miles</AppText>
@@ -987,18 +1132,20 @@ export default function EditProfileScreen() {
           {currentRole === 'sponsor' && (
             <>
               <AppText variant="labelLarge" color={Colors.neutral[900]} weight="bold" style={{ marginTop: 4, marginBottom: 12 }}>Anonymity</AppText>
-              <View style={styles.radioGroup}>
+              <View style={styles.radioGroup} pointerEvents={isPreview ? 'none' : 'auto'}>
                 <RadioCard
                   title="Share my name"
                   description="Display my name to others"
                   isSelected={formData.anonymity === 'show'}
                   onPress={() => handleChange('anonymity', 'show')}
+                  disabled={isPreview}
                 />
                 <RadioCard
                   title="Stay anonymous"
                   description="Hide my name from others"
                   isSelected={formData.anonymity === 'hide'}
                   onPress={() => handleChange('anonymity', 'hide')}
+                  disabled={isPreview}
                 />
               </View>
             </>
@@ -1007,26 +1154,25 @@ export default function EditProfileScreen() {
           {currentRole === 'organization' && (
             <>
               <View style={{ position: 'relative', zIndex: 9 }}>
-                {isTypeModalVisible && (
-                  <Pressable
-                    style={styles.dropdownBackdrop}
-                    onPress={() => setTypeModalVisible(false)}
-                  />
-                )}
-                <TouchableOpacity activeOpacity={0.8} onPress={() => setTypeModalVisible(!isTypeModalVisible)}>
+                <TouchableOpacity
+                  activeOpacity={0.8}
+                  disabled={isPreview}
+                  onPress={() => !isPreview && setTypeModalVisible(!isTypeModalVisible)}
+                >
                   <View pointerEvents="none">
                     <Input
                       label="Organization Type"
                       placeholder="Select organization type"
                       value={formData.organization_type || ''}
                       editable={false}
-                      rightIcon={<ChevronDown color={Colors.neutral[500]} size={20} />}
+                      disabled={isPreview}
+                      rightIcon={!isPreview ? <ChevronDown color={Colors.neutral[500]} size={20} /> : undefined}
                     />
                   </View>
                 </TouchableOpacity>
 
-                {isTypeModalVisible && (
-                  <View style={styles.inlineDropdown} onStartShouldSetResponder={() => true}>
+                {isTypeModalVisible && !isPreview && (
+                  <View style={styles.inlineDropdown}>
                     <ScrollView
                       nestedScrollEnabled={true}
                       keyboardShouldPersistTaps="handled"
@@ -1068,6 +1214,7 @@ export default function EditProfileScreen() {
                   label="Organization Name"
                   value={formData.organization_name}
                   onChangeText={v => handleChange('organization_name', v)}
+                  disabled={isPreview}
                   error={errors.organization_name}
                 />
               </View>
@@ -1136,13 +1283,14 @@ export default function EditProfileScreen() {
                   minLength={1}
                   onFail={(error) => console.log('Google Places Autocomplete Error:', error)}
                   onPress={async (data, details = null) => {
+                    if (isPreview) return;
                     const selectedAddr = data.description || (data as any).formatted_address || '';
                     handleChange('address', selectedAddr);
                     addressPlacesRef.current?.setAddressText(selectedAddr);
                     const validationData = await validateBusinessAddressWithAPI(selectedAddr, GOOGLE_MAPS_API_KEY);
                     setAddressValidation(validationData);
                     if (validationData?.addressType === 'residential' || validationData?.isBusinessAddress === false) {
-                      setErrors(prev => ({...prev, address: 'For your safety, please use the business address'}));
+                      setErrors(prev => ({...prev, address: 'Enter a nearby business address to match you with nearby requests— your exact location is never shared with anyone'}));
                     } else {
                       setErrors(prev => ({...prev, address: ''}));
                     }
@@ -1163,7 +1311,7 @@ export default function EditProfileScreen() {
                       zIndex: 9999,
                     },
                     textInputContainer: {
-                      backgroundColor: Colors.neutral[0],
+                      backgroundColor: isPreview ? Colors.neutral[100] : Colors.neutral[0],
                       borderRadius: 12,
                       borderWidth: 1,
                       borderColor: errors.address ? Colors.error : Colors.neutral[300],
@@ -1207,8 +1355,10 @@ export default function EditProfileScreen() {
                   textInputProps={{
                     placeholderTextColor: Colors.neutral[400],
                     autoCorrect: false,
+                    editable: !isPreview,
                     defaultValue: formData.address || '',
                     onChangeText: (text) => {
+                      if (isPreview) return;
                       handleChange('address', text);
                       setAddressValidation(null);
                       if (errors.address) {
@@ -1227,7 +1377,7 @@ export default function EditProfileScreen() {
                       <MapPin color={Colors.primary[500]} size={20} />
                     </View>
                   )}
-                  renderRightButton={() => (
+                  renderRightButton={() => !isPreview ? (
                     <TouchableOpacity style={{ padding: 4 }} onPress={() => {
                       Toast.show({
                         type: 'info',
@@ -1237,7 +1387,7 @@ export default function EditProfileScreen() {
                     }}>
                       <Navigation color={Colors.primary[500]} size={20} />
                     </TouchableOpacity>
-                  )}
+                  ) : null}
                 />
                 {!!errors.address && (
                   <AppText variant="caption" color={Colors.error} style={{ marginTop: 4, marginLeft: 4 }}>
@@ -1251,28 +1401,43 @@ export default function EditProfileScreen() {
                   label="Contact Name"
                   value={formData.contact_name}
                   onChangeText={v => handleChange('contact_name', v)}
+                  disabled={isPreview}
                   error={errors.contact_name}
+                  returnKeyType="next"
+                  onSubmitEditing={() => contactEmailRef.current?.focus()}
                 />
               </View>
               <View {...registerField('contact_email')}>
                 <Input
-                  ref={registerInput('contact_email')}
+                  ref={(r) => {
+                    contactEmailRef.current = r;
+                    registerInput('contact_email')(r);
+                  }}
                   label="Contact Email"
                   value={formData.contact_email}
                   onChangeText={v => handleChange('contact_email', v)}
                   keyboardType="email-address"
+                  disabled={isPreview}
                   error={errors.contact_email}
+                  returnKeyType="next"
+                  onSubmitEditing={() => contactPhoneRef.current?.focus()}
                 />
               </View>
               <View {...registerField('contact_phone')}>
                 <Input
-                  ref={registerInput('contact_phone')}
+                  ref={(r) => {
+                    contactPhoneRef.current = r;
+                    registerInput('contact_phone')(r);
+                  }}
                   label="Contact Phone"
                   value={formData.contact_phone?.startsWith('+1') ? formData.contact_phone.slice(2) : formData.contact_phone}
                   onChangeText={v => handleChange('contact_phone', v)}
                   keyboardType="phone-pad"
                   leftIcon={<PhonePrefixPrefix />}
+                  disabled={isPreview}
                   error={errors.contact_phone}
+                  returnKeyType="done"
+                  onSubmitEditing={() => Keyboard.dismiss()}
                 />
               </View>
             </>
@@ -1281,13 +1446,26 @@ export default function EditProfileScreen() {
       </KeyboardAwareScrollView>
 
       <View style={styles.footer}>
-        <Button
-          title="Save Changes"
-          onPress={handleSave}
-          loading={saving || loading || isValidatingAddress}
-          disabled={saving || loading || isValidatingAddress || Boolean(errors.address) || addressValidation?.addressType === 'residential' || addressValidation?.isBusinessAddress === false}
-        />
+        {isPreview ? (
+          <Button
+            title="Edit Profile"
+            onPress={() => {
+              navigation.navigate('EditProfile', {
+                role: currentRole,
+                isPreview: false,
+              });
+            }}
+          />
+        ) : (
+          <Button
+            title="Save Changes"
+            onPress={handleSave}
+            loading={saving || loading || (currentRole === 'organization' && isValidatingAddress)}
+            disabled={saving || loading || (currentRole === 'organization' && isValidatingAddress) || Boolean(errors.address) || (currentRole === 'organization' && (addressValidation?.addressType === 'residential' || addressValidation?.isBusinessAddress === false))}
+          />
+        )}
       </View>
+      </KeyboardAvoidingView>
 
       <Modal visible={isMapModalVisible} transparent animationType="slide">
         <View style={styles.mapModalContainer}>
@@ -1307,7 +1485,7 @@ export default function EditProfileScreen() {
             }}
           >
             <Marker 
-              draggable
+              draggable={!isPreview}
               coordinate={{ latitude: Number(formData.latitude) || region.latitude, longitude: Number(formData.longitude) || region.longitude }} 
               onDragEnd={handleMarkerDragEnd}
             />
@@ -1451,11 +1629,12 @@ const styles = StyleSheet.create({
     borderRadius: 16,
   },
   sliderSubtitle: {
-    marginBottom: 16,
+    marginBottom: 8,
   },
   sliderContainer: {
-    height: 40,
-    justifyContent: 'center',
+    height: 68,
+    justifyContent: 'flex-end',
+    paddingBottom: 8,
     marginBottom: 4,
   },
   sliderTrack: {
@@ -1463,6 +1642,10 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.neutral[200],
     borderRadius: 3,
     width: '100%',
+    position: 'absolute',
+    bottom: 14,
+    left: 0,
+    right: 0,
   },
   sliderFill: {
     height: 6,
@@ -1471,6 +1654,7 @@ const styles = StyleSheet.create({
   },
   sliderThumb: {
     position: 'absolute',
+    bottom: 3,
     width: 28,
     height: 28,
     borderRadius: 14,
@@ -1478,6 +1662,47 @@ const styles = StyleSheet.create({
     borderWidth: 3,
     borderColor: Colors.primary[500],
     marginLeft: -14, // Center thumb
+    shadowColor: Colors.neutral[900],
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  sliderBubbleContainer: {
+    position: 'absolute',
+    bottom: 35,
+    width: 74,
+  },
+  sliderBubble: {
+    backgroundColor: Colors.primary[500],
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+    shadowColor: Colors.primary[900],
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  sliderBubbleText: {
+    fontSize: 12,
+    textAlign: 'center',
+  },
+  sliderBubbleArrow: {
+    width: 0,
+    height: 0,
+    backgroundColor: 'transparent',
+    borderStyle: 'solid',
+    borderLeftWidth: 5,
+    borderRightWidth: 5,
+    borderTopWidth: 5,
+    borderLeftColor: 'transparent',
+    borderRightColor: 'transparent',
+    borderTopColor: Colors.primary[500],
+    marginTop: -1,
   },
   sliderLimitsRow: {
     flexDirection: 'row',
@@ -1565,15 +1790,6 @@ const styles = StyleSheet.create({
     elevation: 5,
     maxHeight: 220,
     zIndex: 10,
-  },
-  dropdownBackdrop: {
-    position: 'absolute',
-    top: -4000,
-    bottom: -4000,
-    left: -4000,
-    right: -4000,
-    zIndex: 1,
-    backgroundColor: 'transparent',
   },
   dropdownScrollView: {
     maxHeight: 220,

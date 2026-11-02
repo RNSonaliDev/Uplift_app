@@ -14,33 +14,25 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import {useNavigation, useFocusEffect} from '@react-navigation/native';
 import { launchImageLibrary } from 'react-native-image-picker';
 import Toast from 'react-native-toast-message';
-import {api, getFullImageUrl, clearAuthToken} from '../../../api/client';
+import {getFullImageUrl, clearAuthToken} from '../../../api/client';
 import {authApi, UserProfileResponse} from '../../../api/auth';
 import {pushNotificationService} from '../../../services/PushNotificationService';
 import {Colors} from '../../../theme/colors';
 import {Typography} from '../../../theme/typography';
-import {horizontalScale, verticalScale, moderateScale, hp} from '../../../utils/responsive';
-import { button_user } from '../../../assets/images';
+import {horizontalScale, verticalScale, moderateScale} from '../../../utils/responsive';
 import {AppText} from '../../../components/AppText';
 import {
-  ChevronLeft,
-  Edit2,
   Camera,
   User,
-  MapPin,
-  CreditCard,
   Phone,
   Bell,
   ChevronRight,
   PlusCircle,
   Settings as SettingsIcon,
-  Key,
   LogOut,
   Shield,
-  FileText,
   HelpCircle,
   Headphones,
-  Star,
   Mail,
   Trash2,
 } from 'lucide-react-native';
@@ -173,13 +165,7 @@ export default function MyProfileScreen() {
     );
   };
 
-  const openTerms = () => {
-    navigation.navigate('LegalContent', { type: 'terms' });
-  };
 
-  const openPrivacy = () => {
-    navigation.navigate('LegalContent', { type: 'privacy' });
-  };
 
   const userRoles = profile?.roles?.map((r: any) => (typeof r === 'string' ? r : r.role || r.name || r)) || [];
   const pendingRoles = (profile as any)?.pending_roles?.map((r: any) => (typeof r === 'string' ? r : r.role || r.name || r)) || [];
@@ -285,13 +271,20 @@ export default function MyProfileScreen() {
           <MenuItem 
             icon={<User color={Colors.neutral[500]} size={24} />} 
             title="Personal Information" 
-            onPress={() => navigation.navigate('EditProfile', { role: profile?.default_role || 'beneficiary' })} 
+            onPress={() => navigation.navigate('ProfilePreview', { role: profile?.default_role || 'beneficiary' })} 
           />
           {/* <MenuItem 
             icon={<CreditCard color={Colors.neutral[500]} size={24} />} 
             title="Payment Methods" 
             onPress={() => {}} 
           /> */}
+                    {userRoles.length > 1 && (
+            <MenuItem 
+              icon={<SettingsIcon color={Colors.neutral[500]} size={24} />} 
+              title="Switch Role" 
+              onPress={() => profile && navigation.navigate('DashboardRoleSelection', { selectedRoles: userRoles, currentRole: profile.default_role })} 
+            />
+          )}
           <MenuItem 
             icon={<Phone color={Colors.neutral[500]} size={24} />} 
             title="Emergency Contacts" 
@@ -309,13 +302,7 @@ export default function MyProfileScreen() {
               onPress={() => navigation.navigate('SelectRoles', { fromProfile: true })} 
             />
           )}
-          {userRoles.length > 1 && (
-            <MenuItem 
-              icon={<SettingsIcon color={Colors.neutral[500]} size={24} />} 
-              title="Switch Role" 
-              onPress={() => profile && navigation.navigate('DashboardRoleSelection', { selectedRoles: userRoles, currentRole: profile.default_role })} 
-            />
-          )}
+
           {/* <MenuItem 
             icon={<Key color={Colors.neutral[500]} size={24} />} 
             title="Change Password" 
@@ -323,19 +310,14 @@ export default function MyProfileScreen() {
           /> */}
           <MenuItem 
             icon={<Shield color={Colors.neutral[500]} size={24} />} 
-            title="Privacy Policy" 
-            onPress={openPrivacy} 
+            title="Policies" 
+            onPress={() => navigation.navigate('Policies')} 
           />
           <MenuItem 
-            icon={<FileText color={Colors.neutral[500]} size={24} />} 
-            title="Terms of Service" 
-            onPress={openTerms} 
-          />
-          {/* <MenuItem 
             icon={<HelpCircle color={Colors.neutral[500]} size={24} />} 
-            title="Help Center" 
-            onPress={() => {}} 
-          /> */}
+            title="FAQ" 
+            onPress={() => navigation.navigate('FAQ')} 
+          />
           <MenuItem 
             icon={<Headphones color={Colors.neutral[500]} size={24} />} 
             title="Contact Support" 

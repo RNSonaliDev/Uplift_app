@@ -1,12 +1,12 @@
 import React, { useState, useCallback } from 'react';
-import { View, StyleSheet, SafeAreaView, TouchableOpacity, ScrollView, RefreshControl, Linking, ActivityIndicator, Modal } from 'react-native';
+import { View, StyleSheet, SafeAreaView, TouchableOpacity, ScrollView, RefreshControl, Linking, ActivityIndicator, Modal, Alert } from 'react-native';
 import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native';
 import { useStripe, LinkDisplay } from '@stripe/stripe-react-native';
 import { Colors } from '../../../theme/colors';
-import { Typography, FontFamily } from '../../../theme/typography';
+import { FontFamily } from '../../../theme/typography';
 import { AppText } from '../../../components/AppText';
 import { Button } from '../../../components/Button';
-import { FileText, Link2, Briefcase, Tag, ChevronLeft, Building, DollarSign, Clock, Edit2, Info, Sparkles, Check, X } from 'lucide-react-native';
+import { FileText, Link2, Briefcase, Tag, ChevronLeft, Building, DollarSign, Clock, Pencil, Trash2, Info, Sparkles, Check, X } from 'lucide-react-native';
 import { api } from '../../../api/client';
 import { plansApi, Plan, CreatePlanPurchaseResponse } from '../../../api/plans';
 import Toast from 'react-native-toast-message';
@@ -19,6 +19,7 @@ export const JobDetailsScreen = () => {
   const [job, setJob] = useState<any>(route.params?.job || null);
   const [loading, setLoading] = useState(false);
   const [closing, setClosing] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [plans, setPlans] = useState<Plan[]>([]);
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
@@ -55,13 +56,16 @@ export const JobDetailsScreen = () => {
     }
   }, [job?.id, initPaymentSheet]);
 
-  const fetchPlans = useCallback(async () => {
+  const fetchPlans = useCallback(async (plansList?: Plan[]) => {
     try {
       setLoadingPlans(true);
-      const data = await plansApi.getPlans('job');
+      let data: Plan[] = plansList && plansList.length > 0 ? plansList : [];
+      if (!data || data.length === 0) {
+        data = await plansApi.getPlans('job');
+      }
       if (data && data.length > 0) {
         setPlans(data);
-        const defaultPlan = data.find((p) => p.code === 'featured') || data[0];
+        const defaultPlan = data.find((p) => (p.code || '').toLowerCase() === 'featured') || data[0];
         handleSelectPlan(defaultPlan);
       }
     } catch (error) {
@@ -78,7 +82,12 @@ export const JobDetailsScreen = () => {
       const data = await api.get<any>(`/job_posts/${job.id}`);
       setJob(data);
       if (data?.status === 'draft') {
-        fetchPlans();
+        const availablePlans = data?.available_plans || data?.job_post?.available_plans;
+        if (Array.isArray(availablePlans) && availablePlans.length > 0) {
+          fetchPlans(availablePlans);
+        } else {
+          fetchPlans();
+        }
       }
     } catch (error) {
       console.error('Failed to fetch job details', error);
@@ -91,9 +100,14 @@ export const JobDetailsScreen = () => {
     useCallback(() => {
       fetchJob();
       if (job?.status === 'draft') {
-        fetchPlans();
+        const availablePlans = job?.available_plans || job?.job_post?.available_plans;
+        if (Array.isArray(availablePlans) && availablePlans.length > 0) {
+          fetchPlans(availablePlans);
+        } else {
+          fetchPlans();
+        }
       }
-    }, [fetchJob, fetchPlans, job?.status])
+    }, [fetchJob, fetchPlans, job?.status, job?.available_plans, job?.job_post?.available_plans])
   );
 
   const handleClose = async () => {
@@ -109,12 +123,56 @@ export const JobDetailsScreen = () => {
     }
   };
 
+  const handleDelete = async () => {
+    const targetId = job?.id;
+    if (!targetId) {
+      Toast.show({ type: 'error', text1: 'Error', text2: 'Invalid job ID' });
+      return;
+    }
+
+    Alert.alert(
+      'Delete Job',
+      'Are you sure you want to delete this job? This action cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              setDeleting(true);
+              await api.delete(`/job_posts/${targetId}`);
+              Toast.show({
+                type: 'success',
+                text1: 'Deleted',
+                text2: 'Job deleted successfully!',
+              });
+              navigation.goBack();
+            } catch (error: any) {
+              console.error('Failed to delete job', error);
+              Toast.show({
+                type: 'error',
+                text1: 'Delete Failed',
+                text2: error?.data?.errors?.[0] || error?.message || 'Failed to delete job',
+              });
+            } finally {
+              setDeleting(false);
+            }
+          },
+        },
+      ]
+    );
+  };
+
   const handleOpenPublish = () => {
     setIsPlanModalVisible(true);
-    if (plans.length === 0) {
+    const availablePlans = job?.available_plans || job?.job_post?.available_plans;
+    if (Array.isArray(availablePlans) && availablePlans.length > 0 && plans.length === 0) {
+      fetchPlans(availablePlans);
+    } else if (plans.length === 0) {
       fetchPlans();
     } else if (!selectedPlan && plans.length > 0) {
-      const defaultPlan = plans.find((p) => p.code === 'featured') || plans[0];
+      const defaultPlan = plans.find((p) => (p.code || '').toLowerCase() === 'featured') || plans[0];
       handleSelectPlan(defaultPlan);
     }
   };
@@ -178,7 +236,7 @@ export const JobDetailsScreen = () => {
           plan_code: selectedPlan.code,
           plan_purchase_id: purchaseId,
         });
-      } catch (pubErr) {
+      } catch {
         // If confirm already marked job published, ignore
       }
 
@@ -218,18 +276,55 @@ export const JobDetailsScreen = () => {
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.iconButton}>
             <ChevronLeft color={Colors.neutral[0]} size={28} strokeWidth={2} />
           </TouchableOpacity>
-          <View style={{width: 50, alignItems: 'flex-end'}}>
-            {job.status === 'draft' && (
-              <TouchableOpacity onPress={() => navigation.navigate('CreateJob', { job })}>
-                <Edit2 color={Colors.neutral[0]} size={20} />
-              </TouchableOpacity>
-            )}
+          <View style={{ minWidth: 50, flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center' }}>
+            {(() => {
+              const isClosed = (job?.status || '').toLowerCase() === 'closed' || (job?.status || '').toLowerCase() === 'expired';
+              if (isClosed) return null;
+              return (
+                <>
+                  <TouchableOpacity
+                    onPress={() => navigation.navigate('CreateJob', { job })}
+                    style={{ marginRight: 14 }}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                    <Pencil color={Colors.neutral[0]} size={22} />
+                  </TouchableOpacity>
+                  <TouchableOpacity 
+                    onPress={handleDelete}
+                    disabled={deleting}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                    <Trash2 color={Colors.neutral[0]} size={22} />
+                  </TouchableOpacity>
+                </>
+              );
+            })()}
           </View>
         </View>
       <ScrollView 
         contentContainerStyle={styles.content}
         refreshControl={<RefreshControl refreshing={loading} onRefresh={fetchJob} />}
       >
+        {job.company_name ? (
+          <View style={styles.detailRowItem}>
+            <View style={styles.detailLabelRow}>
+              <Building color={Colors.neutral[600]} size={20} />
+              <AppText variant="bodyMedium" color={Colors.neutral[900]} style={{marginLeft: 8, fontFamily: FontFamily.medium}}>Company Name</AppText>
+            </View>
+            <AppText variant="bodyMedium" color={Colors.neutral[600]} style={{flex: 1, textAlign: 'right', marginLeft: 16}}>
+              {job.company_name}
+            </AppText>
+          </View>
+        ) : null}
+
+        <View style={styles.detailRowItem}>
+          <View style={styles.detailLabelRow}>
+            <Briefcase color={Colors.neutral[600]} size={20} />
+            <AppText variant="bodyMedium" color={Colors.neutral[900]} style={{marginLeft: 8, fontFamily: FontFamily.medium}}>Job Title</AppText>
+          </View>
+          <AppText variant="bodyMedium" color={Colors.neutral[600]} style={{flex: 1, textAlign: 'right', marginLeft: 16}}>
+            {job.title}
+          </AppText>
+        </View>
+
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
           <View style={styles.detailLabelRow}>
             <Info color={Colors.neutral[600]} size={20} />
@@ -242,16 +337,6 @@ export const JobDetailsScreen = () => {
               </AppText>
             </View>
           </View>
-        </View>
-
-        <View style={styles.detailRowItem}>
-          <View style={styles.detailLabelRow}>
-            <Briefcase color={Colors.neutral[600]} size={20} />
-            <AppText variant="bodyMedium" color={Colors.neutral[900]} style={{marginLeft: 8, fontFamily: FontFamily.medium}}>Job Title</AppText>
-          </View>
-          <AppText variant="bodyMedium" color={Colors.neutral[600]} style={{flex: 1, textAlign: 'right', marginLeft: 16}}>
-            {job.title}
-          </AppText>
         </View>
 
         {job.department && (
@@ -413,7 +498,6 @@ export const JobDetailsScreen = () => {
             <View style={styles.modalHeader}>
               <View style={{ flex: 1, marginRight: 8 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                  <Sparkles color={Colors.primary[600]} size={20} />
                   <AppText variant="bodyLarge" weight="bold" color={Colors.neutral[900]} style={{ marginLeft: 8 }}>
                     Choose Plan to Publish
                   </AppText>

@@ -312,6 +312,8 @@ export const CreateAccountScreen: React.FC = () => {
               keyboardType="email-address"
               autoCapitalize="none"
               containerStyle={styles.inputContainer}
+              returnKeyType="done"
+              onSubmitEditing={handleContinue}
             />
           </View>
 

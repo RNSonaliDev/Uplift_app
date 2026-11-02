@@ -6,6 +6,9 @@ import {
   TouchableOpacity,
   TextInput,
   ScrollView,
+  KeyboardAvoidingView,
+  Platform,
+  Keyboard,
 } from 'react-native';
 import Toast from 'react-native-toast-message';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -83,6 +86,10 @@ export default function RateExperienceScreen() {
         </View>
       </View>
 
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={{ flex: 1 }}
+      >
       <ScrollView contentContainerStyle={styles.scrollContent} bounces={false}>
         <View style={styles.card}>
           <AppText variant="h5" color={Colors.neutral[900]} style={styles.title}>
@@ -123,6 +130,9 @@ export default function RateExperienceScreen() {
               onChangeText={setNotes}
               multiline
               textAlignVertical="top"
+              returnKeyType="done"
+              blurOnSubmit={true}
+              onSubmitEditing={() => Keyboard.dismiss()}
             />
           </View>
 
@@ -140,6 +150,7 @@ export default function RateExperienceScreen() {
         </AppText>
 
       </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
     </>
   );

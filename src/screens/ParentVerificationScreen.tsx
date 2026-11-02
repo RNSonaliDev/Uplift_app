@@ -13,6 +13,7 @@ import {
   Keyboard,
   Platform,
   AppState,
+  Clipboard,
 } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import {SafeAreaView} from 'react-native-safe-area-context';
@@ -154,28 +155,82 @@ interface OtpInputProps {
 const OtpInput: React.FC<OtpInputProps> = ({length, value, onChange}) => {
   const inputRefs = useRef<(TextInput | null)[]>([]);
 
-  const handleChange = (text: string, index: number) => {
-    const newOtp = [...value];
+  const handlePasteDigits = (rawText: string, startIndex = 0) => {
+    const digits = rawText.replace(/[^0-9]/g, '');
+    if (!digits) return false;
 
-    if (text.length > 1) {
-      // Handle paste
-      const pastedChars = text.split('').slice(0, length);
-      pastedChars.forEach((char, i) => {
-        if (index + i < length) {
-          newOtp[index + i] = char;
+    const newOtp = [...value];
+    const pasteChars = digits.split('');
+    const actualStart = pasteChars.length >= length ? 0 : startIndex;
+
+    pasteChars.forEach((char, i) => {
+      if (actualStart + i < length) {
+        newOtp[actualStart + i] = char;
+      }
+    });
+
+    onChange(newOtp);
+    const lastFilled = Math.min(actualStart + pasteChars.length, length) - 1;
+    inputRefs.current[Math.max(0, lastFilled)]?.focus();
+    return true;
+  };
+
+  const handlePasteClipboard = async () => {
+    try {
+      const text = await Clipboard.getString();
+      if (text) {
+        const success = handlePasteDigits(text, 0);
+        if (success) {
+          Toast.show({
+            type: 'success',
+            text1: 'Code Pasted',
+            text2: 'Verification code pasted from clipboard.',
+          });
         }
-      });
-      onChange(newOtp);
-      const nextIndex = Math.min(index + pastedChars.length, length - 1);
-      inputRefs.current[nextIndex]?.focus();
+      }
+    } catch (err) {
+      console.log('Clipboard read error:', err);
+    }
+  };
+
+  const handleChange = (text: string, index: number) => {
+    const digits = text.replace(/[^0-9]/g, '');
+
+    // Case 1: Multiple digits (paste / SMS autofill)
+    if (digits.length > 1) {
+      const currentVal = value[index] || '';
+      if (digits.length === 2 && currentVal && digits.includes(currentVal)) {
+        const newChar = digits.replace(currentVal, '').slice(0, 1) || digits.slice(-1);
+        const newOtp = [...value];
+        newOtp[index] = newChar;
+        onChange(newOtp);
+        if (index < length - 1) {
+          inputRefs.current[index + 1]?.focus();
+        }
+        return;
+      }
+
+      handlePasteDigits(digits, index);
       return;
     }
 
-    newOtp[index] = text;
-    onChange(newOtp);
+    // Case 2: Single digit entered
+    if (digits.length === 1) {
+      const newOtp = [...value];
+      newOtp[index] = digits;
+      onChange(newOtp);
 
-    if (text && index < length - 1) {
-      inputRefs.current[index + 1]?.focus();
+      if (index < length - 1) {
+        inputRefs.current[index + 1]?.focus();
+      }
+      return;
+    }
+
+    // Case 3: Cleared
+    if (digits.length === 0) {
+      const newOtp = [...value];
+      newOtp[index] = '';
+      onChange(newOtp);
     }
   };
 
@@ -191,32 +246,51 @@ const OtpInput: React.FC<OtpInputProps> = ({length, value, onChange}) => {
     }
   };
 
-  return (
-    <View style={otpStyles.container}>
-      {Array.from({length}, (_, index) => {
-        const isFocused = false; // managed by TextInput internally
-        const hasValue = !!value[index];
+  const isComplete = value.every(v => !!v);
 
-        return (
-          <TextInput
-            key={index}
-            ref={ref => {
-              inputRefs.current[index] = ref;
-            }}
-            style={[
-              otpStyles.input,
-              hasValue && otpStyles.inputFilled,
-            ]}
-            maxLength={1}
-            keyboardType="number-pad"
-            value={value[index] || ''}
-            onChangeText={text => handleChange(text, index)}
-            onKeyPress={e => handleKeyPress(e, index)}
-            selectTextOnFocus
-            selectionColor={Colors.primary[500]}
-          />
-        );
-      })}
+  return (
+    <View>
+      <View style={otpStyles.container}>
+        {Array.from({length}, (_, index) => {
+          const hasValue = !!value[index];
+
+          return (
+            <TextInput
+              key={index}
+              ref={ref => {
+                inputRefs.current[index] = ref;
+              }}
+              style={[
+                otpStyles.input,
+                hasValue && otpStyles.inputFilled,
+              ]}
+              maxLength={length}
+              keyboardType="number-pad"
+              textContentType="oneTimeCode"
+              autoComplete={Platform.OS === 'android' ? 'sms-otp' : 'one-time-code'}
+              importantForAutofill="yes"
+              contextMenuHidden={false}
+              value={value[index] || ''}
+              onChangeText={text => handleChange(text, index)}
+              onKeyPress={e => handleKeyPress(e, index)}
+              selectTextOnFocus
+              selectionColor={Colors.primary[500]}
+            />
+          );
+        })}
+      </View>
+
+      {!isComplete && (
+        <TouchableOpacity
+          onPress={handlePasteClipboard}
+          style={otpStyles.pasteButton}
+          activeOpacity={0.7}
+        >
+          <AppText variant="labelSmall" color={Colors.primary[600]} style={otpStyles.pasteButtonText}>
+            Paste code from clipboard
+          </AppText>
+        </TouchableOpacity>
+      )}
     </View>
   );
 };
@@ -249,6 +323,16 @@ const otpStyles = StyleSheet.create({
   inputFilled: {
     borderColor: Colors.primary[500],
     backgroundColor: Colors.primary[50],
+  },
+  pasteButton: {
+    alignSelf: 'center',
+    marginTop: verticalScale(10),
+    paddingVertical: verticalScale(4),
+    paddingHorizontal: horizontalScale(8),
+  },
+  pasteButtonText: {
+    fontFamily: FontFamily.medium,
+    textDecorationLine: 'underline',
   },
 });
 

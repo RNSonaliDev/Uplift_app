@@ -26,6 +26,7 @@ import {JobPreviewScreen} from '../screens/organization/jobs/JobPreviewScreen';
 import {JobDetailsScreen} from '../screens/organization/jobs/JobDetailsScreen';
 
 // Profile
+import ProfilePreviewScreen from '../screens/beneficiary/profile/ProfilePreviewScreen';
 import EditProfileScreen from '../screens/beneficiary/profile/EditProfileScreen';
 import SettingsScreen from '../screens/beneficiary/profile/SettingsScreen';
 import LegalContentScreen from '../screens/beneficiary/profile/LegalContentScreen';
@@ -33,6 +34,8 @@ import EmergencyContactsScreen from '../screens/beneficiary/profile/EmergencyCon
 import ContactSupportScreen from '../screens/beneficiary/profile/ContactSupportScreen';
 import ContactSupportDetailsScreen from '../screens/beneficiary/profile/ContactSupportDetailsScreen';
 import CreateSupportRequestScreen from '../screens/beneficiary/profile/CreateSupportRequestScreen';
+import FAQScreen from '../screens/beneficiary/profile/FAQScreen';
+import PoliciesScreen from '../screens/beneficiary/profile/PoliciesScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -65,6 +68,7 @@ export function OrganizationRootStack() {
       <Stack.Screen name="PromotionDetails" component={PromotionDetailsScreen} />
 
       {/* Profile Stack Screens */}
+      <Stack.Screen name="ProfilePreview" component={ProfilePreviewScreen} />
       <Stack.Screen name="EditProfile" component={EditProfileScreen} />
       <Stack.Screen name="Settings" component={SettingsScreen} />
       <Stack.Screen name="LegalContent" component={LegalContentScreen} />
@@ -72,6 +76,8 @@ export function OrganizationRootStack() {
       <Stack.Screen name="ContactSupport" component={ContactSupportScreen} />
       <Stack.Screen name="ContactSupportDetails" component={ContactSupportDetailsScreen} />
       <Stack.Screen name="CreateSupportRequest" component={CreateSupportRequestScreen} />
+      <Stack.Screen name="FAQ" component={FAQScreen} />
+      <Stack.Screen name="Policies" component={PoliciesScreen} />
     </Stack.Navigator>
   );
 }

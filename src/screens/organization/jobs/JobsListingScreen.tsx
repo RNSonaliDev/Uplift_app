@@ -1,12 +1,13 @@
 import React, { useState, useCallback } from 'react';
-import { View, StyleSheet, SafeAreaView, TouchableOpacity, ScrollView, RefreshControl } from 'react-native';
+import { View, StyleSheet, SafeAreaView, TouchableOpacity, ScrollView, RefreshControl, Alert } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
-import { Plus, Briefcase, Link2 } from 'lucide-react-native';
+import { Plus, Briefcase, Link2, Pencil, Trash2 } from 'lucide-react-native';
 import { Colors } from '../../../theme/colors';
-import { Typography, FontFamily } from '../../../theme/typography';
+import { FontFamily } from '../../../theme/typography';
 import { AppText } from '../../../components/AppText';
 import { api } from '../../../api/client';
 import { formatStatus, getStatusColors } from '../../../utils/statusUtils';
+import Toast from 'react-native-toast-message';
 
 export const JobsListingScreen = () => {
   const navigation = useNavigation<any>();
@@ -38,6 +39,37 @@ export const JobsListingScreen = () => {
     }, [fetchJobs])
   );
 
+  const handleDeleteJob = (jobItem: any) => {
+    Alert.alert(
+      'Delete Job',
+      `Are you sure you want to delete "${jobItem.company_name || jobItem.title || 'this job'}"? This action cannot be undone.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await api.delete(`/job_posts/${jobItem.id}`);
+              Toast.show({
+                type: 'success',
+                text1: 'Deleted',
+                text2: 'Job has been deleted.',
+              });
+              fetchJobs();
+            } catch (error: any) {
+              Toast.show({
+                type: 'error',
+                text1: 'Delete Failed',
+                text2: error?.data?.errors?.[0] || error?.message || 'Failed to delete job',
+              });
+            }
+          },
+        },
+      ]
+    );
+  };
+
   const renderJobCard = (job: any) => {
     const statusStyle = getStatusColors(job.status);
     return (
@@ -47,9 +79,9 @@ export const JobsListingScreen = () => {
         onPress={() => navigation.navigate('JobDetails', { job })}
         activeOpacity={0.7}
       >
-        {(job.department || job.job_type || job.status) && (
+        {(job.badge || job.department || job.job_type || job.status) && (
           <View style={styles.badgeRow}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, flexWrap: 'wrap', gap: 6, marginRight: 8 }}>
+            <View style={styles.badgesContainer}>
               {job.badge && (
                 <View style={[styles.categoryBadge, { backgroundColor: Colors.primary[100], borderColor: Colors.primary[300] }]}>
                   <AppText variant="labelSmall" color={Colors.primary[700]} style={{ fontFamily: FontFamily.bold }}>
@@ -72,17 +104,54 @@ export const JobsListingScreen = () => {
                 </View>
               )}
             </View>
-            {job.status ? (
-              <View style={[styles.statusBadge, { backgroundColor: statusStyle.bg, borderWidth: 0 }]}>
-                <AppText variant="labelSmall" color={statusStyle.text} style={{ fontFamily: FontFamily.semiBold }}>
-                  {formatStatus(job.status)}
-                </AppText>
-              </View>
-            ) : null}
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              {job.status ? (
+                <View style={[styles.statusBadge, { backgroundColor: statusStyle.bg, borderWidth: 0 }]}>
+                  <AppText variant="labelSmall" color={statusStyle.text} style={{ fontFamily: FontFamily.semiBold }}>
+                    {formatStatus(job.status)}
+                  </AppText>
+                </View>
+              ) : null}
+              {!((job.status || '').toLowerCase() === 'closed' || (job.status || '').toLowerCase() === 'expired') && (
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginLeft: 6 }}>
+                  <TouchableOpacity
+                    style={{ padding: 4, marginRight: 4 }}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    onPress={(e) => {
+                      e.stopPropagation();
+                      navigation.navigate('CreateJob', { job });
+                    }}>
+                    <Pencil size={20} color={Colors.primary[600]} />
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={{ padding: 4 }}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    onPress={(e) => {
+                      e.stopPropagation();
+                      handleDeleteJob(job);
+                    }}>
+                    <Trash2 size={20} color={Colors.error} />
+                  </TouchableOpacity>
+                </View>
+              )}
+            </View>
           </View>
         )}
 
-        <AppText variant="bodyLarge" weight="semiBold" color={Colors.neutral[900]} numberOfLines={1} style={styles.jobTitle}>
+        {job.company_name ? (
+          <AppText variant="bodyLarge" weight="bold" color={Colors.neutral[900]} numberOfLines={1} style={styles.companyName}>
+            {job.company_name}
+          </AppText>
+        ) : null}
+
+        <AppText
+          variant={job.company_name ? 'bodyMedium' : 'bodyLarge'}
+          weight={job.company_name ? 'medium' : 'semiBold'}
+          color={job.company_name ? Colors.neutral[700] : Colors.neutral[900]}
+          numberOfLines={1}
+          style={styles.jobTitle}
+        >
           {job.title}
         </AppText>
 
@@ -232,37 +301,46 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 3,
     borderRadius: 12,
-    borderWidth: 1,
-    marginLeft: 8,
+    alignSelf: 'flex-start',
   },
   badgeRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     justifyContent: 'space-between',
-    marginBottom: 6,
+    marginBottom: 8,
+  },
+  badgesContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    flexWrap: 'wrap',
+    gap: 6,
+    marginRight: 8,
+  },
+  companyName: {
+    marginBottom: 2,
   },
   jobTitle: {
-    marginBottom: 2,
+    marginBottom: 4,
   },
   categoryBadge: {
     backgroundColor: Colors.primary[50],
-    paddingHorizontal: 10,
+    paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 12,
-    flexShrink: 1,
-    marginRight: 8,
   },
   subCategoryBadge: {
     backgroundColor: Colors.neutral[50],
-    paddingHorizontal: 10,
-    paddingVertical: 3,
+    borderWidth: 1,
+    borderColor: Colors.neutral[200],
+    paddingHorizontal: 8,
+    paddingVertical: 2,
     borderRadius: 12,
-    marginLeft: 'auto',
   },
   urlRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 8,
+    marginTop: 4,
   },
   fab: {
     position: 'absolute',

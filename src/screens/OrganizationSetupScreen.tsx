@@ -468,7 +468,7 @@ export const OrganizationSetupScreen: React.FC = () => {
       Toast.show({
         type: 'error',
         text1: 'Business Address Required',
-        text2: 'For your safety, please use the business address.',
+        text2: 'Enter a nearby business address to match you with nearby requests— your exact location is never shared with anyone',
       });
       return;
     }
@@ -544,17 +544,8 @@ export const OrganizationSetupScreen: React.FC = () => {
         enableOnAndroid={true}
         extraScrollHeight={20}
         enableResetScrollToCoords={false}
-        onScrollBeginDrag={() => {
-          if (isTypeModalVisible) setTypeModalVisible(false);
-        }}>
-          
-        <TouchableWithoutFeedback
-          onPress={() => {
-            if (isTypeModalVisible) setTypeModalVisible(false);
-          }}
-          accessible={false}
-        >
-          <View style={{ flex: 1 }}>
+      >
+        <View style={{ flex: 1 }}>
           {/* Header with Back Button */}
           <TouchableOpacity
             style={styles.backButton}
@@ -588,12 +579,6 @@ export const OrganizationSetupScreen: React.FC = () => {
           {/* Organization Form Fields */}
           <View style={[styles.formSection, { zIndex: 100 }]}>
             <View {...registerField('orgType')} style={{ position: 'relative', zIndex: 100 }}>
-              {isTypeModalVisible && (
-                <Pressable
-                  style={styles.dropdownBackdrop}
-                  onPress={() => setTypeModalVisible(false)}
-                />
-              )}
               <TouchableOpacity activeOpacity={0.8} onPress={() => setTypeModalVisible(!isTypeModalVisible)}>
                 <View pointerEvents="none">
                   <Input
@@ -608,7 +593,7 @@ export const OrganizationSetupScreen: React.FC = () => {
               </TouchableOpacity>
 
               {isTypeModalVisible && (
-                <View style={styles.inlineDropdown} onStartShouldSetResponder={() => true}>
+                <View style={styles.inlineDropdown}>
                   <ScrollView
                     nestedScrollEnabled={true}
                     keyboardShouldPersistTaps="handled"
@@ -969,7 +954,6 @@ export const OrganizationSetupScreen: React.FC = () => {
             style={styles.continueButton}
           />
           </View>
-        </TouchableWithoutFeedback>
       </KeyboardAwareScrollView>
 
 
@@ -1093,15 +1077,6 @@ const styles = StyleSheet.create({
     elevation: 5,
     maxHeight: verticalScale(220),
     zIndex: 10,
-  },
-  dropdownBackdrop: {
-    position: 'absolute',
-    top: -4000,
-    bottom: -4000,
-    left: -4000,
-    right: -4000,
-    zIndex: 1,
-    backgroundColor: 'transparent',
   },
   dropdownScrollView: {
     maxHeight: verticalScale(220),

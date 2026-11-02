@@ -15,6 +15,8 @@ import {
   Platform,
   Pressable,
   Dimensions,
+  Keyboard,
+  KeyboardAvoidingView,
 } from 'react-native';
 import Svg, { Circle, Path } from 'react-native-svg';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
@@ -130,6 +132,10 @@ export const CreatePromotionScreen = () => {
     language: 'en',
   }), []);
   const googlePlacesRef = useRef<any>(null);
+  const onlineUrlInputRef = useRef<TextInput>(null);
+  const promoCodeInputRef = useRef<TextInput>(null);
+  const quantityInputRef = useRef<TextInput>(null);
+  const termsInputRef = useRef<TextInput>(null);
 
   // Form states
   const [title, setTitle] = useState('');
@@ -181,7 +187,7 @@ export const CreatePromotionScreen = () => {
             const validationData = await validateBusinessAddressWithAPI(addressStr, GOOGLE_MAPS_API_KEY);
             setAddressValidation(validationData);
             if (validationData?.addressType === 'residential' || validationData?.isBusinessAddress === false) {
-              setFieldErrors(prev => ({ ...prev, storeAddress: 'For your safety, please use the business address' }));
+              setFieldErrors(prev => ({ ...prev, storeAddress: 'Enter a nearby business address to match you with nearby requests— your exact location is never shared with anyone' }));
             } else {
               setFieldErrors(prev => ({ ...prev, storeAddress: '' }));
             }
@@ -215,7 +221,7 @@ export const CreatePromotionScreen = () => {
         const validationData = await validateBusinessAddressWithAPI(addressStr, GOOGLE_MAPS_API_KEY);
         setAddressValidation(validationData);
         if (validationData?.addressType === 'residential' || validationData?.isBusinessAddress === false) {
-          setFieldErrors(prev => ({ ...prev, storeAddress: 'For your safety, please use the business address' }));
+          setFieldErrors(prev => ({ ...prev, storeAddress: 'Enter a nearby business address to match you with nearby requests— your exact location is never shared with anyone' }));
         } else {
           setFieldErrors(prev => ({ ...prev, storeAddress: '' }));
         }
@@ -452,13 +458,13 @@ export const CreatePromotionScreen = () => {
       if (isResidential || fieldErrors.storeAddress) {
         setFieldErrors(prev => ({
           ...prev,
-          storeAddress: 'For your safety, please use the business address',
+          storeAddress: 'Enter a nearby business address to match you with nearby requests— your exact location is never shared with anyone',
         }));
         scrollToError('storeAddress');
         Toast.show({
           type: 'error',
           text1: 'Validation Error',
-          text2: 'For your safety, please use the business address',
+          text2: 'Enter a nearby business address to match you with nearby requests— your exact location is never shared with anyone',
         });
         return;
       }
@@ -538,7 +544,11 @@ export const CreatePromotionScreen = () => {
         <View style={{ width: 40 }} />
       </View>
 
-      <View style={styles.mainContainer}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={{ flex: 1 }}
+      >
+        <View style={styles.mainContainer}>
         <KeyboardAwareScrollView
           ref={scrollViewRef}
           style={styles.container}
@@ -549,21 +559,8 @@ export const CreatePromotionScreen = () => {
           extraHeight={140}
           enableOnAndroid={true}
           enableAutomaticScroll={true}
-          enableResetScrollToCoords={false}
-          onScrollBeginDrag={() => {
-            if (activeDropdown !== null) {
-              setActiveDropdown(null);
-            }
-          }}>
-          <TouchableWithoutFeedback
-            onPress={() => {
-              if (activeDropdown !== null) {
-                setActiveDropdown(null);
-              }
-            }}
-            accessible={false}
-          >
-            <View style={{ flex: 1 }}>
+          enableResetScrollToCoords={false}>
+          <View style={{ flex: 1 }}>
 
               {/* Title / Business Name */}
               <View {...registerField('title')}>
@@ -584,18 +581,20 @@ export const CreatePromotionScreen = () => {
                     setTitle(text);
                     if (fieldErrors.title) setFieldErrors(prev => ({ ...prev, title: '' }));
                   }}
+                  returnKeyType="next"
+                  onSubmitEditing={() => {
+                    if (locationType === 'online' || locationType === 'both') {
+                      onlineUrlInputRef.current?.focus();
+                    } else {
+                      promoCodeInputRef.current?.focus();
+                    }
+                  }}
                 />
                 {fieldErrors.title ? <Text style={styles.fieldErrorText}>{fieldErrors.title}</Text> : null}
               </View>
 
               {/* Promotion Type */}
               <View {...registerField('promotionType')} style={{ position: 'relative', zIndex: 10 }}>
-                {activeDropdown === 'type' && (
-                  <Pressable
-                    style={styles.dropdownBackdrop}
-                    onPress={() => setActiveDropdown(null)}
-                  />
-                )}
                 <Text style={styles.label}>
                   Promotion Type <Text style={{ color: Colors.error }}>*</Text>
                 </Text>
@@ -609,7 +608,7 @@ export const CreatePromotionScreen = () => {
                 </TouchableOpacity>
                 {fieldErrors.promotionType ? <Text style={styles.fieldErrorText}>{fieldErrors.promotionType}</Text> : null}
                 {activeDropdown === 'type' && (
-                  <View style={styles.dropdownList} onStartShouldSetResponder={() => true}>
+                  <View style={styles.dropdownList}>
                     <ScrollView
                       nestedScrollEnabled={true}
                       keyboardShouldPersistTaps="handled"
@@ -646,12 +645,6 @@ export const CreatePromotionScreen = () => {
 
               {/* Product Category */}
               <View {...registerField('productCategory')} style={{ position: 'relative', zIndex: 9 }}>
-                {activeDropdown === 'category' && (
-                  <Pressable
-                    style={styles.dropdownBackdrop}
-                    onPress={() => setActiveDropdown(null)}
-                  />
-                )}
                 <Text style={styles.label}>
                   Product Category <Text style={{ color: Colors.error }}>*</Text>
                 </Text>
@@ -665,7 +658,7 @@ export const CreatePromotionScreen = () => {
                 </TouchableOpacity>
                 {fieldErrors.productCategory ? <Text style={styles.fieldErrorText}>{fieldErrors.productCategory}</Text> : null}
                 {activeDropdown === 'category' && (
-                  <View style={styles.dropdownList} onStartShouldSetResponder={() => true}>
+                  <View style={styles.dropdownList}>
                     <ScrollView
                       nestedScrollEnabled={true}
                       keyboardShouldPersistTaps="handled"
@@ -829,7 +822,7 @@ export const CreatePromotionScreen = () => {
                       const validationData = await validateBusinessAddressWithAPI(selectedAddr, GOOGLE_MAPS_API_KEY);
                       setAddressValidation(validationData);
                       if (validationData?.addressType === 'residential' || validationData?.isBusinessAddress === false) {
-                        setFieldErrors(prev => ({ ...prev, storeAddress: 'For your safety, please use the business address' }));
+                        setFieldErrors(prev => ({ ...prev, storeAddress: 'Enter a nearby business address to match you with nearby requests— your exact location is never shared with anyone' }));
                       } else {
                         setFieldErrors(prev => ({ ...prev, storeAddress: '' }));
                       }
@@ -928,7 +921,10 @@ export const CreatePromotionScreen = () => {
                     Online URL <Text style={{ color: Colors.error }}>*</Text>
                   </Text>
                   <TextInput
-                    ref={registerInput('onlineUrl')}
+                    ref={(r) => {
+                      onlineUrlInputRef.current = r;
+                      registerInput('onlineUrl')(r);
+                    }}
                     style={[styles.input, fieldErrors.onlineUrl ? styles.inputError : null]}
                     placeholder="https://yourwebsite.com/deal"
                     placeholderTextColor={Colors.neutral[400]}
@@ -939,6 +935,8 @@ export const CreatePromotionScreen = () => {
                       setOnlineUrl(text);
                       if (fieldErrors.onlineUrl) setFieldErrors(prev => ({ ...prev, onlineUrl: '' }));
                     }}
+                    returnKeyType="next"
+                    onSubmitEditing={() => promoCodeInputRef.current?.focus()}
                   />
                   {fieldErrors.onlineUrl ? <Text style={styles.fieldErrorText}>{fieldErrors.onlineUrl}</Text> : null}
                 </View>
@@ -950,31 +948,38 @@ export const CreatePromotionScreen = () => {
                 <Text style={styles.charCount}>{promoCode.length}/6</Text>
               </View>
               <TextInput
+                ref={promoCodeInputRef}
                 style={[styles.input, { marginTop: 6 }]}
                 placeholder="iUpliftU"
                 placeholderTextColor={Colors.neutral[400]}
                 autoCapitalize="characters"
-                maxLength={6}
+                maxLength={20}
                 value={promoCode}
-                onChangeText={(text) => setPromoCode(text.toUpperCase().slice(0, 6))}
+                onChangeText={(text) => setPromoCode(text)}
+                returnKeyType="next"
+                onSubmitEditing={() => quantityInputRef.current?.focus()}
               />
               <Text style={styles.helperText}>Default is iUpliftU or enter a custom promo code</Text>
 
               {/* Quantity Available */}
               <Text style={styles.label}>Quantity Available</Text>
               <TextInput
+                ref={quantityInputRef}
                 style={styles.input}
                 placeholder="Leave blank for unlimited"
                 placeholderTextColor={Colors.neutral[400]}
                 keyboardType="number-pad"
                 value={quantityAvailable}
                 onChangeText={(text) => setQuantityAvailable(text.replace(/[^0-9]/g, ''))}
+                returnKeyType="next"
+                onSubmitEditing={() => termsInputRef.current?.focus()}
               />
               <Text style={styles.helperText}>Leave blank for unlimited</Text>
 
               {/* Terms and Conditions */}
               <Text style={styles.label}>Terms and Conditions</Text>
               <TextInput
+                ref={termsInputRef}
                 style={[styles.input, styles.multilineInput]}
                 placeholder="e.g. One per customer. Valid until expiration date."
                 placeholderTextColor={Colors.neutral[400]}
@@ -983,9 +988,11 @@ export const CreatePromotionScreen = () => {
                 textAlignVertical="top"
                 value={termsConditions}
                 onChangeText={setTermsConditions}
+                returnKeyType="done"
+                blurOnSubmit={true}
+                onSubmitEditing={() => Keyboard.dismiss()}
               />
             </View>
-          </TouchableWithoutFeedback>
         </KeyboardAwareScrollView>
 
         {/* Footer Action Button */}
@@ -999,7 +1006,10 @@ export const CreatePromotionScreen = () => {
             fullWidth
           />
         </View>
-        {/* Date Picker Modals */}
+        </View>
+      </KeyboardAvoidingView>
+
+      {/* Date Picker Modals */}
         <DatePickerModal
           open={isFromPickerOpen}
           date={availableFrom}
@@ -1057,7 +1067,6 @@ export const CreatePromotionScreen = () => {
             </View>
           </View>
         </Modal>
-      </View>
     </SafeAreaView>
   );
 };
@@ -1254,15 +1263,6 @@ const styles = StyleSheet.create({
     maxHeight: verticalScale(220),
     overflow: 'hidden',
     zIndex: 10,
-  },
-  dropdownBackdrop: {
-    position: 'absolute',
-    top: -4000,
-    bottom: -4000,
-    left: -4000,
-    right: -4000,
-    zIndex: 1,
-    backgroundColor: 'transparent',
   },
   dropdownScrollView: {
     maxHeight: verticalScale(220),

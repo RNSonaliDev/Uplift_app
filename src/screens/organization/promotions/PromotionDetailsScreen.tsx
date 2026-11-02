@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   StyleSheet,
@@ -16,7 +16,7 @@ import {
 import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native';
 import { useStripe, LinkDisplay } from '@stripe/stripe-react-native';
 import { Colors } from '../../../theme/colors';
-import { Typography, FontFamily } from '../../../theme/typography';
+import { FontFamily } from '../../../theme/typography';
 import { AppText } from '../../../components/AppText';
 import { Button } from '../../../components/Button';
 import { HtmlContentView } from '../../../components/HtmlContentView';
@@ -56,7 +56,7 @@ export const PromotionDetailsScreen = () => {
   const [copied, setCopied] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [closing, setClosing] = useState(false);
-  const [deleting, setDeleting] = useState(false);
+  const [, setDeleting] = useState(false);
 
   const [plans, setPlans] = useState<Plan[]>([]);
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
@@ -94,13 +94,16 @@ export const PromotionDetailsScreen = () => {
     }
   }, [promotion?.id, id, initPaymentSheet]);
 
-  const fetchPlans = useCallback(async () => {
+  const fetchPlans = useCallback(async (plansList?: Plan[]) => {
     try {
       setLoadingPlans(true);
-      const data = await plansApi.getPlans('promotion');
+      let data: Plan[] = plansList && plansList.length > 0 ? plansList : [];
+      if (!data || data.length === 0) {
+        data = await plansApi.getPlans('promotion');
+      }
       if (data && data.length > 0) {
         setPlans(data);
-        const defaultPlan = data.find((p) => p.code === 'featured') || data[0];
+        const defaultPlan = data.find((p) => (p.code || '').toLowerCase() === 'featured') || data[0];
         handleSelectPlan(defaultPlan);
       }
     } catch (error) {
@@ -119,7 +122,12 @@ export const PromotionDetailsScreen = () => {
       if (data) {
         setPromotion(data);
         if ((data.status || '').toLowerCase() === 'draft') {
-          fetchPlans();
+          const availablePlans = data.available_plans || data.promotion?.available_plans;
+          if (Array.isArray(availablePlans) && availablePlans.length > 0) {
+            fetchPlans(availablePlans);
+          } else {
+            fetchPlans();
+          }
         }
       }
     } catch (error: any) {
@@ -151,10 +159,13 @@ export const PromotionDetailsScreen = () => {
 
   const handleOpenPublish = () => {
     setIsPlanModalVisible(true);
-    if (plans.length === 0) {
+    const availablePlans = promotion?.available_plans;
+    if (Array.isArray(availablePlans) && availablePlans.length > 0 && plans.length === 0) {
+      fetchPlans(availablePlans);
+    } else if (plans.length === 0) {
       fetchPlans();
     } else if (!selectedPlan && plans.length > 0) {
-      const defaultPlan = plans.find((p) => p.code === 'featured') || plans[0];
+      const defaultPlan = plans.find((p) => (p.code || '').toLowerCase() === 'featured') || plans[0];
       handleSelectPlan(defaultPlan);
     }
   };
@@ -219,7 +230,7 @@ export const PromotionDetailsScreen = () => {
           plan_code: selectedPlan.code,
           plan_purchase_id: purchaseId,
         });
-      } catch (pubErr) {
+      } catch {
         // If confirm already marked promotion published, ignore
       }
 
@@ -365,7 +376,10 @@ export const PromotionDetailsScreen = () => {
   const description = promotion?.description || '';
 
   const statusStyle = promotion?.status ? getStatusColors(promotion.status) : null;
-  const isVolOrBeni = isPublicView || userRole === 'volunteer' || userRole === 'beneficiary';
+  const isVolOrBeni =
+    isPublicView ||
+    (userRole || '').toLowerCase() === 'volunteer' ||
+    (userRole || '').toLowerCase() === 'beneficiary';
 
   return (
     <>
@@ -492,15 +506,17 @@ export const PromotionDetailsScreen = () => {
               </View>
             </View>
 
-            <View style={styles.detailRowItem}>
-              <View style={styles.detailLabelRow}>
-                <Eye color={Colors.neutral[600]} size={20} />
-                <AppText variant="bodyMedium" color={Colors.neutral[900]} style={{ marginLeft: 8, fontFamily: FontFamily.medium }}>Total Views</AppText>
+            {!isVolOrBeni && (
+              <View style={styles.detailRowItem}>
+                <View style={styles.detailLabelRow}>
+                  <Eye color={Colors.neutral[600]} size={20} />
+                  <AppText variant="bodyMedium" color={Colors.neutral[900]} style={{ marginLeft: 8, fontFamily: FontFamily.medium }}>Total Views</AppText>
+                </View>
+                <AppText variant="bodyMedium" color={Colors.neutral[800]} style={{ flex: 1, textAlign: 'right', marginLeft: 16 }}>
+                  {promotion?.views_count || promotion?.views || 0} views
+                </AppText>
               </View>
-              <AppText variant="bodyMedium" color={Colors.neutral[800]} style={{ flex: 1, textAlign: 'right', marginLeft: 16 }}>
-                {promotion?.views_count || promotion?.views || 0} views
-              </AppText>
-            </View>
+            )}
 
             {/* Promo Code Box */}
             <TouchableOpacity style={styles.codeBox} onPress={handleCopyCode} activeOpacity={0.8}>
@@ -604,10 +620,9 @@ export const PromotionDetailsScreen = () => {
                   title="Close Promotion"
                   onPress={handleClose}
                   loading={closing}
-                  color="error"
-                  variant="outline"
                   size="lg"
                   fullWidth
+                  style={{ backgroundColor: Colors.error }}
                 />
               </View>
             );
@@ -632,10 +647,9 @@ export const PromotionDetailsScreen = () => {
                   title="Close Promotion"
                   onPress={handleClose}
                   loading={closing}
-                  color="error"
-                  variant="outline"
                   size="lg"
                   fullWidth
+                  style={{ backgroundColor: Colors.error }}
                 />
               </View>
             );
@@ -662,7 +676,6 @@ export const PromotionDetailsScreen = () => {
               <View style={styles.modalHeader}>
                 <View style={{ flex: 1, marginRight: 8 }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    <Sparkles color={Colors.primary[600]} size={20} />
                     <AppText variant="bodyLarge" weight="bold" color={Colors.neutral[900]} style={{ marginLeft: 8 }}>
                       Choose Plan to Publish
                     </AppText>

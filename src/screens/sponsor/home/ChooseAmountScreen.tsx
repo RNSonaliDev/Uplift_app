@@ -8,6 +8,9 @@ import {
   ScrollView,
   Modal,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
+  Keyboard,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Colors } from '../../../theme/colors';
@@ -94,6 +97,10 @@ export default function ChooseAmountScreen() {
         <View style={{ width: 28 }} />
       </View>
 
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={{ flex: 1 }}
+      >
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
         {/* Information Banner */}
         <View style={styles.infoBanner}>
@@ -167,6 +174,8 @@ export default function ChooseAmountScreen() {
               placeholder="Enter amount"
               placeholderTextColor={Colors.neutral[400]}
               onFocus={() => setSelectedAmount('custom')}
+              returnKeyType="done"
+              onSubmitEditing={() => Keyboard.dismiss()}
             />
           </View>
         </View>
@@ -210,6 +219,7 @@ export default function ChooseAmountScreen() {
           </AppText>
         </View> */}
       </View>
+      </KeyboardAvoidingView>
 
       <Modal visible={isRecipientModalVisible} transparent animationType="fade">
         <View style={styles.modalOverlay}>

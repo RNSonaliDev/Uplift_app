@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView, Platform, Image, RefreshControl, StatusBar } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { api, getFullImageUrl } from '../../../api/client';
@@ -6,7 +6,7 @@ import { authApi, UserProfileResponse } from '../../../api/auth';
 import { formatDate, formatTime12Hour } from '../../../utils/dateFormatter';
 import { formatStatus, getStatusColors } from '../../../utils/statusUtils';
 import { CategoryIcon } from '../../../components/CategoryIcon';
-import { Menu, Bell, Plus, Lock, Calendar, Pill, ChevronRight, MapPin, Users, Clock } from 'lucide-react-native';
+import { Menu, Bell, Plus, Lock, Calendar, Pill, ChevronRight, ChevronDown, MapPin, Users, Clock, ArrowRightLeft } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Colors } from '../../../theme/colors';
@@ -75,6 +75,25 @@ export const OrganizationDashboardScreen = () => {
     setRefreshing(false);
   }, []);
 
+  const userRoles = useMemo(() => {
+    const rawRoles = profile?.roles?.map((r: any) => (typeof r === 'string' ? r : r.role || r.name || r)) || [];
+    const profileKeys = Object.keys(profile?.profiles || {});
+    return Array.from(new Set([...rawRoles, ...profileKeys].filter(Boolean)));
+  }, [profile]);
+
+  const hasMultipleRoles = userRoles.length > 1;
+
+  const handleRolePress = () => {
+    if (hasMultipleRoles) {
+      navigation.navigate('DashboardRoleSelection', {
+        selectedRoles: userRoles,
+        currentRole: profile?.default_role || 'organization',
+      });
+    } else {
+      navigation.navigate('SelectRoles', { fromProfile: true });
+    }
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar backgroundColor={Colors.primary[500]} barStyle="light-content" />
@@ -102,13 +121,39 @@ export const OrganizationDashboardScreen = () => {
             <View style={{flexDirection: 'row', alignItems: 'center', flex: 1}}>
               <View style={{justifyContent: 'center'}}>
                 <Text style={styles.welcomeText}>Welcome back,</Text>
-                <Text style={styles.nameText}>{profile?.profiles?.organization?.organization_name || profile?.active_profile?.organization_name || profile?.first_name || 'Organization'}</Text>
+                <Text style={styles.nameText} numberOfLines={1}>{profile?.profiles?.organization?.organization_name || profile?.active_profile?.organization_name || profile?.first_name || 'Organization'}</Text>
               </View>
             </View>
-            <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('Notifications')}>
-              {unreadNotificationsCount > 0 && <View style={styles.notificationBadge} />}
-              <Bell color={Colors.neutral[0]} size={24} />
-            </TouchableOpacity>
+            <View style={{flexDirection: 'row', alignItems: 'center', gap: 8}}>
+              {profile && (
+                <TouchableOpacity
+                  style={styles.roleActionButton}
+                  onPress={handleRolePress}
+                  activeOpacity={0.75}
+                >
+                  <View style={styles.roleIconContainer}>
+                    {hasMultipleRoles ? (
+                      <ArrowRightLeft color={Colors.neutral[0]} size={12} strokeWidth={2.4} />
+                    ) : (
+                      <Plus color={Colors.neutral[0]} size={12} strokeWidth={2.4} />
+                    )}
+                  </View>
+                  <Text style={styles.roleActionText}>
+                    Role
+                  </Text>
+                  {hasMultipleRoles ? (
+                    <ChevronDown color={Colors.neutral[0]} size={12} strokeWidth={2.4} style={styles.chevronIcon} />
+                  ) : (
+                    <ChevronRight color={Colors.neutral[0]} size={12} strokeWidth={2.4} style={styles.chevronIcon} />
+                  )}
+                </TouchableOpacity>
+              )}
+
+              <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('Notifications')}>
+                {unreadNotificationsCount > 0 && <View style={styles.notificationBadge} />}
+                <Bell color={Colors.neutral[0]} size={24} />
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
 
@@ -276,6 +321,35 @@ const styles = StyleSheet.create({
   iconButton: {
     padding: 8,
     position: 'relative',
+  },
+  roleActionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.18)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.32)',
+    paddingLeft: horizontalScale(6),
+    paddingRight: horizontalScale(10),
+    paddingVertical: verticalScale(5),
+    borderRadius: moderateScale(20),
+    gap: horizontalScale(5),
+  },
+  roleIconContainer: {
+    width: moderateScale(20),
+    height: moderateScale(20),
+    borderRadius: moderateScale(10),
+    backgroundColor: 'rgba(255, 255, 255, 0.22)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  roleActionText: {
+    fontFamily: FontFamily.semiBold,
+    fontSize: FontSize.xs,
+    color: Colors.neutral[0],
+    letterSpacing: 0.2,
+  },
+  chevronIcon: {
+    opacity: 0.85,
   },
   notificationBadge: {
     position: 'absolute',

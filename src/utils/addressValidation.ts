@@ -66,7 +66,7 @@ export const validateAddressType = (types: string[] = []): ValidationResult => {
       isBusinessAddress: false,
       addressType: 'residential',
       confidence: 'high',
-      message: 'For your safety, please use the business address',
+      message: 'Enter a nearby business address to match you with nearby requests— your exact location is never shared with anyone',
     };
   }
 
@@ -111,7 +111,7 @@ export const validateBusinessAddressWithAPI = async (address: string, apiKey: st
         isBusinessAddress: false,
         addressType: 'residential',
         confidence: 'high',
-        message: 'For your safety, please use the business address',
+        message: 'Enter a nearby business address to match you with nearby requests— your exact location is never shared with anyone',
       };
     } else if (isBusiness) {
       return {

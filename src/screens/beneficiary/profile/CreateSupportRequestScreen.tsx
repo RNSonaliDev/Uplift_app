@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import {
   View,
   StyleSheet,
@@ -7,6 +7,10 @@ import {
   SafeAreaView,
   FlatList,
   ActivityIndicator,
+  Platform,
+  KeyboardAvoidingView,
+  Keyboard,
+  TextInput,
 } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { Colors } from '../../../theme/colors';
@@ -23,6 +27,7 @@ import { useFormScrollToError } from '../../../utils/useFormScrollToError';
 export default function CreateSupportRequestScreen() {
   const navigation = useNavigation<any>();
   const { scrollViewRef, registerField, registerInput, scrollToFirstError } = useFormScrollToError();
+  const messageInputRef = useRef<TextInput>(null);
   // Form State
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
@@ -112,6 +117,10 @@ export default function CreateSupportRequestScreen() {
         <View style={{ width: 32 }} />
       </View>
 
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={{ flex: 1 }}
+      >
       <ScrollView 
         ref={scrollViewRef}
         style={styles.container} 
@@ -143,12 +152,17 @@ export default function CreateSupportRequestScreen() {
                 maxLength={50}
                 error={errors.subject}
                 containerStyle={styles.inputSpacing}
+                returnKeyType="next"
+                onSubmitEditing={() => messageInputRef.current?.focus()}
               />
             </View>
             
             <View {...registerField('message')}>
               <Input
-                ref={registerInput('message')}
+                ref={(r) => {
+                  messageInputRef.current = r;
+                  registerInput('message')(r);
+                }}
                 label="Message"
                 bottomRight={<AppText variant="caption" color={Colors.neutral[500]}>{message.length}/500</AppText>}
                 placeholder="Describe your issue in detail..."
@@ -163,6 +177,9 @@ export default function CreateSupportRequestScreen() {
                 textAlignVertical="top"
                 error={errors.message}
                 containerStyle={styles.inputSpacing}
+                returnKeyType="done"
+                blurOnSubmit={true}
+                onSubmitEditing={() => Keyboard.dismiss()}
               />
             </View>
 
@@ -191,6 +208,7 @@ export default function CreateSupportRequestScreen() {
             />
           </View>
       </ScrollView>
+      </KeyboardAvoidingView>
       </SafeAreaView>
     </>
   );

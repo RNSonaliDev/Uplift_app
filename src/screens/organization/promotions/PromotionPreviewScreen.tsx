@@ -8,10 +8,12 @@ import {
   StatusBar,
   Clipboard,
   Linking,
+  Modal,
+  ActivityIndicator,
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { Colors } from '../../../theme/colors';
-import { Typography, FontFamily } from '../../../theme/typography';
+import { FontFamily } from '../../../theme/typography';
 import { AppText } from '../../../components/AppText';
 import { Button } from '../../../components/Button';
 import { HtmlContentView } from '../../../components/HtmlContentView';
@@ -27,11 +29,13 @@ import {
   Package,
   FileText,
   Sparkles,
-  Info,
+  X,
+  Check,
 } from 'lucide-react-native';
 import { api } from '../../../api/client';
+import { useStripe, LinkDisplay } from '@stripe/stripe-react-native';
+import { plansApi, Plan, CreatePlanPurchaseResponse } from '../../../api/plans';
 import { formatDate } from '../../../utils/dateFormatter';
-import { formatStatus, getStatusColors } from '../../../utils/statusUtils';
 import Toast from 'react-native-toast-message';
 
 export const PromotionPreviewScreen = () => {
@@ -39,8 +43,160 @@ export const PromotionPreviewScreen = () => {
   const route = useRoute<any>();
   const { promotion, rawPayload, isEditing, editingId } = route.params || {};
 
+  const { initPaymentSheet, presentPaymentSheet } = useStripe();
+
   const [publishing, setPublishing] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [plans, setPlans] = useState<Plan[]>([]);
+  const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
+  const [loadingPlans, setLoadingPlans] = useState(false);
+  const [currentPurchase, setCurrentPurchase] = useState<CreatePlanPurchaseResponse | null>(null);
+  const [initializingPayment, setInitializingPayment] = useState(false);
+  const [isPlanModalVisible, setIsPlanModalVisible] = useState(false);
+  const [savedPromoId, setSavedPromoId] = useState<number | string | null>(null);
+
+  const handleSelectPlan = async (plan: Plan, targetPromoId?: number | string) => {
+    setSelectedPlan(plan);
+    const promoId = targetPromoId || savedPromoId || editingId || promotion?.id;
+    if (!promoId) return;
+    try {
+      setInitializingPayment(true);
+      const res = await plansApi.createPromotionPlanPurchase(promoId, plan.id);
+      setCurrentPurchase(res);
+      if (res?.client_secret) {
+        await initPaymentSheet({
+          merchantDisplayName: 'Uplift',
+          paymentIntentClientSecret: res.client_secret,
+          returnURL: 'upliftapp://stripe-redirect',
+          allowsDelayedPaymentMethods: true,
+          paymentMethodOrder: ['card', 'us_bank_account'],
+          link: {
+            display: LinkDisplay.NEVER,
+          },
+        });
+      }
+    } catch (error: any) {
+      console.warn('Failed to create promotion plan purchase on selection', error);
+    } finally {
+      setInitializingPayment(false);
+    }
+  };
+
+  const fetchPlans = async (targetPromoId?: number | string, plansList?: Plan[]) => {
+    try {
+      setLoadingPlans(true);
+      let data: Plan[] = plansList && plansList.length > 0 ? plansList : [];
+      if (!data || data.length === 0) {
+        data = await plansApi.getPlans('promotion');
+      }
+      if (data && data.length > 0) {
+        setPlans(data);
+        const defaultPlan = data.find((p) => (p.code || '').toLowerCase() === 'featured') || data[0];
+        await handleSelectPlan(defaultPlan, targetPromoId);
+      }
+    } catch (error) {
+      console.error('Failed to fetch promotion plans', error);
+    } finally {
+      setLoadingPlans(false);
+    }
+  };
+
+  const handlePayAndPublish = async () => {
+    const targetId = savedPromoId || editingId || promotion?.id;
+    if (!targetId) return;
+    if (!selectedPlan) {
+      Toast.show({ type: 'info', text1: 'Plan Required', text2: 'Please select a plan to publish this promotion.' });
+      return;
+    }
+
+    try {
+      setPublishing(true);
+
+      // 1. Ensure we have a plan purchase created for the currently selected plan
+      let purchaseData = currentPurchase;
+      if (!purchaseData || purchaseData.plan_purchase?.plan?.id !== selectedPlan.id) {
+        purchaseData = await plansApi.createPromotionPlanPurchase(targetId, selectedPlan.id);
+        setCurrentPurchase(purchaseData);
+        if (purchaseData?.client_secret) {
+          const { error: initErr } = await initPaymentSheet({
+            merchantDisplayName: 'Uplift',
+            paymentIntentClientSecret: purchaseData.client_secret,
+            returnURL: 'upliftapp://stripe-redirect',
+            allowsDelayedPaymentMethods: true,
+            paymentMethodOrder: ['card', 'us_bank_account'],
+            link: {
+              display: LinkDisplay.NEVER,
+            },
+          });
+          if (initErr) {
+            Toast.show({ type: 'error', text1: 'Payment Error', text2: initErr.message });
+            setPublishing(false);
+            return;
+          }
+        }
+      }
+
+      // 2. Present Stripe Payment Sheet
+      if (purchaseData?.client_secret) {
+        const { error: paymentError } = await presentPaymentSheet();
+        if (paymentError) {
+          if (paymentError.code !== 'Canceled') {
+            Toast.show({ type: 'error', text1: 'Payment Failed', text2: paymentError.message });
+          }
+          setPublishing(false);
+          return;
+        }
+      }
+
+      // 3. Confirm plan purchase on backend
+      const purchaseId = purchaseData?.plan_purchase?.id;
+      if (purchaseId) {
+        await plansApi.confirmPlanPurchase(purchaseId);
+      }
+
+      // 4. Trigger publish endpoint to ensure promotion status transitions to published
+      try {
+        await api.post(`/promotions/${targetId}/publish`, {
+          plan_id: selectedPlan.id,
+          plan_code: selectedPlan.code,
+          plan_purchase_id: purchaseId,
+        });
+      } catch {
+        // If confirm already marked promotion published, ignore
+      }
+
+      setIsPlanModalVisible(false);
+      Toast.show({
+        type: 'success',
+        text1: 'Success',
+        text2: 'Plan purchased and promotion published successfully!',
+      });
+      navigation.navigate('OrganizationTabs', { screen: 'PromotionsTab' });
+    } catch (error: any) {
+      if (error?.data?.error === 'PlanRequiredError' || error?.message?.includes('PlanRequiredError') || error?.data?.requires_plan) {
+        setIsPlanModalVisible(true);
+      }
+      const errMsg =
+        error?.data?.error ||
+        error?.data?.errors?.[0] ||
+        error?.message ||
+        'Failed to complete plan purchase.';
+      Toast.show({ type: 'error', text1: 'Error', text2: errMsg });
+    } finally {
+      setPublishing(false);
+    }
+  };
+
+  const handleClosePlanModal = () => {
+    if (publishing) return;
+    setIsPlanModalVisible(false);
+    Toast.show({
+      type: 'info',
+      text1: 'Draft Saved',
+      text2: 'You can select a plan anytime to publish this promotion.',
+    });
+    navigation.navigate('OrganizationTabs', { screen: 'PromotionsTab' });
+  };
 
   const handleCopyCode = () => {
     const code = promotion?.promo_code || promotion?.promoCode || 'UPLIFT';
@@ -87,23 +243,29 @@ export const PromotionPreviewScreen = () => {
       }
 
       let savedPromo: any = null;
-      if (isEditing && targetId) {
+      if (targetId) {
         savedPromo = await api.put(`/promotions/${targetId}`, payloadToUse);
-      } else if (!targetId) {
+      } else {
         savedPromo = await api.post('/promotions', payloadToUse);
         targetId = savedPromo?.id || savedPromo?.promotion?.id;
       }
 
-      const status = (savedPromo?.status || savedPromo?.promotion?.status || '').toLowerCase();
-      if (status === 'draft' && targetId) {
+      const status = (savedPromo?.status || savedPromo?.promotion?.status || promotion?.status || '').toLowerCase();
+      const isDraft = status === 'draft' || savedPromo?.requires_plan || savedPromo?.promotion?.requires_plan;
+
+      const availablePlansFromApi =
+        savedPromo?.available_plans ||
+        savedPromo?.promotion?.available_plans ||
+        promotion?.available_plans;
+
+      if (isDraft && targetId) {
+        setSavedPromoId(targetId);
+        setIsPlanModalVisible(true);
+        fetchPlans(targetId, Array.isArray(availablePlansFromApi) && availablePlansFromApi.length > 0 ? availablePlansFromApi : undefined);
         Toast.show({
           type: 'info',
           text1: 'Draft Saved',
           text2: 'Please select a plan to publish this promotion.',
-        });
-        navigation.navigate('PromotionDetails', {
-          id: targetId,
-          promotion: savedPromo?.promotion || savedPromo,
         });
       } else {
         Toast.show({
@@ -141,8 +303,6 @@ export const PromotionPreviewScreen = () => {
 
   const terms = promotion?.terms_and_conditions || promotion?.termsConditions || '';
   const description = promotion?.description || '';
-
-  const statusStyle = promotion?.status ? getStatusColors(promotion.status) : null;
 
   return (
     <>
@@ -325,11 +485,163 @@ export const PromotionPreviewScreen = () => {
           <Button
             title="Publish Promotion"
             onPress={handlePublish}
-            loading={publishing}
+            loading={publishing && !isPlanModalVisible}
             size="lg"
             fullWidth
           />
         </View>
+
+        {/* Plan Selection Modal */}
+        <Modal
+          visible={isPlanModalVisible}
+          transparent
+          animationType="slide"
+          onRequestClose={handleClosePlanModal}
+        >
+          <View style={styles.modalOverlay}>
+            <TouchableOpacity
+              style={styles.modalBackdropTouch}
+              activeOpacity={1}
+              onPress={handleClosePlanModal}
+            />
+            <View style={styles.modalContainer}>
+              <View style={styles.modalDragHandle} />
+
+              <View style={styles.modalHeader}>
+                <View style={{ flex: 1, marginRight: 8 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <AppText variant="bodyLarge" weight="bold" color={Colors.neutral[900]} style={{ marginLeft: 8 }}>
+                      Choose Plan to Publish
+                    </AppText>
+                  </View>
+                  <AppText variant="bodySmall" color={Colors.neutral[600]} style={{ marginTop: 4 }}>
+                    A paid promotion plan is required to publish this promotion:
+                  </AppText>
+                </View>
+                <TouchableOpacity
+                  onPress={handleClosePlanModal}
+                  style={styles.modalCloseButton}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                >
+                  <X color={Colors.neutral[700]} size={22} />
+                </TouchableOpacity>
+              </View>
+
+              <ScrollView
+                style={styles.modalScroll}
+                contentContainerStyle={{ paddingBottom: 20 }}
+                showsVerticalScrollIndicator={false}
+              >
+                {loadingPlans && plans.length === 0 ? (
+                  <View style={styles.planLoadingContainer}>
+                    <ActivityIndicator size="small" color={Colors.primary[500]} />
+                    <AppText variant="bodySmall" color={Colors.neutral[500]} style={{ marginLeft: 8 }}>
+                      Loading available plans...
+                    </AppText>
+                  </View>
+                ) : (
+                  <View style={styles.plansList}>
+                    {plans.map((p) => {
+                      const isSelected = selectedPlan?.id === p.id;
+                      const isFeatured = (p.code || '').toLowerCase() === 'featured' || (p.badge || '').toLowerCase() === 'featured';
+                      return (
+                        <TouchableOpacity
+                          key={p.id}
+                          activeOpacity={0.85}
+                          onPress={() => handleSelectPlan(p)}
+                          style={[
+                            styles.planCard,
+                            isSelected && styles.planCardSelected,
+                            isFeatured && !isSelected && styles.planCardFeaturedBorder,
+                          ]}
+                        >
+                          {isFeatured && (
+                            <View style={styles.popularBadge}>
+                              <Sparkles color="#FFF" size={11} />
+                              <AppText variant="caption" color="#FFF" style={styles.popularBadgeText}>
+                                FEATURED
+                              </AppText>
+                            </View>
+                          )}
+
+                          <View style={styles.planCardTopRow}>
+                            <View style={styles.planRadioRow}>
+                              <View style={[styles.radioButton, isSelected && styles.radioButtonSelected]}>
+                                {isSelected && <View style={styles.radioButtonInner} />}
+                              </View>
+                              <View style={{ marginLeft: 10, flex: 1 }}>
+                                <AppText variant="bodyLarge" weight="bold" color={Colors.neutral[900]}>
+                                  {p.name}
+                                </AppText>
+                                <AppText variant="caption" color={Colors.neutral[500]}>
+                                  {p.duration_days ? `${p.duration_days} Days Duration` : (p.code === 'featured' ? '30 Days Duration' : '15 Days Duration')}
+                                </AppText>
+                              </View>
+                            </View>
+
+                            <View style={{ alignItems: 'flex-end' }}>
+                              <AppText variant="h6" weight="bold" color={Colors.primary[600]}>
+                                ${Number(p.amount || p.price).toFixed(2)}
+                              </AppText>
+                              {p.processing_fee ? (
+                                <AppText variant="caption" color={Colors.neutral[500]}>
+                                  +${Number(p.processing_fee).toFixed(2)} fee
+                                </AppText>
+                              ) : null}
+                            </View>
+                          </View>
+
+                          {p.description ? (
+                            <AppText variant="bodySmall" color={Colors.neutral[600]} style={styles.planDesc}>
+                              {p.description}
+                            </AppText>
+                          ) : null}
+
+                          <View style={styles.planFeatures}>
+                            <View style={styles.planFeatureItem}>
+                              <Check color={Colors.primary[600]} size={14} strokeWidth={2.5} />
+                              <AppText variant="caption" color={Colors.neutral[700]} style={{ marginLeft: 6 }}>
+                                Active promotion for {p.duration_days || (p.code === 'featured' ? 30 : 15)} days
+                              </AppText>
+                            </View>
+                            {isFeatured && (
+                              <View style={styles.planFeatureItem}>
+                                <Check color={Colors.primary[600]} size={14} strokeWidth={2.5} />
+                                <AppText variant="caption" color={Colors.neutral[700]} style={{ marginLeft: 6 }}>
+                                  Top of feed & highlighted badge
+                                </AppText>
+                              </View>
+                            )}
+                          </View>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+                )}
+              </ScrollView>
+
+              {/* Modal Footer with Pay Button */}
+              <View style={styles.modalFooter}>
+                <Button
+                  title={
+                    publishing
+                      ? 'Processing Payment...'
+                      : initializingPayment
+                      ? 'Preparing Checkout...'
+                      : selectedPlan
+                      ? `Pay $${Number(selectedPlan.amount || selectedPlan.price).toFixed(2)}`
+                      : 'Pay'
+                  }
+                  onPress={handlePayAndPublish}
+                  loading={publishing || initializingPayment}
+                  disabled={publishing || initializingPayment || !selectedPlan}
+                  size="lg"
+                  fullWidth
+                />
+              </View>
+            </View>
+          </View>
+        </Modal>
       </SafeAreaView>
     </>
   );
@@ -408,5 +720,140 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.neutral[0],
     borderTopWidth: 1,
     borderTopColor: Colors.neutral[200],
+  },
+  // Plan Selection Modal Styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalBackdropTouch: {
+    flex: 1,
+  },
+  modalContainer: {
+    backgroundColor: '#FFF',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    maxHeight: '85%',
+    paddingTop: 12,
+  },
+  modalDragHandle: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: Colors.neutral[300],
+    alignSelf: 'center',
+    marginBottom: 12,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    paddingHorizontal: 20,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.neutral[200],
+  },
+  modalCloseButton: {
+    padding: 4,
+    marginLeft: 8,
+  },
+  modalScroll: {
+    paddingHorizontal: 20,
+    paddingTop: 16,
+  },
+  modalFooter: {
+    padding: 16,
+    backgroundColor: '#FFF',
+    borderTopWidth: 1,
+    borderTopColor: Colors.neutral[200],
+  },
+  planLoadingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 24,
+  },
+  plansList: {
+    gap: 12,
+  },
+  planCard: {
+    borderWidth: 1.5,
+    borderColor: Colors.neutral[200],
+    borderRadius: 14,
+    padding: 16,
+    backgroundColor: '#FFF',
+    position: 'relative',
+    marginTop: 6,
+  },
+  planCardSelected: {
+    borderColor: Colors.primary[600],
+    backgroundColor: Colors.primary[50],
+  },
+  planCardFeaturedBorder: {
+    borderColor: Colors.primary[300],
+  },
+  popularBadge: {
+    position: 'absolute',
+    top: -10,
+    right: 14,
+    backgroundColor: Colors.primary[600],
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    zIndex: 2,
+  },
+  popularBadgeText: {
+    color: '#FFF',
+    fontSize: 10,
+    fontFamily: FontFamily.bold,
+    letterSpacing: 0.5,
+  },
+  planCardTopRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  planRadioRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  radioButton: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: Colors.neutral[400],
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#FFF',
+  },
+  radioButtonSelected: {
+    borderColor: Colors.primary[600],
+  },
+  radioButtonInner: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: Colors.primary[600],
+  },
+  planDesc: {
+    marginTop: 8,
+    lineHeight: 18,
+  },
+  planFeatures: {
+    marginTop: 12,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: Colors.neutral[200],
+    gap: 6,
+  },
+  planFeatureItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
 });

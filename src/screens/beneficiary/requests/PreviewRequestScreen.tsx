@@ -13,7 +13,7 @@ import {Colors} from '../../../theme/colors';
 import {AppText} from '../../../components/AppText';
 import {Button} from '../../../components/Button';
 import {FontFamily} from '../../../theme/typography';
-import {ChevronLeft, ClipboardList, Calendar, Clock, MapPin, FileText, AlignLeft, Info} from 'lucide-react-native';
+import {ChevronLeft, ClipboardList, Calendar, Clock, MapPin, FileText, AlignLeft, Info, Globe} from 'lucide-react-native';
 import {
   horizontalScale,
   verticalScale,
@@ -45,6 +45,7 @@ export default function PreviewRequestScreen() {
           meeting_location: formData.meeting_location,
           latitude: formData.latitude ? parseFloat(formData.latitude) : 0.90,
           longitude: formData.longitude ? parseFloat(formData.longitude) : 0.99,
+          time_zone: route.params?.timeZone?.code || 'CT',
         },
       };
 
@@ -150,6 +151,11 @@ export default function PreviewRequestScreen() {
             <Clock color={Colors.neutral[700]} size={20} />, 
             'Time', 
             `${formData?.preferred_start_time || ''} - ${formData?.preferred_end_time || ''}`
+          )}
+          {renderInlineRow(
+            <Globe color={Colors.neutral[700]} size={20} />, 
+            'Time Zone', 
+            formData?.time_zone_label || route.params?.timeZone?.label || formData?.time_zone || 'CT — Central'
           )}
           {renderColumnRow(
             <MapPin color={Colors.neutral[700]} size={20} />, 

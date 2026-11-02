@@ -2,7 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { View, StyleSheet, SafeAreaView, TouchableOpacity, ScrollView, RefreshControl, Linking } from 'react-native';
 import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native';
 import { Colors } from '../../../theme/colors';
-import { Typography, FontFamily } from '../../../theme/typography';
+import { FontFamily } from '../../../theme/typography';
 import { AppText } from '../../../components/AppText';
 import { FileText, Link2, Briefcase, Tag, ChevronLeft, Building, DollarSign, Clock } from 'lucide-react-native';
 import { api } from '../../../api/client';
@@ -51,6 +51,18 @@ export const VolunteerJobDetailsScreen = () => {
         contentContainerStyle={styles.content}
         refreshControl={<RefreshControl refreshing={loading} onRefresh={fetchJob} />}
       >
+
+        {job.company_name ? (
+          <View style={styles.detailRowItem}>
+            <View style={styles.detailLabelRow}>
+              <Building color={Colors.neutral[600]} size={20} />
+              <AppText variant="bodyMedium" color={Colors.neutral[900]} style={{marginLeft: 8, fontFamily: FontFamily.medium}}>Company Name</AppText>
+            </View>
+            <AppText variant="bodyMedium" color={Colors.neutral[600]} style={{flex: 1, textAlign: 'right', marginLeft: 16}}>
+              {job.company_name}
+            </AppText>
+          </View>
+        ) : null}
 
         <View style={styles.detailRowItem}>
           <View style={styles.detailLabelRow}>

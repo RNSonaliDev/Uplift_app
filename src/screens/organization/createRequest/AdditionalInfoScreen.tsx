@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,7 @@ import {
   ScrollView,
   Platform,
   KeyboardAvoidingView,
+  Keyboard,
 } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -28,6 +29,7 @@ export const AdditionalInfoScreen = () => {
 
   const [skills, setSkills] = useState('');
   const [notes, setNotes] = useState('');
+  const notesInputRef = useRef<TextInput>(null);
 
   const handleContinue = () => {
     navigation.navigate('ReviewRequest', {
@@ -53,68 +55,79 @@ export const AdditionalInfoScreen = () => {
         <View style={{ width: 40 }} />
       </View>
 
-      <KeyboardAwareScrollView 
-        style={styles.flex1} 
-        contentContainerStyle={styles.scrollContent} 
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-        enableOnAndroid={true}
-        extraScrollHeight={20}
-        enableResetScrollToCoords={false}>
-          
-          {/* Skills Required */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Skills / Category Required (Optional)</Text>
-            <TextInput
-              style={[styles.input, styles.textAreaSmall]}
-              placeholder="e.g. Cooking, Event Management, Packing, Driving"
-              placeholderTextColor={Colors.neutral[400]}
-              multiline
-              numberOfLines={2}
-              textAlignVertical="top"
-              value={skills}
-              onChangeText={setSkills}
-            />
-          </View>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={{ flex: 1 }}
+      >
+        <KeyboardAwareScrollView 
+          style={styles.flex1} 
+          contentContainerStyle={styles.scrollContent} 
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          enableOnAndroid={true}
+          extraScrollHeight={20}
+          enableResetScrollToCoords={false}>
+            
+            {/* Skills Required */}
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Skills / Category Required (Optional)</Text>
+              <TextInput
+                style={[styles.input, styles.textAreaSmall]}
+                placeholder="e.g. Cooking, Event Management, Packing, Driving"
+                placeholderTextColor={Colors.neutral[400]}
+                multiline
+                numberOfLines={2}
+                textAlignVertical="top"
+                value={skills}
+                onChangeText={setSkills}
+                returnKeyType="next"
+                onSubmitEditing={() => notesInputRef.current?.focus()}
+              />
+            </View>
 
-          {/* Notes */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Notes (Optional)</Text>
-            <TextInput
-              style={[styles.input, styles.textArea]}
-              placeholder="Any specific instructions for volunteers?"
-              placeholderTextColor={Colors.neutral[400]}
-              multiline
-              numberOfLines={4}
-              textAlignVertical="top"
-              maxLength={300}
-              value={notes}
-              onChangeText={setNotes}
-            />
-            <Text style={styles.charCount}>{notes.length}/300</Text>
-          </View>
+            {/* Notes */}
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Notes (Optional)</Text>
+              <TextInput
+                ref={notesInputRef}
+                style={[styles.input, styles.textArea]}
+                placeholder="Any specific instructions for volunteers?"
+                placeholderTextColor={Colors.neutral[400]}
+                multiline
+                numberOfLines={4}
+                textAlignVertical="top"
+                maxLength={300}
+                value={notes}
+                onChangeText={setNotes}
+                returnKeyType="done"
+                blurOnSubmit={true}
+                onSubmitEditing={() => Keyboard.dismiss()}
+              />
+              <Text style={styles.charCount}>{notes.length}/300</Text>
+            </View>
 
-          {/* Upload Images */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Upload Images (Optional)</Text>
-            <TouchableOpacity style={styles.uploadBox}>
-              <ImageIcon color={Colors.primary[600]} size={32} style={styles.uploadIcon} />
-              <Text style={styles.uploadTitle}>Upload photos{'\n'}from your gallery</Text>
-              <Text style={styles.uploadSubtitle}>JPG, PNG up to 5MB</Text>
-            </TouchableOpacity>
-          </View>
+            {/* Upload Images */}
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Upload Images (Optional)</Text>
+              <TouchableOpacity style={styles.uploadBox}>
+                <ImageIcon color={Colors.primary[600]} size={32} style={styles.uploadIcon} />
+                <Text style={styles.uploadTitle}>Upload photos{'\n'}from your gallery</Text>
+                <Text style={styles.uploadSubtitle}>JPG, PNG up to 5MB</Text>
+              </TouchableOpacity>
+            </View>
 
-        </KeyboardAwareScrollView>
+          </KeyboardAwareScrollView>
 
-      {/* Footer Button */}
-      <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 20) }]}>
-        <TouchableOpacity
-          style={styles.primaryButton}
-          onPress={handleContinue}
-        >
-          <Text style={styles.primaryButtonText}>Continue</Text>
-        </TouchableOpacity>
-      </View>
+        {/* Footer Button */}
+        <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 20) }]}>
+          <TouchableOpacity
+            style={styles.primaryButton}
+            onPress={handleContinue}
+          >
+            <Text style={styles.primaryButtonText}>Continue</Text>
+          </TouchableOpacity>
+        </View>
+      </KeyboardAvoidingView>
     </View>
   );
 };

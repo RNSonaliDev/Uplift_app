@@ -14,7 +14,6 @@ import {
   Dimensions,
   Pressable,
   TextInput,
-  ActivityIndicator,
   Keyboard,
 } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
@@ -30,7 +29,6 @@ import MapView, { Marker, Circle as MapCircle } from 'react-native-maps';
 import { GooglePlacesAutocomplete, GooglePlacesAutocompleteRef } from 'react-native-google-places-autocomplete';
 import Geolocation from '@react-native-community/geolocation';
 import { Navigation, MapPin, X } from 'lucide-react-native';
-import { validateBusinessAddressWithAPI, ValidationResult } from '../utils/addressValidation';
 import {AppText} from '../components/AppText';
 import {Button} from '../components/Button';
 import {Input} from '../components/Input';
@@ -264,13 +262,37 @@ const PhonePrefixPrefix = () => (
   </View>
 );
 
-const CustomSlider = ({ value, onValueChange, min = 0, max = 100, onSlidingStart, onSlidingComplete }: { value: number, onValueChange: (val: number) => void, min?: number, max?: number, onSlidingStart?: () => void, onSlidingComplete?: () => void }) => {
+interface CustomSliderProps {
+  value: number;
+  onValueChange: (val: number) => void;
+  min?: number;
+  max?: number;
+  unit?: string;
+  onSlidingStart?: () => void;
+  onSlidingComplete?: () => void;
+}
+
+const CustomSlider = ({
+  value,
+  onValueChange,
+  min = 0,
+  max = 100,
+  unit = 'miles',
+  onSlidingStart,
+  onSlidingComplete,
+}: CustomSliderProps) => {
   const [width, setWidth] = useState(0);
   const widthRef = React.useRef(0);
   widthRef.current = width;
 
-  const valueRef = React.useRef(value);
-  valueRef.current = value;
+  const [internalValue, setInternalValue] = useState(value);
+  const isDraggingRef = React.useRef(false);
+
+  useEffect(() => {
+    if (!isDraggingRef.current) {
+      setInternalValue(value);
+    }
+  }, [value]);
 
   const onValueChangeRef = React.useRef(onValueChange);
   onValueChangeRef.current = onValueChange;
@@ -286,11 +308,13 @@ const CustomSlider = ({ value, onValueChange, min = 0, max = 100, onSlidingStart
       onPanResponderTerminationRequest: () => false,
       onPanResponderGrant: (evt) => {
         if (onSlidingStart) onSlidingStart();
+        isDraggingRef.current = true;
         if (widthRef.current > 0) {
           const locX = evt.nativeEvent.locationX;
           const percent = Math.max(0, Math.min(1, locX / widthRef.current));
           const newValue = min + percent * (max - min);
           startValue.current = newValue;
+          setInternalValue(newValue);
           onValueChangeRef.current(newValue);
         }
       },
@@ -299,19 +323,32 @@ const CustomSlider = ({ value, onValueChange, min = 0, max = 100, onSlidingStart
           const deltaPercent = gestureState.dx / widthRef.current;
           let newValue = startValue.current + deltaPercent * (max - min);
           newValue = Math.max(min, Math.min(max, newValue));
+          setInternalValue(newValue);
           onValueChangeRef.current(newValue);
         }
       },
       onPanResponderRelease: () => {
+        isDraggingRef.current = false;
         if (onSlidingComplete) onSlidingComplete();
       },
       onPanResponderTerminate: () => {
+        isDraggingRef.current = false;
         if (onSlidingComplete) onSlidingComplete();
       },
     })
   ).current;
 
-  const percentage = ((value - min) / (max - min)) * 100;
+  const displayValue = isDraggingRef.current ? internalValue : value;
+  const percentage = Math.max(0, Math.min(100, ((displayValue - min) / (max - min)) * 100));
+
+  const BUBBLE_WIDTH = 74;
+  const HALF_BUBBLE = BUBBLE_WIDTH / 2;
+  const thumbX = width > 0 ? (percentage / 100) * width : 0;
+  const bubbleLeft = width > 0 ? Math.max(0, Math.min(width - BUBBLE_WIDTH, thumbX - HALF_BUBBLE)) : 0;
+  const arrowLeft = width > 0 ? Math.max(10, Math.min(BUBBLE_WIDTH - 20, thumbX - bubbleLeft - 5)) : HALF_BUBBLE - 5;
+
+  const rounded = Math.round(displayValue);
+  const formattedText = unit ? `${rounded} ${rounded === 1 ? (unit === 'miles' ? 'mile' : unit) : unit}` : `${rounded}`;
 
   return (
     <View 
@@ -320,9 +357,40 @@ const CustomSlider = ({ value, onValueChange, min = 0, max = 100, onSlidingStart
       {...panResponder.panHandlers}
       hitSlop={{ top: 15, bottom: 15, left: 0, right: 0 }}
     >
+      {/* Floating value bubble on top of slider */}
+      <View
+        style={[
+          styles.sliderBubbleContainer,
+          width > 0
+            ? { left: bubbleLeft }
+            : { left: `${percentage}%`, marginLeft: -HALF_BUBBLE },
+        ]}
+        pointerEvents="none"
+      >
+        <View style={styles.sliderBubble}>
+          <AppText
+            variant="caption"
+            color={Colors.neutral[0]}
+            weight="bold"
+            style={styles.sliderBubbleText}
+          >
+            {formattedText}
+          </AppText>
+        </View>
+        <View
+          style={[
+            styles.sliderBubbleArrow,
+            width > 0 ? { left: arrowLeft } : { alignSelf: 'center' },
+          ]}
+        />
+      </View>
+
+      {/* Track */}
       <View style={styles.sliderTrack} pointerEvents="none">
         <View style={[styles.sliderFill, { width: `${percentage}%` }]} />
       </View>
+
+      {/* Thumb */}
       <View style={[styles.sliderThumb, { left: `${percentage}%` }]} pointerEvents="none" />
     </View>
   );
@@ -447,8 +515,6 @@ export const VolunteerSetupScreen: React.FC = () => {
   };
 
   const [address, setAddress] = useState('');
-  const [addressValidation, setAddressValidation] = useState<ValidationResult | null>(null);
-  const [isValidatingAddress, setIsValidatingAddress] = useState(false);
   const [latitude, setLatitude] = useState('');
   const [longitude, setLongitude] = useState('');
   const [region, setRegion] = useState({
@@ -475,7 +541,6 @@ export const VolunteerSetupScreen: React.FC = () => {
     scrollViewRef,
     registerField,
     registerInput,
-    scrollToError,
     scrollToFirstError,
   } = useFormScrollToError();
 
@@ -506,21 +571,6 @@ export const VolunteerSetupScreen: React.FC = () => {
             if (zipComponent) {
               setZipCode(zipComponent.long_name);
               if (errors.zipCode) setErrors(prev => ({...prev, zipCode: ''}));
-            }
-
-            try {
-              setIsValidatingAddress(true);
-              const validationData = await validateBusinessAddressWithAPI(fetchedAddress, GOOGLE_MAPS_API_KEY);
-              setAddressValidation(validationData);
-              if (validationData?.addressType === 'residential' || validationData?.isBusinessAddress === false) {
-                setErrors(prev => ({...prev, address: 'Please use the business address'}));
-              } else {
-                setErrors(prev => ({...prev, address: ''}));
-              }
-            } catch (err) {
-              console.log('Error validating current location address:', err);
-            } finally {
-              setIsValidatingAddress(false);
             }
           } else {
             setAddress('Current Location');
@@ -559,21 +609,6 @@ export const VolunteerSetupScreen: React.FC = () => {
         const zipComponent = data.results[0].address_components.find((c: any) => c.types.includes('postal_code'));
         if (zipComponent) {
           setZipCode(zipComponent.long_name);
-        }
-
-        try {
-          setIsValidatingAddress(true);
-          const validationData = await validateBusinessAddressWithAPI(fetchedAddress, GOOGLE_MAPS_API_KEY);
-          setAddressValidation(validationData);
-          if (validationData?.addressType === 'residential' || validationData?.isBusinessAddress === false) {
-            setErrors(prev => ({...prev, address: 'Please use the business address'}));
-          } else {
-            setErrors(prev => ({...prev, address: ''}));
-          }
-        } catch (err) {
-          console.log('Error validating dragged address:', err);
-        } finally {
-          setIsValidatingAddress(false);
         }
       }
     } catch (error) {
@@ -647,8 +682,6 @@ export const VolunteerSetupScreen: React.FC = () => {
 
     if (!address || !address.trim() || address === 'Current Location') {
       newErrors.address = 'Starting address is required';
-    } else if (addressValidation?.addressType === 'residential' || addressValidation?.isBusinessAddress === false) {
-      newErrors.address = 'For your safety, please use the business address';
     }
 
     if (!dob || !dob.trim()) {
@@ -687,33 +720,6 @@ export const VolunteerSetupScreen: React.FC = () => {
   };
 
   const handleContinue = async () => {
-    let currentValidation = addressValidation;
-    if (address && address.trim() && address !== 'Current Location' && !currentValidation) {
-      try {
-        setIsValidatingAddress(true);
-        currentValidation = await validateBusinessAddressWithAPI(address, GOOGLE_MAPS_API_KEY);
-        setAddressValidation(currentValidation);
-      } catch (err) {
-        console.log('Error validating address on submit:', err);
-      } finally {
-        setIsValidatingAddress(false);
-      }
-    }
-
-    if (currentValidation?.addressType === 'residential' || currentValidation?.isBusinessAddress === false) {
-      setErrors(prev => ({
-        ...prev,
-        address: 'Please use the business address',
-      }));
-      scrollToError('address');
-      Toast.show({
-        type: 'error',
-        text1: 'Business Address Required',
-        text2: 'For your safety, please use the business address.',
-      });
-      return;
-    }
-
     if (validate()) {
       const currentRoleData = {
         role: 'volunteer',
@@ -1098,23 +1104,6 @@ export const VolunteerSetupScreen: React.FC = () => {
                     setZipCode(zipComp.long_name);
                     if (errors.zipCode) setErrors(prev => ({...prev, zipCode: ''}));
                   }
-
-                  if (selectedAddr) {
-                    try {
-                      setIsValidatingAddress(true);
-                      const validationData = await validateBusinessAddressWithAPI(selectedAddr, GOOGLE_MAPS_API_KEY);
-                      setAddressValidation(validationData);
-                      if (validationData?.addressType === 'residential' || validationData?.isBusinessAddress === false) {
-                        setErrors(prev => ({...prev, address: 'Please use the business address'}));
-                      } else {
-                        setErrors(prev => ({...prev, address: ''}));
-                      }
-                    } catch (err) {
-                      console.log('Error validating selected address:', err);
-                    } finally {
-                      setIsValidatingAddress(false);
-                    }
-                  }
                 }}
                 query={googlePlacesQuery}
                 styles={{
@@ -1171,7 +1160,6 @@ export const VolunteerSetupScreen: React.FC = () => {
                   onChangeText: (text) => {
                     setAddress(text);
                     if (errors.address) setErrors({...errors, address: ''});
-                    if (addressValidation) setAddressValidation(null);
                   }
                 }}
                 {...({
@@ -1211,24 +1199,17 @@ export const VolunteerSetupScreen: React.FC = () => {
                     {/* Left pointing triangle */}
                     <View style={[styles.tooltipTriangle, {left: 145}]} />
                     <AppText variant="caption" color={Colors.neutral[800]} style={{lineHeight: 18}}>
-                      Enter a nearby business address to match you with nearby requests— your exact location is never shared with anyone
+                      Your exact location is never shared with anyone
                     </AppText>
                   </View>
                 </>
               )}
 
-              {!!errors.address ? (
+              {!!errors.address && (
                 <AppText variant="bodySmall" color={Colors.error} style={{marginTop: 4}}>
                   {errors.address}
                 </AppText>
-              ) : isValidatingAddress ? (
-                <View style={{flexDirection: 'row', alignItems: 'center', marginTop: 8}}>
-                  <ActivityIndicator size="small" color={Colors.primary[500]} />
-                  <AppText variant="caption" color={Colors.neutral[500]} style={{marginLeft: 8}}>
-                    Validating address...
-                  </AppText>
-                </View>
-              ) : null}
+              )}
             </View>
 
             <View {...registerField('zipCode')}>
@@ -1318,11 +1299,6 @@ export const VolunteerSetupScreen: React.FC = () => {
                     <InfoCircleIcon size={16} color={Colors.primary[500]} />
                   </TouchableOpacity> */}
                 </View>
-                <View style={styles.pillContainer}>
-                  <AppText variant="caption" color={Colors.primary[600]} weight="semiBold">
-                    {Math.round(radiusWithin)} miles
-                  </AppText>
-                </View>
               </View>
               <AppText variant="caption" color={Colors.neutral[500]} style={styles.sliderSubtitle}>
                 Areas you are comfortable serving
@@ -1333,6 +1309,7 @@ export const VolunteerSetupScreen: React.FC = () => {
                 onValueChange={setRadiusWithin} 
                 min={5} 
                 max={50}
+                unit="miles"
                 onSlidingStart={() => setIsScrollEnabled(false)}
                 onSlidingComplete={() => setIsScrollEnabled(true)} 
               />
@@ -1505,7 +1482,7 @@ export const VolunteerSetupScreen: React.FC = () => {
             size="lg"
             fullWidth
             loading={isSubmitting}
-            disabled={isSubmitting || isValidatingAddress || addressValidation?.addressType === 'residential' || addressValidation?.isBusinessAddress === false}
+            disabled={isSubmitting}
             onPress={handleContinue}
             style={styles.continueButton}
           />
@@ -1808,11 +1785,12 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.xl,
   },
   sliderSubtitle: {
-    marginBottom: verticalScale(16),
+    marginBottom: verticalScale(8),
   },
   sliderContainer: {
-    height: 40,
-    justifyContent: 'center',
+    height: 68,
+    justifyContent: 'flex-end',
+    paddingBottom: 8,
     marginBottom: 4,
   },
   sliderTrack: {
@@ -1820,6 +1798,10 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.neutral[200],
     borderRadius: 3,
     width: '100%',
+    position: 'absolute',
+    bottom: 14,
+    left: 0,
+    right: 0,
   },
   sliderFill: {
     height: 6,
@@ -1828,6 +1810,7 @@ const styles = StyleSheet.create({
   },
   sliderThumb: {
     position: 'absolute',
+    bottom: 3,
     width: 28,
     height: 28,
     borderRadius: 14,
@@ -1835,6 +1818,47 @@ const styles = StyleSheet.create({
     borderWidth: 3,
     borderColor: Colors.primary[500],
     marginLeft: -14, // Center thumb
+    shadowColor: Colors.neutral[900],
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  sliderBubbleContainer: {
+    position: 'absolute',
+    bottom: 35,
+    width: 74,
+  },
+  sliderBubble: {
+    backgroundColor: Colors.primary[500],
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+    shadowColor: Colors.primary[900],
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  sliderBubbleText: {
+    fontSize: 12,
+    textAlign: 'center',
+  },
+  sliderBubbleArrow: {
+    width: 0,
+    height: 0,
+    backgroundColor: 'transparent',
+    borderStyle: 'solid',
+    borderLeftWidth: 5,
+    borderRightWidth: 5,
+    borderTopWidth: 5,
+    borderLeftColor: 'transparent',
+    borderRightColor: 'transparent',
+    borderTopColor: Colors.primary[500],
+    marginTop: -1,
   },
   sliderLimitsRow: {
     flexDirection: 'row',

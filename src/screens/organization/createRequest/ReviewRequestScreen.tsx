@@ -23,6 +23,7 @@ import {
   AlertTriangle,
   FileText,
   Clock,
+  Globe,
 } from 'lucide-react-native';
 
 import { Colors } from '../../../theme/colors';
@@ -58,6 +59,7 @@ export const ReviewRequestScreen = () => {
           }),
           preferred_start_time: params.startTimeISO || '09:00',
           preferred_end_time: params.endTimeISO || '11:00',
+          time_zone: params.timeZone?.code || 'CT',
           address: params.address || '',
           meeting_location: params.address || '',
           latitude: params.latitude ? Number(params.latitude) : 34.07362,
@@ -67,7 +69,7 @@ export const ReviewRequestScreen = () => {
         }
       };
 
-      const response = await api.post('/help_requests', payload);
+      const response: any = await api.post('/help_requests', payload);
       
       navigation.navigate('RequestCreated', {
         referenceNumber: response.data?.reference_number || response.reference_number || `REQ-${Math.floor(1000 + Math.random() * 9000)}`
@@ -165,6 +167,12 @@ export const ReviewRequestScreen = () => {
             icon={Clock} 
             title="Time" 
             value={`${params.startTime} - ${params.endTime}`} 
+          />
+
+          <SummaryItem 
+            icon={Globe} 
+            title="Time Zone" 
+            value={params.timeZone?.label || params.timeZoneCode || 'CT — Central'} 
           />
           
           <SummaryItem 
