@@ -89,22 +89,26 @@ export default function SponsorDashboardScreen() {
   };
 
   const userRoles = useMemo(() => {
-    const rawRoles = profile?.roles?.map((r: any) => (typeof r === 'string' ? r : r.role || r.name || r)) || [];
-    const profileKeys = Object.keys(profile?.profiles || {});
-    return Array.from(new Set([...rawRoles, ...profileKeys].filter(Boolean)));
+    const profileKeys = Object.keys(profile?.profiles || {}).filter(
+      k => profile?.profiles?.[k] != null && typeof profile?.profiles?.[k] === 'object' && Object.keys(profile?.profiles?.[k]).length > 0
+    );
+    const rolesWithProfile = (profile?.roles || []).map((r: any) => {
+      if (r?.profile && typeof r.profile === 'object' && Object.keys(r.profile).length > 0) {
+        return r.role || r.name;
+      }
+      return null;
+    }).filter(Boolean);
+    const defaultRole = profile?.default_role ? [profile.default_role] : [];
+    return Array.from(new Set([...profileKeys, ...rolesWithProfile, ...defaultRole].filter(Boolean)));
   }, [profile]);
 
   const hasMultipleRoles = userRoles.length > 1;
 
   const handleRolePress = () => {
-    if (hasMultipleRoles) {
-      navigation.navigate('DashboardRoleSelection', {
-        selectedRoles: userRoles,
-        currentRole: profile?.default_role || 'sponsor',
-      });
-    } else {
-      navigation.navigate('SelectRoles', { fromProfile: true });
-    }
+    navigation.navigate('DashboardRoleSelection', {
+      selectedRoles: userRoles,
+      currentRole: profile?.default_role || 'sponsor',
+    });
   };
 
   return (
@@ -138,19 +142,15 @@ export default function SponsorDashboardScreen() {
                 >
                   <View style={styles.roleIconContainer}>
                     {hasMultipleRoles ? (
-                      <ArrowRightLeft color={Colors.neutral[0]} size={12} strokeWidth={2.4} />
+                      <ArrowRightLeft color={Colors.primary[600]} size={12} strokeWidth={2.4} />
                     ) : (
-                      <Plus color={Colors.neutral[0]} size={12} strokeWidth={2.4} />
+                      <Plus color={Colors.primary[600]} size={12} strokeWidth={2.4} />
                     )}
                   </View>
                   <Text style={styles.roleActionText}>
                     Role
                   </Text>
-                  {hasMultipleRoles ? (
-                    <ChevronDown color={Colors.neutral[0]} size={12} strokeWidth={2.4} style={styles.chevronIcon} />
-                  ) : (
-                    <ChevronRight color={Colors.neutral[0]} size={12} strokeWidth={2.4} style={styles.chevronIcon} />
-                  )}
+         
                 </TouchableOpacity>
               )}
 
@@ -266,31 +266,34 @@ const styles = StyleSheet.create({
   roleActionButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.18)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.32)',
-    paddingLeft: horizontalScale(6),
+    backgroundColor: '#FFFFFF',
+    paddingLeft: horizontalScale(8),
     paddingRight: horizontalScale(10),
-    paddingVertical: verticalScale(5),
+    paddingVertical: verticalScale(6),
     borderRadius: moderateScale(20),
-    gap: horizontalScale(5),
+    gap: horizontalScale(6),
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 3,
+    elevation: 3,
   },
   roleIconContainer: {
-    width: moderateScale(20),
-    height: moderateScale(20),
-    borderRadius: moderateScale(10),
-    backgroundColor: 'rgba(255, 255, 255, 0.22)',
+    width: moderateScale(22),
+    height: moderateScale(22),
+    borderRadius: moderateScale(11),
+    backgroundColor: Colors.primary[50],
     justifyContent: 'center',
     alignItems: 'center',
   },
   roleActionText: {
-    fontFamily: FontFamily.semiBold,
+    fontFamily: FontFamily.bold,
     fontSize: FontSize.xs,
-    color: Colors.neutral[0],
+    color: Colors.primary[600],
     letterSpacing: 0.2,
   },
   chevronIcon: {
-    opacity: 0.85,
+    opacity: 1,
   },
   unreadBadge: {
     position: 'absolute',

@@ -8,6 +8,7 @@ import { AppText } from '../../../components/AppText';
 import { Button } from '../../../components/Button';
 import { FileText, Link2, Briefcase, Tag, ChevronLeft, Building, DollarSign, Clock, Pencil, Trash2, Info, Sparkles, Check, X } from 'lucide-react-native';
 import { api } from '../../../api/client';
+import { jobsApi } from '../../../api/jobs';
 import { plansApi, Plan, CreatePlanPurchaseResponse } from '../../../api/plans';
 import Toast from 'react-native-toast-message';
 import { formatStatus, getStatusColors } from '../../../utils/statusUtils';
@@ -124,7 +125,7 @@ export const JobDetailsScreen = () => {
   };
 
   const handleDelete = async () => {
-    const targetId = job?.id;
+    const targetId = job?.id || job?.job_post?.id || job?.job_id;
     if (!targetId) {
       Toast.show({ type: 'error', text1: 'Error', text2: 'Invalid job ID' });
       return;
@@ -141,7 +142,7 @@ export const JobDetailsScreen = () => {
           onPress: async () => {
             try {
               setDeleting(true);
-              await api.delete(`/job_posts/${targetId}`);
+              await jobsApi.deleteJob(targetId);
               Toast.show({
                 type: 'success',
                 text1: 'Deleted',
@@ -530,6 +531,7 @@ export const JobDetailsScreen = () => {
               ) : (
                 <View style={styles.plansList}>
                   {plans.map((p) => {
+                    console.log("@@@plansplans ===",plans)
                     const isSelected = selectedPlan?.id === p.id;
                     const isFeatured = (p.code || '').toLowerCase() === 'featured' || (p.badge || '').toLowerCase() === 'featured';
                     return (

@@ -13,14 +13,16 @@ import {
 } from 'react-native';
 import Toast from 'react-native-toast-message';
 import {useNavigation, useRoute} from '@react-navigation/native';
-import {Star, ChevronLeft} from 'lucide-react-native';
+import {Star} from 'lucide-react-native';
 import {AppText} from '../../../components/AppText';
 import {Button} from '../../../components/Button';
 import {Colors} from '../../../theme/colors';
+import {FontFamily} from '../../../theme/typography';
 import {
   horizontalScale,
   verticalScale,
   moderateScale,
+  fontScale,
 } from '../../../utils/responsive';
 import {api} from '../../../api/client';
 
@@ -79,18 +81,22 @@ export default function RateHelperScreen() {
     }
   };
 
+  const handleSkip = () => {
+    navigation.goBack();
+  };
+
   return (
     <>
       <SafeAreaView style={{ flex: 0, backgroundColor: Colors.primary[500] }} />
       <SafeAreaView style={styles.safeArea}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <ChevronLeft color={Colors.neutral[0]} size={28} />
+        <View style={styles.headerPlaceholder} />
+        <AppText variant="h5" color={Colors.neutral[0]} style={styles.headerTitle}>Rate Experience</AppText>
+        <TouchableOpacity onPress={handleSkip} style={styles.skipBtn} activeOpacity={0.7}>
+          <AppText variant="bodyLarge" color={Colors.neutral[0]} style={styles.skipText}>
+            Skip
+          </AppText>
         </TouchableOpacity>
-        <AppText variant="h5" color={Colors.neutral[0]} style={{textAlign: 'center'}}>Rate Experience</AppText>
-        <View style={[styles.backBtn, {opacity: 0}]} pointerEvents="none">
-          <View style={{width: 28, height: 28}} />
-        </View>
       </View>
 
       <KeyboardAvoidingView
@@ -172,10 +178,23 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: Colors.primary[500],
   },
-  backBtn: {
-    padding: moderateScale(8),
+  headerPlaceholder: {
+    width: moderateScale(48),
   },
   headerTitle: {
+    color: Colors.neutral[0],
+    textAlign: 'center',
+    flex: 1,
+  },
+  skipBtn: {
+    minWidth: moderateScale(48),
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+    paddingVertical: verticalScale(4),
+  },
+  skipText: {
+    fontFamily: FontFamily.medium,
+    fontSize: fontScale(16),
     color: Colors.neutral[0],
   },
   scrollContent: {

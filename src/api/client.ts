@@ -71,7 +71,7 @@ export const registerUnauthorizedHandler = (cb: UnauthorizedCallback) => {
 
 let isHandlingUnauthorized = false;
 
-export const handleUnauthorized = async () => {
+export const handleUnauthorized = async (endpoint?: string) => {
   if (isHandlingUnauthorized) return;
   isHandlingUnauthorized = true;
 
@@ -87,11 +87,20 @@ export const handleUnauthorized = async () => {
       }
     }
 
-    Toast.show({
-      type: 'error',
-      text1: 'Session Expired',
-      text2: 'Please log in again',
-    });
+    const isProfileEndpoint =
+      endpoint === '/profile' ||
+      endpoint?.startsWith('/profile') ||
+      endpoint?.includes('/profile');
+
+    if (!isProfileEndpoint) {
+      Toast.show({
+        type: 'error',
+        text1: 'Session Expired',
+        text2: 'Please log in again',
+      });
+    } else {
+      Toast.hide();
+    }
 
     resetToLogin();
   } catch (error) {
@@ -160,7 +169,7 @@ export const apiClient = async <T>(endpoint: string, options: FetchOptions = {})
           endpoint.startsWith('/auth/token');
 
         if (!isAuthEndpoint) {
-          handleUnauthorized();
+          handleUnauthorized(endpoint);
         }
       }
 

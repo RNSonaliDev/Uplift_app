@@ -544,10 +544,6 @@ export const CreatePromotionScreen = () => {
         <View style={{ width: 40 }} />
       </View>
 
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={{ flex: 1 }}
-      >
         <View style={styles.mainContainer}>
         <KeyboardAwareScrollView
           ref={scrollViewRef}
@@ -555,8 +551,8 @@ export const CreatePromotionScreen = () => {
           contentContainerStyle={[styles.content, { paddingBottom: 140 }]}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
-          extraScrollHeight={140}
-          extraHeight={140}
+          extraScrollHeight={24}
+          extraHeight={30}
           enableOnAndroid={true}
           enableAutomaticScroll={true}
           enableResetScrollToCoords={false}>
@@ -1007,7 +1003,6 @@ export const CreatePromotionScreen = () => {
           />
         </View>
         </View>
-      </KeyboardAvoidingView>
 
       {/* Date Picker Modals */}
         <DatePickerModal

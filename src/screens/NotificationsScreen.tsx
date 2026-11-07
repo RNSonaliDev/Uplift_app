@@ -43,13 +43,15 @@ export default function NotificationsScreen() {
         notifs = (data as any).notifications;
       }
       setNotifications(notifs);
-    } catch (error) {
+    } catch (error: any) {
       console.log('Failed to fetch notifications', error);
-      Toast.show({
-        type: 'error',
-        text1: 'Error',
-        text2: 'Could not load notifications',
-      });
+      if (error?.status !== 401) {
+        Toast.show({
+          type: 'error',
+          text1: 'Error',
+          text2: 'Could not load notifications',
+        });
+      }
     } finally {
       setLoading(false);
     }

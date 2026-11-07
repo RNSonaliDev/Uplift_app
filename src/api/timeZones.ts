@@ -34,6 +34,7 @@ export const timeZonesApi = {
       throw error;
     }
   },
+  getCachedTimeZones: (): TimeZonesResponse | null => cachedTimeZonesResponse,
 };
 
 /**
@@ -169,5 +170,55 @@ export const getTimeZoneCodeFromZipCode = (zipCode?: string | null): string | nu
 
 export const findTimeZoneByCode = (code: string, timeZones: TimeZone[]): TimeZone | undefined => {
   return timeZones.find(tz => tz.code.toUpperCase() === code.toUpperCase());
+};
+
+export const resolveDefaultTimeZone = (
+  response: TimeZonesResponse | any,
+  timeZonesList: TimeZone[] = []
+): TimeZone | null => {
+  if (!response) return null;
+  const list = timeZonesList && timeZonesList.length > 0 ? timeZonesList : (response.time_zones || []);
+  const raw =
+    response.default_timezone ??
+    response.default_time_zone ??
+    response.defaultTimezone ??
+    response.data?.default_timezone ??
+    response.data?.default_time_zone;
+
+  if (!raw) {
+    return list.find((tz: TimeZone) => tz.code?.toUpperCase() === 'CT') || (list.length > 0 ? list[0] : null);
+  }
+
+  // If raw is an object with code or id
+  if (typeof raw === 'object') {
+    const match = list.find(
+      (tz: TimeZone) =>
+        (raw.id && tz.id === raw.id) ||
+        (raw.code && tz.code?.toUpperCase() === raw.code?.toUpperCase()) ||
+        (raw.iana_name && tz.iana_name === raw.iana_name)
+    );
+    return match || raw;
+  }
+
+  // If raw is string code or name or iana_name
+  if (typeof raw === 'string') {
+    const upper = raw.trim().toUpperCase();
+    const match = list.find(
+      (tz: TimeZone) =>
+        tz.code?.toUpperCase() === upper ||
+        tz.current_abbreviation?.toUpperCase() === upper ||
+        tz.iana_name?.toUpperCase() === upper ||
+        tz.name?.toUpperCase() === upper ||
+        tz.label?.toUpperCase().includes(upper)
+    );
+    return match || null;
+  }
+
+  // If raw is number id
+  if (typeof raw === 'number') {
+    return list.find((tz: TimeZone) => tz.id === raw) || null;
+  }
+
+  return list.find((tz: TimeZone) => tz.code?.toUpperCase() === 'CT') || (list.length > 0 ? list[0] : null);
 };
 

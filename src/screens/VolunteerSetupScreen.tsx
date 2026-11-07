@@ -33,6 +33,7 @@ import {AppText} from '../components/AppText';
 import {Button} from '../components/Button';
 import {Input} from '../components/Input';
 import {UpliftLogo} from '../components/UpliftLogo';
+import {validateBusinessAddressWithAPI, ValidationResult} from '../utils/addressValidation';
 import {useFormScrollToError} from '../utils/useFormScrollToError';
 import {authApi} from '../api';
 import {Colors} from '../theme/colors';
@@ -515,6 +516,8 @@ export const VolunteerSetupScreen: React.FC = () => {
   };
 
   const [address, setAddress] = useState('');
+  const [addressValidation, setAddressValidation] = useState<ValidationResult | null>(null);
+  const [isValidatingAddress, setIsValidatingAddress] = useState(false);
   const [latitude, setLatitude] = useState('');
   const [longitude, setLongitude] = useState('');
   const [region, setRegion] = useState({
@@ -565,7 +568,21 @@ export const VolunteerSetupScreen: React.FC = () => {
             const fetchedAddress = data.results[0].formatted_address;
             setAddress(fetchedAddress);
             googlePlacesRef.current?.setAddressText(fetchedAddress);
-            if (errors.address) setErrors(prev => ({...prev, address: ''}));
+
+            try {
+              setIsValidatingAddress(true);
+              const validationData = await validateBusinessAddressWithAPI(fetchedAddress, GOOGLE_MAPS_API_KEY);
+              setAddressValidation(validationData);
+              if (validationData?.addressType === 'residential' || validationData?.isBusinessAddress === false) {
+                setErrors(prev => ({ ...prev, address: 'Enter a nearby business address to match you with nearby requests— your exact location is never shared with anyone' }));
+              } else {
+                setErrors(prev => ({ ...prev, address: '' }));
+              }
+            } catch (err) {
+              console.log('Error validating current location address:', err);
+            } finally {
+              setIsValidatingAddress(false);
+            }
 
             const zipComponent = data.results[0].address_components?.find((c: any) => c.types?.includes('postal_code'));
             if (zipComponent) {
@@ -605,6 +622,21 @@ export const VolunteerSetupScreen: React.FC = () => {
         const fetchedAddress = data.results[0].formatted_address;
         setAddress(fetchedAddress);
         googlePlacesRef.current?.setAddressText(fetchedAddress);
+
+        try {
+          setIsValidatingAddress(true);
+          const validationData = await validateBusinessAddressWithAPI(fetchedAddress, GOOGLE_MAPS_API_KEY);
+          setAddressValidation(validationData);
+          if (validationData?.addressType === 'residential' || validationData?.isBusinessAddress === false) {
+            setErrors(prev => ({ ...prev, address: 'Enter a nearby business address to match you with nearby requests— your exact location is never shared with anyone' }));
+          } else {
+            setErrors(prev => ({ ...prev, address: '' }));
+          }
+        } catch (err) {
+          console.log('Error validating dragged marker address:', err);
+        } finally {
+          setIsValidatingAddress(false);
+        }
         
         const zipComponent = data.results[0].address_components.find((c: any) => c.types.includes('postal_code'));
         if (zipComponent) {
@@ -682,6 +714,10 @@ export const VolunteerSetupScreen: React.FC = () => {
 
     if (!address || !address.trim() || address === 'Current Location') {
       newErrors.address = 'Starting address is required';
+    } else if (errors.address) {
+      newErrors.address = errors.address;
+    } else if (addressValidation?.addressType === 'residential' || addressValidation?.isBusinessAddress === false) {
+      newErrors.address = 'Enter a nearby business address to match you with nearby requests— your exact location is never shared with anyone';
     }
 
     if (!dob || !dob.trim()) {
@@ -720,6 +756,28 @@ export const VolunteerSetupScreen: React.FC = () => {
   };
 
   const handleContinue = async () => {
+    let currentValidation = addressValidation;
+    if (address && address.trim() && address !== 'Current Location' && !currentValidation) {
+      try {
+        setIsValidatingAddress(true);
+        currentValidation = await validateBusinessAddressWithAPI(address, GOOGLE_MAPS_API_KEY);
+        setAddressValidation(currentValidation);
+      } catch (err) {
+        console.log('Error validating address on continue:', err);
+      } finally {
+        setIsValidatingAddress(false);
+      }
+    }
+
+    if (currentValidation?.addressType === 'residential' || currentValidation?.isBusinessAddress === false) {
+      setErrors(prev => ({
+        ...prev,
+        address: 'Enter a nearby business address to match you with nearby requests— your exact location is never shared with anyone',
+      }));
+      scrollToFirstError({ address: 'error' }, ['address']);
+      return;
+    }
+
     if (validate()) {
       const currentRoleData = {
         role: 'volunteer',
@@ -1087,7 +1145,25 @@ export const VolunteerSetupScreen: React.FC = () => {
                   const selectedAddr = data.description || (data as any).formatted_address || '';
                   setAddress(selectedAddr);
                   googlePlacesRef.current?.setAddressText(selectedAddr);
-                  if (errors.address) setErrors(prev => ({...prev, address: ''}));
+
+                  if (selectedAddr) {
+                    try {
+                      setIsValidatingAddress(true);
+                      const validationData = await validateBusinessAddressWithAPI(selectedAddr, GOOGLE_MAPS_API_KEY);
+                      setAddressValidation(validationData);
+                      if (validationData?.addressType === 'residential' || validationData?.isBusinessAddress === false) {
+                        setErrors(prev => ({ ...prev, address: 'Enter a nearby business address to match you with nearby requests— your exact location is never shared with anyone' }));
+                      } else {
+                        setErrors(prev => ({ ...prev, address: '' }));
+                      }
+                    } catch (err) {
+                      console.log('Error validating selected address:', err);
+                    } finally {
+                      setIsValidatingAddress(false);
+                    }
+                  } else if (errors.address) {
+                    setErrors(prev => ({...prev, address: ''}));
+                  }
 
                   if (details?.geometry?.location) {
                     setLatitude(details.geometry.location.lat.toString());
@@ -1159,6 +1235,7 @@ export const VolunteerSetupScreen: React.FC = () => {
                   autoCorrect: false,
                   onChangeText: (text) => {
                     setAddress(text);
+                    setAddressValidation(null);
                     if (errors.address) setErrors({...errors, address: ''});
                   }
                 }}
@@ -1481,8 +1558,8 @@ export const VolunteerSetupScreen: React.FC = () => {
             color="primary"
             size="lg"
             fullWidth
-            loading={isSubmitting}
-            disabled={isSubmitting}
+            loading={isSubmitting || isValidatingAddress}
+            disabled={isSubmitting || isValidatingAddress || Boolean(errors.address) || addressValidation?.addressType === 'residential' || addressValidation?.isBusinessAddress === false}
             onPress={handleContinue}
             style={styles.continueButton}
           />

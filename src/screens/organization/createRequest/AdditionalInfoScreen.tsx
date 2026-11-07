@@ -8,7 +8,6 @@ import {
   TextInput,
   ScrollView,
   Platform,
-  KeyboardAvoidingView,
   Keyboard,
 } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
@@ -55,18 +54,15 @@ export const AdditionalInfoScreen = () => {
         <View style={{ width: 40 }} />
       </View>
 
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={{ flex: 1 }}
-      >
-        <KeyboardAwareScrollView 
-          style={styles.flex1} 
-          contentContainerStyle={styles.scrollContent} 
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-          enableOnAndroid={true}
-          extraScrollHeight={20}
-          enableResetScrollToCoords={false}>
+      <KeyboardAwareScrollView 
+        style={styles.flex1} 
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: 32 }]} 
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        enableOnAndroid={true}
+        extraScrollHeight={24}
+        extraHeight={30}
+        enableResetScrollToCoords={false}>
             
             {/* Skills Required */}
             <View style={styles.inputGroup}>
@@ -127,7 +123,6 @@ export const AdditionalInfoScreen = () => {
             <Text style={styles.primaryButtonText}>Continue</Text>
           </TouchableOpacity>
         </View>
-      </KeyboardAvoidingView>
     </View>
   );
 };

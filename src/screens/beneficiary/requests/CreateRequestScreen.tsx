@@ -3,7 +3,6 @@ import {
   View,
   StyleSheet,
   ScrollView,
-  KeyboardAvoidingView,
   Platform,
   Alert,
   TouchableOpacity,
@@ -31,7 +30,7 @@ import { Button } from '../../../components/Button';
 import { DatePickerModal } from '../../../components/DatePickerModal';
 import { api, getFullImageUrl } from '../../../api/client';
 import { authApi, CategoryResponse } from '../../../api/auth';
-import { ChevronLeft, ShoppingCart, MapPin, Navigation, X, Globe, ChevronDown } from 'lucide-react-native';
+import { ChevronLeft, ShoppingCart, MapPin, Navigation, X } from 'lucide-react-native';
 import { horizontalScale, verticalScale, moderateScale } from '../../../utils/responsive';
 import MapView, { Marker, Circle } from 'react-native-maps';
 import { GooglePlacesAutocomplete, GooglePlacesAutocompleteRef } from 'react-native-google-places-autocomplete';
@@ -39,12 +38,12 @@ import Geolocation from '@react-native-community/geolocation';
 import { validateAddressType, validateBusinessAddressWithAPI, ValidationResult } from '../../../utils/addressValidation';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { useFormScrollToError } from '../../../utils/useFormScrollToError';
-import { TimeZonePickerModal } from '../../../components/TimeZonePickerModal';
 import {
   timeZonesApi,
   TimeZone,
   getTimeZoneCodeFromZipCode,
   findTimeZoneByCode,
+  resolveDefaultTimeZone,
 } from '../../../api/timeZones';
 
 const InfoCircleIcon: React.FC<{ size?: number; color?: string }> = ({
@@ -68,12 +67,25 @@ interface CustomTimePickerModalProps {
   selectedDate: Date;
   currentTime: Date;
   startTime?: Date;
-  onSelectTime: (time: Date) => void;
+  timeZones?: TimeZone[];
+  selectedTimeZone?: TimeZone | null;
+  onSelectTimeZone?: (tz: TimeZone) => void;
+  onSelectTime: (time: Date, tz?: TimeZone | null) => void;
   onClose: () => void;
 }
 
 const HOURS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
 const MINUTES = Array.from({ length: 60 }, (_, i) => i);
+
+const FALLBACK_TIME_ZONES: TimeZone[] = [
+  { id: 1, code: 'ET', name: 'Eastern', label: 'ET — Eastern', iana_name: 'America/New_York', observes_dst: true, current_abbreviation: 'EDT', utc_offset_label: 'UTC−4' },
+  { id: 2, code: 'CT', name: 'Central', label: 'CT — Central', iana_name: 'America/Chicago', observes_dst: true, current_abbreviation: 'CDT', utc_offset_label: 'UTC−5' },
+  { id: 3, code: 'MT', name: 'Mountain', label: 'MT — Mountain', iana_name: 'America/Denver', observes_dst: true, current_abbreviation: 'MDT', utc_offset_label: 'UTC−6' },
+  { id: 4, code: 'PT', name: 'Pacific', label: 'PT — Pacific', iana_name: 'America/Los_Angeles', observes_dst: true, current_abbreviation: 'PDT', utc_offset_label: 'UTC−7' },
+  { id: 5, code: 'MST', name: 'Arizona', label: 'MST — Arizona', iana_name: 'America/Phoenix', observes_dst: false, current_abbreviation: 'MST', utc_offset_label: 'UTC−7' },
+  { id: 6, code: 'AKT', name: 'Alaska', label: 'AKT — Alaska', iana_name: 'America/Anchorage', observes_dst: true, current_abbreviation: 'AKDT', utc_offset_label: 'UTC−8' },
+  { id: 7, code: 'HT', name: 'Hawaii', label: 'HT — Hawaii', iana_name: 'Pacific/Honolulu', observes_dst: false, current_abbreviation: 'HST', utc_offset_label: 'UTC−10' },
+];
 
 const CustomTimePickerModal: React.FC<CustomTimePickerModalProps> = ({
   visible,
@@ -81,29 +93,54 @@ const CustomTimePickerModal: React.FC<CustomTimePickerModalProps> = ({
   selectedDate,
   currentTime,
   startTime,
+  timeZones,
+  selectedTimeZone,
+  onSelectTimeZone,
   onSelectTime,
   onClose,
 }) => {
+  const availableTimeZones = useMemo(() => {
+    return timeZones && timeZones.length > 0 ? timeZones : FALLBACK_TIME_ZONES;
+  }, [timeZones]);
+
   const [selectedHour, setSelectedHour] = useState<number>(() => {
     let h = currentTime.getHours() % 12;
     return h === 0 ? 12 : h;
   });
   const [selectedMinute, setSelectedMinute] = useState<number>(() => currentTime.getMinutes());
   const [period, setPeriod] = useState<'AM' | 'PM'>(() => (currentTime.getHours() >= 12 ? 'PM' : 'AM'));
+  const [selectedTz, setSelectedTz] = useState<TimeZone | null>(() => selectedTimeZone || null);
 
   const hourScrollRef = useRef<ScrollView>(null);
   const minuteScrollRef = useRef<ScrollView>(null);
+  const tzScrollRef = useRef<ScrollView>(null);
 
   React.useEffect(() => {
     if (visible) {
+      if (selectedTimeZone) {
+        setSelectedTz(selectedTimeZone);
+      } else if (availableTimeZones.length > 0) {
+        const cached = timeZonesApi.getCachedTimeZones?.();
+        const defaultTz = resolveDefaultTimeZone(cached, availableTimeZones) || availableTimeZones.find(t => t.code === 'CT') || availableTimeZones[0];
+        setSelectedTz(defaultTz);
+      }
       let targetTime = new Date(currentTime);
 
-      // If end time picker and currentTime <= startTime or invalid, default to startTime + 1h
+      if (type === 'start') {
+        const currentTotalMin = targetTime.getHours() * 60 + targetTime.getMinutes();
+        if (currentTotalMin < 480 || currentTotalMin > 1170) {
+          targetTime = new Date(selectedDate);
+          const defaultStartH = (isToday && minTodayMinutes > 480) ? Math.min(19, Math.ceil(minTodayMinutes / 60)) : 10;
+          targetTime.setHours(defaultStartH, 0, 0, 0);
+        }
+      }
+
+      // If end time picker and currentTime <= startTime or invalid, default to startTime + 30m (or clamped 8:30 AM to 8:00 PM)
       if (type === 'end' && startTime) {
         const startTotalMin = startTime.getHours() * 60 + startTime.getMinutes();
         const currentTotalMin = targetTime.getHours() * 60 + targetTime.getMinutes();
-        if (currentTotalMin <= startTotalMin || currentTotalMin > startTotalMin + 240 || currentTotalMin > 1200) {
-          const suggestedEndMin = Math.min(1200, startTotalMin + 60);
+        if (currentTotalMin < startTotalMin + 30 || currentTotalMin > startTotalMin + 240 || currentTotalMin > 1200 || currentTotalMin < 510) {
+          const suggestedEndMin = Math.min(1200, Math.max(510, startTotalMin + 30));
           targetTime = new Date(selectedDate);
           targetTime.setHours(Math.floor(suggestedEndMin / 60), suggestedEndMin % 60, 0, 0);
         }
@@ -162,9 +199,14 @@ const CustomTimePickerModal: React.FC<CustomTimePickerModalProps> = ({
         if (minuteScrollRef.current) {
           minuteScrollRef.current.scrollTo({ y: initialM * 48, animated: true });
         }
+        const currentCode = selectedTimeZone?.code || selectedTz?.code;
+        const tzIdx = availableTimeZones.findIndex(t => t.code === currentCode);
+        if (tzIdx !== -1 && tzScrollRef.current) {
+          tzScrollRef.current.scrollTo({ y: tzIdx * 48, animated: true });
+        }
       }, 200);
     }
-  }, [visible, currentTime, startTime, selectedDate, type]);
+  }, [visible, currentTime, startTime, selectedDate, type, selectedTimeZone, availableTimeZones]);
 
   const get24Hour = (h12: number, ampm: 'AM' | 'PM') => {
     if (ampm === 'AM') {
@@ -186,19 +228,23 @@ const CustomTimePickerModal: React.FC<CustomTimePickerModalProps> = ({
   const isTimeValid = (h24: number, min: number) => {
     const totalMin = h24 * 60 + min;
 
-    // Operating hours: 8 AM (480 min) to 8 PM (1200 min)
-    if (totalMin < 480 || totalMin > 1200) {
-      return false;
+    // Start time: 8:00 AM (480 min) to 7:30 PM (1170 min)
+    if (type === 'start') {
+      if (totalMin < 480 || totalMin > 1170) {
+        return false;
+      }
+      // Lead time check for today
+      if (isToday && totalMin < minTodayMinutes) {
+        return false;
+      }
     }
 
-    // Lead time check for today
-    if (type === 'start' && isToday && totalMin < minTodayMinutes) {
-      return false;
-    }
-
-    // End time checks
+    // End time: 8:30 AM (510 min) to 8:00 PM (1200 min)
     if (type === 'end') {
-      if (totalMin <= startMinutes) return false;
+      if (totalMin < 510 || totalMin > 1200) {
+        return false;
+      }
+      if (totalMin < startMinutes + 30) return false;
       if (totalMin > startMinutes + 240) return false;
     }
 
@@ -223,6 +269,50 @@ const CustomTimePickerModal: React.FC<CustomTimePickerModalProps> = ({
     return false;
   };
 
+  const handleHourSelect = (h: number) => {
+    setSelectedHour(h);
+    const h24 = get24Hour(h, period);
+    if (!isTimeValid(h24, selectedMinute)) {
+      for (let m = 0; m < 60; m++) {
+        if (isTimeValid(h24, m)) {
+          setSelectedMinute(m);
+          minuteScrollRef.current?.scrollTo({ y: m * 48, animated: true });
+          break;
+        }
+      }
+    }
+  };
+
+  const handlePeriodSelect = (p: 'AM' | 'PM') => {
+    setPeriod(p);
+    const h24 = get24Hour(selectedHour, p);
+    if (isTimeValid(h24, selectedMinute)) {
+      return;
+    }
+    for (let m = 0; m < 60; m++) {
+      if (isTimeValid(h24, m)) {
+        setSelectedMinute(m);
+        minuteScrollRef.current?.scrollTo({ y: m * 48, animated: true });
+        return;
+      }
+    }
+    for (const h of HOURS) {
+      const check24 = get24Hour(h, p);
+      for (let m = 0; m < 60; m++) {
+        if (isTimeValid(check24, m)) {
+          setSelectedHour(h);
+          setSelectedMinute(m);
+          const hourIdx = HOURS.indexOf(h);
+          if (hourIdx !== -1) {
+            hourScrollRef.current?.scrollTo({ y: hourIdx * 48, animated: true });
+          }
+          minuteScrollRef.current?.scrollTo({ y: m * 48, animated: true });
+          return;
+        }
+      }
+    }
+  };
+
   const currentH24 = get24Hour(selectedHour, period);
   const isCurrentSelectionValid = isTimeValid(currentH24, selectedMinute);
 
@@ -230,7 +320,10 @@ const CustomTimePickerModal: React.FC<CustomTimePickerModalProps> = ({
     if (!isCurrentSelectionValid) return;
     const finalDate = new Date(selectedDate);
     finalDate.setHours(currentH24, selectedMinute, 0, 0);
-    onSelectTime(finalDate);
+    if (selectedTz) {
+      onSelectTimeZone?.(selectedTz);
+    }
+    onSelectTime(finalDate, selectedTz);
     onClose();
   };
 
@@ -245,7 +338,7 @@ const CustomTimePickerModal: React.FC<CustomTimePickerModalProps> = ({
                 {type === 'start' ? 'Select Start Time' : 'Select End Time'}
               </AppText>
               <AppText variant="caption" color={Colors.neutral[500]} style={{ marginTop: 2 }}>
-                Operating hours: 8:00 AM – 8:00 PM
+                {type === 'start' ? 'Operating hours: 8:00 AM – 7:30 PM' : 'Operating hours: 8:30 AM – 8:00 PM'}
               </AppText>
             </View>
             <TouchableOpacity onPress={onClose} style={{ padding: 4 }}>
@@ -262,23 +355,30 @@ const CustomTimePickerModal: React.FC<CustomTimePickerModalProps> = ({
               <AppText variant="bodyLarge" weight="bold" color={Colors.primary[700]} style={{ marginLeft: 8 }}>
                 {period}
               </AppText>
+              {selectedTz ? (
+                <AppText variant="bodyLarge" weight="bold" color={Colors.primary[600]} style={{ marginLeft: 8 }}>
+                  {selectedTz.code}
+                </AppText>
+              ) : null}
             </View>
           </View>
 
           {!isCurrentSelectionValid && (
             <View style={styles.warningBanner}>
               <AppText variant="caption" color={Colors.error} center>
-                Selected time is outside allowed hours (8am–8pm) or invalid.
+                {type === 'start'
+                  ? 'Start time must be between 8:00 AM and 7:30 PM.'
+                  : 'End time must be between 8:30 AM and 8:00 PM (at least 30 min after start).'}
               </AppText>
             </View>
           )}
 
-          {/* 3 Columns Side-by-Side in a Single Row */}
+          {/* 4 Columns Side-by-Side in a Single Row */}
           <View style={styles.pickersRow}>
             {/* Column 1: Hour */}
             <View style={styles.columnContainer}>
-              <AppText variant="labelMedium" color={Colors.neutral[700]} style={styles.columnLabel}>
-                Hour (1-12)
+              <AppText variant="labelSmall" color={Colors.neutral[700]} style={styles.columnLabel}>
+                Hour
               </AppText>
               <ScrollView
                 ref={hourScrollRef}
@@ -298,7 +398,7 @@ const CustomTimePickerModal: React.FC<CustomTimePickerModalProps> = ({
                         !valid && styles.columnChipDisabled,
                       ]}
                       disabled={!valid}
-                      onPress={() => setSelectedHour(h)}>
+                      onPress={() => handleHourSelect(h)}>
                       <AppText
                         variant="bodyMedium"
                         weight={isSelected ? 'bold' : 'regular'}
@@ -313,8 +413,8 @@ const CustomTimePickerModal: React.FC<CustomTimePickerModalProps> = ({
 
             {/* Column 2: Minute */}
             <View style={styles.columnContainer}>
-              <AppText variant="labelMedium" color={Colors.neutral[700]} style={styles.columnLabel}>
-                Minute (0-59)
+              <AppText variant="labelSmall" color={Colors.neutral[700]} style={styles.columnLabel}>
+                Minute 
               </AppText>
               <ScrollView
                 ref={minuteScrollRef}
@@ -349,7 +449,7 @@ const CustomTimePickerModal: React.FC<CustomTimePickerModalProps> = ({
 
             {/* Column 3: Period */}
             <View style={styles.columnContainer}>
-              <AppText variant="labelMedium" color={Colors.neutral[700]} style={styles.columnLabel}>
+              <AppText variant="labelSmall" color={Colors.neutral[700]} style={styles.columnLabel}>
                 Period
               </AppText>
               <View style={styles.verticalPeriodContainer}>
@@ -361,7 +461,7 @@ const CustomTimePickerModal: React.FC<CustomTimePickerModalProps> = ({
                     !isPeriodValid('AM') && styles.columnChipDisabled,
                   ]}
                   disabled={!isPeriodValid('AM')}
-                  onPress={() => setPeriod('AM')}>
+                  onPress={() => handlePeriodSelect('AM')}>
                   <AppText
                     variant="bodyMedium"
                     weight="bold"
@@ -378,7 +478,7 @@ const CustomTimePickerModal: React.FC<CustomTimePickerModalProps> = ({
                     !isPeriodValid('PM') && styles.columnChipDisabled,
                   ]}
                   disabled={!isPeriodValid('PM')}
-                  onPress={() => setPeriod('PM')}>
+                  onPress={() => handlePeriodSelect('PM')}>
                   <AppText
                     variant="bodyMedium"
                     weight="bold"
@@ -388,12 +488,48 @@ const CustomTimePickerModal: React.FC<CustomTimePickerModalProps> = ({
                 </TouchableOpacity>
               </View>
             </View>
+
+            {/* Column 4: Time Zone */}
+            <View style={styles.columnContainer}>
+              <AppText variant="labelSmall" color={Colors.neutral[700]} style={styles.columnLabel}>
+                Time Zone
+              </AppText>
+              <ScrollView
+                ref={tzScrollRef}
+                nestedScrollEnabled
+                showsVerticalScrollIndicator={false}
+                style={styles.verticalScroll}
+                contentContainerStyle={styles.verticalScrollContent}>
+                {availableTimeZones.map((tz) => {
+                  const isSelected = selectedTz?.code === tz.code || selectedTz?.id === tz.id;
+                  return (
+                    <TouchableOpacity
+                      key={`tz-${tz.id || tz.code}`}
+                      style={[
+                        styles.columnChip,
+                        isSelected && styles.columnChipSelected,
+                      ]}
+                      onPress={() => {
+                        setSelectedTz(tz);
+                        onSelectTimeZone?.(tz);
+                      }}>
+                      <AppText
+                        variant="bodyMedium"
+                        weight={isSelected ? 'bold' : 'regular'}
+                        color={isSelected ? Colors.neutral[0] : Colors.neutral[900]}>
+                        {tz.code}
+                      </AppText>
+                    </TouchableOpacity>
+                  );
+                })}
+              </ScrollView>
+            </View>
           </View>
 
           {/* Confirm Button */}
           <View style={{ marginTop: verticalScale(16) }}>
             <Button
-              title={`Confirm ${type === 'start' ? 'Start' : 'End'} Time (${String(selectedHour).padStart(2, '0')}:${String(selectedMinute).padStart(2, '0')} ${period})`}
+              title={`Confirm ${type === 'start' ? 'Start' : 'End'} Time`}
               onPress={handleConfirm}
               disabled={!isCurrentSelectionValid}
             />
@@ -456,10 +592,18 @@ export default function CreateRequestScreen() {
   });
   const [isEndTimePickerOpen, setIsEndTimePickerOpen] = useState(false);
 
-  const [timeZones, setTimeZones] = useState<TimeZone[]>([]);
-  const [selectedTimeZone, setSelectedTimeZone] = useState<TimeZone | null>(null);
+  const [timeZones, setTimeZones] = useState<TimeZone[]>(() => {
+    const cached = timeZonesApi.getCachedTimeZones?.();
+    return cached?.time_zones || [];
+  });
+  const [selectedTimeZone, setSelectedTimeZone] = useState<TimeZone | null>(() => {
+    const cached = timeZonesApi.getCachedTimeZones?.();
+    if (cached) {
+      return resolveDefaultTimeZone(cached, cached.time_zones || []);
+    }
+    return null;
+  });
   const timeZonesRef = useRef<TimeZone[]>([]);
-  const [isTimeZoneModalOpen, setIsTimeZoneModalOpen] = useState(false);
 
   useEffect(() => {
     const loadTimeZones = async () => {
@@ -469,27 +613,10 @@ export default function CreateRequestScreen() {
         setTimeZones(list);
         timeZonesRef.current = list;
 
-        let initialTz: TimeZone | null = res?.default_timezone || (list.length > 0 ? list[0] : null);
+        const defaultTz: TimeZone | null = resolveDefaultTimeZone(res, list);
 
-        try {
-          const profileRes = await authApi.getProfile();
-          const activeProf = profileRes?.active_profile;
-          const userZip = activeProf?.zip_code;
-          if (userZip) {
-            const tzCode = getTimeZoneCodeFromZipCode(userZip);
-            if (tzCode) {
-              const matched = findTimeZoneByCode(tzCode, list);
-              if (matched) {
-                initialTz = matched;
-              }
-            }
-          }
-        } catch (e) {
-          // ignore
-        }
-
-        if (initialTz) {
-          setSelectedTimeZone(initialTz);
+        if (defaultTz) {
+          setSelectedTimeZone(defaultTz);
         }
       } catch (err) {
         console.warn('Error loading time zones from API:', err);
@@ -520,6 +647,7 @@ export default function CreateRequestScreen() {
     registerInput,
     scrollToError,
     scrollToFirstError,
+    fieldPositions,
   } = useFormScrollToError();
   const scrollYRef = useRef<number>(0);
 
@@ -738,11 +866,13 @@ export default function CreateRequestScreen() {
         }
       }
 
-      if (startTime.getHours() < 8 || endTime.getHours() > 20 || (endTime.getHours() === 20 && endTime.getMinutes() > 0)) {
-        newErrors.preferred_start_time = 'Time must be between 8 AM and 8 PM';
-        newErrors.preferred_end_time = 'Time must be between 8 AM and 8 PM';
-      } else if (endMinutes - startMinutes <= 0) {
-        newErrors.preferred_end_time = 'End time must be after start time';
+      if (startMinutes < 480 || startMinutes > 1170) {
+        newErrors.preferred_start_time = 'Start time must be between 8:00 AM and 7:30 PM';
+      }
+      if (endMinutes < 510 || endMinutes > 1200) {
+        newErrors.preferred_end_time = 'End time must be between 8:30 AM and 8:00 PM';
+      } else if (endMinutes - startMinutes < 30) {
+        newErrors.preferred_end_time = 'End time must be at least 30 minutes after start time';
       } else if (endMinutes - startMinutes > 240) {
         newErrors.preferred_end_time = 'Request cannot exceed 4 hours';
       }
@@ -826,14 +956,10 @@ export default function CreateRequestScreen() {
           <View style={{ width: 28 }} />
         </View>
 
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          style={{ flex: 1 }}
-        >
         <KeyboardAwareScrollView
           ref={scrollViewRef}
           style={{ flex: 1, backgroundColor: Colors.neutral[50] }}
-          contentContainerStyle={styles.content}
+          contentContainerStyle={[styles.content, { paddingBottom: verticalScale(120) }]}
           keyboardShouldPersistTaps="handled"
           enableOnAndroid={true}
           extraScrollHeight={20}
@@ -943,23 +1069,6 @@ export default function CreateRequestScreen() {
             </View>
           </View>
 
-          {/* Time Zone */}
-          <View style={{ marginBottom: 16 }}>
-            <AppText variant="labelLarge" color={Colors.neutral[700]} style={{ marginBottom: 6 }}>
-              Time Zone <AppText color={Colors.error}>*</AppText>
-            </AppText>
-            <TouchableOpacity onPress={() => setIsTimeZoneModalOpen(true)} activeOpacity={0.7}>
-              <View pointerEvents="box-only">
-                <Input
-                  placeholder="Select Time Zone"
-                  value={selectedTimeZone?.label || ''}
-                  editable={false}
-                  leftIcon={<Globe color={Colors.neutral[400]} size={20} />}
-                  rightIcon={<ChevronDown color={Colors.neutral[400]} size={20} />}
-                />
-              </View>
-            </TouchableOpacity>
-          </View>
 
           {/* <Input
             label="Hours Required"
@@ -1094,6 +1203,14 @@ export default function CreateRequestScreen() {
               textInputProps={{
                 placeholderTextColor: Colors.neutral[400],
                 autoCorrect: false,
+                onFocus: () => {
+                  setTimeout(() => {
+                    const y = fieldPositions.current['meeting_location'];
+                    if (y !== undefined && scrollViewRef.current) {
+                      scrollViewRef.current.scrollToPosition?.(0, Math.max(0, y - 10), true);
+                    }
+                  }, 150);
+                },
                 onChangeText: (text) => {
                   handleChange('meeting_location', text);
                   setAddressValidation(null);
@@ -1135,16 +1252,7 @@ export default function CreateRequestScreen() {
             onPress={handlePreview}
           />
         </View>
-        </KeyboardAvoidingView>
 
-        {/* Time Zone Picker Modal */}
-        <TimeZonePickerModal
-          visible={isTimeZoneModalOpen}
-          onClose={() => setIsTimeZoneModalOpen(false)}
-          timeZones={timeZones}
-          selectedTimeZone={selectedTimeZone}
-          onSelect={(tz) => setSelectedTimeZone(tz)}
-        />
 
         <DatePickerModal
           open={isDatePickerOpen}
@@ -1169,14 +1277,21 @@ export default function CreateRequestScreen() {
           type="start"
           selectedDate={date}
           currentTime={startTime}
-          onSelectTime={(selectedTime) => {
+          timeZones={timeZones}
+          selectedTimeZone={selectedTimeZone}
+          onSelectTimeZone={(tz) => setSelectedTimeZone(tz)}
+          onSelectTime={(selectedTime, tz) => {
             setStartTime(selectedTime);
             handleChange('preferred_start_time', formatTime(selectedTime));
+            if (tz) {
+              setSelectedTimeZone(tz);
+            }
 
-            // Automatically adjust end time to start time + 1 hour (clamped to 8 PM)
+            // Automatically adjust end time to start time + 30 minutes (clamped between 8:30 AM and 8:00 PM)
             const newEnd = new Date(selectedTime);
-            const endHour = Math.min(20, selectedTime.getHours() + 1);
-            newEnd.setHours(endHour, selectedTime.getMinutes(), 0, 0);
+            const newEndMinutes = selectedTime.getHours() * 60 + selectedTime.getMinutes() + 30;
+            const clampedMinutes = Math.min(1200, Math.max(510, newEndMinutes));
+            newEnd.setHours(Math.floor(clampedMinutes / 60), clampedMinutes % 60, 0, 0);
             setEndTime(newEnd);
             handleChange('preferred_end_time', formatTime(newEnd));
           }}
@@ -1189,9 +1304,15 @@ export default function CreateRequestScreen() {
           selectedDate={date}
           currentTime={endTime}
           startTime={startTime}
-          onSelectTime={(selectedTime) => {
+          timeZones={timeZones}
+          selectedTimeZone={selectedTimeZone}
+          onSelectTimeZone={(tz) => setSelectedTimeZone(tz)}
+          onSelectTime={(selectedTime, tz) => {
             setEndTime(selectedTime);
             handleChange('preferred_end_time', formatTime(selectedTime));
+            if (tz) {
+              setSelectedTimeZone(tz);
+            }
           }}
           onClose={() => setIsEndTimePickerOpen(false)}
         />
@@ -1454,7 +1575,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.neutral[0],
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
-    padding: horizontalScale(20),
+    padding: horizontalScale(16),
     paddingTop: verticalScale(20),
     paddingBottom: verticalScale(36),
     maxHeight: '70%',
@@ -1530,7 +1651,7 @@ const styles = StyleSheet.create({
   pickersRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    gap: horizontalScale(10),
+    gap: horizontalScale(6),
     marginVertical: verticalScale(8),
   },
   columnContainer: {
@@ -1540,6 +1661,7 @@ const styles = StyleSheet.create({
   columnLabel: {
     marginBottom: verticalScale(6),
     textAlign: 'center',
+    height: verticalScale(28),
   },
   verticalScroll: {
     height: verticalScale(200),
@@ -1553,7 +1675,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: verticalScale(6),
     gap: verticalScale(6),
-    paddingHorizontal: horizontalScale(4),
+    paddingHorizontal: horizontalScale(2),
   },
   columnChip: {
     width: '100%',

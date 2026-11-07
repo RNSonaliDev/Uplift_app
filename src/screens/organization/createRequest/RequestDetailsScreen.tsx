@@ -9,7 +9,6 @@ import {
   TextInput,
   ScrollView,
   Platform,
-  KeyboardAvoidingView,
   Keyboard,
   Modal,
   Pressable,
@@ -32,6 +31,7 @@ import {
   TimeZone,
   getTimeZoneCodeFromZipCode,
   findTimeZoneByCode,
+  resolveDefaultTimeZone,
 } from '../../../api/timeZones';
 import { authApi } from '../../../api/auth';
 
@@ -80,26 +80,43 @@ export const RequestDetailsScreen = () => {
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [errors, setErrors] = useState({ title: '', description: '', time: '' });
+  const [errors, setErrors] = useState({ title: '', description: '', date: '', time: '' });
   const [addressValidation, setAddressValidation] = useState<ValidationResult | null>(null);
   const [showAddressInfo, setShowAddressInfo] = useState(false);
   const [helpType, setHelpType] = useState<'single' | 'multiple'>('single');
   const [isMultipleDates, setIsMultipleDates] = useState(false);
   
-  const [startDate, setStartDate] = useState(new Date());
+  const [startDate, setStartDate] = useState(() => new Date());
   const [isStartDatePickerOpen, setIsStartDatePickerOpen] = useState(false);
 
-  const [startTime, setStartTime] = useState(new Date());
+  const [startTime, setStartTime] = useState(() => new Date());
   const [isStartTimePickerOpen, setIsStartTimePickerOpen] = useState(false);
 
-  const [endDate, setEndDate] = useState(new Date());
+  const [endDate, setEndDate] = useState(() => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    return tomorrow;
+  });
   const [isEndDatePickerOpen, setIsEndDatePickerOpen] = useState(false);
 
-  const [endTime, setEndTime] = useState(new Date());
+  const [endTime, setEndTime] = useState(() => {
+    const end = new Date();
+    end.setMinutes(end.getMinutes() + 30);
+    return end;
+  });
   const [isEndTimePickerOpen, setIsEndTimePickerOpen] = useState(false);
 
-  const [timeZones, setTimeZones] = useState<TimeZone[]>([]);
-  const [selectedTimeZone, setSelectedTimeZone] = useState<TimeZone | null>(null);
+  const [timeZones, setTimeZones] = useState<TimeZone[]>(() => {
+    const cached = timeZonesApi.getCachedTimeZones?.();
+    return cached?.time_zones || [];
+  });
+  const [selectedTimeZone, setSelectedTimeZone] = useState<TimeZone | null>(() => {
+    const cached = timeZonesApi.getCachedTimeZones?.();
+    if (cached) {
+      return resolveDefaultTimeZone(cached, cached.time_zones || []);
+    }
+    return null;
+  });
   const timeZonesRef = useRef<TimeZone[]>([]);
   const [isTimeZoneModalOpen, setIsTimeZoneModalOpen] = useState(false);
 
@@ -111,27 +128,10 @@ export const RequestDetailsScreen = () => {
         setTimeZones(list);
         timeZonesRef.current = list;
 
-        let initialTz: TimeZone | null = res?.default_timezone || (list.length > 0 ? list[0] : null);
+        const defaultTz: TimeZone | null = resolveDefaultTimeZone(res, list);
 
-        try {
-          const profileRes = await authApi.getProfile();
-          const activeProf = profileRes?.active_profile;
-          const userZip = activeProf?.zip_code;
-          if (userZip) {
-            const tzCode = getTimeZoneCodeFromZipCode(userZip);
-            if (tzCode) {
-              const matched = findTimeZoneByCode(tzCode, list);
-              if (matched) {
-                initialTz = matched;
-              }
-            }
-          }
-        } catch (e) {
-          // Profile zip fetch ignored
-        }
-
-        if (initialTz) {
-          setSelectedTimeZone(initialTz);
+        if (defaultTz) {
+          setSelectedTimeZone(defaultTz);
         }
       } catch (err) {
         console.warn('Error loading time zones from API:', err);
@@ -322,9 +322,26 @@ export const RequestDetailsScreen = () => {
   const decrementVolunteers = () => setVolunteersNeeded(v => Math.max(helpType === 'multiple' ? 2 : 1, v - 1));
 
   
+  const handleToggleMultipleDates = () => {
+    const nextVal = !isMultipleDates;
+    setIsMultipleDates(nextVal);
+    if (nextVal) {
+      const startDay = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate()).getTime();
+      const endDay = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate()).getTime();
+      if (endDay <= startDay) {
+        const nextDay = new Date(startDate);
+        nextDay.setDate(nextDay.getDate() + 1);
+        setEndDate(nextDay);
+      }
+    }
+    if (errors.date) {
+      setErrors(prev => ({ ...prev, date: '' }));
+    }
+  };
+
   const handleContinue = () => {
     let hasError = false;
-    const newErrors = { title: '', description: '', time: '' };
+    const newErrors = { title: '', description: '', date: '', time: '' };
 
     if (!title.trim()) {
       newErrors.title = 'Please enter a request title';
@@ -336,15 +353,20 @@ export const RequestDetailsScreen = () => {
       hasError = true;
     }
 
-    const isSingleDate = 
-      (!isMultipleDates) || 
-      (isMultipleDates && startDate.toDateString() === endDate.toDateString());
+    if (isMultipleDates) {
+      const startDay = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate()).getTime();
+      const endDay = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate()).getTime();
+      if (endDay <= startDay) {
+        newErrors.date = 'End date must be after start date';
+        hasError = true;
+      }
+    }
 
     const startMinutes = startTime.getHours() * 60 + startTime.getMinutes();
     const endMinutes = endTime.getHours() * 60 + endTime.getMinutes();
 
-    if (endMinutes - startMinutes <= 0) {
-      newErrors.time = 'End time must be after start time';
+    if (endMinutes - startMinutes < 30) {
+      newErrors.time = 'End time must be at least 30 minutes after start time';
       hasError = true;
     } 
     // else 
@@ -370,10 +392,11 @@ export const RequestDetailsScreen = () => {
       const allErrors = {
         title: newErrors.title,
         description: newErrors.description,
+        date: newErrors.date,
         time: newErrors.time,
         address: addressErr,
       };
-      scrollToFirstError(allErrors, ['title', 'description', 'time', 'address']);
+      scrollToFirstError(allErrors, ['title', 'description', 'date', 'time', 'address']);
       return;
     }
 
@@ -420,18 +443,15 @@ export const RequestDetailsScreen = () => {
         <View style={{ width: 40 }} />
       </View>
 
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={{ flex: 1 }}
-      >
       <KeyboardAwareScrollView 
         ref={scrollViewRef}
         style={styles.flex1} 
-        contentContainerStyle={styles.scrollContent} 
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: 32 }]} 
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
         enableOnAndroid={true}
-        extraScrollHeight={20}
+        extraScrollHeight={24}
+        extraHeight={30}
         enableResetScrollToCoords={false}
         onScroll={(e) => {
           scrollYRef.current = e.nativeEvent.contentOffset.y;
@@ -591,7 +611,7 @@ export const RequestDetailsScreen = () => {
           {/* Dates and Times */}
           <TouchableOpacity 
             style={[styles.checkboxContainer, { marginBottom: 16 }]}
-            onPress={() => setIsMultipleDates(!isMultipleDates)}
+            onPress={handleToggleMultipleDates}
           >
             {isMultipleDates ? (
               <CheckSquare color={Colors.primary[500]} size={20} />
@@ -601,23 +621,32 @@ export const RequestDetailsScreen = () => {
             <Text style={[styles.checkboxText, { fontFamily: FontFamily.semiBold }]}>Request for multiple dates</Text>
           </TouchableOpacity>
 
-          <View style={styles.row}>
-            <View style={[styles.inputGroup, { flex: 1, marginRight: 8, marginBottom: 24 }]}>
-              <Text style={styles.label}>{isMultipleDates ? 'Start Date' : 'Date'} <Text style={{color: Colors.error}}>*</Text></Text>
-              <TouchableOpacity style={styles.dateInput} onPress={() => setIsStartDatePickerOpen(true)}>
-                <Text style={styles.dateText}>{formatDate(startDate)}</Text>
-                <CalendarIcon color={Colors.neutral[500]} size={20} />
-              </TouchableOpacity>
-            </View>
-            {isMultipleDates && (
-              <View style={[styles.inputGroup, { flex: 1, marginLeft: 8, marginBottom: 24 }]}>
-                <Text style={styles.label}>End Date <Text style={{color: Colors.error}}>*</Text></Text>
-                <TouchableOpacity style={styles.dateInput} onPress={() => setIsEndDatePickerOpen(true)}>
-                  <Text style={styles.dateText}>{formatDate(endDate)}</Text>
+          <View {...registerField('date')}>
+            <View style={styles.row}>
+              <View style={[styles.inputGroup, { flex: 1, marginRight: isMultipleDates ? 8 : 0, marginBottom: errors.date ? 8 : 24 }]}>
+                <Text style={styles.label}>{isMultipleDates ? 'Start Date' : 'Date'} <Text style={{color: Colors.error}}>*</Text></Text>
+                <TouchableOpacity 
+                  style={[styles.dateInput, errors.date ? styles.inputError : null]} 
+                  onPress={() => setIsStartDatePickerOpen(true)}
+                >
+                  <Text style={styles.dateText}>{formatDate(startDate)}</Text>
                   <CalendarIcon color={Colors.neutral[500]} size={20} />
                 </TouchableOpacity>
               </View>
-            )}
+              {isMultipleDates && (
+                <View style={[styles.inputGroup, { flex: 1, marginLeft: 8, marginBottom: errors.date ? 8 : 24 }]}>
+                  <Text style={styles.label}>End Date <Text style={{color: Colors.error}}>*</Text></Text>
+                  <TouchableOpacity 
+                    style={[styles.dateInput, errors.date ? styles.inputError : null]} 
+                    onPress={() => setIsEndDatePickerOpen(true)}
+                  >
+                    <Text style={styles.dateText}>{formatDate(endDate)}</Text>
+                    <CalendarIcon color={Colors.neutral[500]} size={20} />
+                  </TouchableOpacity>
+                </View>
+              )}
+            </View>
+            {!!errors.date && <Text style={[styles.errorText, { marginBottom: 24, marginTop: 0 }]}>{errors.date}</Text>}
           </View>
           <View {...registerField('time')}>
             <View style={styles.row}>
@@ -864,6 +893,16 @@ export const RequestDetailsScreen = () => {
         onConfirm={(date) => {
           setIsStartDatePickerOpen(false);
           setStartDate(date);
+          if (errors.date) setErrors(prev => ({ ...prev, date: '' }));
+          if (isMultipleDates) {
+            const startDay = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+            const endDay = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate()).getTime();
+            if (endDay <= startDay) {
+              const nextDay = new Date(date);
+              nextDay.setDate(nextDay.getDate() + 1);
+              setEndDate(nextDay);
+            }
+          }
         }}
         onCancel={() => {
           setIsStartDatePickerOpen(false);
@@ -878,6 +917,12 @@ export const RequestDetailsScreen = () => {
         onConfirm={(time) => {
           setIsStartTimePickerOpen(false);
           setStartTime(time);
+          const startMinutes = time.getHours() * 60 + time.getMinutes();
+          const currentEndMinutes = endTime.getHours() * 60 + endTime.getMinutes();
+          if (currentEndMinutes - startMinutes < 30) {
+            const newEnd = new Date(time.getTime() + 30 * 60 * 1000);
+            setEndTime(newEnd);
+          }
           if (errors.time) setErrors(prev => ({ ...prev, time: '' }));
         }}
         onCancel={() => {
@@ -888,10 +933,17 @@ export const RequestDetailsScreen = () => {
         open={isEndDatePickerOpen}
         date={endDate}
         mode="date"
-        minimumDate={startDate}
+        minimumDate={new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate() + 1)}
         onConfirm={(date) => {
           setIsEndDatePickerOpen(false);
           setEndDate(date);
+          const startDay = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate()).getTime();
+          const endDay = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+          if (endDay <= startDay) {
+            setErrors(prev => ({ ...prev, date: 'End date must be after start date' }));
+          } else if (errors.date) {
+            setErrors(prev => ({ ...prev, date: '' }));
+          }
         }}
         onCancel={() => {
           setIsEndDatePickerOpen(false);
@@ -901,12 +953,18 @@ export const RequestDetailsScreen = () => {
         open={isEndTimePickerOpen}
         date={endTime}
         mode="time"
-        minimumDate={getMinTimeForPicker(endTime, endDate)}
+        minimumDate={new Date(startTime.getTime() + 30 * 60 * 1000)}
         maximumDate={getMaxTimeForPicker(endTime)}
         onConfirm={(time) => {
           setIsEndTimePickerOpen(false);
           setEndTime(time);
-          if (errors.time) setErrors(prev => ({ ...prev, time: '' }));
+          const startMinutes = startTime.getHours() * 60 + startTime.getMinutes();
+          const chosenEndMinutes = time.getHours() * 60 + time.getMinutes();
+          if (chosenEndMinutes - startMinutes < 30) {
+            setErrors(prev => ({ ...prev, time: 'End time must be at least 30 minutes after start time' }));
+          } else if (errors.time) {
+            setErrors(prev => ({ ...prev, time: '' }));
+          }
         }}
         onCancel={() => {
           setIsEndTimePickerOpen(false);
@@ -922,7 +980,6 @@ export const RequestDetailsScreen = () => {
           <Text style={styles.primaryButtonText}>Preview Request</Text>
         </TouchableOpacity>
       </View>
-      </KeyboardAvoidingView>
 
       {/* Time Zone Picker Modal */}
       <TimeZonePickerModal

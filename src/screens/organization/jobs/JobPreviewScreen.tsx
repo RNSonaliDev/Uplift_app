@@ -487,7 +487,7 @@ export const JobPreviewScreen = () => {
 
                             <View style={{ alignItems: 'flex-end' }}>
                               <AppText variant="h6" weight="bold" color={Colors.primary[600]}>
-                                ${Number(p.amount || p.price).toFixed(2)}
+                                ${Number(p.price).toFixed(2)}
                               </AppText>
                               {p.processing_fee ? (
                                 <AppText variant="caption" color={Colors.neutral[500]}>

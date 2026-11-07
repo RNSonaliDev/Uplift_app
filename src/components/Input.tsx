@@ -96,7 +96,7 @@ export const Input = React.forwardRef<TextInput, InputProps>(({
             borderColor: getBorderColor(),
             borderWidth: isFocused ? 1.5 : 1,
             backgroundColor: disabled
-              ? Colors.neutral[100]
+              ? Colors.neutral[200]
               : Colors.neutral[0],
           },
         ]}>

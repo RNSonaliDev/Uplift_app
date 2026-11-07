@@ -14,7 +14,7 @@ import Toast from 'react-native-toast-message';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Svg, { Path, Circle } from 'react-native-svg';
-import { ChevronLeft } from 'lucide-react-native';
+import { ChevronLeft, Plus, ArrowRightLeft, Check } from 'lucide-react-native';
 
 import { authApi } from '../api';
 import { AppText } from '../components/AppText';
@@ -144,11 +144,20 @@ interface DashboardCardProps {
   onPress: () => void;
   disabled?: boolean;
   isCurrent?: boolean;
+  isCreated?: boolean;
+  isSwitching?: boolean;
 }
 
-const DashboardCard: React.FC<DashboardCardProps> = ({ role, onPress, disabled, isCurrent }) => {
+const DashboardCard: React.FC<DashboardCardProps> = ({
+  role,
+  onPress,
+  disabled,
+  isCurrent,
+  isCreated = true,
+  isSwitching = false,
+}) => {
   const getIcon = () => {
-    const iconColor = isCurrent ? Colors.neutral[500] : Colors.primary[500];
+    const iconColor = Colors.primary[600];
     switch (role) {
       case 'beneficiary':
         return <BeneficiaryIcon size={moderateScale(26)} color={iconColor} />;
@@ -186,27 +195,52 @@ const DashboardCard: React.FC<DashboardCardProps> = ({ role, onPress, disabled, 
     <TouchableOpacity
       style={[
         styles.card,
-        isCurrent ? styles.cardCurrent : styles.cardAvailable,
-        disabled && !isCurrent && styles.cardLoading,
+        isCurrent
+          ? styles.cardCurrent
+          : isCreated
+          ? styles.cardAvailable
+          : styles.cardNotCreated,
+        (disabled || isSwitching) && !isCurrent && styles.cardLoading,
       ]}
       onPress={onPress}
-      activeOpacity={isCurrent ? 1 : 0.7}
-      disabled={disabled || isCurrent}>
+      activeOpacity={isCurrent ? 1 : 0.75}
+      disabled={disabled || isCurrent || isSwitching}>
       <View style={styles.cardHeader}>
-        <View style={[styles.iconContainer, isCurrent && styles.iconContainerCurrent]}>
+        <View style={styles.iconContainer} pointerEvents="none">
           {getIcon()}
         </View>
         {isCurrent && (
-          <View style={styles.currentBadge}>
-            <AppText variant="caption" style={styles.currentBadgeText}>
-              Current Role
+          <View style={styles.selectedBadge} pointerEvents="none">
+            <Check color={Colors.primary[700]} size={11} strokeWidth={2.4} />
+            <AppText variant="caption" style={styles.selectedBadgeText}>
+              Selected Role
+            </AppText>
+          </View>
+        )}
+        {!isCurrent && isCreated && (
+          <View style={styles.switchBadge} pointerEvents="none">
+            {isSwitching ? (
+              <ActivityIndicator size="small" color={Colors.primary[600]} style={{ transform: [{ scale: 0.7 }] }} />
+            ) : (
+              <ArrowRightLeft color={Colors.primary[600]} size={10} strokeWidth={2.2} />
+            )}
+            <AppText variant="caption" style={styles.switchBadgeText}>
+              {isSwitching ? 'Switching...' : 'Switch Role'}
+            </AppText>
+          </View>
+        )}
+        {!isCreated && (
+          <View style={styles.addRoleBadge} pointerEvents="none">
+            <Plus color={Colors.primary[600]} size={11} strokeWidth={2.5} />
+            <AppText variant="caption" style={styles.addRoleBadgeText}>
+              Add Role
             </AppText>
           </View>
         )}
       </View>
       <AppText
         variant="h6"
-        color={isCurrent ? Colors.neutral[600] : Colors.neutral[900]}
+        color={isCurrent ? Colors.neutral[700] : Colors.neutral[900]}
         style={styles.cardTitle}>
         {getTitle()} Dashboard
       </AppText>
@@ -222,41 +256,84 @@ const DashboardCard: React.FC<DashboardCardProps> = ({ role, onPress, disabled, 
 
 // ── Main Component ────────────────────────────────────────
 
+const ALL_ROLES = ['beneficiary', 'volunteer', 'organization', 'sponsor'];
+
 export const DashboardRoleSelectionScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProps>();
   const route = useRoute<DashboardRoleSelectionRouteProp>();
-  const routeSelectedRoles = route.params?.selectedRoles || [];
-  const [userRoles, setUserRoles] = useState<string[]>([]);
+  const [profileData, setProfileData] = useState<any>(null);
+  const [isFetchingProfile, setIsFetchingProfile] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
+  const [switchingRole, setSwitchingRole] = useState<string | null>(null);
   const [currentRole, setCurrentRole] = useState<string | null>(route.params?.currentRole || null);
 
   React.useEffect(() => {
     const fetchProfile = async () => {
       try {
         const profile = await authApi.getProfile();
+        setProfileData(profile);
         if (!currentRole && profile.default_role) {
           setCurrentRole(profile.default_role);
         }
-        if (profile.roles && profile.roles.length > 0) {
-          setUserRoles(profile.roles);
-        }
       } catch (e) {
         // ignore
+      } finally {
+        setIsFetchingProfile(false);
       }
     };
     fetchProfile();
   }, [currentRole]);
 
-  const rolesToDisplay =
-    routeSelectedRoles.length > 0
-      ? routeSelectedRoles
-      : userRoles.length > 0
-      ? userRoles
-      : ['beneficiary', 'volunteer', 'organization', 'sponsor'];
+  const isRoleCreated = (roleKey: string): boolean => {
+    const roleLower = roleKey.toLowerCase();
+    
+    // 1. Current active role is definitely created
+    if (currentRole && currentRole.toLowerCase() === roleLower) return true;
+    if (profileData?.default_role && profileData.default_role.toLowerCase() === roleLower) return true;
+
+    // 2. Must exist in profileData.profiles with actual data
+    if (
+      profileData?.profiles &&
+      profileData.profiles[roleLower] != null &&
+      typeof profileData.profiles[roleLower] === 'object' &&
+      Object.keys(profileData.profiles[roleLower]).length > 0
+    ) {
+      return true;
+    }
+
+    // 3. Pending roles are definitely NOT created
+    const pendingRoles = ((profileData?.pending_roles || []) as any[]).map((r: any) =>
+      typeof r === 'string' ? r.toLowerCase() : (r.role || r.name || '').toLowerCase()
+    );
+    if (pendingRoles.includes(roleLower)) {
+      return false;
+    }
+
+    // 4. Must exist in profileData.roles with a valid non-empty profile object
+    const roleObj = ((profileData?.roles || []) as any[]).find((r: any) => {
+      if (!r) return false;
+      if (typeof r === 'string') return r.toLowerCase() === roleLower;
+      const name = (r.role || r.name || '').toLowerCase();
+      return name === roleLower;
+    });
+
+    if (roleObj && typeof roleObj === 'object') {
+      if (
+        roleObj.profile != null &&
+        typeof roleObj.profile === 'object' &&
+        Object.keys(roleObj.profile).length > 0
+      ) {
+        return true;
+      }
+    }
+
+    return false;
+  };
 
   const handleRoleSelect = async (role: string) => {
     try {
       setIsLoading(true);
+      setSwitchingRole(role);
       await authApi.setDefaultRole({ default_role: role });
 
       if (role === 'volunteer') {
@@ -268,7 +345,7 @@ export const DashboardRoleSelectionScreen: React.FC = () => {
       } else if (role === 'beneficiary') {
         navigation.reset({ index: 0, routes: [{ name: 'BeneficiaryFlow' as any }] });
       } else {
-        navigation.reset({ index: 0, routes: [{ name: 'DashboardRoleSelection' as any, params: { selectedRoles: rolesToDisplay } }] });
+        navigation.reset({ index: 0, routes: [{ name: 'DashboardRoleSelection' as any }] });
       }
     } catch (error: any) {
       Toast.show({
@@ -278,6 +355,44 @@ export const DashboardRoleSelectionScreen: React.FC = () => {
       });
     } finally {
       setIsLoading(false);
+      setSwitchingRole(null);
+    }
+  };
+
+  const handleAddRole = (role: string) => {
+    const roleLower = role.toLowerCase();
+
+    // Check minor restrictions
+    if (profileData?.date_of_birth) {
+      const birthDate = new Date(profileData.date_of_birth);
+      const ageDiff = Date.now() - birthDate.getTime();
+      const ageDate = new Date(ageDiff);
+      const age = Math.abs(ageDate.getUTCFullYear() - 1970);
+      if (age < 18 && roleLower !== 'volunteer') {
+        Toast.show({
+          type: 'info',
+          text1: 'Age Restriction',
+          text2: 'Users under 18 can only register as youth volunteers.',
+        });
+        return;
+      }
+    }
+
+    const routeParams = {
+      pendingRoles: [],
+      selectedRoles: [roleLower],
+      collectedRolesData: [],
+      date_of_birth: profileData?.date_of_birth,
+    };
+
+    if (roleLower === 'volunteer') {
+      navigation.navigate('VolunteerSetup' as any, routeParams);
+    } else if (roleLower === 'organization') {
+      navigation.navigate('OrganizationSetup' as any, routeParams);
+    } else if (roleLower === 'sponsor') {
+      navigation.navigate('SponsorSetup' as any, routeParams);
+    } else if (roleLower === 'beneficiary') {
+      navigation.navigate('BeneficiarySetup' as any, routeParams);
     }
   };
 
@@ -306,27 +421,45 @@ export const DashboardRoleSelectionScreen: React.FC = () => {
             bounces={false}>
 
           <AppText variant="h4" center color={Colors.neutral[900]} style={styles.title}>
-            Choose Dashboard
+            {currentRole ? 'Switch Role' : 'Choose Dashboard'}
           </AppText>
 
           <AppText variant="bodyLarge" center color={Colors.neutral[500]} style={styles.subtitle}>
-            Select which profile you'd like to access right now. You can switch between them anytime in settings.
+            {currentRole
+              ? "Select a profile to switch to, or add a new role to your account."
+              : "Select which profile you'd like to access right now. You can switch between them anytime in settings."
+            }
           </AppText>
 
-          <View style={styles.cardsContainer}>
-            {rolesToDisplay.map((role, index) => {
-              const isCurrent = role === currentRole;
-              return (
-                <DashboardCard
-                  key={`${role}-${index}`}
-                  role={role}
-                  onPress={() => handleRoleSelect(role)}
-                  disabled={isLoading}
-                  isCurrent={isCurrent}
-                />
-              );
-            })}
-          </View>
+          {isFetchingProfile ? (
+            <View style={styles.loaderContainer}>
+              <ActivityIndicator size="large" color={Colors.primary[500]} />
+            </View>
+          ) : (
+            <View style={styles.cardsContainer}>
+              {ALL_ROLES.map((role, index) => {
+                const isCurrent = role.toLowerCase() === currentRole?.toLowerCase();
+                const isCreated = isRoleCreated(role);
+                return (
+                  <DashboardCard
+                    key={`${role}-${index}`}
+                    role={role}
+                    onPress={() => {
+                      if (isCreated) {
+                        handleRoleSelect(role);
+                      } else {
+                        handleAddRole(role);
+                      }
+                    }}
+                    disabled={isLoading}
+                    isCurrent={isCurrent}
+                    isCreated={isCreated}
+                    isSwitching={switchingRole === role}
+                  />
+                );
+              })}
+            </View>
+          )}
 
           {isLoading && (
             <View style={{ marginTop: 24 }}>
@@ -407,7 +540,12 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.neutral[100],
     borderWidth: 1.5,
     borderColor: Colors.neutral[300],
-    opacity: 0.8,
+  },
+  cardNotCreated: {
+    backgroundColor: Colors.neutral[0],
+    borderWidth: 1.5,
+    borderColor: Colors.primary[200],
+    borderStyle: 'dashed',
   },
   cardLoading: {
     opacity: 0.6,
@@ -426,32 +564,53 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  iconContainerCurrent: {
-    backgroundColor: Colors.neutral[200],
-  },
-  currentBadge: {
-    backgroundColor: Colors.neutral[200],
-    paddingHorizontal: horizontalScale(6),
-    paddingVertical: verticalScale(3),
-    borderRadius: BorderRadius.full,
-  },
-  currentBadgeText: {
-    color: Colors.neutral[700],
-    fontFamily: FontFamily.semiBold,
-    fontSize: fontScale(10),
-  },
-  availableBadge: {
+  selectedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: Colors.primary[50],
     paddingHorizontal: horizontalScale(6),
     paddingVertical: verticalScale(3),
     borderRadius: BorderRadius.full,
     borderWidth: 1,
     borderColor: Colors.primary[200],
+    gap: horizontalScale(3),
   },
-  availableBadgeText: {
+  selectedBadgeText: {
     color: Colors.primary[700],
     fontFamily: FontFamily.semiBold,
-    fontSize: fontScale(10),
+    fontSize: fontScale(9.5),
+  },
+  switchBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.primary[50],
+    paddingHorizontal: horizontalScale(6),
+    paddingVertical: verticalScale(3),
+    borderRadius: BorderRadius.full,
+    borderWidth: 1,
+    borderColor: Colors.primary[200],
+    gap: horizontalScale(3),
+  },
+  switchBadgeText: {
+    color: Colors.primary[600],
+    fontFamily: FontFamily.semiBold,
+    fontSize: fontScale(9.5),
+  },
+  addRoleBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.primary[50],
+    paddingHorizontal: horizontalScale(6),
+    paddingVertical: verticalScale(3),
+    borderRadius: BorderRadius.full,
+    borderWidth: 1,
+    borderColor: Colors.primary[300],
+    gap: horizontalScale(2),
+  },
+  addRoleBadgeText: {
+    color: Colors.primary[600],
+    fontFamily: FontFamily.bold,
+    fontSize: fontScale(9.5),
   },
   cardTitle: {
     fontFamily: FontFamily.semiBold,

@@ -1,4 +1,4 @@
-import React, {useState, useCallback} from 'react';
+import React, {useState, useCallback, useMemo} from 'react';
 import {
   View,
   Text,
@@ -167,7 +167,19 @@ export default function MyProfileScreen() {
 
 
 
-  const userRoles = profile?.roles?.map((r: any) => (typeof r === 'string' ? r : r.role || r.name || r)) || [];
+  const userRoles = useMemo(() => {
+    const profileKeys = Object.keys(profile?.profiles || {}).filter(
+      k => profile?.profiles?.[k] != null && typeof profile?.profiles?.[k] === 'object' && Object.keys(profile?.profiles?.[k]).length > 0
+    );
+    const rolesWithProfile = (profile?.roles || []).map((r: any) => {
+      if (r?.profile && typeof r.profile === 'object' && Object.keys(r.profile).length > 0) {
+        return r.role || r.name;
+      }
+      return null;
+    }).filter(Boolean);
+    const defaultRole = profile?.default_role ? [profile.default_role] : [];
+    return Array.from(new Set([...profileKeys, ...rolesWithProfile, ...defaultRole].filter(Boolean)));
+  }, [profile]);
   const pendingRoles = (profile as any)?.pending_roles?.map((r: any) => (typeof r === 'string' ? r : r.role || r.name || r)) || [];
   const combinedRolesList = Array.from(
     new Set([

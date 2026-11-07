@@ -332,7 +332,7 @@ export default function EditProfileScreen(props?: EditProfileScreenProps) {
         handleChange('address', address);
         volunteerPlacesRef.current?.setAddressText(address);
         addressPlacesRef.current?.setAddressText(address);
-        if (currentRole === 'organization') {
+        if (currentRole === 'organization' || currentRole === 'volunteer') {
           const validationData = await validateBusinessAddressWithAPI(address, GOOGLE_MAPS_API_KEY);
           setAddressValidation(validationData);
           if (validationData?.addressType === 'residential' || validationData?.isBusinessAddress === false) {
@@ -442,6 +442,16 @@ export default function EditProfileScreen(props?: EditProfileScreenProps) {
       if (roleProfile.address) {
         volunteerPlacesRef.current?.setAddressText(roleProfile.address);
         addressPlacesRef.current?.setAddressText(roleProfile.address);
+        if ((currentRole === 'organization' || currentRole === 'volunteer') && !isPreview) {
+          validateBusinessAddressWithAPI(roleProfile.address, GOOGLE_MAPS_API_KEY)
+            .then(validationData => {
+              setAddressValidation(validationData);
+              if (validationData?.addressType === 'residential' || validationData?.isBusinessAddress === false) {
+                setErrors(prev => ({...prev, address: 'Enter a nearby business address to match you with nearby requests— your exact location is never shared with anyone'}));
+              }
+            })
+            .catch(err => console.log('Validation error on fetchProfile:', err));
+        }
       }
     } catch (error) {
       console.error('Failed to fetch profile', error);
@@ -516,7 +526,7 @@ export default function EditProfileScreen(props?: EditProfileScreenProps) {
       newErrors.zip_code = 'ZIP code must be 5 digits';
     }
 
-    if (currentRole === 'organization') {
+    if (currentRole === 'organization' || currentRole === 'volunteer') {
       if (errors.address) {
         newErrors.address = errors.address;
       } else if (formData.address && formData.address.trim()) {
@@ -642,7 +652,7 @@ export default function EditProfileScreen(props?: EditProfileScreenProps) {
       >
       <KeyboardAwareScrollView
         ref={scrollViewRef}
-        style={{ flex: 1, backgroundColor: Colors.neutral[50] }}
+        style={{ flex: 1, backgroundColor: isPreview? Colors.neutral[200] : Colors.neutral[50] }}
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
         enableOnAndroid={true}
@@ -978,7 +988,22 @@ export default function EditProfileScreen(props?: EditProfileScreenProps) {
                     const selectedAddr = data.description || (data as any).formatted_address || '';
                     handleChange('address', selectedAddr);
                     volunteerPlacesRef.current?.setAddressText(selectedAddr);
-                    if (errors.address) {
+                    if (selectedAddr) {
+                      setIsValidatingAddress(true);
+                      try {
+                        const validationData = await validateBusinessAddressWithAPI(selectedAddr, GOOGLE_MAPS_API_KEY);
+                        setAddressValidation(validationData);
+                        if (validationData?.addressType === 'residential' || validationData?.isBusinessAddress === false) {
+                          setErrors(prev => ({...prev, address: 'Enter a nearby business address to match you with nearby requests— your exact location is never shared with anyone'}));
+                        } else {
+                          setErrors(prev => ({...prev, address: ''}));
+                        }
+                      } catch (e) {
+                        console.log('Error validating volunteer address:', e);
+                      } finally {
+                        setIsValidatingAddress(false);
+                      }
+                    } else if (errors.address) {
                       setErrors(prev => ({...prev, address: ''}));
                     }
                     if (details?.geometry?.location) {
@@ -998,7 +1023,7 @@ export default function EditProfileScreen(props?: EditProfileScreenProps) {
                       zIndex: 9999,
                     },
                     textInputContainer: {
-                      backgroundColor: isPreview ? Colors.neutral[100] : Colors.neutral[0],
+                      backgroundColor: isPreview ? Colors.neutral[200] : Colors.neutral[0],
                       borderRadius: 12,
                       borderWidth: 1,
                       borderColor: errors.address ? Colors.error : Colors.neutral[300],
@@ -1311,7 +1336,7 @@ export default function EditProfileScreen(props?: EditProfileScreenProps) {
                       zIndex: 9999,
                     },
                     textInputContainer: {
-                      backgroundColor: isPreview ? Colors.neutral[100] : Colors.neutral[0],
+                      backgroundColor: isPreview ? Colors.neutral[200] : Colors.neutral[0],
                       borderRadius: 12,
                       borderWidth: 1,
                       borderColor: errors.address ? Colors.error : Colors.neutral[300],
@@ -1460,8 +1485,8 @@ export default function EditProfileScreen(props?: EditProfileScreenProps) {
           <Button
             title="Save Changes"
             onPress={handleSave}
-            loading={saving || loading || (currentRole === 'organization' && isValidatingAddress)}
-            disabled={saving || loading || (currentRole === 'organization' && isValidatingAddress) || Boolean(errors.address) || (currentRole === 'organization' && (addressValidation?.addressType === 'residential' || addressValidation?.isBusinessAddress === false))}
+            loading={saving || loading || ((currentRole === 'organization' || currentRole === 'volunteer') && isValidatingAddress)}
+            disabled={saving || loading || ((currentRole === 'organization' || currentRole === 'volunteer') && isValidatingAddress) || Boolean(errors.address) || ((currentRole === 'organization' || currentRole === 'volunteer') && (addressValidation?.addressType === 'residential' || addressValidation?.isBusinessAddress === false))}
           />
         )}
       </View>
@@ -1580,7 +1605,7 @@ export default function EditProfileScreen(props?: EditProfileScreenProps) {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: Colors.neutral[0],
+    backgroundColor: Colors.neutral[100],
   },
   header: {
     backgroundColor: Colors.primary[500],
@@ -1605,6 +1630,7 @@ const styles = StyleSheet.create({
     padding: 24,
     borderTopWidth: 1,
     borderTopColor: Colors.neutral[200],
+    backgroundColor: Colors.neutral[100],
   },
   sliderGroup: {
     marginBottom: 32,

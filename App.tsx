@@ -97,7 +97,7 @@ function App() {
   return (
     <SafeAreaProvider>
       <View style={{flex: 1, backgroundColor: Colors.neutral[0]}}>
-        <StripeProvider publishableKey="pk_test_51UA9Vr3T0Xq4ckhg35yL5yu15O93uLapwn65j9qgf8VA7EYOcqbrObKGhrvY13mqvZhskn69JNOVdWmLDxpfKc4M00KwpVNBDX"
+        <StripeProvider publishableKey="pk_live_51UA9Vr3T0Xq4ckhgpnDwmjAfH29tVl640q12dpF43B5udwLorka67xL2ph8DAv856mesJX4eIQ6pLw1quC1jIJmt00j8dO84MQ"
         urlScheme="upliftapp">
           <NavigationContainer ref={navigationRef}>
             <Stack.Navigator screenOptions={{headerShown: false}}>

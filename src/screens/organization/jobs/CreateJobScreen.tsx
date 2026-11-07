@@ -274,16 +274,12 @@ export const CreateJobScreen = () => {
         </TouchableOpacity>
         <View style={{width: 40}} />
       </View>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={{ flex: 1 }}
-      >
       <KeyboardAwareScrollView
         ref={scrollViewRef}
         contentContainerStyle={[styles.content, { paddingBottom: 100 }]}
         keyboardShouldPersistTaps="handled"
-        extraScrollHeight={120}
-        extraHeight={120}
+        extraScrollHeight={24}
+        extraHeight={30}
         enableOnAndroid={true}
         enableAutomaticScroll={true}
         enableResetScrollToCoords={false}
@@ -428,7 +424,6 @@ export const CreateJobScreen = () => {
           fullWidth
         />
       </View>
-      </KeyboardAvoidingView>
       </SafeAreaView>
     </>
   );

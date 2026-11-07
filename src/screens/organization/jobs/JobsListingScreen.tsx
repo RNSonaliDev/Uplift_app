@@ -6,6 +6,8 @@ import { Colors } from '../../../theme/colors';
 import { FontFamily } from '../../../theme/typography';
 import { AppText } from '../../../components/AppText';
 import { api } from '../../../api/client';
+import { jobsApi } from '../../../api/jobs';
+import { authApi } from '../../../api/auth';
 import { formatStatus, getStatusColors } from '../../../utils/statusUtils';
 import Toast from 'react-native-toast-message';
 
@@ -14,13 +16,25 @@ export const JobsListingScreen = () => {
   const [jobs, setJobs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'active' | 'closed'>('active');
+  const [freeJobAvailable, setFreeJobAvailable] = useState(false);
   const isFirstMount = React.useRef(true);
+
+  const fetchProfileStatus = useCallback(async () => {
+    try {
+      const res: any = await authApi.getProfile();
+      const org = res?.profiles?.organization || res?.active_profile || res?.organization || res;
+      setFreeJobAvailable(Boolean(org?.free_job_available));
+    } catch (e) {
+      console.warn('Failed to fetch profile in JobsListingScreen', e);
+    }
+  }, []);
 
   const fetchJobs = useCallback(async (isInitial = false) => {
     try {
       if (isInitial) setLoading(true);
-      const data = await api.get<any[]>('/job_posts?scope=organization');
-      setJobs(data);
+      const data = await jobsApi.getOrganizationJobs();
+      const list = Array.isArray(data) ? data : (data as any)?.job_posts || (data as any)?.jobs || [];
+      setJobs(list);
     } catch (error) {
       console.error('Failed to fetch jobs', error);
     } finally {
@@ -30,16 +44,27 @@ export const JobsListingScreen = () => {
 
   useFocusEffect(
     useCallback(() => {
+      fetchProfileStatus();
       if (isFirstMount.current) {
         fetchJobs(true);
         isFirstMount.current = false;
       } else {
         fetchJobs(false);
       }
-    }, [fetchJobs])
+    }, [fetchJobs, fetchProfileStatus])
   );
 
   const handleDeleteJob = (jobItem: any) => {
+    const targetId = jobItem?.id || jobItem?.job_post?.id || jobItem?.job_id;
+    if (!targetId) {
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Invalid job ID',
+      });
+      return;
+    }
+
     Alert.alert(
       'Delete Job',
       `Are you sure you want to delete "${jobItem.company_name || jobItem.title || 'this job'}"? This action cannot be undone.`,
@@ -50,7 +75,7 @@ export const JobsListingScreen = () => {
           style: 'destructive',
           onPress: async () => {
             try {
-              await api.delete(`/job_posts/${jobItem.id}`);
+              await jobsApi.deleteJob(targetId);
               Toast.show({
                 type: 'success',
                 text1: 'Deleted',
@@ -58,6 +83,7 @@ export const JobsListingScreen = () => {
               });
               fetchJobs();
             } catch (error: any) {
+              console.error('Failed to delete job', error);
               Toast.show({
                 type: 'error',
                 text1: 'Delete Failed',
@@ -73,11 +99,9 @@ export const JobsListingScreen = () => {
   const renderJobCard = (job: any) => {
     const statusStyle = getStatusColors(job.status);
     return (
-      <TouchableOpacity
+      <View
         key={job.id}
         style={styles.card}
-        onPress={() => navigation.navigate('JobDetails', { job })}
-        activeOpacity={0.7}
       >
         {(job.badge || job.department || job.job_type || job.status) && (
           <View style={styles.badgeRow}>
@@ -115,20 +139,18 @@ export const JobsListingScreen = () => {
               {!((job.status || '').toLowerCase() === 'closed' || (job.status || '').toLowerCase() === 'expired') && (
                 <View style={{ flexDirection: 'row', alignItems: 'center', marginLeft: 6 }}>
                   <TouchableOpacity
-                    style={{ padding: 4, marginRight: 4 }}
+                    style={{ padding: 6, marginRight: 2 }}
                     hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                    onPress={(e) => {
-                      e.stopPropagation();
+                    onPress={() => {
                       navigation.navigate('CreateJob', { job });
                     }}>
                     <Pencil size={20} color={Colors.primary[600]} />
                   </TouchableOpacity>
 
                   <TouchableOpacity
-                    style={{ padding: 4 }}
+                    style={{ padding: 6 }}
                     hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                    onPress={(e) => {
-                      e.stopPropagation();
+                    onPress={() => {
                       handleDeleteJob(job);
                     }}>
                     <Trash2 size={20} color={Colors.error} />
@@ -139,37 +161,42 @@ export const JobsListingScreen = () => {
           </View>
         )}
 
-        {job.company_name ? (
-          <AppText variant="bodyLarge" weight="bold" color={Colors.neutral[900]} numberOfLines={1} style={styles.companyName}>
-            {job.company_name}
-          </AppText>
-        ) : null}
-
-        <AppText
-          variant={job.company_name ? 'bodyMedium' : 'bodyLarge'}
-          weight={job.company_name ? 'medium' : 'semiBold'}
-          color={job.company_name ? Colors.neutral[700] : Colors.neutral[900]}
-          numberOfLines={1}
-          style={styles.jobTitle}
+        <TouchableOpacity
+          onPress={() => navigation.navigate('JobDetails', { job })}
+          activeOpacity={0.7}
         >
-          {job.title}
-        </AppText>
-
-        {job.company_url ? (
-          <View style={styles.urlRow}>
-            <Link2 color={Colors.neutral[500]} size={14} />
-            <AppText variant="caption" color={Colors.neutral[700]} style={{marginLeft: 8, flex: 1}} numberOfLines={1}>
-              {job.company_url}
+          {job.company_name ? (
+            <AppText variant="bodyLarge" weight="bold" color={Colors.neutral[900]} numberOfLines={1} style={styles.companyName}>
+              {job.company_name}
             </AppText>
-          </View>
-        ) : null}
+          ) : null}
 
-        {job.description ? (
-          <AppText variant="caption" color={Colors.neutral[700]} numberOfLines={2} style={{marginTop: 6, lineHeight: 18}}>
-            {job.description}
+          <AppText
+            variant={job.company_name ? 'bodyMedium' : 'bodyLarge'}
+            weight={job.company_name ? 'medium' : 'semiBold'}
+            color={job.company_name ? Colors.neutral[700] : Colors.neutral[900]}
+            numberOfLines={1}
+            style={styles.jobTitle}
+          >
+            {job.title}
           </AppText>
-        ) : null}
-      </TouchableOpacity>
+
+          {job.company_url ? (
+            <View style={styles.urlRow}>
+              <Link2 color={Colors.neutral[500]} size={14} />
+              <AppText variant="caption" color={Colors.neutral[700]} style={{marginLeft: 8, flex: 1}} numberOfLines={1}>
+                {job.company_url}
+              </AppText>
+            </View>
+          ) : null}
+
+          {job.description ? (
+            <AppText variant="caption" color={Colors.neutral[700]} numberOfLines={2} style={{marginTop: 6, lineHeight: 18}}>
+              {job.description}
+            </AppText>
+          ) : null}
+        </TouchableOpacity>
+      </View>
     );
   };
 
@@ -203,7 +230,15 @@ export const JobsListingScreen = () => {
       </View>
       <ScrollView 
         contentContainerStyle={styles.content}
-        refreshControl={<RefreshControl refreshing={loading} onRefresh={fetchJobs} />}
+        refreshControl={
+          <RefreshControl
+            refreshing={loading}
+            onRefresh={() => {
+              fetchJobs();
+              fetchProfileStatus();
+            }}
+          />
+        }
       >
         {jobs.filter(job => activeTab === 'active' ? job.status !== 'closed' : job.status === 'closed').length === 0 && !loading ? (
           <View style={styles.emptyState}>
@@ -226,7 +261,7 @@ export const JobsListingScreen = () => {
       >
         <Plus color="#FFF" size={20} />
         <AppText variant="buttonMedium" color="#FFF" style={{ marginLeft: 6 }}>
-          Create Job
+          {freeJobAvailable ? 'Create Free Job' : 'Create Job'}
         </AppText>
       </TouchableOpacity>
       </SafeAreaView>

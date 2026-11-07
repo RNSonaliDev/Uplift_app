@@ -14,6 +14,7 @@ import {
   TouchableWithoutFeedback,
   Keyboard,
   Linking,
+  Share,
 } from 'react-native';
 import Toast from 'react-native-toast-message';
 import {useNavigation, useRoute, useFocusEffect} from '@react-navigation/native';
@@ -36,6 +37,7 @@ import {
   MessageCircle,
   AlertCircle,
   Download,
+  Globe,
 } from 'lucide-react-native';
 import {
   horizontalScale,
@@ -43,6 +45,7 @@ import {
   moderateScale,
 } from '../../../utils/responsive';
 import {api, getFullImageUrl} from '../../../api/client';
+import {timeZonesApi, TimeZone, findTimeZoneByCode, resolveDefaultTimeZone} from '../../../api/timeZones';
 import {toastConfig} from '../../../theme';
 
 export default function RequestDetailsScreen() {
@@ -64,9 +67,23 @@ export default function RequestDetailsScreen() {
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
   const [isFullScreenImageVisible, setIsFullScreenImageVisible] = useState(false);
   const [isDownloadingCertificate, setIsDownloadingCertificate] = useState(false);
+  const [timeZones, setTimeZones] = useState<TimeZone[]>(() => {
+    const cached = timeZonesApi.getCachedTimeZones?.();
+    return cached?.time_zones || [];
+  });
 
   useFocusEffect(
     useCallback(() => {
+      const fetchTimeZones = async () => {
+        try {
+          const res = await timeZonesApi.getTimeZones();
+          if (res?.time_zones) {
+            setTimeZones(res.time_zones);
+          }
+        } catch (e) {
+          // ignore
+        }
+      };
       const fetchRequest = async () => {
         if (request.id) {
           try {
@@ -103,6 +120,7 @@ export default function RequestDetailsScreen() {
       };
       fetchRequest();
       fetchProfile();
+      fetchTimeZones();
     }, [request.id])
   );
 
@@ -144,13 +162,44 @@ export default function RequestDetailsScreen() {
     );
 
   const showAcceptBtn = !isCancelled && !isPendingParentVerification && !forceAction && (!reqStatus || (!volunteerAssignment && reqStatus.toLowerCase() === 'pending'));
-  const showStartBtn = !isOrgRequest && !isCancelled && !isPendingParentVerification && (forceAction === 'start' || reqStatus?.toLowerCase() === 'accepted');
+  const showStartBtn = !isCancelled && !isPendingParentVerification && (forceAction === 'start' || reqStatus?.toLowerCase() === 'accepted' || reqStatus?.toLowerCase() === 'assigned');
   const showStartWithOtpBtn = !isOrgRequest && !isCancelled && !isPendingParentVerification && (forceAction === 'start_with_otp' || reqStatus?.toLowerCase() === 'on_the_way');
   const showCompleteBtn = !isOrgRequest && !isCancelled && !isPendingParentVerification && (forceAction === 'complete' || reqStatus?.toLowerCase() === 'in_progress');
-  const showOrgCancelBtn = isOrgRequest && !isCancelled && !isPendingParentVerification && (reqStatus?.toLowerCase() === 'accepted' || reqStatus?.toLowerCase() === 'on_the_way');
+  const showOrgCancelBtn = isOrgRequest && !isCancelled && !isPendingParentVerification && (forceAction === 'start_with_otp' || reqStatus?.toLowerCase() === 'on_the_way');
   
   const hasRated = request.ratings?.some((r: any) => r.rater_id === currentUserId);
   const showRateBtn = !isCancelled && !isPendingParentVerification && (forceAction === 'rate' || (reqStatus?.toLowerCase() === 'completed' && !hasRated));
+
+  const getTimeZoneDisplay = (): string | null => {
+    const raw =
+      request.time_zone_label ||
+      request.time_zone ||
+      request.timezone ||
+      request.time_zone_name ||
+      request.time_zone_code;
+
+    if (typeof raw === 'object' && raw !== null) {
+      return raw.label || raw.name || raw.code || null;
+    }
+
+    if (typeof raw === 'string') {
+      const trimmed = raw.trim();
+      if (!trimmed) return null;
+      if (trimmed.includes('—') || trimmed.includes(' - ')) {
+        return trimmed;
+      }
+      const match = findTimeZoneByCode(trimmed, timeZones);
+      if (match) {
+        return match.label;
+      }
+      return trimmed;
+    }
+
+    const defaultTz = resolveDefaultTimeZone(timeZonesApi.getCachedTimeZones?.(), timeZones);
+    return defaultTz?.label || null;
+  };
+
+  const timeZoneDisplay = getTimeZoneDisplay();
 
   const handleAcceptClick = async () => {
     if (!request.id) return;
@@ -238,7 +287,7 @@ export default function RequestDetailsScreen() {
       Toast.show({
         type: 'success',
         text1: 'Success',
-        text2: 'Task started successfully!',
+        text2: 'Job started successfully!',
         position: 'bottom',
         bottomOffset: Platform.OS === 'ios' ? 40 : 20,
         onHide: () => {
@@ -289,24 +338,116 @@ export default function RequestDetailsScreen() {
       }
     };
 
-    const handleDownloadCertificate = async () => {
-      if (!certificateUrl) {
-        Alert.alert('Notice', 'Certificate is not available yet.');
-        return;
+  const handleDownloadCertificate = async () => {
+    if (!certificateUrl) {
+      Toast.show({
+        type: 'info',
+        text1: 'Notice',
+        text2: 'Certificate is not available yet.',
+      });
+      return;
+    }
+    try {
+      setIsDownloadingCertificate(true);
+      const rawUrl = certificateUrl.startsWith('http')
+        ? certificateUrl
+        : (getFullImageUrl(certificateUrl) as string);
+
+      if (!rawUrl) {
+        throw new Error('Invalid certificate URL');
       }
+
+      // Do not alter or append query parameters as that breaks signed cloud storage signatures (Azure Blob SAS / AWS S3)
+      const targetUrl = rawUrl.trim();
+
+      if (Platform.OS === 'ios') {
+        // On iOS: fetch file data and open system dialog so user can "Save to Files" or "Save Image" to their device
+        try {
+          const response = await fetch(targetUrl);
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+
+          const blob = await response.blob();
+          
+          let mimeType = blob.type;
+          if (!mimeType || mimeType === 'application/octet-stream') {
+            const clean = targetUrl.split('?')[0].toLowerCase();
+            if (clean.endsWith('.pdf')) mimeType = 'application/pdf';
+            else if (clean.endsWith('.png')) mimeType = 'image/png';
+            else if (clean.endsWith('.jpg') || clean.endsWith('.jpeg')) mimeType = 'image/jpeg';
+            else mimeType = 'application/pdf';
+          }
+
+          const dataUri = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+              if (typeof reader.result === 'string') {
+                resolve(reader.result);
+              } else {
+                reject(new Error('Failed to read certificate file'));
+              }
+            };
+            reader.onerror = () => reject(new Error('FileReader error reading certificate'));
+            reader.readAsDataURL(blob);
+          });
+
+          let finalDataUri = dataUri;
+          if (mimeType && !finalDataUri.startsWith(`data:${mimeType}`)) {
+            finalDataUri = finalDataUri.replace(/^data:[^;]*/, `data:${mimeType}`);
+          }
+
+          await Share.share(
+            {
+              url: finalDataUri,
+              title: 'Volunteer Certificate',
+            },
+            {
+              subject: 'Volunteer_Certificate',
+            }
+          );
+          return;
+        } catch (fetchErr) {
+          console.warn('In-app file preparation failed, falling back to browser download:', fetchErr);
+          await Linking.openURL(targetUrl);
+          return;
+        }
+      } else {
+        // On Android: open direct URL to trigger device download
+        Toast.show({
+          type: 'info',
+          text1: 'Downloading',
+          text2: 'Downloading certificate to your device...',
+        });
+        await Linking.openURL(targetUrl);
+      }
+    } catch (error) {
+      console.error('Error opening certificate URL:', error);
       try {
-        setIsDownloadingCertificate(true);
-        const targetUrl = certificateUrl.startsWith('http')
+        const fallbackUrl = certificateUrl.startsWith('http')
           ? certificateUrl
           : (getFullImageUrl(certificateUrl) as string);
-        await Linking.openURL(targetUrl);
-      } catch (error) {
-        console.error('Error opening certificate URL:', error);
-        Alert.alert('Error', 'Unable to open certificate download link.');
-      } finally {
-        setIsDownloadingCertificate(false);
+        if (fallbackUrl) {
+          await Share.share({
+            url: fallbackUrl.trim(),
+            title: 'Volunteer Certificate',
+            message: fallbackUrl.trim(),
+          });
+          return;
+        }
+      } catch (shareErr) {
+        console.error('Fallback share error:', shareErr);
       }
-    };
+
+      Toast.show({
+        type: 'error',
+        text1: 'Download Failed',
+        text2: 'Unable to download certificate. Please try again.',
+      });
+    } finally {
+      setIsDownloadingCertificate(false);
+    }
+  };
 
     const handleCancelRequest = () => {
       Alert.alert('Cancel Request', 'Are you sure you want to cancel this request?', [
@@ -482,6 +623,19 @@ export default function RequestDetailsScreen() {
             </AppText>
           </View>
 
+          {/* Time Zone */}
+          {timeZoneDisplay ? (
+            <View style={styles.detailRowItem}>
+              <View style={styles.detailLabelRow}>
+                <Globe color={Colors.neutral[600]} size={20} />
+                <AppText variant="bodyMedium" color={Colors.neutral[900]} style={{marginLeft: 8, fontFamily: FontFamily.medium}}>Time Zone</AppText>
+              </View>
+              <AppText variant="bodyMedium" color={Colors.neutral[600]} style={{flex: 1, textAlign: 'right', marginLeft: 16}}>
+                {timeZoneDisplay}
+              </AppText>
+            </View>
+          ) : null}
+
           {/* Distance */}
           {request.distance != null ? (
             <View style={styles.detailRowItem}>
@@ -530,33 +684,6 @@ export default function RequestDetailsScreen() {
               <AppText variant="bodyMedium" color={Colors.neutral[600]} style={{marginLeft: 28, marginTop: 4, lineHeight: 22}}>
                 {request.notes}
               </AppText>
-            </View>
-          ) : null}
-
-          {/* Certificate */}
-          {isCompleted && certificateUrl ? (
-            <View style={styles.detailRowItem}>
-              <View style={styles.detailLabelRow}>
-                <FileText color={Colors.neutral[600]} size={20} />
-                <AppText variant="bodyMedium" color={Colors.neutral[900]} style={{marginLeft: 8, fontFamily: FontFamily.medium}}>Certificate</AppText>
-              </View>
-              <TouchableOpacity 
-                onPress={handleDownloadCertificate}
-                activeOpacity={0.7}
-                style={{
-                  flexDirection: 'row', 
-                  alignItems: 'center', 
-                  backgroundColor: Colors.primary[50], 
-                  paddingHorizontal: 12, 
-                  paddingVertical: 6, 
-                  borderRadius: 16
-                }}
-              >
-                <Download color={Colors.primary[600]} size={16} />
-                <AppText variant="labelMedium" color={Colors.primary[600]} style={{marginLeft: 6, fontFamily: FontFamily.medium}}>
-                  Download
-                </AppText>
-              </TouchableOpacity>
             </View>
           ) : null}
         </View>

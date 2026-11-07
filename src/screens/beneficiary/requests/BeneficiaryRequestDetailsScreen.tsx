@@ -26,6 +26,7 @@ import {
   Info,
   MessageCircle,
   ShieldCheck,
+  Globe,
 } from 'lucide-react-native';
 import {
   horizontalScale,
@@ -33,17 +34,32 @@ import {
   moderateScale,
 } from '../../../utils/responsive';
 import {api, getFullImageUrl} from '../../../api/client';
+import {timeZonesApi, TimeZone, findTimeZoneByCode, resolveDefaultTimeZone} from '../../../api/timeZones';
 
 export default function BeneficiaryRequestDetailsScreen() {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const [request, setRequest] = useState<any>(route.params?.request || {});
   const [isFullScreenImageVisible, setIsFullScreenImageVisible] = useState(false);
+  const [timeZones, setTimeZones] = useState<TimeZone[]>(() => {
+    const cached = timeZonesApi.getCachedTimeZones?.();
+    return cached?.time_zones || [];
+  });
   
   const requestId = route.params?.requestId || request.id;
 
   useFocusEffect(
     useCallback(() => {
+      const fetchTimeZones = async () => {
+        try {
+          const res = await timeZonesApi.getTimeZones();
+          if (res?.time_zones) {
+            setTimeZones(res.time_zones);
+          }
+        } catch (e) {
+          // ignore
+        }
+      };
       const fetchRequest = async () => {
         if (requestId) {
           try {
@@ -58,8 +74,40 @@ export default function BeneficiaryRequestDetailsScreen() {
       };
       
       fetchRequest();
+      fetchTimeZones();
     }, [requestId])
   );
+
+  const getTimeZoneDisplay = (): string | null => {
+    const raw =
+      request.time_zone_label ||
+      request.time_zone ||
+      request.timezone ||
+      request.time_zone_name ||
+      request.time_zone_code;
+
+    if (typeof raw === 'object' && raw !== null) {
+      return raw.label || raw.name || raw.code || null;
+    }
+
+    if (typeof raw === 'string') {
+      const trimmed = raw.trim();
+      if (!trimmed) return null;
+      if (trimmed.includes('—') || trimmed.includes(' - ')) {
+        return trimmed;
+      }
+      const match = findTimeZoneByCode(trimmed, timeZones);
+      if (match) {
+        return match.label;
+      }
+      return trimmed;
+    }
+
+    const defaultTz = resolveDefaultTimeZone(timeZonesApi.getCachedTimeZones?.(), timeZones);
+    return defaultTz?.label || null;
+  };
+
+  const timeZoneDisplay = getTimeZoneDisplay();
   return (
     <>
       <SafeAreaView style={{ flex: 0, backgroundColor: Colors.primary[500] }} />
@@ -244,6 +292,19 @@ export default function BeneficiaryRequestDetailsScreen() {
               {request.preferred_start_time ? `${formatTime12Hour(request.preferred_start_time)} - ${formatTime12Hour(request.preferred_end_time)}` : 'Time TBD'}{request.hours_required != null ? ` (${request.hours_required} hours)` : ''}
             </AppText>
           </View>
+
+          {/* Time Zone */}
+          {timeZoneDisplay ? (
+            <View style={styles.detailRowItem}>
+              <View style={styles.detailLabelRow}>
+                <Globe color={Colors.neutral[600]} size={20} />
+                <AppText variant="bodyMedium" color={Colors.neutral[900]} style={{marginLeft: 8, fontFamily: FontFamily.medium}}>Time Zone</AppText>
+              </View>
+              <AppText variant="bodyMedium" color={Colors.neutral[600]} style={{flex: 1, textAlign: 'right', marginLeft: 16}}>
+                {timeZoneDisplay}
+              </AppText>
+            </View>
+          ) : null}
 
           {/* Description */}
           {request.description ? (

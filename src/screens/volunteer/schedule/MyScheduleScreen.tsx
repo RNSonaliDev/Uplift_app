@@ -184,10 +184,11 @@ export default function MyScheduleScreen() {
             const s = status?.toLowerCase() || '';
             const isOrg = item.request_type === 'organization' || !!item.organization;
             let forceAction: string | undefined = undefined;
-            if (!isOrg) {
+            if (s === 'accepted' || s === 'assigned') {
+              forceAction = 'start';
+            } else if (!isOrg) {
               if (s === 'on_the_way') forceAction = 'start_with_otp';
               else if (s === 'in_progress') forceAction = 'complete';
-              else if (s === 'accepted') forceAction = 'start';
             }
             if (s.includes('parent') || s.includes('verification')) forceAction = 'parent_verification';
             navigation.navigate('RequestDetails', { request: item, forceAction });

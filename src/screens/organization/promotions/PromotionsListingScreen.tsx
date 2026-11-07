@@ -29,6 +29,7 @@ import { Typography, FontFamily } from '../../../theme/typography';
 import { AppText } from '../../../components/AppText';
 import { horizontalScale, verticalScale, moderateScale, fontScale } from '../../../utils/responsive';
 import { api } from '../../../api/client';
+import { authApi } from '../../../api/auth';
 import { formatDate } from '../../../utils/dateFormatter';
 import { formatStatus, getStatusColors } from '../../../utils/statusUtils';
 import Toast from 'react-native-toast-message';
@@ -38,7 +39,18 @@ export const PromotionsListingScreen = () => {
   const [promotions, setPromotions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'active' | 'closed'>('active');
+  const [freePromotionAvailable, setFreePromotionAvailable] = useState(false);
   const isFirstMount = React.useRef(true);
+
+  const fetchProfileStatus = useCallback(async () => {
+    try {
+      const res: any = await authApi.getProfile();
+      const org = res?.profiles?.organization || res?.active_profile || res?.organization || res;
+      setFreePromotionAvailable(Boolean(org?.free_promotion_available));
+    } catch (e) {
+      console.warn('Failed to fetch profile in PromotionsListingScreen', e);
+    }
+  }, []);
 
   const fetchPromotions = useCallback(async (isInitial = false) => {
     try {
@@ -56,13 +68,14 @@ export const PromotionsListingScreen = () => {
 
   useFocusEffect(
     useCallback(() => {
+      fetchProfileStatus();
       if (isFirstMount.current) {
         fetchPromotions(true);
         isFirstMount.current = false;
       } else {
         fetchPromotions(false);
       }
-    }, [fetchPromotions])
+    }, [fetchPromotions, fetchProfileStatus])
   );
 
   const handleClosePromotion = (item: any) => {
@@ -350,7 +363,14 @@ export const PromotionsListingScreen = () => {
           contentContainerStyle={styles.content}
           showsVerticalScrollIndicator={false}
           refreshControl={
-            <RefreshControl refreshing={loading} onRefresh={fetchPromotions} colors={[Colors.primary[500]]} />
+            <RefreshControl
+              refreshing={loading}
+              onRefresh={() => {
+                fetchPromotions();
+                fetchProfileStatus();
+              }}
+              colors={[Colors.primary[500]]}
+            />
           }>
           {filteredPromotions.length === 0 && !loading ? (
             <View style={styles.emptyState}>
@@ -374,7 +394,7 @@ export const PromotionsListingScreen = () => {
           activeOpacity={0.85}>
           <Plus color={Colors.neutral[0]} size={20} />
           <AppText variant="buttonMedium" color={Colors.neutral[0]} style={{ marginLeft: 6 }}>
-            Create Promo
+            {freePromotionAvailable ? 'Create Free Promo' : 'Create Promo'}
           </AppText>
         </TouchableOpacity>
       </View>

@@ -20,7 +20,7 @@ export function useFormScrollToError() {
     requestAnimationFrame(() => {
       const y = fieldPositions.current[fieldKey];
       if (y !== undefined && scrollViewRef.current) {
-        const scrollY = Math.max(0, y - offset);
+        const scrollY = y < 100 ? 0 : Math.max(0, y - offset);
         if (typeof scrollViewRef.current.scrollToPosition === 'function') {
           scrollViewRef.current.scrollToPosition(0, scrollY, true);
         } else if (typeof scrollViewRef.current.scrollTo === 'function') {
