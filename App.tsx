@@ -3,7 +3,7 @@
  *
  * @format
  */
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View } from 'react-native';
 import {SafeAreaProvider, SafeAreaView} from 'react-native-safe-area-context';
 import {NavigationContainer} from '@react-navigation/native';
@@ -37,6 +37,8 @@ import ContactSupportScreen from './src/screens/beneficiary/profile/ContactSuppo
 import ContactSupportDetailsScreen from './src/screens/beneficiary/profile/ContactSupportDetailsScreen';
 import CreateSupportRequestScreen from './src/screens/beneficiary/profile/CreateSupportRequestScreen';
 import { pushNotificationService } from './src/services/PushNotificationService';
+import { AppUpdateModal } from './src/components';
+import { AppUpdateService, UpdateCheckResult } from './src/services/AppUpdateService';
 
 type RootStackParamList = {
   Splash: undefined;
@@ -76,7 +78,20 @@ import { navigationRef } from './src/navigation/navigationRef';
 import { registerUnauthorizedHandler } from './src/api/client';
 
 function App() {
+  const [updateInfo, setUpdateInfo] = useState<UpdateCheckResult | null>(null);
+
   useEffect(() => {
+    // Check for App Store / Play Store update
+    AppUpdateService.checkForUpdate()
+      .then((res) => {
+        if (res.updateAvailable) {
+          setUpdateInfo(res);
+        }
+      })
+      .catch((e) => {
+        console.log('[App] Failed to check for app updates:', e);
+      });
+
     // Request permission and get FCM token on startup
     pushNotificationService.requestUserPermission();
     
@@ -93,11 +108,11 @@ function App() {
     const unsubscribe = pushNotificationService.setupForegroundListener();
     return unsubscribe;
   }, []);
-
+// pk_live_51UA9Vr3T0Xq4ckhgpnDwmjAfH29tVl640q12dpF43B5udwLorka67xL2ph8DAv856mesJX4eIQ6pLw1quC1jIJmt00j8dO84MQpk_live_51UA9Vr3T0Xq4ckhgpnDwmjAfH29tVl640q12dpF43B5udwLorka67xL2ph8DAv856mesJX4eIQ6pLw1quC1jIJmt00j8dO84MQ
   return (
     <SafeAreaProvider>
       <View style={{flex: 1, backgroundColor: Colors.neutral[0]}}>
-        <StripeProvider publishableKey="pk_live_51UA9Vr3T0Xq4ckhgpnDwmjAfH29tVl640q12dpF43B5udwLorka67xL2ph8DAv856mesJX4eIQ6pLw1quC1jIJmt00j8dO84MQ"
+        <StripeProvider publishableKey="pk_live_51UA9Vr3T0Xq4ckhgpnDwmjAfH29tVl640q12dpF43B5udwLorka67xL2ph8DAv856mesJX4eIQ6pLw1quC1jIJmt00j8dO84MQpk_live_51UA9Vr3T0Xq4ckhgpnDwmjAfH29tVl640q12dpF43B5udwLorka67xL2ph8DAv856mesJX4eIQ6pLw1quC1jIJmt00j8dO84MQ"
         urlScheme="upliftapp">
           <NavigationContainer ref={navigationRef}>
             <Stack.Navigator screenOptions={{headerShown: false}}>
@@ -128,6 +143,14 @@ function App() {
           </NavigationContainer>
         </StripeProvider>
       </View>
+      <AppUpdateModal
+        visible={!!updateInfo?.updateAvailable}
+        latestVersion={updateInfo?.latestVersion}
+        storeName={updateInfo?.storeName}
+        storeUrl={updateInfo?.storeUrl}
+        forceUpdate={updateInfo?.forceUpdate}
+        onDismiss={() => setUpdateInfo(null)}
+      />
       <Toast position="bottom" bottomOffset={60} config={toastConfig} />
     </SafeAreaProvider>
   );

@@ -1276,7 +1276,7 @@ export const VolunteerSetupScreen: React.FC = () => {
                     {/* Left pointing triangle */}
                     <View style={[styles.tooltipTriangle, {left: 145}]} />
                     <AppText variant="caption" color={Colors.neutral[800]} style={{lineHeight: 18}}>
-                      Your exact location is never shared with anyone
+                      Enter a nearby business address to match you with nearby requests— your exact location is never shared with anyone
                     </AppText>
                   </View>
                 </>

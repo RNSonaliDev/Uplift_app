@@ -163,7 +163,12 @@ export const RequestDetailsScreen = () => {
       
     if (isToday) {
       const minCurrentTime = new Date(pickerDate);
-      minCurrentTime.setHours(now.getHours() + 2, now.getMinutes(), 0, 0);
+      const targetHours = now.getHours() + 2;
+      if (targetHours >= 24) {
+        minCurrentTime.setHours(23, 59, 0, 0);
+      } else {
+        minCurrentTime.setHours(targetHours, now.getMinutes(), 0, 0);
+      }
       return minCurrentTime;
     }
     return min;
@@ -953,7 +958,11 @@ export const RequestDetailsScreen = () => {
         open={isEndTimePickerOpen}
         date={endTime}
         mode="time"
-        minimumDate={new Date(startTime.getTime() + 30 * 60 * 1000)}
+        minimumDate={(() => {
+          const min = new Date(startTime.getTime() + 30 * 60 * 1000);
+          const max = getMaxTimeForPicker(endTime);
+          return min > max ? max : min;
+        })()}
         maximumDate={getMaxTimeForPicker(endTime)}
         onConfirm={(time) => {
           setIsEndTimePickerOpen(false);

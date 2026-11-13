@@ -8,3 +8,4 @@ export * from './Popup';
 export * from './TaskParentConfirmationModal';
 export * from './ImagePickerModal';
 export * from './TimeZonePickerModal';
+export * from './AppUpdateModal';

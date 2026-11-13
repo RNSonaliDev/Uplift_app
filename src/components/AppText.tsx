@@ -53,20 +53,20 @@ const weightToItalicFamily: Record<FontWeight, string> = {
   black: FontFamily.blackItalic,
 };
 
-const emojiRegex = /(\p{Extended_Pictographic}+)/u;
+const emojiRegex = /(\p{Extended_Pictographic}(?:\uFE0F|\uFE0E|\p{Emoji_Modifier}|\u200D\p{Extended_Pictographic})*)/u;
 
 const formatChildWithEmoji = (child: React.ReactNode): React.ReactNode => {
   if (typeof child !== 'string') {
     return child;
   }
 
-  if (!/\p{Extended_Pictographic}/u.test(child)) {
+  if (!emojiRegex.test(child)) {
     return child;
   }
 
   const parts = child.split(emojiRegex);
   return parts.map((part, index) => {
-    if (/\p{Extended_Pictographic}/u.test(part)) {
+    if (emojiRegex.test(part)) {
       return (
         <RNText key={index} style={styles.emojiSpan}>
           {part}
@@ -135,6 +135,12 @@ export const AppText: React.FC<AppTextProps> = ({
 
 const styles = StyleSheet.create({
   emojiSpan: {
-    fontFamily: Platform.OS === 'ios' ? 'System' : undefined,
+    fontFamily: Platform.select({
+      ios: 'Apple Color Emoji',
+      android: 'sans-serif',
+      default: undefined,
+    }),
+    fontWeight: 'normal',
+    fontStyle: 'normal',
   },
 });

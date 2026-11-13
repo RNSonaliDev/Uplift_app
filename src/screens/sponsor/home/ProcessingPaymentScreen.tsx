@@ -19,40 +19,47 @@ export default function ProcessingPaymentScreen() {
   const amount = route.params?.amount || 0;
   const recipientType = route.params?.recipientType || 'none';
   const donationId = route.params?.donationId;
+  const isOrganization = Boolean(route.params?.isOrganization);
 
   useEffect(() => {
     const processPayment = async () => {
       if (!donationId) {
         // Fallback if donationId is missing
         setTimeout(() => {
-          navigation.replace('PaymentSuccessful', { amount, recipientType });
+          navigation.replace('PaymentSuccessful', { amount, recipientType, isOrganization });
         }, 1500);
         return;
       }
 
       try {
-        const { donationsApi } = await import('../../../api/donations');
-        const res = await donationsApi.confirmDonation(donationId);
+        let res: any;
+        if (isOrganization) {
+          const { organizationDonationsApi } = await import('../../../api/donations');
+          res = await organizationDonationsApi.confirmDonation(donationId);
+        } else {
+          const { donationsApi } = await import('../../../api/donations');
+          res = await donationsApi.confirmDonation(donationId);
+        }
         
-        if (res.status === 'failed') {
+        if (res?.status === 'failed') {
           setTimeout(() => {
             Alert.alert("Payment Failed", "Your payment could not be processed. Please try again.");
             navigation.goBack();
           }, 1500);
         } else {
           setTimeout(() => {
-            navigation.replace('PaymentSuccessful', { amount, recipientType, donation: res });
+            navigation.replace('PaymentSuccessful', { amount, recipientType, donation: res, isOrganization });
           }, 1500);
         }
       } catch (error) {
         console.error('Failed to confirm donation', error);
         setTimeout(() => {
-          navigation.replace('PaymentSuccessful', { amount, recipientType });
+          navigation.replace('PaymentSuccessful', { amount, recipientType, isOrganization });
         }, 1500);
       }
     };
     processPayment();
-  }, [navigation, amount, recipientType, donationId]);
+  }, [navigation, amount, recipientType, donationId, isOrganization]);
 
   return (
     <SafeAreaView style={styles.safeArea}>

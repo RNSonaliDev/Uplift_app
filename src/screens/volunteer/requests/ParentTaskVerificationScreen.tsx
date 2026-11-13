@@ -154,24 +154,6 @@ const OtpInput: React.FC<OtpInputProps> = ({length, value, onChange}) => {
     return true;
   };
 
-  const handlePasteClipboard = async () => {
-    try {
-      const text = await Clipboard.getString();
-      if (text) {
-        const success = handlePasteDigits(text, 0);
-        if (success) {
-          Toast.show({
-            type: 'success',
-            text1: 'Code Pasted',
-            text2: 'Verification code pasted from clipboard.',
-          });
-        }
-      }
-    } catch (err) {
-      console.log('Clipboard read error:', err);
-    }
-  };
-
   const handleChange = (text: string, index: number) => {
     const digits = text.replace(/[^0-9]/g, '');
 
@@ -225,51 +207,35 @@ const OtpInput: React.FC<OtpInputProps> = ({length, value, onChange}) => {
     }
   };
 
-  const isComplete = value.every(v => !!v);
-
   return (
-    <View>
-      <View style={otpStyles.container}>
-        {Array.from({length}, (_, index) => {
-          const hasValue = !!value[index];
+    <View style={otpStyles.container}>
+      {Array.from({length}, (_, index) => {
+        const hasValue = !!value[index];
 
-          return (
-            <TextInput
-              key={index}
-              ref={ref => {
-                inputRefs.current[index] = ref;
-              }}
-              style={[
-                otpStyles.input,
-                hasValue && otpStyles.inputFilled,
-              ]}
-              maxLength={length}
-              keyboardType="number-pad"
-              textContentType="oneTimeCode"
-              autoComplete={Platform.OS === 'android' ? 'sms-otp' : 'one-time-code'}
-              importantForAutofill="yes"
-              contextMenuHidden={false}
-              value={value[index] || ''}
-              onChangeText={text => handleChange(text, index)}
-              onKeyPress={e => handleKeyPress(e, index)}
-              selectTextOnFocus
-              selectionColor={Colors.primary[500]}
-            />
-          );
-        })}
-      </View>
-
-      {!isComplete && (
-        <TouchableOpacity
-          onPress={handlePasteClipboard}
-          style={otpStyles.pasteButton}
-          activeOpacity={0.7}
-        >
-          <AppText variant="labelSmall" color={Colors.primary[600]} style={otpStyles.pasteButtonText}>
-            Paste code from clipboard
-          </AppText>
-        </TouchableOpacity>
-      )}
+        return (
+          <TextInput
+            key={index}
+            ref={ref => {
+              inputRefs.current[index] = ref;
+            }}
+            style={[
+              otpStyles.input,
+              hasValue && otpStyles.inputFilled,
+            ]}
+            maxLength={length}
+            keyboardType="number-pad"
+            textContentType="oneTimeCode"
+            autoComplete={Platform.OS === 'android' ? 'sms-otp' : 'one-time-code'}
+            importantForAutofill="yes"
+            contextMenuHidden={false}
+            value={value[index] || ''}
+            onChangeText={text => handleChange(text, index)}
+            onKeyPress={e => handleKeyPress(e, index)}
+            selectTextOnFocus
+            selectionColor={Colors.primary[500]}
+          />
+        );
+      })}
     </View>
   );
 };
@@ -302,16 +268,6 @@ const otpStyles = StyleSheet.create({
   inputFilled: {
     borderColor: Colors.primary[500],
     backgroundColor: Colors.primary[50],
-  },
-  pasteButton: {
-    alignSelf: 'center',
-    marginTop: verticalScale(12),
-    paddingVertical: verticalScale(6),
-    paddingHorizontal: horizontalScale(12),
-  },
-  pasteButtonText: {
-    fontFamily: FontFamily.medium,
-    textDecorationLine: 'underline',
   },
 });
 

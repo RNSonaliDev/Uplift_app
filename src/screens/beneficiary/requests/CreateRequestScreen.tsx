@@ -726,7 +726,12 @@ export default function CreateRequestScreen() {
 
     if (isToday) {
       const minCurrentTime = new Date(pickerDate);
-      minCurrentTime.setHours(now.getHours() + 2, now.getMinutes(), 0, 0);
+      const targetHours = now.getHours() + 2;
+      if (targetHours >= 20) {
+        minCurrentTime.setHours(20, 0, 0, 0);
+      } else {
+        minCurrentTime.setHours(targetHours, now.getMinutes(), 0, 0);
+      }
       const max = new Date(pickerDate);
       max.setHours(20, 0, 0, 0);
 

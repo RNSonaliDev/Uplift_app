@@ -179,11 +179,7 @@ export default function PaymentDetailsScreen() {
           <View style={[styles.summaryRow, { marginTop: verticalScale(10) }]}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <AppText variant="bodyMedium" color={Colors.neutral[600]}>Processing Fee</AppText>
-              <View style={styles.feeBadge}>
-                <AppText variant="caption" color={Colors.primary[700]} style={styles.feeBadgeText}>
-                  {stripeConfig.processing_fee_percent}% + ${stripeConfig.fixed_charge.toFixed(2)}
-                </AppText>
-              </View>
+     
             </View>
             <AppText variant="bodyMedium" weight="semiBold" color={Colors.neutral[900]}>
               ${displayFee.toFixed(2)}

@@ -37,6 +37,11 @@ import CreateSupportRequestScreen from '../screens/beneficiary/profile/CreateSup
 import FAQScreen from '../screens/beneficiary/profile/FAQScreen';
 import PoliciesScreen from '../screens/beneficiary/profile/PoliciesScreen';
 
+// Payment Screens
+import {OrgDonationScreen} from '../screens/organization/donation/OrgDonationScreen';
+import ProcessingPaymentScreen from '../screens/sponsor/home/ProcessingPaymentScreen';
+import PaymentSuccessfulScreen from '../screens/sponsor/home/PaymentSuccessfulScreen';
+
 const Stack = createNativeStackNavigator();
 
 export function OrganizationRootStack() {
@@ -78,6 +83,11 @@ export function OrganizationRootStack() {
       <Stack.Screen name="CreateSupportRequest" component={CreateSupportRequestScreen} />
       <Stack.Screen name="FAQ" component={FAQScreen} />
       <Stack.Screen name="Policies" component={PoliciesScreen} />
+
+      {/* Payment & Donation Screens */}
+      <Stack.Screen name="OrgDonationScreen" component={OrgDonationScreen} />
+      <Stack.Screen name="ProcessingPayment" component={ProcessingPaymentScreen} options={{gestureEnabled: false}} />
+      <Stack.Screen name="PaymentSuccessful" component={PaymentSuccessfulScreen} options={{gestureEnabled: false}} />
     </Stack.Navigator>
   );
 }

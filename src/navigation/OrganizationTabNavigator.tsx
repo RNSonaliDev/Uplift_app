@@ -2,13 +2,14 @@ import React from 'react';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import {View, Text, StyleSheet} from 'react-native';
 import {Colors} from '../theme/colors';
-import {Home, List, Calendar, Briefcase, User, Megaphone} from 'lucide-react-native';
+import {Home, List, Calendar, Briefcase, User, Megaphone, Heart} from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import {OrganizationRequestsScreen} from '../screens/organization/dashboard/OrganizationRequestsScreen';
 import {OrganizationDashboardScreen} from '../screens/organization/dashboard/OrganizationDashboardScreen';
 import {JobsListingScreen} from '../screens/organization/jobs/JobsListingScreen';
 import {PromotionsListingScreen} from '../screens/organization/promotions/PromotionsListingScreen';
+import {OrgDonationsListScreen} from '../screens/organization/donation/OrgDonationsListScreen';
 import VolunteerScheduleStack from './VolunteerScheduleStack';
 import MyProfileScreen from '../screens/beneficiary/profile/MyProfileScreen';
 
@@ -21,7 +22,6 @@ export function OrganizationTabNavigator() {
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
-        unmountOnBlur: false,
         tabBarActiveTintColor: Colors.primary[500],
         tabBarInactiveTintColor: Colors.neutral[900],
         tabBarLabelStyle: {
@@ -104,6 +104,20 @@ export function OrganizationTabNavigator() {
           tabPress: (e) => {
             e.preventDefault();
             navigation.navigate('PromotionsTab');
+          },
+        })}
+      />
+      <Tab.Screen
+        name="DonationTab"
+        component={OrgDonationsListScreen}
+        options={{
+          tabBarLabel: 'Partnering',
+          tabBarIcon: ({color}) => <Heart color={color} size={22} />,
+        }}
+        listeners={({navigation}) => ({
+          tabPress: (e) => {
+            e.preventDefault();
+            navigation.navigate('DonationTab');
           },
         })}
       />

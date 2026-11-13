@@ -67,16 +67,33 @@ export const DatePickerModal: React.FC<DatePickerModalProps> = ({
     }
   };
 
+  if (!open) return null;
+
+  // Guard against invalid ranges: Ensure minimumDate <= maximumDate
+  let resolvedMinDate = minimumDate;
+  let resolvedMaxDate = maximumDate;
+
+  if (resolvedMinDate && resolvedMaxDate && resolvedMinDate > resolvedMaxDate) {
+    resolvedMinDate = resolvedMaxDate;
+  }
+
+  // Ensure value is within [minimumDate, maximumDate]
+  let resolvedValue = tempDate;
+  if (resolvedMinDate && resolvedValue < resolvedMinDate) {
+    resolvedValue = resolvedMinDate;
+  } else if (resolvedMaxDate && resolvedValue > resolvedMaxDate) {
+    resolvedValue = resolvedMaxDate;
+  }
+
   // On Android, render the picker directly (it shows as a native dialog)
   if (Platform.OS === 'android') {
-    if (!open) return null;
     return (
       <DateTimePicker
-        value={tempDate}
+        value={resolvedValue}
         mode={mode === 'datetime' ? 'date' : mode}
         display="default"
-        minimumDate={minimumDate}
-        maximumDate={maximumDate}
+        minimumDate={resolvedMinDate}
+        maximumDate={resolvedMaxDate}
         onChange={handleChange}
       />
     );
@@ -100,7 +117,7 @@ export const DatePickerModal: React.FC<DatePickerModalProps> = ({
               </AppText>
             </TouchableOpacity>
             <TouchableOpacity
-              onPress={() => onConfirm(tempDate)}
+              onPress={() => onConfirm(resolvedValue)}
               style={styles.headerButton}
             >
               <AppText variant="bodyMedium" color={Colors.primary[500]} weight="bold">
@@ -109,11 +126,11 @@ export const DatePickerModal: React.FC<DatePickerModalProps> = ({
             </TouchableOpacity>
           </View>
           <DateTimePicker
-            value={tempDate}
+            value={resolvedValue}
             mode={mode === 'datetime' ? 'date' : mode}
             display="spinner"
-            minimumDate={minimumDate}
-            maximumDate={maximumDate}
+            minimumDate={resolvedMinDate}
+            maximumDate={resolvedMaxDate}
             onChange={handleChange}
             style={styles.picker}
             textColor={Colors.neutral[900]}

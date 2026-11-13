@@ -88,13 +88,13 @@ export default function ChooseAmountScreen() {
     <SafeAreaView style={styles.safeArea}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <ChevronLeft color={Colors.neutral[0]} size={28} />
+        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+          <ChevronLeft color={Colors.neutral[0]} size={26} />
         </TouchableOpacity>
-        <AppText variant="h4" color={Colors.neutral[0]}>
+        <AppText variant="h5" color={Colors.neutral[0]} style={styles.headerTitle}>
           Make a Contribution
         </AppText>
-        <View style={{ width: 28 }} />
+        <View style={{ width: 26 }} />
       </View>
 
       <KeyboardAvoidingView
@@ -104,14 +104,14 @@ export default function ChooseAmountScreen() {
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
         {/* Information Banner */}
         <View style={styles.infoBanner}>
-          <ShieldCheck color={Colors.primary[500]} size={22} style={{ marginRight: 10, marginTop: 2 }} />
-          <AppText variant="bodySmall" color={Colors.neutral[700]} style={styles.infoBannerText}>
+          <ShieldCheck color={Colors.primary[500]} size={18} style={{ marginRight: horizontalScale(8), marginTop: 2 }} />
+          <AppText variant="caption" color={Colors.neutral[700]} style={styles.infoBannerText}>
             When you support your community through iUpliftU, 80% goes directly to beneficiaries and youth volunteers and 20% keeps the platform running so the help never stops
           </AppText>
         </View>
 
         {/* Recipient Type Selection */}
-        <AppText variant="h5" color={Colors.neutral[900]} style={{marginBottom: 8}}>
+        <AppText variant="bodyLarge" weight="semiBold" color={Colors.neutral[900]} style={styles.sectionTitle}>
           Where should this go?
         </AppText>
         <TouchableOpacity 
@@ -124,7 +124,7 @@ export default function ChooseAmountScreen() {
           <ChevronDown color={Colors.neutral[500]} size={20} />
         </TouchableOpacity>
 
-        <AppText variant="h5" color={Colors.neutral[900]} style={{marginTop: verticalScale(8), marginBottom: verticalScale(4)}}>
+        <AppText variant="bodyLarge" weight="semiBold" color={Colors.neutral[900]} style={styles.sectionTitle}>
           Choose Amount
         </AppText>
         {/* Amount Grid */}
@@ -134,6 +134,7 @@ export default function ChooseAmountScreen() {
             return (
               <TouchableOpacity
                 key={amount}
+                activeOpacity={0.8}
                 style={[styles.amountBox, isSelected && styles.amountBoxSelected]}
                 onPress={() => {
                   if (isSelected) {
@@ -146,8 +147,9 @@ export default function ChooseAmountScreen() {
                 }}
               >
                 <AppText 
-                  variant="h5" 
-                  color={isSelected ? Colors.neutral[0] : Colors.neutral[600]}
+                  variant="bodyLarge" 
+                  weight={isSelected ? 'bold' : 'semiBold'}
+                  color={isSelected ? Colors.neutral[0] : Colors.neutral[700]}
                 >
                   ${amount}
                 </AppText>
@@ -158,11 +160,11 @@ export default function ChooseAmountScreen() {
 
         {/* Custom Amount Input */}
         <View style={styles.customInputContainer}>
-          <AppText variant="h5" color={Colors.neutral[900]} style={{marginBottom: 8}}>
+          <AppText variant="bodyMedium" weight="semiBold" color={Colors.neutral[900]} style={styles.customSectionTitle}>
             Or Enter Custom Amount
           </AppText>
-          <View style={[styles.inputWrapper, selectedAmount === 'custom' && { borderColor: Colors.primary[500], borderWidth: 2 }]}>
-            <AppText variant="h5" color={Colors.neutral[600]} style={styles.currencySymbol}>$</AppText>
+          <View style={[styles.inputWrapper, selectedAmount === 'custom' && styles.inputWrapperActive]}>
+            <AppText variant="bodyLarge" weight="semiBold" color={selectedAmount === 'custom' ? Colors.primary[600] : Colors.neutral[500]} style={styles.currencySymbol}>$</AppText>
             <TextInput
               style={styles.input}
               value={customAmount}
@@ -189,7 +191,7 @@ export default function ChooseAmountScreen() {
             </View>
             <View style={[styles.calcRow, { marginTop: verticalScale(6) }]}>
               <AppText variant="caption" color={Colors.neutral[600]}>
-                Processing Fee ({stripeConfig.processing_fee_percent}% + ${stripeConfig.fixed_charge.toFixed(2)}):
+                Processing Fee:
               </AppText>
               <AppText variant="caption" weight="semiBold" color={Colors.neutral[900]}>+${feeInfo.fee.toFixed(2)}</AppText>
             </View>
@@ -225,7 +227,7 @@ export default function ChooseAmountScreen() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <AppText variant="h5" style={{ color: Colors.neutral[900] }}>Where should this go?</AppText>
+              <AppText variant="bodyLarge" weight="semiBold" style={{ color: Colors.neutral[900] }}>Where should this go?</AppText>
               <TouchableOpacity onPress={() => setIsRecipientModalVisible(false)} style={{ padding: 4 }}>
                 <X color={Colors.neutral[500]} size={24} />
               </TouchableOpacity>
@@ -267,7 +269,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: horizontalScale(16),
-    paddingVertical: verticalScale(16),
+    paddingVertical: verticalScale(14),
+  },
+  headerTitle: {
+    fontFamily: FontFamily.semiBold,
+    textAlign: 'center',
   },
   backButton: {
     padding: moderateScale(4),
@@ -279,8 +285,8 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 24,
   },
   content: {
-    padding: horizontalScale(24),
-    paddingTop: verticalScale(32),
+    padding: horizontalScale(20),
+    paddingTop: verticalScale(24),
   },
   title: {
     marginBottom: verticalScale(8),
@@ -288,25 +294,41 @@ const styles = StyleSheet.create({
   subtitle: {
     marginBottom: verticalScale(15),
   },
+  sectionTitle: {
+    marginBottom: verticalScale(10),
+  },
+  customSectionTitle: {
+    marginBottom: verticalScale(8),
+  },
   amountGrid: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: verticalScale(16),
+    marginBottom: verticalScale(14),
   },
   amountBox: {
     flex: 1,
     marginHorizontal: horizontalScale(4),
     backgroundColor: Colors.neutral[0],
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: Colors.neutral[200],
-    borderRadius: 12,
-    paddingVertical: verticalScale(16),
+    borderRadius: moderateScale(10),
+    paddingVertical: verticalScale(8),
     alignItems: 'center',
     justifyContent: 'center',
+    elevation: 1,
+    shadowColor: Colors.neutral[900],
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
   },
   amountBoxSelected: {
     backgroundColor: Colors.primary[500],
     borderColor: Colors.primary[500],
+    shadowColor: Colors.primary[500],
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
   },
   customInputContainer: {
     marginBottom: verticalScale(16),
@@ -319,9 +341,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.neutral[200],
     borderRadius: 12,
-    paddingVertical: verticalScale(14),
+    paddingVertical: verticalScale(12),
     paddingHorizontal: horizontalScale(16),
-    marginBottom: verticalScale(15),
+    marginBottom: verticalScale(14),
   },
   modalOverlay: {
     flex: 1,
@@ -352,11 +374,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: Colors.neutral[0],
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: Colors.neutral[200],
-    borderRadius: 12,
-    paddingHorizontal: horizontalScale(16),
-    height: verticalScale(56),
+    borderRadius: moderateScale(12),
+    paddingHorizontal: horizontalScale(14),
+    height: verticalScale(50),
+  },
+  inputWrapperActive: {
+    borderColor: Colors.primary[500],
   },
   currencySymbol: {
     marginRight: horizontalScale(8),
@@ -364,8 +389,8 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     fontFamily: FontFamily.medium,
-    fontSize: fontScale(18),
-    color: Colors.neutral[600]
+    fontSize: fontScale(16),
+    color: Colors.neutral[800],
   },
   thankYouCard: {
     flexDirection: 'row',
@@ -392,17 +417,18 @@ const styles = StyleSheet.create({
   },
   infoBanner: {
     flexDirection: 'row',
-    backgroundColor: Colors.primary[50],
+    backgroundColor: '#F8F6FF',
     borderWidth: 1,
-    borderColor: Colors.primary[200],
-    borderRadius: 14,
-    padding: moderateScale(14),
-    marginBottom: verticalScale(20),
+    borderColor: '#E2DCFE',
+    borderRadius: moderateScale(14),
+    padding: moderateScale(12),
+    marginBottom: verticalScale(18),
     alignItems: 'flex-start',
   },
   infoBannerText: {
     flex: 1,
-    lineHeight: fontScale(18),
+    fontSize: fontScale(12),
+    lineHeight: fontScale(17),
   },
   legalFooter: {
     marginTop: verticalScale(20),

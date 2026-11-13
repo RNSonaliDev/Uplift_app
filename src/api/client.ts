@@ -1,14 +1,20 @@
 // src/api/client.ts
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// const BASE_URL = 'https://production.iupliftu.com/api/v1';
-// export const CABLE_URL = 'wss://production.iupliftu.com/cable';
-// export const IMAGE_BASE_URL = 'https://production.iupliftu.com';
+const BASE_URL = 'https://production.iupliftu.com/api/v1';
+export const CABLE_URL = 'wss://production.iupliftu.com/cable';
+export const IMAGE_BASE_URL = 'https://production.iupliftu.com';
 
 
-const BASE_URL = 'https://uplift-backend.pixoatic.com/api/v1';
-export const CABLE_URL = 'wss://uplift-backend.pixoatic.com/cable';
-export const IMAGE_BASE_URL = 'https://uplift-backend.pixoatic.com';
+// export const BASE_URL = 'https://uplift-backend.pixoatic.com/api/v1';
+// export const CABLE_URL = 'wss://uplift-backend.pixoatic.com/cable';
+// export const IMAGE_BASE_URL = 'https://uplift-backend.pixoatic.com';
+
+export const getFullUrl = (path?: string | null) => {
+  if (!path) return '';
+  if (path.startsWith('http')) return path;
+  return `${IMAGE_BASE_URL}${path.startsWith('/') ? '' : '/'}${path}`;
+};
 
 export const getFullImageUrl = (path?: string | null) => {
   if (!path) return null;
@@ -77,6 +83,7 @@ export const handleUnauthorized = async (endpoint?: string) => {
 
   try {
     console.warn('[AUTH] 401 Unauthorized received. Clearing token and redirecting to Login.');
+    const hadToken = Boolean(globalAuthToken || (await AsyncStorage.getItem('UPLIFT_AUTH_TOKEN')));
     await clearAuthToken();
 
     if (unauthorizedCallback) {
@@ -87,12 +94,17 @@ export const handleUnauthorized = async (endpoint?: string) => {
       }
     }
 
-    const isProfileEndpoint =
+    const isSilentEndpoint =
       endpoint === '/profile' ||
       endpoint?.startsWith('/profile') ||
-      endpoint?.includes('/profile');
+      endpoint?.includes('/profile') ||
+      endpoint?.includes('device_tokens') ||
+      endpoint?.includes('notifications') ||
+      endpoint?.includes('stats');
 
-    if (!isProfileEndpoint) {
+    // Only show "Session Expired" error message if an existing logged-in session actually expired
+    // If no token was present or it's a silent/startup check, do not show error message
+    if (hadToken && !isSilentEndpoint) {
       Toast.show({
         type: 'error',
         text1: 'Session Expired',
@@ -168,7 +180,7 @@ export const apiClient = async <T>(endpoint: string, options: FetchOptions = {})
           endpoint.startsWith('/auth/registrations') ||
           endpoint.startsWith('/auth/token');
 
-        if (!isAuthEndpoint) {
+        if (!isAuthEndpoint && token) {
           handleUnauthorized(endpoint);
         }
       }

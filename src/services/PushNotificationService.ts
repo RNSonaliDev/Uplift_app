@@ -12,6 +12,7 @@ import notifee, { AndroidImportance } from '@notifee/react-native';
 import { Platform } from 'react-native';
 import { notificationsApi } from '../api/notifications';
 import { authApi } from '../api/auth';
+import { loadAuthToken } from '../api/client';
 
 class PushNotificationService {
   async requestUserPermission() {
@@ -68,6 +69,11 @@ class PushNotificationService {
       const fcmToken = await getToken(msg);
       if (fcmToken) {
         console.log('Your Firebase Token is:', fcmToken);
+        const authToken = await loadAuthToken();
+        if (!authToken) {
+          console.log('No auth token present, skipping device token registration');
+          return;
+        }
         try {
           await notificationsApi.registerDeviceToken({
             device_token: {
@@ -89,6 +95,11 @@ class PushNotificationService {
 
   async unregisterDeviceToken() {
     try {
+      const authToken = await loadAuthToken();
+      if (!authToken) {
+        console.log('No auth token present, skipping unregisterDeviceToken');
+        return;
+      }
       const profile = await authApi.getProfile();
       if (profile && profile.id) {
         console.log('Unregistering Firebase Token for user ID:', profile.id);

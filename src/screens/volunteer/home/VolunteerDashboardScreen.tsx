@@ -18,6 +18,7 @@ import {formatDate, formatTime12Hour} from '../../../utils/dateFormatter';
 import {Button} from '../../../components/Button';
 import {CategoryIcon} from '../../../components/CategoryIcon';
 import { button_user } from '../../../assets/images';
+import Svg, { Circle } from 'react-native-svg';
 import {
   Bell,
   Calendar,
@@ -100,6 +101,38 @@ export default function VolunteerDashboardScreen() {
 
   const hasMultipleRoles = userRoles.length > 1;
 
+  const goalMetrics = useMemo(() => {
+    const rawGoal =
+      stats?.set_hours ??
+      profile?.profiles?.volunteer?.hours_goal_per_week ??
+      (profile as any)?.hours_goal_per_week;
+    const goalHours = Number(rawGoal) || 0;
+    const completedHours = Number(stats?.hours_completed ?? stats?.work_hours ?? 0);
+    const progressPercent = goalHours > 0 ? Math.min(Math.round((completedHours / goalHours) * 100), 100) : 0;
+    const remainingHours = Math.max(goalHours - completedHours, 0);
+
+    const monthName = new Date().toLocaleString('en-US', { month: 'long' });
+
+    const size = moderateScale(68);
+    const strokeWidth = moderateScale(6.5);
+    const radius = (size - strokeWidth) / 2;
+    const circumference = 2 * Math.PI * radius;
+    const strokeDashoffset = circumference - (circumference * progressPercent) / 100;
+
+    return {
+      goalHours,
+      completedHours,
+      progressPercent,
+      remainingHours,
+      monthName,
+      size,
+      strokeWidth,
+      radius,
+      circumference,
+      strokeDashoffset,
+    };
+  }, [stats, profile]);
+
   const handleRolePress = () => {
     navigation.navigate('DashboardRoleSelection', {
       selectedRoles: userRoles,
@@ -172,7 +205,6 @@ export default function VolunteerDashboardScreen() {
         {/* Floating Impact Card */}
         <View style={styles.impactCardWrapper}>
           <View style={styles.impactCard}>
-            
             <View style={styles.statsRow}>
               <View style={styles.statItem}>
                 <AppText variant="h3" style={styles.statNumber}>{stats?.hours_completed || 0}</AppText>
@@ -192,8 +224,83 @@ export default function VolunteerDashboardScreen() {
           </View>
         </View>
 
+        {/* Monthly Goal Progress Card (Above Browse Support Requests) */}
+        {goalMetrics.goalHours > 0 && (
+          <View style={styles.goalCardWrapper}>
+            <View style={styles.goalCard}>
+              <View style={styles.goalRow}>
+                {/* Circular Progress Ring */}
+                <View style={[styles.ringContainer, { width: goalMetrics.size, height: goalMetrics.size }]}>
+                  <Svg
+                    width={goalMetrics.size}
+                    height={goalMetrics.size}
+                    style={{ transform: [{ rotate: '-90deg' }] }}
+                  >
+                    {/* Background Track */}
+                    <Circle
+                      cx={goalMetrics.size / 2}
+                      cy={goalMetrics.size / 2}
+                      r={goalMetrics.radius}
+                      stroke={Colors.primary[100]}
+                      strokeWidth={goalMetrics.strokeWidth}
+                      fill="none"
+                    />
+                    {/* Active Progress */}
+                    <Circle
+                      cx={goalMetrics.size / 2}
+                      cy={goalMetrics.size / 2}
+                      r={goalMetrics.radius}
+                      stroke={Colors.primary[600]}
+                      strokeWidth={goalMetrics.strokeWidth}
+                      strokeDasharray={goalMetrics.circumference}
+                      strokeDashoffset={goalMetrics.strokeDashoffset}
+                      strokeLinecap="round"
+                      fill="none"
+                    />
+                  </Svg>
+                  <View style={styles.ringCenterTextContainer}>
+                    <AppText variant="labelLarge" style={styles.ringPercentText}>
+                      {goalMetrics.progressPercent}%
+                    </AppText>
+                  </View>
+                </View>
+
+                {/* Goal Info */}
+                <View style={styles.goalInfoContainer}>
+                  <View style={styles.goalBadgeRow}>
+                    <View style={styles.goalBadge}>
+                      <Clock color={Colors.primary[600]} size={12} strokeWidth={2.4} />
+                      <AppText variant="caption" style={styles.goalBadgeText}>
+                        {goalMetrics.monthName} Goal
+                      </AppText>
+                    </View>
+                    <AppText variant="caption" color={Colors.neutral[400]} style={styles.goalResetText}>
+                      Resets monthly
+                    </AppText>
+                  </View>
+
+                  <View style={styles.goalNumbersRow}>
+                    <AppText variant="h4" style={styles.goalCompletedNumber}>
+                      {goalMetrics.completedHours}
+                    </AppText>
+                    <AppText variant="bodyMedium" color={Colors.neutral[500]} style={styles.goalTotalLabel}>
+                      {' '}/ {goalMetrics.goalHours} hrs
+                    </AppText>
+                  </View>
+
+                  <AppText variant="caption" color={Colors.neutral[500]}>
+                    {goalMetrics.remainingHours > 0
+                      ? `${goalMetrics.remainingHours} hrs to reach your monthly goal`
+                      : '🎉 Monthly goal completed!'}
+                  </AppText>
+                </View>
+              </View>
+            </View>
+          </View>
+        )}
+
         {/* Browse Support Section */}
-        <View style={styles.sectionContainer}>
+        <View style={[styles.sectionContainer, goalMetrics.goalHours > 0 && { marginTop: verticalScale(20) }]}>
           <AppText variant="h5" style={styles.browseSectionTitle}>Browse support requests</AppText>
           <View style={styles.browseCardsRow}>
             <TouchableOpacity 
@@ -368,6 +475,81 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 12,
     elevation: 4,
+  },
+  goalCardWrapper: {
+    paddingHorizontal: horizontalScale(24),
+    marginTop: verticalScale(16),
+  },
+  goalCard: {
+    backgroundColor: Colors.neutral[0],
+    borderRadius: 16,
+    padding: moderateScale(16),
+    shadowColor: Colors.neutral[900],
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 12,
+    elevation: 3,
+    borderWidth: 1,
+    borderColor: Colors.primary[100],
+  },
+  goalRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  ringContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative',
+  },
+  ringCenterTextContainer: {
+    position: 'absolute',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  ringPercentText: {
+    fontFamily: FontFamily.bold,
+    fontSize: FontSize.sm,
+    color: Colors.primary[700],
+  },
+  goalInfoContainer: {
+    flex: 1,
+    marginLeft: horizontalScale(14),
+    justifyContent: 'center',
+  },
+  goalBadgeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: verticalScale(4),
+  },
+  goalBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.primary[50],
+    paddingHorizontal: horizontalScale(8),
+    paddingVertical: verticalScale(2),
+    borderRadius: moderateScale(10),
+    gap: horizontalScale(4),
+  },
+  goalBadgeText: {
+    color: Colors.primary[700],
+    fontFamily: FontFamily.semiBold,
+    fontSize: FontSize.xs,
+  },
+  goalResetText: {
+    fontSize: FontSize.xs,
+  },
+  goalNumbersRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    marginBottom: verticalScale(2),
+  },
+  goalCompletedNumber: {
+    fontFamily: FontFamily.bold,
+    color: Colors.neutral[900],
+  },
+  goalTotalLabel: {
+    fontFamily: FontFamily.medium,
   },
   impactTitle: {
     color: Colors.neutral[900],

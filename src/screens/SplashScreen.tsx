@@ -3,7 +3,8 @@ import { View, StyleSheet, Image, StatusBar, Animated, Text, Dimensions } from '
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { loadAuthToken } from '../api/client';
+import Toast from 'react-native-toast-message';
+import { loadAuthToken, clearAuthToken } from '../api/client';
 import { authApi } from '../api';
 import { Colors } from '../theme/colors';
 import { Typography } from '../theme/typography';
@@ -82,7 +83,7 @@ export const SplashScreen: React.FC = () => {
     const checkTokenAndNavigate = async () => {
       try {
         const token = await loadAuthToken();
-        if (token) {
+        if (token && token.trim()) {
           const profile = await authApi.getProfile();
           const pendingRoles = profile.pending_roles || [];
           const selectedRoles = profile.selected_roles || [];
@@ -132,11 +133,14 @@ export const SplashScreen: React.FC = () => {
             navigation.reset({ index: 0, routes: [{ name: 'Welcome' }] });
           }
         } else {
+          Toast.hide();
           navigation.reset({ index: 0, routes: [{ name: 'Welcome' }] });
         }
       } catch (error) {
-        // Token invalid or network error, fallback to Welcome
+        // Token invalid or network error, fallback to Welcome without error toast
         console.log('Splash screen token check failed', error);
+        await clearAuthToken();
+        Toast.hide();
         navigation.reset({ index: 0, routes: [{ name: 'Welcome' }] });
       }
     };

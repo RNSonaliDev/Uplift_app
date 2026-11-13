@@ -1,4 +1,4 @@
-import { api } from './client';
+import { api, loadAuthToken } from './client';
 
 export interface RegisterDeviceTokenPayload {
   device_token: {
@@ -35,11 +35,21 @@ export interface AppNotification {
 }
 
 export const notificationsApi = {
-  registerDeviceToken: (payload: RegisterDeviceTokenPayload) => {
+  registerDeviceToken: async (payload: RegisterDeviceTokenPayload) => {
+    const token = await loadAuthToken();
+    if (!token) {
+      console.log('Skipping registerDeviceToken: No auth token present');
+      return { message: 'Skipped - not logged in' };
+    }
     return api.post<{message: string}>('/device_tokens', payload);
   },
   
-  deleteDeviceToken: (userId: number) => {
+  deleteDeviceToken: async (userId: number) => {
+    const token = await loadAuthToken();
+    if (!token) {
+      console.log('Skipping deleteDeviceToken: No auth token present');
+      return { message: 'Skipped - not logged in' };
+    }
     return api.delete<{message: string}>(`/device_tokens/${userId}`);
   },
   
