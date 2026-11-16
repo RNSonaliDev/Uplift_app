@@ -13,7 +13,10 @@ import {
   Keyboard,
   Platform,
   AppState,
+  InteractionManager,
 } from 'react-native';
+import { useNavigation, useRoute, RouteProp, useFocusEffect } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import Svg, {Path, Circle, Rect} from 'react-native-svg';
@@ -129,10 +132,36 @@ interface OtpInputProps {
   length: number;
   value: string[];
   onChange: (otp: string[]) => void;
+  autoFocus?: boolean;
 }
 
-const OtpInput: React.FC<OtpInputProps> = ({length, value, onChange}) => {
+const OtpInput: React.FC<OtpInputProps> = ({length, value, onChange, autoFocus = true}) => {
   const inputRefs = useRef<(TextInput | null)[]>([]);
+  const valueRef = useRef(value);
+  valueRef.current = value;
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!autoFocus) return;
+
+      const focusInput = () => {
+        const firstEmptyIndex = valueRef.current.findIndex(v => !v);
+        const targetIndex = firstEmptyIndex === -1 ? 0 : firstEmptyIndex;
+        inputRefs.current[targetIndex]?.focus();
+      };
+
+      const task = InteractionManager.runAfterInteractions(() => {
+        focusInput();
+      });
+
+      const timer = setTimeout(focusInput, 250);
+
+      return () => {
+        task?.cancel?.();
+        clearTimeout(timer);
+      };
+    }, [autoFocus])
+  );
 
   const handlePasteDigits = (rawText: string, startIndex = 0) => {
     const digits = rawText.replace(/[^0-9]/g, '');
@@ -149,8 +178,14 @@ const OtpInput: React.FC<OtpInputProps> = ({length, value, onChange}) => {
     });
 
     onChange(newOtp);
-    const lastFilled = Math.min(actualStart + pasteChars.length, length) - 1;
-    inputRefs.current[Math.max(0, lastFilled)]?.focus();
+    const isComplete = newOtp.every(d => d !== '');
+    if (isComplete) {
+      inputRefs.current.forEach(ref => ref?.blur());
+      Keyboard.dismiss();
+    } else {
+      const lastFilled = Math.min(actualStart + pasteChars.length, length) - 1;
+      inputRefs.current[Math.max(0, lastFilled)]?.focus();
+    }
     return true;
   };
 
@@ -166,7 +201,11 @@ const OtpInput: React.FC<OtpInputProps> = ({length, value, onChange}) => {
         const newOtp = [...value];
         newOtp[index] = newChar;
         onChange(newOtp);
-        if (index < length - 1) {
+        const isComplete = newOtp.every(d => d !== '');
+        if (isComplete) {
+          inputRefs.current[index]?.blur();
+          Keyboard.dismiss();
+        } else if (index < length - 1) {
           inputRefs.current[index + 1]?.focus();
         }
         return;
@@ -182,7 +221,11 @@ const OtpInput: React.FC<OtpInputProps> = ({length, value, onChange}) => {
       newOtp[index] = digits;
       onChange(newOtp);
 
-      if (index < length - 1) {
+      const isComplete = newOtp.every(d => d !== '');
+      if (isComplete) {
+        inputRefs.current[index]?.blur();
+        Keyboard.dismiss();
+      } else if (index < length - 1) {
         inputRefs.current[index + 1]?.focus();
       }
       return;
@@ -219,6 +262,7 @@ const OtpInput: React.FC<OtpInputProps> = ({length, value, onChange}) => {
             ref={ref => {
               inputRefs.current[index] = ref;
             }}
+            autoFocus={autoFocus && index === 0}
             style={[
               otpStyles.input,
               hasValue && otpStyles.inputFilled,
@@ -322,9 +366,6 @@ const contactStyles = StyleSheet.create({
 });
 
 // ── Main Component ──────────────────────────────────
-
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 type RootStackParamList = {
   Welcome: undefined;
@@ -430,6 +471,12 @@ export const VerifyAccountScreen: React.FC = () => {
   };
 
   const isOtpComplete = otp.every(digit => digit !== '');
+
+  useEffect(() => {
+    if (isOtpComplete) {
+      Keyboard.dismiss();
+    }
+  }, [isOtpComplete]);
 
   const handleSendParentVerification = async () => {
     try {
